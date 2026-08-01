@@ -49,22 +49,38 @@ export const REGOLE = {
     fonte: 'aliquote 2026: la legge di bilancio 199/2025 ha ridotto la seconda dal 35% al 33% dal 1° gennaio 2026, confermato sul sito del MEF. La riduzione è sterilizzata sopra i 200.000 € di reddito, e il modello non lo rappresenta',
     verificata: true
   },
-  IVS: { nome: "Contributi previdenziali a carico del dipendente", val: 0.0919, fonte: 'aliquota IVS a carico del dipendente: DA RISCONTRARE su circolare INPS, la fonte finora indicata non era citabile', verificata: false },
+  // NON è tutta IVS, e il nome lo diceva male: 9,19 = 8,89 al Fondo pensioni + 0,30 alla CIG
+  // straordinaria (tabelle INPS delle aliquote contributive). Chi lavora in un'azienda non
+  // soggetta alla CIGS trattiene 8,89: la differenza vale 0,30 punti di RAL, e il conto la
+  // ignora perché non sappiamo in che azienda sta chi legge.
+  // NON RAPPRESENTATA anche l'aliquota aggiuntiva dell'1% sulla parte di retribuzione oltre la
+  // prima fascia di retribuzione pensionabile (56.224 € per il 2026, circolare INPS 6/2026):
+  // sopra quella soglia la trattenuta vera è più alta, quindi per le RAL alte il netto qui
+  // esce un po' generoso.
+  IVS: { nome: "Contributi previdenziali a carico del dipendente", val: 0.0919,
+    fonte: 'quota a carico del lavoratore dipendente: 8,89% al Fondo pensioni lavoratori dipendenti più 0,30% per la CIG straordinaria — tabelle INPS delle aliquote contributive. Non è rappresentata l\'aliquota aggiuntiva dell\'1% oltre la prima fascia di retribuzione pensionabile',
+    verificata: true },
 
   // --- previdenza complementare ------------------------------------------
-  // Le due cifre che la legge di bilancio 2026 ha cambiato. Riscontrate sul
-  // testo della legge, non su una notizia: L. 199/2025 art. 1 c. 201 lett. a)
-  // n. 1 e lett. b) n. 1.1, che modificano il D.Lgs. 252/2005. In vigore dal
-  // 1° luglio 2026. Attenzione: parecchi fondi hanno documenti aggiornati a
-  // quella legge che continuano a scrivere le cifre vecchie — vale il testo.
+  // Riscontrate sul testo della legge, non su una notizia: L. 199/2025 art. 1
+  // c. 201 lett. a) n. 1 e lett. b) n. 1.1, che modificano il D.Lgs. 252/2005.
+  // In vigore dal 1° luglio 2026. Attenzione: parecchi fondi hanno documenti
+  // aggiornati a quella legge che continuano a scrivere le cifre vecchie —
+  // vale il testo.
   TETTO_DEDUZIONE: { nome: "Tetto di deducibilità dei contributi",
     val: 5300,
     fonte: 'art. 8 c. 4 D.Lgs. 252/2005, come modificato dalla L. 199/2025 art. 1 c. 201: era 5.164,57 €',
     verificata: true
   },
+  // LA CIFRA CHE È ANDATA E TORNATA, ed è il motivo per cui le fonti si rileggono invece di
+  // ricordarle. La legge di bilancio l'aveva portata da 50 a 60; l'art. 16-ter del decreto
+  // legge 62/2026, inserito dalla legge di conversione 112/2026 (in vigore dal 28 giugno 2026),
+  // l'ha riportata a 50 «a decorrere dal termine del 1° luglio 2026», cioè prima ancora che il
+  // 60% arrivasse mai ad applicarsi. Chi si è fermato alla legge di bilancio — e sono in tanti,
+  // fondi compresi — scrive 60 e sbaglia di un sesto.
   QUOTA_ORDINARIA: { nome: "Massimo in capitale, ordinario",
-    val: 0.60,
-    fonte: 'art. 11 c. 3 D.Lgs. 252/2005, come modificato dalla L. 199/2025 art. 1 c. 201: era il 50%',
+    val: 0.50,
+    fonte: 'art. 11 c. 3 D.Lgs. 252/2005: la L. 199/2025 art. 1 c. 201 l\'aveva portato al 60%, l\'art. 16-ter del D.L. 62/2026 conv. L. 112/2026 l\'ha riportato al 50% con effetto dal 1° luglio 2026',
     verificata: true
   },
   ASSEGNO_SOCIALE: { nome: "Assegno sociale annuo",
@@ -81,15 +97,27 @@ export const REGOLE = {
   // Chi ha trentacinque anni di iscrizione ci arriva al 15%, cioè dove le altre prestazioni
   // PARTONO. È la differenza che rende quella forma una scelta da guardare coi numeri e non
   // una comodità in più. La rendita a durata definita e i prelievi seguono invece l'aliquota
-  // ordinaria delle prestazioni in capitale.
+  // ordinaria delle prestazioni in capitale, e anche questo sta scritto: c. 6-bis.
+  //
+  // IL COMMA ERA SBAGLIATO: le tre aliquote stanno nel 6-TER, non nel 6-bis. Il 6-bis dice
+  // un'altra cosa (rendita a durata definita e prelievi seguono il regime del comma 6), e
+  // citarlo qui avrebbe mandato a leggere il pezzo giusto sotto il nome sbagliato.
   ALIQ_FRAZ_MAX: { nome: "Imposta sull'erogazione frazionata, massimo", val: 0.20,
-    fonte: 'art. 11 c. 6-bis D.Lgs. 252/2005 introdotto dalla L. 199/2025: DA RISCONTRARE sul testo, finora letto su documenti dei fondi e sulla nota Assogestioni', verificata: false },
+    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005, introdotto dalla L. 199/2025 art. 1 c. 201 lett. b) n. 4: «una ritenuta a titolo d\'imposta con l\'aliquota del 20 per cento»', verificata: true },
   ALIQ_FRAZ_MIN: { nome: "Imposta sull'erogazione frazionata, minimo", val: 0.15,
-    fonte: 'riduzione massima di 5 punti, raggiunta a 35 anni di partecipazione: DA RISCONTRARE sul testo', verificata: false },
+    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «con un limite massimo di riduzione di 5 punti percentuali», raggiunto a 35 anni di partecipazione', verificata: true },
   ALIQ_FRAZ_PASSO: { nome: "Riduzione dell'imposta sull'erogazione frazionata", val: 0.0025,
-    fonte: '0,25 punti per ogni anno oltre il quindicesimo: DA RISCONTRARE sul testo', verificata: false },
+    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «ridotta di una quota pari a 0,25 punti percentuali per ogni anno eccedente il quindicesimo anno di partecipazione»', verificata: true },
   FRAZ_ANNI_MIN: { nome: "Durata minima dell'erogazione frazionata", val: 5, come: 'anni',
     fonte: 'art. 11 c. 3-bis D.Lgs. 252/2005: «per un periodo non inferiore a cinque anni»', verificata: true },
+  // LE TRE FORME NUOVE NON SONO PARTITE INSIEME. Rendita a durata definita e prelievi si possono
+  // chiedere dal 1° luglio 2026; l'erogazione frazionata è stata rinviata dallo stesso decreto
+  // che ha riportato la quota in capitale al 50%. Fino a quella data il calcolatore la calcola
+  // ma nessun fondo la eroga, e dirlo è più utile che nasconderla.
+  FRAZ_DECORRENZA: { nome: "Erogazione frazionata, da quando si può chiedere",
+    val: '31 ottobre 2026', come: 'secco',
+    fonte: 'art. 16-ter c. 2 del D.L. 62/2026 conv. L. 112/2026, che differisce la sola erogazione frazionata: la rendita a durata definita e i prelievi valgono dal 1° luglio 2026',
+    verificata: true },
 
   // LA DURATA DELLA RENDITA A DURATA DEFINITA NON SI SCEGLIE: sono gli anni INTERI della
   // speranza di vita residua all'età della richiesta (art. 11 c. 3-ter). È una tavola diversa
@@ -97,19 +125,40 @@ export const REGOLE = {
   // vuole l'intero, e i fondi pubblicano proprio questa. Le due coincidono in quindici età su
   // ventuno — e coincidono a 67 anni, che è l'ancora del progetto — ma dove differiscono vale
   // questa, perché è quella che i fondi applicano.
+  //
+  // LE ISTRUZIONI COVIP NON HANNO L'ALLEGATO che la fonte prometteva: la deliberazione del
+  // 25 giugno 2026 non pubblica nessuna tavola, ripete il rinvio della legge alla tavola ISTAT
+  // e aggiunge la sola cosa che serviva davvero, cioè che si arrotonda PER DIFETTO. La tavola,
+  // quindi, si riscontra dove la legge dice di guardare: sui dati ISTAT. Scaricati e confrontati
+  // uno per uno (demo.istat.it, tavole di mortalità 2023, Italia, maschi e femmine): tutte e 41
+  // le età coincidono col troncamento. Nessuna coincide col 2022, che era l'altra ipotesi.
   VITA_INTERA: { nome: "Vita attesa residua in anni interi, per età",
     val: [[50,34],[51,33],[52,32],[53,31],[54,30],[55,29],[56,28],[57,27],[58,26],[59,26],
           [60,25],[61,24],[62,23],[63,22],[64,21],[65,20],[66,20],[67,19],[68,18],[69,17],
           [70,16],[71,15],[72,15],[73,14],[74,13],[75,12],[76,12],[77,11],[78,10],[79,10],
           [80,9],[81,8],[82,8],[83,7],[84,7],[85,6],[86,6],[87,5],[88,5],[89,4],[90,4]],
     come: 'anni',
-    fonte: 'tavola pubblicata identica da più fondi in attuazione delle Istruzioni COVIP del 25 giugno 2026: DA RISCONTRARE sull\'allegato alle Istruzioni', verificata: false },
+    fonte: 'art. 11 c. 3-ter D.Lgs. 252/2005, che rinvia alla tavola di mortalità ISTAT della popolazione generale usata per i coefficienti di trasformazione della tabella A della L. 335/1995; l\'arrotondamento per difetto è nelle Istruzioni COVIP del 25 giugno 2026. Riscontrata su tutte e 41 le età contro le tavole di mortalità ISTAT 2023, Italia, maschi e femmine', verificata: true },
 
   // --- TFR ---------------------------------------------------------------
-  TFR_SU_RAL: { nome: "TFR annuo, in quota della RAL", val: 0.069074, fonte: 'art. 2120 c.c.: RAL/13,5 meno lo 0,50% al Fondo di garanzia — articolo citato ma non ancora letto sul testo', verificata: false },
-  TFR_RIV_FISSA: { nome: "Rivalutazione del TFR in azienda, parte fissa", val: 0.015, fonte: 'art. 2120 c. 4 c.c. — articolo citato ma non ancora letto sul testo', verificata: false },
-  TFR_RIV_QUOTA: { nome: 'Rivalutazione del TFR in azienda, quota dell\'inflazione', val: 0.75, fonte: 'art. 2120 c. 4 c.c.: 75% dell\'indice ISTAT — articolo citato ma non ancora letto sul testo', verificata: false },
-  TFR_IMPOSTA_RIV: { nome: "Imposta sostitutiva sulla rivalutazione del TFR", val: 0.17, fonte: 'imposta sostitutiva sulla rivalutazione del TFR: DA RISCONTRARE sul testo (art. 11 c. 3 D.Lgs. 47/2000), la fonte finora indicata non era citabile', verificata: false },
+  // LO 0,50% NON STA NELL'ART. 2120, e la fonte lo diceva: il codice civile dà solo il divisore
+  // 13,5. La trattenuta viene dall'art. 3 della L. 297/1982, che alza il contributo del datore
+  // di 0,30 punti dal luglio 1982 e di altri 0,20 dal gennaio 1983 — e nel comma dopo dispone
+  // che il datore «detrae per ciascun lavoratore l'importo della contribuzione aggiuntiva
+  // dall'ammontare della quota del trattamento di fine rapporto». Non è una tassa sul TFR:
+  // è un contributo di previdenza pubblica pagato coi soldi del TFR.
+  TFR_SU_RAL: { nome: "TFR annuo, in quota della RAL", val: 0.069074,
+    fonte: 'art. 2120 c. 1 c.c., «la retribuzione dovuta per l\'anno stesso divisa per 13,5», meno lo 0,50% (0,30 + 0,20) che l\'art. 3 della L. 297/1982 fa detrarre dalla quota di TFR',
+    verificata: true },
+  TFR_RIV_FISSA: { nome: "Rivalutazione del TFR in azienda, parte fissa", val: 0.015,
+    fonte: 'art. 2120 c. 4 c.c.: «un tasso costituito dall\'1,5 per cento in misura fissa»',
+    verificata: true },
+  TFR_RIV_QUOTA: { nome: 'Rivalutazione del TFR in azienda, quota dell\'inflazione', val: 0.75,
+    fonte: 'art. 2120 c. 4 c.c.: «e dal 75 per cento dell\'aumento dell\'indice dei prezzi al consumo per le famiglie di operai ed impiegati, accertato dall\'ISTAT»',
+    verificata: true },
+  TFR_IMPOSTA_RIV: { nome: "Imposta sostitutiva sulla rivalutazione del TFR", val: 0.17,
+    fonte: 'art. 11 c. 3 D.Lgs. 47/2000: «l\'imposta sostitutiva delle imposte sui redditi nella misura del 17 per cento», aliquota elevata dalla L. 190/2014 per le rivalutazioni dal 1° gennaio 2015',
+    verificata: true },
 
   // --- coefficienti di conversione ---------------------------------------
   // NON sono legge, e nessun fondo pubblica «il» coefficiente: ogni convenzione
@@ -129,7 +178,7 @@ export const REGOLE = {
   SPERANZA_VITA: { nome: "Speranza di vita residua, per età",
     val: ANNI_ISTAT,
     come: 'anni',
-    fonte: 'tavole di mortalità ISTAT 2023, sessi congiunti (banca dati Eurostat demo_mlexpec, che per l\'Italia riceve i dati ISTAT)',
+    fonte: 'Eurostat demo_mlexpec, Italia 2023, sessi congiunti: valori riscontrati uno per uno. La tavola nazionale ISTAT per lo stesso anno dà circa 0,2 anni in meno a ogni età, e il margine qui sotto è calibrato su questa',
     verificata: true
   },
   MARGINE_RENDITA: { nome: "Anni che la compagnia conta in più dell'ISTAT",
@@ -314,6 +363,7 @@ export const TESTI = {
   fattRev:          pc(1 - V('FATT_REV')),
   fattCerta:        pc(1 - V('FATT_CERTA')),
   anno0:            String(V('ANNO0')),
+  frazDal:          V('FRAZ_DECORRENZA'),
   revisione:        REVISIONE,
 
   // l'esempio, tutto calcolato

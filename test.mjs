@@ -36,7 +36,10 @@ const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'',
   tipoFondo0:'collettiva', tipoFondo1:'collettiva',
   // vuoto = fino alla propria pensione. Assente varrebbe '0', cioè «non lavora da sempre»
   ultimo0:'', ultimo1:'',
-  fondo0:90000, pcVoi0:1.5, pcDat0:2.0, tfrDove0:'fondo', iscr0:2018, rita0:2042, quotaCap0:0.6,
+  // quotaCap0 è la quota massima ordinaria di oggi: il caso di prova chiede esattamente quello
+  // che la legge concede, così il gruppo qui sotto può controllare che non venga tagliato.
+  // Era 0,6, ed è stata la spia del cambio di legge: dal 1° luglio 2026 il massimo è 0,5.
+  fondo0:90000, pcVoi0:1.5, pcDat0:2.0, tfrDove0:'fondo', iscr0:2018, rita0:2042, quotaCap0:0.5,
   nascita1:1982, stip1:1900, ral1:36000, pens1:1700, annoPens1:2050,
   fondo1:30000, pcVoi1:1.2, pcDat1:1.6, tfrDove1:'fondo', iscr1:2012, rita1:2050, quotaCap1:1};
 
@@ -63,7 +66,7 @@ globalThis.document = {
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
-  TETTO_DEDUZIONE, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
+  TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
 let ok = 0, ko = 0;
@@ -233,8 +236,10 @@ t('la base imponibile è il versato, non il montante',
   r.incassi.every(i => i.base < i.montante && i.base > 0));
 t('imposta = base × aliquota',
   r.incassi.every(i => Math.abs(i.tasse - i.base * i.al) < 1e-9));
-t('Anna prende il 60%: la sua scelta coincide con quello che la legge concede',
-  Math.abs(r.incassi[0].capitale / (r.incassi[0].montante - r.incassi[0].tasse) - 0.6) < 1e-12
+// LA CIFRA NON SI SCRIVE QUI. Un test che ripete «0,6» duplica la regola, e quando la legge si
+// muove fallisce senza dire che è la legge ad essersi mossa: dice solo che un numero non torna.
+t('Anna chiede il massimo ordinario: la sua scelta coincide con quello che la legge concede',
+  Math.abs(r.incassi[0].capitale / (r.incassi[0].montante - r.incassi[0].tasse) - M.QUOTA_ORDINARIA) < 1e-12
   && !r.incassi[0].limitata);
 t('il capitale entra nel patrimonio nell\'anno giusto',
   r.incassi.every(i => Math.abs(anno(i.anno).daFondo - i.capitale) < 1e-9));
@@ -294,26 +299,29 @@ t('la soglia di riferimento sta fra quella che vale per chiunque e quella che no
   && M.SOGLIA_TUTTO < M.soglia(M.COEFF_RENDITA * M.BANDA_BASSA),
   `${eur(M.soglia(M.COEFF_RENDITA*M.BANDA_ALTA))} € · ${eur(M.SOGLIA_TUTTO)} € · ${eur(M.soglia(M.COEFF_RENDITA*M.BANDA_BASSA))} €`);
 t('un fondo piccolo si può prendere tutto', M.quotaMax(50000, M.COEFF_RENDITA) === 1);
-t('appena sopra la soglia ci si ferma al 60%',
-  Math.abs(M.quotaMax(M.SOGLIA_TUTTO + 1, M.COEFF_RENDITA) - 0.6) < 1e-12);
+t('appena sopra la soglia ci si ferma alla quota ordinaria',
+  Math.abs(M.quotaMax(M.SOGLIA_TUTTO + 1, M.COEFF_RENDITA) - M.QUOTA_ORDINARIA) < 1e-12);
 t('il fondo del primo è sopra la soglia: chiedere tutto viene tagliato', (() => {
     const c = M.conAlt(s, 0, 'quotaCap', 1);
     const i = c.incassi.find(v => v.chi === DATI.nome0);
-    return i.limitata && Math.abs(i.quota - 0.6) < 1e-12; })(),
+    return i.limitata && Math.abs(i.quota - M.QUOTA_ORDINARIA) < 1e-12; })(),
   `montante ${eur(r.incassi[0].montante)} €`);
 // LE DUE DECISIONI SI PARLANO, ed è l'effetto di confine che la pagina dichiara: chi aspetta la
 // pensione si trova il montante sopra la soglia e «tutto in contanti» negato; chi lo prende a
 // rate arriva alla pensione con un residuo sotto soglia, e glielo concedono.
-t('chi aspetta: il fondo supera la soglia e «tutto» viene tagliato al 60%',
+t('chi aspetta: il fondo supera la soglia e «tutto» viene tagliato alla quota ordinaria',
   r.incassi[1].limitata && r.incassi[1].chiesta === 1 &&
-  Math.abs(r.incassi[1].quota - 0.6) < 1e-12 && r.incassi[1].montante > r.incassi[1].soglia,
+  Math.abs(r.incassi[1].quota - M.QUOTA_ORDINARIA) < 1e-12 && r.incassi[1].montante > r.incassi[1].soglia,
   `montante ${eur(r.incassi[1].montante)} € contro una soglia di ${eur(r.incassi[1].soglia)} €`);
 t('chi prende a rate: quel che avanza sta sotto soglia e «tutto» si può', (() => {
     const c = M.conAlt(s, 1, 'rita', DATI.annoPens1 - 8).incassi[1];
     return !c.limitata && c.quota === 1 && c.montante < c.soglia; })(),
   `avanzano ${eur(M.conAlt(s, 1, 'rita', DATI.annoPens1 - 8).incassi[1].montante)} €`);
-t('prendere tutto quando si può lascia più soldi che prenderne metà',
-  M.conAlt(s, 1, 'quotaCap', 1).finale > M.conAlt(s, 1, 'quotaCap', 0.5).finale);
+// «tutto» viene comunque tagliato al massimo di legge: il confronto va fatto con METÀ di quel
+// massimo, non con 0,5 fisso — che dal 1° luglio 2026 è il massimo stesso, e il test confrontava
+// il taglio con sé stesso.
+t('prendere tutto quello che si può lascia più soldi che prenderne metà',
+  M.conAlt(s, 1, 'quotaCap', 1).finale > M.conAlt(s, 1, 'quotaCap', M.QUOTA_ORDINARIA / 2).finale);
 
 console.log('\n— quanto versare nel fondo: IRPEF e tetto di deducibilità —');
 t('IRPEF, primo scaglione al 23%', Math.abs(M.irpef(28000) - 28000*0.23) < 1e-9);
@@ -794,7 +802,11 @@ t('prendendo tutto in contanti non resta nessuna rendita, qualunque forma', (() 
 t('ZERO in contanti si può, ed è la rendita più alta: prima la pagina non lo permetteva', (() => {
     const soloRendita = M.simula({...s, p:s.p.map((x,j)=>j===0?{...x, quotaCap:0}:x)})
       .incassi.find(v=>v.chi==='Anna');
-    return soloRendita.capitale === 0 && soloRendita.assegno > vita.assegno * 2; })(),
+    // il rapporto non è «più del doppio»: è esattamente 1/(1 − quota presa in contanti), e
+    // scritto così regge a qualunque quota massima. Con il 60% dava 2,5 volte, col 50% ne dà 2,
+    // e la vecchia soglia «più del doppio» diventava falsa per un pelo.
+    return soloRendita.capitale === 0 &&
+      Math.abs(soloRendita.assegno - vita.assegno / (1 - vita.quota)) < 1e-6; })(),
   `tutto in rendita: ${eur(M.simula({...s, p:s.p.map((x,j)=>j===0?{...x, quotaCap:0}:x)}).incassi.find(v=>v.chi==='Anna').assegno)} €/mese`);
 t('il pareggio fra contanti e rendita è l\'inverso del coefficiente, sempre',
   Math.abs((vita.capitale / (M.COEFF_RENDITA * vita.netto / 12)) / 12

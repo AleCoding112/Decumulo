@@ -2884,7 +2884,8 @@ function aggiornaDecisioni(s, r){
     // la casella della durata esiste solo per la forma che la lascia scegliere
     EL('cFraz'+i).hidden = x.forma !== 'frazionata' || !inc || alMese(qc) < 1;
     EL('cFraz'+i+'Nota').innerHTML = `non meno di ${FRAZ_ANNI_MIN} anni, che è il minimo di `
-      + `legge. A durata definita sarebbero ${vitaIntera(x.etaPens)}, con un'imposta più bassa`;
+      + `legge. A durata definita sarebbero ${vitaIntera(x.etaPens)}, con un'imposta più bassa. `
+      + `Questa forma si può chiedere dal {{frazDal}}`;
 
     EL('cForma'+i+'Esito').innerHTML = !inc || alMese(qc) < 1
       ? `<i>non c'è nessuna rendita da scegliere: esce tutto in contanti</i>`

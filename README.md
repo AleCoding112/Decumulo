@@ -377,8 +377,12 @@ nascosto: ce ne sono due gruppi, *convertire* e *tenere e consumare*.
 
 **Quello che la legge detta, e che quindi non si sceglie:**
 - la **durata definita** dura gli anni **interi** della vita attesa (art. 11 c. 3-ter): a 67 anni,
-  19. La tavola è `VITA_INTERA`, pubblicata dai fondi in attuazione delle Istruzioni COVIP del
-  25 giugno 2026. **Non è `SPERANZA_VITA`**, che porta i decimali e serve ai coefficienti: le due
+  19. La tavola è `VITA_INTERA`: le Istruzioni COVIP del 25 giugno 2026 **non contengono nessun
+  allegato** con quei numeri, ripetono il rinvio della legge alla tavola ISTAT e aggiungono la sola
+  cosa che serviva, cioè che si arrotonda **per difetto**. Riscontrata quindi dove la legge manda:
+  tutte e 41 le età coincidono col troncamento delle tavole di mortalità **ISTAT 2023**, Italia,
+  maschi e femmine (scaricabili da `demo.istat.it`). Col 2022 non ne coincidono diciassette.
+  **Non è `SPERANZA_VITA`**, che porta i decimali e serve ai coefficienti: le due
   coincidono in quindici età su ventuno, e coincidono a 67 anni, ma dove differiscono vale quella
   ufficiale, perché è quella che i fondi applicano;
 - l'**erogazione frazionata** dura quello che si sceglie, **non meno di cinque anni**;
@@ -493,21 +497,23 @@ le tavole vere. Il rischio residuo è di *modello*, ed è dichiarato in `il-meto
 Fatto: disclaimer nel calcolatore e in ogni piè di pagina, informativa privacy, perimetro
 dichiarato in testa, data di revisione, navigazione.
 
-**CINQUE CIFRE NON SONO CONFERMATE, e sono pubblicate** (01/08/2026). Erano marcate «verificata» ma
-nessuno le aveva lette sul testo, e tre avevano una `fonte` che non era una fonte ma una
-descrizione: «scaglioni 2026», «contributi previdenziali a carico del dipendente», «imposta
-sostitutiva sulla rivalutazione». Con quelle diciture nessuno può rifare il riscontro.
-`verifiche/scadenze.mjs` le elenca a ogni esecuzione:
+**TUTTE LE CIFRE SONO ORA RISCONTRATE SUL TESTO** (01/08/2026). Erano rimaste nove senza riscontro
+— tre aliquote dell'erogazione frazionata, la tavola della vita attesa, l'aliquota a carico del
+dipendente e le quattro del TFR — e alcune avevano una `fonte` che non era una fonte ma una
+descrizione. `verifiche/scadenze.mjs` controlla a ogni esecuzione che non ne ricompaiano.
 
-| cifra | cosa serve |
+**Il riscontro ha trovato quattro cose, e nessuna era il valore in sé:**
+
+| dove | cosa non tornava |
 |---|---|
-| `IVS` | la circolare INPS sull'aliquota a carico del dipendente |
-| `TFR_SU_RAL`, `TFR_RIV_FISSA`, `TFR_RIV_QUOTA` | l'art. 2120 c.c., citato ma mai letto |
-| `TFR_IMPOSTA_RIV` | l'imposta sostitutiva sulla rivalutazione, sul testo |
+| `ALIQ_FRAZ_*` | le aliquote stanno nel comma **6-ter**, non nel 6-bis. Il 6-bis dice un'altra cosa (durata definita e prelievi seguono il comma 6) |
+| `VITA_INTERA` | l'allegato COVIP che la fonte prometteva **non esiste**: il riscontro è sulle tavole ISTAT 2023 |
+| `TFR_SU_RAL` | lo 0,50% **non è nell'art. 2120 c.c.**: viene dall'art. 3 della L. 297/1982, che lo fa detrarre dalla quota di TFR |
+| `IVS` | 9,19 non è tutta IVS: è 8,89 al Fondo pensioni **più 0,30 di CIG straordinaria**, che non tutte le aziende versano |
 
-**Non è una scoperta di errori: è una scoperta di verifiche mancanti.** I valori sono quelli
-correnti secondo ogni fonte secondaria; quello che manca è il riscontro sul testo, che è lo
-standard che questo progetto si è dato.
+**Regola: una fonte sbagliata non si vede finché non la si apre.** Tutti e nove i valori numerici
+erano giusti; sbagliati erano tre riferimenti su nove, cioè proprio quello che serve a chi vuole
+rifare il controllo.
 
 **`SCAGLIONI` è stato riscontrato il 01/08/2026, e la verifica è servita**: la seconda aliquota
 IRPEF è **33% e non 35%**, perché la legge di bilancio 2026 l'ha ridotta dal 1° gennaio. Il valore
@@ -519,10 +525,16 @@ in `il-metodo.html`.
 **Le tre cifre della legge di bilancio sono verificate** (31/07/2026), sul testo e non su
 una notizia:
 
-- **tetto 5.300 €** e **massimo in capitale 60%** — L. 199/2025 (legge di bilancio 2026) art. 1
-  c. 201, che modifica gli artt. 8 c. 4 e 11 c. 3 del D.Lgs. 252/2005. In vigore dal 1° luglio
-  2026. La stessa norma riscrive la deroga del «tutto in capitale» nei termini esatti che il
-  motore già usava: 70% del montante convertito, sotto metà assegno sociale;
+- **tetto 5.300 €** — L. 199/2025 (legge di bilancio 2026) art. 1 c. 201, che modifica l'art. 8
+  c. 4 del D.Lgs. 252/2005. In vigore dal 1° luglio 2026. La stessa norma riscrive la deroga del
+  «tutto in capitale» nei termini esatti che il motore già usava: 70% del montante convertito,
+  sotto metà assegno sociale;
+- **massimo in capitale: 50%, non 60%** — ed è la correzione più grossa del 01/08/2026. La legge
+  di bilancio l'aveva portato a 60; l'**art. 16-ter del D.L. 62/2026**, inserito dalla legge di
+  conversione **112/2026** (in vigore dal 28 giugno 2026), l'ha riportato a 50 «a decorrere dal
+  termine del 1° luglio 2026» — cioè **il 60% non si è mai applicato un giorno**. Lo stesso
+  articolo differisce al {{frazDal}} la sola erogazione frazionata.
+  **Regola: una cifra verificata non resta verificata. Va riletta, non ricordata**;
 - **assegno sociale 7.101,12 €** — circolare INPS 153 del 19/12/2025 (546,24 € × 13).
 
 **TRAPPOLA, e ci sono cascato**: parecchi fondi hanno documenti aggiornati *a quella legge* che
