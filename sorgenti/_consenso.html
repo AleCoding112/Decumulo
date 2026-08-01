@@ -1,0 +1,127 @@
+<!-- ==========================================================================
+     LA MISURAZIONE DELLE VISITE, E IL CONSENSO CHE LA PRECEDE.
+
+     Google Analytics scrive cookie e trasmette dati a un terzo: in Italia
+     questo richiede un consenso PREVENTIVO, quindi il tag non si scrive nel
+     documento. Viene creato dal codice, e solo dopo un sì esplicito.
+     Fino a quel momento verso googletagmanager.com non parte nulla.
+
+     TRE REGOLE CHE DECIDONO LA FORMA DEL BANNER, e non sono di stile:
+      1. rifiutare dev'essere facile quanto accettare. Due pulsanti uguali,
+         niente «accetta» in evidenza e «rifiuta» come link in grigio;
+      2. il silenzio non è consenso: chiudere, scorrere o navigare non vale
+         come sì, e infatti il banner non ha una crocetta per chiudersi;
+      3. il consenso si revoca com'è stato dato. Il piè di pagina di OGNI
+         pagina dice lo stato e permette di cambiarlo.
+
+     Lo stile sta qui e non nel foglio comune perché il calcolatore non
+     include `_stile.html`: ha il proprio. Un pezzo che deve comparire su
+     tutte le pagine si porta dietro il proprio stile, o su una non c'è.
+     ========================================================================== -->
+<style>
+  .consenso{position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:var(--card,#fff);border-top:1px solid var(--line,#e3e3e0);
+    box-shadow:0 -2px 14px rgba(0,0,0,.07);
+    padding:14px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+    justify-content:center;font-size:13px;line-height:1.55;color:var(--soft,#4a4a46)}
+  .consenso p{margin:0;max-width:64ch}
+  .consenso b{color:var(--ink,#22221f)}
+  .consenso a{color:var(--acc,#2f6b46);font-weight:600}
+  .consenso-b{display:flex;gap:10px;flex-shrink:0}
+  /* i due pulsanti sono IDENTICI: la scelta non dev'essere suggerita dalla grafica */
+  .consenso-b button{font:inherit;font-size:13px;font-weight:600;padding:9px 20px;
+    border-radius:8px;cursor:pointer;border:1px solid var(--line,#d8d8d4);
+    background:#fff;color:var(--ink,#22221f)}
+  .consenso-b button:hover{border-color:var(--acc,#2f6b46);color:var(--acc,#2f6b46)}
+  .pie-consenso button{font:inherit;font-size:12px;padding:2px 9px;margin-left:4px;
+    border-radius:6px;cursor:pointer;border:1px solid var(--line,#d8d8d4);
+    background:transparent;color:inherit}
+  @media (max-width:600px){
+    .consenso{padding:13px 16px;gap:12px}
+    .consenso-b{width:100%}
+    .consenso-b button{flex:1}
+  }
+  /* su carta non esiste niente da consentire */
+  @media print{ .consenso,.pie-consenso{display:none !important} }
+</style>
+
+<div class="consenso" id="consenso" hidden role="region" aria-label="Misurazione delle visite">
+  <p><b>Misurazione delle visite.</b> Con il consenso il sito impiega Google Analytics, che
+  scrive cookie sul dispositivo e trasmette i dati di navigazione a Google. Non riguarda le
+  cifre inserite nel calcolatore, che restano nel browser e non sono trasmesse. Senza consenso
+  il sito funziona per intero. <a href="privacy.html">Cosa viene raccolto</a>.</p>
+  <p class="consenso-b">
+    <button type="button" id="consensoNo">Rifiuta</button>
+    <button type="button" id="consensoSi">Accetta</button>
+  </p>
+</div>
+
+<script>
+(function(){
+  var CHIAVE = 'decumulo-it-consenso';   // distinta da 'decumulo-it', che sono i dati del modulo
+  var ID = 'G-10YFPPG27R';
+  var acceso = false;
+
+  // localStorage può essere negato (navigazione privata, impostazioni restrittive): in quel caso
+  // non si tiene memoria della scelta e il banner ricompare, che è il verso prudente. Non si
+  // ripiega su un cookie, perché scrivere un cookie è proprio la cosa che si sta chiedendo.
+  function leggi(){ try { return localStorage.getItem(CHIAVE); } catch(e){ return null; } }
+  function scrivi(v){ try { localStorage.setItem(CHIAVE, v); } catch(e){} }
+
+  function accendi(){
+    if (acceso) return;
+    acceso = true;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', ID);
+  }
+
+  // REVOCARE NON È SOLO SMETTERE DI MISURARE: i cookie già scritti vanno tolti, altrimenti
+  // restano sul dispositivo di chi ha appena chiesto di non essere misurato. Si cancellano
+  // quelli di Analytics (`_ga`, `_ga_<id>`) sul dominio e sul dominio con il punto davanti,
+  // che è dove Google li scrive.
+  function spegni(){
+    acceso = false;
+    var host = location.hostname;
+    document.cookie.split(';').forEach(function(c){
+      var n = c.split('=')[0].trim();
+      if (n.indexOf('_ga') !== 0) return;
+      [host, '.' + host, ''].forEach(function(d){
+        document.cookie = n + '=; Max-Age=0; path=/' + (d ? '; domain=' + d : '');
+      });
+    });
+  }
+
+  function mostra(v){ var e = document.getElementById('consenso'); if (e) e.hidden = !v; }
+
+  function stato(){
+    var e = document.getElementById('consensoStato');
+    if (e) e.textContent = leggi() === 'si' ? 'attiva' : 'non attiva';
+  }
+
+  function scelta(v){
+    scrivi(v);
+    if (v === 'si') accendi(); else spegni();
+    mostra(false);
+    stato();
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var si = document.getElementById('consensoSi'), no = document.getElementById('consensoNo');
+    if (si) si.addEventListener('click', function(){ scelta('si'); });
+    if (no) no.addEventListener('click', function(){ scelta('no'); });
+    var cambia = document.getElementById('consensoCambia');
+    if (cambia) cambia.addEventListener('click', function(){ mostra(true); });
+    stato();
+    // Il banner compare finché una scelta non c'è. Chi ha già risposto non lo rivede: un avviso
+    // che torna a ogni visita spinge ad accettare per toglierselo, ed è un consenso estorto.
+    if (leggi() === 'si') accendi();
+    else if (leggi() !== 'no') mostra(true);
+  });
+})();
+</script>

@@ -22,7 +22,13 @@ import { fileURLToPath } from 'node:url';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const PAGINA = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8');
-const src = PAGINA.match(/<script>([\s\S]*?)<\/script>/)[1];
+// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
+// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
+// posto del motore, e l'armatura falliva su un codice giusto.
+// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
+// dell'ordine in cui il build monta i pezzi.
+const src = [...PAGINA.matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  .map(m => m[1]).find(t => /function simula\(/.test(t));
 
 // I VALORI DI PARTENZA STANNO NELL'HTML, NON NEGLI SCENARI. Rendimenti, inflazione e orizzonte
 // hanno un `value` scritto nel modulo: uno scenario che non li nomina deve vedere quelli, non
@@ -467,11 +473,20 @@ console.log('\n— ogni casella ha un nome —');
 console.log('\n— chi sta fisso sullo schermo —');
 {
   const pagina = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8');
-  const stile = (pagina.match(/<style>([\s\S]*?)<\/style>/) || [,''])[1];
+  // TUTTI i blocchi di stile, non il primo: il banner del consenso porta il proprio, e una
+  // regola `position:fixed` scritta là dentro sarebbe sfuggita a questo controllo.
+  const stile = [...pagina.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
   const fisse = [...stile.matchAll(/\.([\w-]+)[^{}]*\{[^}]*position:\s*fixed/g)].map(m => m[1]);
   c('c\'è almeno un elemento fisso, ed è dichiarato', fisse.length > 0, fisse.join(', '));
+  // SI CONFRONTA LA CLASSE INTERA, non la parola dentro l'attributo. Con `\b` il trattino è un
+  // confine, quindi `.consenso` risultava applicata anche a `consenso-b` e `pie-consenso`: tre
+  // usi invece di uno, e il controllo dava rosso su un codice giusto. È il settimo falso
+  // positivo degli strumenti di questo progetto, e ancora una volta della stessa famiglia:
+  // una regex che promette una precisione che non ha.
+  const classi = [...pagina.matchAll(/class="([^"$]*)"/g)]
+    .map(m => m[1].trim().split(/\s+/));
   for (const cl of fisse){
-    const usi = (pagina.match(new RegExp(`class="[^"$]*\\b${cl}\\b[^"$]*"`, 'g')) || []).length;
+    const usi = classi.filter(v => v.includes(cl)).length;
     c(`la classe fissa .${cl} è applicata a un elemento solo`, usi === 1,
       usi === 1 ? '' : `applicata ${usi} volte: il nome era già occupato`);
   }

@@ -196,7 +196,13 @@ function piano(D){
 
 // --------------------------------------------------- il motore della pagina
 const PAGINA = new URL('../sito/index.html', import.meta.url).pathname;
-const src = fs.readFileSync(PAGINA, 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
+// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
+// posto del motore, e l'armatura falliva su un codice giusto.
+// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
+// dell'ordine in cui il build monta i pezzi.
+const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  .map(m => m[1]).find(t => /function simula\(/.test(t));
 let DATI = {};
 const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
   min:'', max:'', disabled:false, hidden:false, style:{}, addEventListener(){},

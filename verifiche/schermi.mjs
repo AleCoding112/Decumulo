@@ -39,7 +39,7 @@ const c = (nome, cond, extra = '') => {
 
 for (const file of fs.readdirSync(SITO).filter(f => f.endsWith('.html'))){
   const h = fs.readFileSync(join(SITO, file), 'utf8');
-  const stile = (h.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
+  const stile = [...h.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
   if (!stile.trim()) continue;
 
   // le regole che stanno DENTRO una media query sono già una risposta al problema:
@@ -83,7 +83,7 @@ c('e la più bassa arriva sotto i 400 px, dove stanno i telefoni',
 for (const file of ['il-metodo.html', 'come-prendere-il-fondo.html', 'contributo-datore.html']){
   const h = fs.readFileSync(join(SITO, file), 'utf8');
   const conte = [...h.matchAll(/<div class="(conto|scorre)">/g)].map(m => m[1]);
-  const stile = (h.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1];
+  const stile = [...h.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
   const scorrono = new Set();
   // il selettore è l'ULTIMA riga prima della graffa: `[^{};]+` si porta dietro il commento che
   // sta sopra, e un commento con una virgola dentro spezza lo split. Ci sono cascato scrivendo

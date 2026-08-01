@@ -45,8 +45,18 @@ const pezzo = n => readFileSync(join(DA, n), 'utf8');
 for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsWith('_'))) {
   let html = readFileSync(join(DA, nome), 'utf8');
 
-  // 0. i pezzi comuni: stile e piè di pagina stanno in un posto solo
-  html = html.replace(/<!--@@INCLUDI (_[\w-]+\.html)@@-->/g, (_, f) => pezzo(f));
+  // 0. i pezzi comuni: stile e piè di pagina stanno in un posto solo.
+  //    UN PEZZO PUÒ CONTENERNE UN ALTRO, e serve: il piè di pagina porta con sé il banner del
+  //    consenso, così nessuna pagina può dimenticarselo. Con una passata sola il banner sarebbe
+  //    andato aggiunto a mano su nove file, cioè dimenticato sul decimo.
+  //    Il giro si ferma quando non c'è più niente da sostituire; il tetto impedisce a
+  //    un'inclusione circolare di girare all'infinito senza dire perché.
+  for (let giro = 0; ; giro++){
+    const dopo = html.replace(/<!--@@INCLUDI (_[\w-]+\.html)@@-->/g, (_, f) => pezzo(f));
+    if (dopo === html) break;
+    if (giro > 5) throw new Error(`${nome}: inclusioni annidate troppo a fondo, forse un cerchio`);
+    html = dopo;
+  }
 
   // 1. le costanti dentro al codice
   html = html.replace('//@@REGOLE@@', blocco());

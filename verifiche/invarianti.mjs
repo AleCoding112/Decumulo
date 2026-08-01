@@ -6,8 +6,13 @@ import { fileURLToPath } from 'node:url';
 // pubblicazione automatica al primo tentativo. Un percorso assoluto in un progetto che vive in
 // un repository è un errore che si scopre soltanto altrove.
 const QUI = dirname(fileURLToPath(import.meta.url));
-const src = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
-  .match(/<script>([\s\S]*?)<\/script>/)[1];
+// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
+// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
+// posto del motore, e l'armatura falliva su un codice giusto.
+// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
+// dell'ordine in cui il build monta i pezzi.
+const src = [...fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
+  .map(m => m[1]).find(t => /function simula\(/.test(t));
 let DATI={};
 const finto=()=>({value:'',innerHTML:'',className:'',textContent:'',checked:false,min:'',max:'',disabled:false,style:{},dataset:{},addEventListener(){},get nextElementSibling(){return finto()},get parentElement(){return finto()}});
 // `body` serve perché la pagina, appena caricata, spegne la seconda colonna quando la persona

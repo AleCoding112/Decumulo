@@ -22,7 +22,8 @@ import { fileURLToPath } from 'node:url';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const src = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
-  .match(/<script>([\s\S]*?)<\/script>/)[1];
+  .match(/<script>([\s\S]*?)<\/script>/g)
+  .map(t => t.replace(/<\/?script>/g, '')).find(t => /function simula\(/.test(t));
 
 const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','stip0','stip1','ral0','ral1',
   'pens0','pens1','annoPens0','annoPens1','fondo0','fondo1','iscr0','iscr1','pcVoi0','pcVoi1',

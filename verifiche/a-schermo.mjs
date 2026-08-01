@@ -164,4 +164,69 @@ if (anonimi.length){
   }
 }
 
+// --- IL CONSENSO, PROVATO DAVVERO IN UN BROWSER -----------------------------
+// `verifiche/consenso.mjs` controlla il documento: che il tag non sia nel markup, che il banner
+// ci sia, che l'informativa lo dica. Nessuna di quelle cose prova il COMPORTAMENTO, che è la
+// parte che conta: un errore nel codice del banner lo lascerebbe muto, e il sito sembrerebbe a
+// posto mentre non chiede niente a nessuno, oppure misurerebbe chi ha detto di no.
+// Qui la pagina si apre per davvero, si clicca, e si guarda se il tag è arrivato nella testa
+// del documento. È l'unico posto dove questo si può vedere.
+{
+  const banco = join(dir, 'consenso.html');
+  writeFileSync(banco, `<!doctype html><meta charset="utf-8"><body>
+<iframe id="f" src="file://${SITO}/index.html" width="1000" height="800"></iframe>
+<script>
+const out = [], f = document.getElementById('f');
+const attesa = ms => new Promise(r => setTimeout(r, ms));
+const dopoIlCarico = () => new Promise(r => f.addEventListener('load', r, {once:true}));
+addEventListener('load', async () => {
+  let d = f.contentDocument, w = f.contentWindow;
+  // si parte da una memoria pulita: una scelta rimasta da un giro precedente proverebbe
+  // un'altra cosa, e il controllo direbbe rosso senza che niente sia rotto
+  try { w.localStorage.removeItem('decumulo-it-consenso'); } catch(e){}
+  f.src = f.src; await dopoIlCarico(); await attesa(400);
+  d = f.contentDocument; w = f.contentWindow;
+  const tag = () => !!d.querySelector('script[src*="googletagmanager"]');
+  const banner = () => d.getElementById('consenso');
+  const memoria = () => { try { return w.localStorage.getItem('decumulo-it-consenso'); }
+                          catch(e){ return 'illeggibile'; } };
+
+  out.push(['prima di ogni scelta il tag non è stato caricato', !tag()]);
+  out.push(['e il banner è visibile', banner() && banner().hidden === false]);
+
+  d.getElementById('consensoNo').click(); await attesa(300);
+  out.push(['dopo il rifiuto il tag continua a non esserci', !tag()]);
+  out.push(['il banner sparisce, e non torna a insistere', banner().hidden === true]);
+  out.push(['il rifiuto resta memorizzato', memoria() === 'no']);
+
+  d.getElementById('consensoCambia').click(); await attesa(200);
+  out.push(['«Cambia» riapre la scelta da qualunque pagina', banner().hidden === false]);
+
+  d.getElementById('consensoSi').click(); await attesa(700);
+  out.push(['solo dopo il consenso il tag viene caricato', tag()]);
+  out.push(['e il consenso resta memorizzato', memoria() === 'si']);
+
+  document.title = JSON.stringify(out);
+});
+</script>`);
+  console.log('\n  — il consenso, provato in un browser —');
+  try {
+    const uscita = execFileSync(CHROME, ['--headless','--disable-gpu','--no-sandbox',
+      '--allow-file-access-from-files','--virtual-time-budget=20000','--window-size=1100,900',
+      '--dump-dom', 'file://' + banco],
+      {encoding:'utf8', maxBuffer: 64*1024*1024, stdio:['ignore','pipe','ignore']});
+    const m = uscita.match(/<title>([\s\S]*?)<\/title>/);
+    if (!m) { ko++; console.log('  ✗ la pagina di prova non ha risposto'); }
+    else for (const [nome, esito] of JSON.parse(m[1].replace(/&quot;/g,'"')
+                                                    .replace(/&amp;/g,'&')
+                                                    .replace(/&#39;/g,"'"))){
+      if (!esito) ko++;
+      console.log(`  ${esito ? 'ok ' : '✗  '} ${nome}`);
+    }
+  } catch (e){
+    ko++;                       // un guasto non è una rinuncia
+    console.log('  ✗ la prova non è riuscita: ' + String(e.message || e).slice(0, 80));
+  }
+}
+
 if (ko) process.exitCode = 1;

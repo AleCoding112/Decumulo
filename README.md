@@ -18,36 +18,50 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 204 controlli sul motore, letto da `sito/index.html` |
+| `node test.mjs` | 213 controlli sul motore, letto da `sito/index.html` |
 | `node verifiche/come-parla.mjs` | esegue il calcolatore su diciotto scenari e legge le frasi che scrive |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
-| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 38 casi |
+| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 44 casi |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali + le funzioni di legge ai punti esatti |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
+| `node verifiche/consenso.mjs` | che il tag di misurazione non parta senza consenso |
 | `node verifiche/scadenze.mjs` | se i parametri sono ancora quelli correnti |
 
 Fuori dalla catena, perché apre Chrome e va lanciato quando si tocca il layout o si aggiunge
 una casella:
 
 ```
-node verifiche/a-schermo.mjs     nove pagine × quattro larghezze: niente sborda, ogni campo ha un
-                                nome, e la stampa contiene il dettaglio anno per anno
+node verifiche/a-schermo.mjs     nove pagine × quattro larghezze in due assetti del modulo:
+                                niente sborda, ogni campo ha un nome, la stampa contiene il
+                                dettaglio anno per anno. E il CONSENSO provato cliccando davvero:
+                                è l'unico posto dove si può vedere che il tag non parte prima
 ```
 
 `sito/` **non si modifica a mano**: si rigenera. Oltre alle pagine il build scrive `sitemap.xml`
 e `robots.txt`, e mette in ogni testa i metadati per le anteprime — **ricavandoli dal titolo,
 dalla descrizione e dal canonical che la pagina già dichiara**, così non possono divergere. La
-favicon è disegnata dentro `build.mjs` e va in linea: il sito non chiede un file a nessuno, che è
-la promessa scritta in `privacy.html`.
+favicon è disegnata dentro `build.mjs` e va in linea: **senza consenso il sito non chiede un file
+a nessuno**, che è la promessa scritta in `privacy.html`.
 
 ## Pubblicare
 
-Sei pagine, un 404, due file per i motori di ricerca. **Nessuna risorsa esterna, nessun cookie,
-nessuna analitica**: basta copiare `sito/` dietro un nginx e mettere il certificato. Se serve
-sapere quanta gente arriva, si leggono i log del server — non si aggiunge uno script, o la
-pagina privacy diventa falsa.
+Otto pagine, un 404, tre file di servizio (`sitemap.xml`, `robots.txt`, `CNAME`). Il sito è
+statico: non c'è un server da mantenere, e `sito/` si può servire da qualunque parte.
+
+**Pubblica GitHub, e solo se i controlli passano.** `.github/workflows/pubblica.yml` esegue
+`node verifica.mjs` a ogni push su `main` e carica su GitHub Pages soltanto quando è tutto verde:
+se un controllo fallisce, **online resta la versione buona**. `sito/` non sta nel repository
+(`.gitignore`), proprio perché non possa finire online una cartella costruita a mano che i
+controlli non hanno visto.
+
+**Il dominio non si riscrive**: sta nei `canonical` delle pagine, e da lì il build ricava
+`robots.txt` e il file `CNAME` che serve a GitHub per rispondere su `decumulo.it`.
+
+**Senza consenso non parte nulla verso l'esterno**: nessuna risorsa da domini terzi, nessun
+cookie. Con il consenso si attiva Google Analytics, ed è l'unica eccezione. Vedi la sezione
+*La misurazione delle visite*.
 
 ---
 
@@ -187,7 +201,7 @@ build.mjs       le porta ovunque servano
 verifica.mjs    un comando solo per tutto
 test.mjs        204 controlli sul motore
 verifiche/      come parla · valori ostili · tavole dei fondi · seconda implementazione ·
-                invarianti · scadenze
+                invarianti · schermi · coerenza · consenso · scadenze · a-schermo
 sorgenti/       index.html + le pagine; i file con _ sono pezzi da includere
 sito/           quello che si pubblica
 ```
@@ -270,6 +284,45 @@ larghezza voluta, che sono viewport veri.
 l'avviso di chi è già in pensione, le caselle disattivate e la sezione delle scelte che sparisce
 non venivano mai resi, quindi nessuna misura poteva vederli. Regola generale: **un ramo di
 interfaccia che nessuno scenario rende non è coperto**, per quanto verde sia il resto.
+
+## La misurazione delle visite, e il consenso che la precede
+
+Dal 01/08/2026 il sito misura le visite con **Google Analytics**. È l'unica cosa che manda dati
+fuori dal browser, e in Italia richiede un consenso **preventivo**: il frammento che Google
+consegna, incollato com'è, farebbe partire il tag al caricamento della pagina, prima di qualunque
+scelta. Qui il tag **non sta nel documento**: lo crea il codice, e solo dopo un sì.
+
+Tutto sta in `sorgenti/_consenso.html`, che viaggia dentro `_pie.html`: ogni pagina include già il
+piè di pagina, quindi **non esiste una pagina che possa restare senza**. Per questo le inclusioni
+del build sono diventate **ricorsive**: con una passata sola il banner andava aggiunto a mano su
+nove file, cioè dimenticato sul decimo.
+
+**Tre regole decidono la forma del banner, e non sono di stile:**
+- **rifiutare dev'essere facile quanto accettare**: due pulsanti identici, niente «accetta» in
+  evidenza e «rifiuta» come link grigio. Un consenso non libero non è un consenso;
+- **il silenzio non è consenso**: non c'è crocetta per chiudere, e scorrere o navigare non vale
+  come sì;
+- **si revoca da dove si è dato**: il piè di pagina di ogni pagina dice lo stato e permette di
+  cambiarlo, e alla revoca i cookie `_ga` già scritti vengono cancellati.
+
+La scelta sta in `localStorage` sotto **`decumulo-it-consenso`**, distinta da `decumulo-it` che
+sono i dati del modulo: azzerare il calcolatore non deve cancellare una scelta di privacy, e
+revocare non deve cancellare quello che si è scritto.
+
+**Che tutto questo regga lo controllano due file, e servono tutti e due.** `consenso.mjs` guarda
+il documento (il tag non è nel markup, nessuna risorsa esterna, il banner c'è ovunque, i due
+pulsanti sono uguali, l'informativa dice quello che il sito fa). Ma **nessun controllo statico
+prova il comportamento**: un errore nel codice del banner lo lascerebbe muto, e il sito sembrerebbe
+a posto mentre misura chi ha detto di no. Per quello `a-schermo.mjs` apre Chrome, clicca, e guarda
+se il tag è arrivato. Provato rompendolo apposta: con `accendi()` chiamato senza condizione, due
+controlli diventano rossi.
+
+**Il banner ha aggiunto un secondo `<script>` alla pagina, e questo ha rotto cinque armature**:
+prendevano «il primo blocco», che da quel momento era il banner invece del motore. Ora ciascuna
+dice *cosa* vuole (il blocco che contiene `function simula(`) invece di fidarsi dell'ordine in cui
+il build monta i pezzi. Stessa cosa per i fogli di stile, che ora si leggono tutti.
+
+---
 
 ## Prima di pubblicare
 
