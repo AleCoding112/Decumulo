@@ -66,7 +66,7 @@ globalThis.document = {
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
-  TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
+  numero, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
 let ok = 0, ko = 0;
@@ -91,6 +91,40 @@ const leggiCon = o => {
 const r = M.simula(s);
 const g = r.righe;
 const anno = a => g.find(x => x.anno === a);
+
+// COME SI LEGGE UN NUMERO SCRITTO IN ITALIANO. Le caselle non sono più `type="number"`, che
+// accettava solo il punto e restituiva stringa vuota su tutto il resto: adesso la conversione
+// è nostra, e va provata riga per riga perché è l'unico punto in cui una cifra scritta bene
+// può diventare un'altra cifra senza che nessuno se ne accorga.
+console.log('\n— i numeri, come si scrivono —');
+const leggo = (scritto, atteso) =>
+  t(`«${scritto}» vale ${String(atteso).replace('.', ',')}`,
+    Math.abs(M.numero(scritto) - atteso) < 1e-9, `letto ${M.numero(scritto)}`);
+leggo('1,5', 1.5);
+leggo('1.5', 1.5);
+leggo('2,50', 2.5);
+leggo('2.50', 2.5);
+leggo('2.500', 2500);          // punto seguito da tre cifre: migliaia, com'è normale in italiano
+leggo('2.500,75', 2500.75);
+leggo('1.234.567', 1234567);
+leggo('0.500', 0.5);           // le migliaia non cominciano da zero
+leggo('1.234,56', 1234.56);
+leggo('-1,5', -1.5);
+leggo('2 500', 2500);
+leggo('1.200 €', 1200);
+leggo('3,5%', 3.5);
+t('quello che non è un numero non diventa zero di nascosto: è NaN, e num() lo ripiega',
+  Number.isNaN(M.numero('abc')) && Number.isNaN(M.numero('')) && Number.isNaN(M.numero('-')));
+// LA PROVA CHE CONTA, in mezzo al piano: la stessa cifra scritta nei due modi deve dare lo
+// stesso identico risultato. È il controllo che il difetto non torni da un'altra parte.
+{
+  const conSpesa = v => { const salva = DATI.spesa; DATI.spesa = v;
+                          const q = M.simula(M.leggi()).finale; DATI.spesa = salva; return q; };
+  t('la virgola e il punto danno lo stesso piano', Math.abs(conSpesa('2500,5') - conSpesa('2500.5')) < 1e-9);
+  t('e «2.500» è duemilacinquecento, non due e mezzo',
+    Math.abs(conSpesa('2.500') - conSpesa('2500')) < 1e-9,
+    `contro ${eur(conSpesa('2,5'))} € scrivendo 2,5`);
+}
 
 console.log('\n— la contabilità —');
 let peggio = 0, salto = 0;

@@ -148,5 +148,26 @@ for (const file of fs.readdirSync(SITO).filter(f => f.endsWith('.html'))){
     scoperte.map(x => `.${x} ha un display ma non .${x}[hidden]`).join(' · '));
 }
 
+// --- le caselle dei numeri: quale tipo sono, e da che parte stanno ----------
+// Da quando la virgola si accetta, le caselle dei numeri sono `type="text"` e la conversione la
+// fa il calcolatore. Due cose vanno tenute ferme, e nessuna si vede leggendo le frasi:
+//  · che non ricompaia un `type="number"`, che rifiuterebbe la virgola in quel solo punto —
+//    il difetto tornerebbe su una casella sola, ed è così che non se ne accorge nessuno;
+//  · che l'allineamento resti governato da `inputmode`. Lo stile manda a sinistra le caselle
+//    che NON ce l'hanno, cioè i due nomi: se una casella di numeri restasse senza, le sue
+//    cifre andrebbero a sinistra in mezzo a colonne allineate a destra.
+{
+  const inputs = [...idx.matchAll(/<input\b((?:[^>"']|"[^"]*"|'[^']*')*)>/g)].map(m => m[1]);
+  const attr = (t, a) => (t.match(new RegExp(a + '="([^"]*)"')) || [, ''])[1];
+  const numeriche = inputs.filter(t => /type="number"/.test(t)).map(t => attr(t, 'id'));
+  c('nessuna casella è tornata «type=number», che rifiuta la virgola',
+    numeriche.length === 0, numeriche.join(', '));
+  const senzaModo = inputs
+    .filter(t => /type="text"/.test(t) && !/inputmode=/.test(t))
+    .map(t => attr(t, 'id'));
+  c('le sole caselle senza «inputmode» sono i due nomi, che vanno a sinistra',
+    senzaModo.every(id => /^nome[01]$/.test(id)), senzaModo.join(', '));
+}
+
 console.log(ko ? `\n  ✗ ${ko} controlli falliti` : '\n  nessuna griglia esce dallo schermo');
 if (ko) process.exitCode = 1;

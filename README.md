@@ -126,6 +126,35 @@ guardia controlla**: promessa e guardia scritte in due punti erano la causa, non
 Vuoto e zero restano distinti (`patrimonioVuoto`, `stipVuoto`, `pensVuoto`, `annoPensVuoto`):
 chi non ha patrimonio, o non versa, scrive **0** e il conto lo prende alla lettera.
 
+**2-septies. Il calcolatore legge i numeri come si scrivono in italiano, e gli anni solo quando
+sono finiti di scrivere.** Sono due difetti della stessa famiglia — *la pagina risponde a
+qualcosa di diverso da quello che hai scritto* — e tutti e due sono stati segnalati da lui usando
+il sito, non da un controllo.
+
+- **La virgola.** Le caselle erano `type="number"`, che per specifica ammette come separatore
+  decimale solo il punto: `1,5` non veniva letto male, **non veniva letto affatto** — il browser
+  restituisce stringa vuota al codice, che quindi non può nemmeno accorgersene e ripiega su zero.
+  E funzionava o no secondo la lingua del **browser**, non della pagina: un difetto che colpisce
+  un sottoinsieme imprevedibile di chi passa non lo segnala nessuno. Il segnaposto delle
+  percentuali, intanto, diceva `es. 1,2`. **Il caso peggiore era però l'altro**: `2.500` è un
+  numero valido e vale **due virgola cinque**, quindi una spesa scritta come si scrive in italiano
+  rendeva il piano sostenibile per finta. Ora le caselle sono `type="text"` con `inputmode`, e la
+  conversione la fa `numero()`: virgola = decimale sempre; punto seguito da tre cifre = migliaia
+  (`2.500` → 2500), negli altri casi decimale (`2.5` → 2,5); con tutti e due, l'ultimo è il
+  decimale. Le migliaia non cominciano da zero, quindi `0.500` è mezzo.
+  **Si perdono le frecce su/giù e la validazione `min`/`max` nativa — che non stavamo usando**:
+  il taglio vero è `numFra()`, e gli attributi sono stati tolti perché lasciarli avrebbe fatto
+  credere che fossero loro a tenere il valore in riga.
+  *Lo stile non può più distinguere le caselle con `type=text`*: le cifre vanno a destra e i
+  nomi a sinistra, e il criterio è `input:not([inputmode])`. C'è un controllo in `schermi.mjs`.
+- **Gli anni.** Per arrivare a `2079` si passa da `2`, `20`, `207`: numeri leciti che il taglio
+  agli estremi trasformava in un'altra risposta. La decorrenza finiva a 1900 — «già in pensione»,
+  col paragrafo di chi ha già riscosso tutto — l'erogazione anticipata finiva sull'anno in corso e
+  faceva partire il fondo a rate, l'ultimo anno di lavoro cancellava sedici anni di reddito.
+  **Quattro cifre o la casella vale come non compilata**, che è uno stato che la pagina già sa
+  gestire. La regola assorbe il vecchio caso dello zero: per un anno lo zero non è una risposta
+  diversa, è un tasto premuto a metà.
+
 **2-sexies. Chi è già in pensione usa la pagina come chiunque altro.** Una decorrenza già
 trascorsa è un dato, non un errore: prima la guardia pretendeva un anno futuro e rispondeva
 «serve la decorrenza del trattamento» a chi l'aveva scritta. Su un sito che si chiama *decumulo*

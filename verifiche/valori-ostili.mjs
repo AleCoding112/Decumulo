@@ -34,7 +34,11 @@ const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','stip0','stip1','r
   'pc0','pc1'];
 // i valori che fanno male: quelli fuori scala, quelli che non sono numeri, e il vuoto
 const OSTILI = ['', '0', '-1', '-999999', '999999999', '1e308', 'abc', ' ', '.', '-', '1,5',
-  '0.0000001', '2100', '1900', 'NaN', 'Infinity', '99999999999999999999', '50%'];
+  '0.0000001', '2100', '1900', 'NaN', 'Infinity', '99999999999999999999', '50%',
+  // come si scrivono davvero i numeri in italiano: la virgola decimale e il punto delle
+  // migliaia. Erano già ostili prima ed è per questo che valevano una casella vuota o, peggio,
+  // un'altra cifra — «2.500» era due e mezzo
+  '2.500', '1.234,56', '2 500', '1.200 €'];
 // per ciascuno, l'impronta che NON deve comparire dentro la pagina. Cercare il nome intero
 // darebbe falsi allarmi: la prosa del sito contiene già «all'altro», e un nome innocuo come
 // «l'altro» finirebbe per accusare una frase scritta da noi.

@@ -43,7 +43,10 @@
   .sezione{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
     color:var(--tenue);margin:34px 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line)}
   .vuoto-avviso{color:var(--soft);font-size:14px;line-height:1.55;margin:0 0 14px;max-width:60ch}
-  .due input[type=text]{text-align:left}
+  /* le cifre stanno a destra, il testo a sinistra. Il criterio non può più essere `type=text`,
+     perché da quando la virgola si accetta lo sono anche le caselle dei numeri: quelle però
+     portano `inputmode`, e i due campi dei nomi no. */
+  .due input:not([inputmode]){text-align:left}
   .risposta em{font-style:normal}
   .risposta.su em{color:var(--su)} .risposta.giu em{color:var(--giu)}
   /* il verdetto: una parola sola sopra la frase, per capire com'è andata prima di leggere */
@@ -191,7 +194,7 @@
   .cella{display:flex;flex-direction:column;gap:2px;min-width:0}
   .cella input,.cella select{width:100%;text-align:right}
   .cella select{text-align:left;padding-right:4px}
-  .cella input[type=text]{text-align:left}
+  .cella input:not([inputmode]){text-align:left}
   .cella .hint,.caselle .hint{display:block;text-decoration:none;font-style:normal;font-size:11px;
     color:var(--tenue);text-align:right;font-variant-numeric:tabular-nums;line-height:1.3;
     padding:1px 2px 0}
@@ -460,32 +463,32 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <div class="cella p2"><input type="text" id="nome1" value="" placeholder="il secondo" maxlength="14"></div>
 
     <div class="voce">Anno di nascita</div>
-    <div class="cella"><input type="number" id="nascita0" min="1900" max="2026" value="" step="1"></div>
-    <div class="cella p2"><input type="number" id="nascita1" min="1900" max="2026" value="" step="1"></div>
+    <div class="cella"><input type="text" inputmode="numeric" id="nascita0" value=""></div>
+    <div class="cella p2"><input type="text" inputmode="numeric" id="nascita1" value=""></div>
 
     <div class="voce rigalav">Retribuzione netta mensile</div>
-    <div class="cella"><input type="number" id="stip0" min="0" max="100000" value="" step="50"></div>
-    <div class="cella p2"><input type="number" id="stip1" min="0" max="100000" value="" step="50"></div>
+    <div class="cella"><input type="text" inputmode="decimal" id="stip0" value=""></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="stip1" value=""></div>
 
     <div class="voce rigalav">Retribuzione annua <b>lorda</b></div>
-    <div class="cella"><input type="number" id="ral0" min="0" max="10000000" value="" step="1000"></div>
-    <div class="cella p2"><input type="number" id="ral1" min="0" max="10000000" value="" step="1000"></div>
+    <div class="cella"><input type="text" inputmode="decimal" id="ral0" value=""></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="ral1" value=""></div>
 
     <div class="voce rigalav">Crescita annua della retribuzione</div>
-    <div class="cella"><input type="number" id="cresc0" min="-50" max="50" value="" step="0.1"
+    <div class="cella"><input type="text" inputmode="decimal" id="cresc0" value=""
         placeholder="facoltativo">
       <u class="hint" id="crescReale0">&nbsp;</u></div>
-    <div class="cella p2"><input type="number" id="cresc1" min="-50" max="50" value="" step="0.1"
+    <div class="cella p2"><input type="text" inputmode="decimal" id="cresc1" value=""
         placeholder="facoltativo">
       <u class="hint" id="crescReale1">&nbsp;</u></div>
 
     <!-- Vuoto significa «fino alla propria pensione»: il caso base. Chi smette prima lo scrive,
          ed è lì che si apre il buco fra la fine del lavoro e la decorrenza del trattamento. -->
     <div class="voce rigalav">Ultimo anno di lavoro</div>
-    <div class="cella"><input type="number" id="ultimo0" min="1900" max="2106" value="" step="1"
+    <div class="cella"><input type="text" inputmode="numeric" id="ultimo0" value=""
         placeholder="alla pensione">
       <u class="hint" id="ultimoNota0">&nbsp;</u></div>
-    <div class="cella p2"><input type="number" id="ultimo1" min="1900" max="2106" value="" step="1"
+    <div class="cella p2"><input type="text" inputmode="numeric" id="ultimo1" value=""
         placeholder="alla pensione">
       <u class="hint" id="ultimoNota1">&nbsp;</u></div>
 
@@ -501,14 +504,14 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     </div>
 
     <div class="voce">Importo mensile <b>lordo</b></div>
-    <div class="cella"><input type="number" id="pens0" min="0" max="1000000" value="" step="50">
+    <div class="cella"><input type="text" inputmode="decimal" id="pens0" value="">
       <u class="hint" id="pensNetta0">&nbsp;</u></div>
-    <div class="cella p2"><input type="number" id="pens1" min="0" max="1000000" value="" step="50">
+    <div class="cella p2"><input type="text" inputmode="decimal" id="pens1" value="">
       <u class="hint" id="pensNetta1">&nbsp;</u></div>
 
     <div class="voce">Anno di decorrenza</div>
-    <div class="cella"><input type="number" id="annoPens0" min="1900" max="2106" value="" step="1"></div>
-    <div class="cella p2"><input type="number" id="annoPens1" min="1900" max="2106" value="" step="1"></div>
+    <div class="cella"><input type="text" inputmode="numeric" id="annoPens0" value=""></div>
+    <div class="cella p2"><input type="text" inputmode="numeric" id="annoPens1" value=""></div>
 
     <!-- L'AVVISO STA ACCANTO ALLA CASELLA CHE LO PROVOCA, ed è una reazione: compare solo a chi
          ha scritto una decorrenza già trascorsa. Da lì in giù una parte del modulo non ha più
@@ -536,12 +539,12 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
       <u class="hint" id="tipoNota1">&nbsp;</u></div>
 
     <div class="voce rigalav">Consistenza attuale</div>
-    <div class="cella"><input type="number" id="fondo0" min="0" max="100000000" value="" step="1000"></div>
-    <div class="cella p2"><input type="number" id="fondo1" min="0" max="100000000" value="" step="1000"></div>
+    <div class="cella"><input type="text" inputmode="decimal" id="fondo0" value=""></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="fondo1" value=""></div>
 
     <div class="voce rigalav">Anno di iscrizione</div>
-    <div class="cella"><input type="number" id="iscr0" min="1900" max="2106" value="" step="1"></div>
-    <div class="cella p2"><input type="number" id="iscr1" min="1900" max="2106" value="" step="1"></div>
+    <div class="cella"><input type="text" inputmode="numeric" id="iscr0" value=""></div>
+    <div class="cella p2"><input type="text" inputmode="numeric" id="iscr1" value=""></div>
 
   </div>
 
@@ -554,15 +557,15 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 </div>
   <div class="due">
     <div class="voce rigalav">Contributo a <b>carico del lavoratore</b>,<br>in % della RAL</div>
-    <div class="cella"><input type="number" id="pcVoi0" min="0" max="100" value="" step="0.1" placeholder="es. 1,2">
+    <div class="cella"><input type="text" inputmode="decimal" id="pcVoi0" value="" placeholder="es. 1,2">
       <u class="hint" id="pcVoiEuro0">&nbsp;</u></div>
-    <div class="cella p2"><input type="number" id="pcVoi1" min="0" max="100" value="" step="0.1" placeholder="es. 1,2">
+    <div class="cella p2"><input type="text" inputmode="decimal" id="pcVoi1" value="" placeholder="es. 1,2">
       <u class="hint" id="pcVoiEuro1">&nbsp;</u></div>
 
     <div class="voce rigalav">Contributo del <b>datore</b> che ne consegue,<br>in % della RAL</div>
-    <div class="cella"><input type="number" id="pcDat0" min="0" max="100" value="" step="0.1" placeholder="es. 2,0">
+    <div class="cella"><input type="text" inputmode="decimal" id="pcDat0" value="" placeholder="es. 2,0">
       <u class="hint" id="pcDatEuro0">&nbsp;</u></div>
-    <div class="cella p2"><input type="number" id="pcDat1" min="0" max="100" value="" step="0.1" placeholder="es. 2,0">
+    <div class="cella p2"><input type="text" inputmode="decimal" id="pcDat1" value="" placeholder="es. 2,0">
       <u class="hint" id="pcDatEuro1">&nbsp;</u></div>
 
     <div class="somma-sep rigalav"></div>
@@ -615,13 +618,13 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
   <legend>Quello che c'è oggi</legend>
   <div class="caselle">
     <div><label for="patrimonio">Patrimonio investito</label>
-      <input type="number" id="patrimonio" min="0" max="10000000000" value="" step="1000">
+      <input type="text" inputmode="decimal" id="patrimonio" value="">
       <u class="hint">quello che rende ed è disponibile: non l'abitazione</u></div>
     <div><label for="spesa">Spesa mensile, oggi</label>
-      <input type="number" id="spesa" min="0" max="10000000" value="" step="50">
+      <input type="text" inputmode="decimal" id="spesa" value="">
       <u class="hint">quanto esce ogni mese, tutto compreso</u></div>
     <div><label for="spesaPens">Spesa mensile in pensione</label>
-      <input type="number" id="spesaPens" min="0" max="10000000" value="" step="50" placeholder="uguale a oggi">
+      <input type="text" inputmode="decimal" id="spesaPens" value="" placeholder="uguale a oggi">
       <u class="hint" id="spesaPensNota">se resta vuota, il conto tiene la stessa di adesso</u></div>
   </div>
   <p class="calcolato" id="calcolato"></p>
@@ -634,13 +637,13 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
   <legend>Le ipotesi</legend>
   <div class="caselle">
     <div><label for="rend">Rendimento degli investimenti</label>
-      <input type="number" id="rend" min="-50" max="100" value="4" step="0.1"></div>
+      <input type="text" inputmode="decimal" id="rend" value="4"></div>
     <div><label for="rendFondo">Rendimento del comparto del fondo</label>
-      <input type="number" id="rendFondo" min="-50" max="100" value="3" step="0.1"></div>
+      <input type="text" inputmode="decimal" id="rendFondo" value="3"></div>
     <div><label for="infl">Inflazione</label>
-      <input type="number" id="infl" min="-50" max="100" value="2" step="0.1"></div>
+      <input type="text" inputmode="decimal" id="infl" value="2"></div>
     <div><label for="etaFine">Orizzonte del piano, in anni di età</label>
-      <input type="number" id="etaFine" min="0" max="120" value="95" step="1">
+      <input type="text" inputmode="numeric" id="etaFine" value="95">
       <!-- annoFine = max(nascita) + etaFine: il piano si ferma quando la persona più giovane
            compie questa età. Con due date di nascita diverse non è indifferente, e va detto. -->
       <u class="hint">il piano si ferma quando il più giovane compie questa età</u></div>
@@ -968,12 +971,47 @@ const perc = (n, prep) => (zeta(n)   ? {il:'lo ',  al:'allo ', del:'dello '}[pre
 // porta anche `min` e `max`, ma quello lo può aggirare chiunque: la difesa vera è qui.
 // Si limita il valore, non si riscrive la casella: quello che hanno scritto resta scritto.
 const fra = (v, min, max) => Math.min(max, Math.max(min, v));
-const num = id => { const v = parseFloat(EL(id).value); return Number.isFinite(v) ? v : 0; };
+// COME SI SCRIVONO I NUMERI IN ITALIANO, e perché le caselle non sono più `type="number"`.
+// Quel tipo di casella, per specifica, ammette come separatore decimale SOLO il punto: chi
+// scriveva «1,5» non veniva letto male, non veniva letto affatto — il browser restituisce
+// stringa vuota al codice, che quindi non può nemmeno accorgersene e ripiegava su zero. E
+// funzionava o no secondo la lingua del BROWSER, non della pagina: un difetto che colpisce un
+// sottoinsieme imprevedibile di chi passa è peggio di uno che colpisce tutti, perché nessuno
+// lo segnala. Il segnaposto delle percentuali, intanto, diceva «es. 1,2».
+//
+// IL CASO PEGGIORE ERA L'ALTRO, e non lo vedeva nessuno: «2.500» è un numero VALIDO e vale
+// due virgola cinque. Una spesa scritta come si scrive in italiano rendeva il piano sostenibile
+// per finta, senza un avviso.
+//
+// Ora la casella è di testo e la conversione la facciamo qui:
+//   virgola sola              → decimale       «1,5» → 1,5
+//   punto e virgola insieme   → l'ultimo dei due è il decimale, l'altro sono migliaia
+//   punto seguito da 3 cifre  → migliaia       «2.500» → 2500 · «1.234.567» → 1234567
+//   punto, ogni altro caso    → decimale       «2.5» e «2.50» → 2,5
+// Le migliaia non cominciano da zero: «0.500» è mezzo, non cinquecento.
+// La virgola invece è SEMPRE decimale: «1,500» in italiano è uno e mezzo, e chi scrive le
+// migliaia all'inglese qui non è il nostro lettore.
+const MIGLIAIA = /^-?[1-9]\d{0,2}(\.\d{3})+$/;
+const numero = t => {
+  const s = String(t).trim().replace(/\s|€|%/g, '');
+  if (s === '') return NaN;
+  const virgola = s.lastIndexOf(','), punto = s.lastIndexOf('.');
+  const pulito =
+      virgola >= 0 && punto >= 0
+        ? (virgola > punto ? s.replace(/\./g, '').replace(/,/g, '.')
+                           : s.replace(/,/g, ''))
+    : virgola >= 0 ? s.replace(/,/g, '.')
+    : punto >= 0 && MIGLIAIA.test(s) ? s.replace(/\./g, '')
+    : s;
+  const v = parseFloat(pulito);
+  return Number.isFinite(v) ? v : NaN;
+};
+const num = id => { const v = numero(EL(id).value); return Number.isFinite(v) ? v : 0; };
 const numFra = (id, min, max) => fra(num(id), min, max);
 // Vuoto e zero sono due informazioni diverse anche qui: «non l'ho compilata» significa che la
 // spesa resta quella di adesso, «0» significherebbe che in pensione non si spende niente.
 const numOpt = id => { const v = String(EL(id).value).trim();
-                       return v === '' ? null : (parseFloat(v) || 0); };
+                       return v === '' ? null : (numero(v) || 0); };
 // UN ANNO NON SI LEGGE MENTRE LO SI SCRIVE. Per arrivare a «2079» si passa da 2, 20, 207: numeri
 // leciti, che il taglio agli estremi trasformava in una risposta diversa da quella che si stava
 // dando. Non era un difetto di forma, cambiava il conto:
@@ -2576,7 +2614,7 @@ function costruisciDecisioni(){
        ${passo(i, 3, 'Che forma ha l\'assegno che resta',
          `<div class="barra"><div class="scelte" id="cForma${i}"></div>
             <p class="durataFraz" id="cFraz${i}" hidden><label for="anniFraz${i}">Per quanti
-              anni</label><input type="number" id="anniFraz${i}" min="5" max="40" step="1"
+              anni</label><input type="text" inputmode="numeric" id="anniFraz${i}"
               value=""><u class="hint" id="cFraz${i}Nota"></u></p></div>
           <div class="esito" id="cForma${i}Esito"></div>`)}
        <p class="scambio" id="cScambio${i}"></p>
