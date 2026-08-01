@@ -12,8 +12,9 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TESTI, REVISIONE, blocco, daConfermare, tabellaRegole, statoParametri,
+import { TESTI, REVISIONE, REVISIONE_ISO, blocco, daConfermare, tabellaRegole, statoParametri,
          tabellaSoglie, tabellaPareggi } from './regole.mjs';
+import { anteprima, icona } from './anteprima.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const DA  = join(QUI, 'sorgenti');
@@ -37,6 +38,31 @@ const FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
   `<rect width="32" height="32" rx="7" fill="#faf9f6"/>` +
   `<path d="M4 9 C 12 9, 15 14, 18 20 S 25 27, 28 27" fill="none" stroke="#2f6f4e" ` +
   `stroke-width="3.4" stroke-linecap="round"/></svg>`);
+
+// L'ORIGINE DEL SITO, letta una volta sola dal canonical della home. Serve per gli URL delle
+// immagini di anteprima, che gli scraper pretendono ASSOLUTI. Non si può ricavare dalla pagina
+// in corso: la 404 un canonical non ce l'ha, perché non va indicizzata.
+const ORIGINE = new URL(readFileSync(join(DA, 'index.html'), 'utf8')
+  .match(/<link rel="canonical" href="([^"]*)"/)[1]).origin + '/';
+
+// LE BRICIOLE, dichiarate anche a chi indicizza. In cima a ogni pagina di contenuto c'è già il
+// percorso «Decumulo → la RITA»: dirlo in `BreadcrumbList` fa comparire quel percorso nei
+// risultati di ricerca al posto dell'indirizzo nudo. Non è un trucco da posizionamento: descrive
+// una struttura che esiste davvero, e SI RICAVA da quella riga invece di essere riscritta, o le
+// due potrebbero dire cose diverse.
+const briciole = (html, url) => {
+  const riga = (html.match(/<p class="briciole">([\s\S]*?)<\/p>/) || [, ''])[1];
+  if (!riga || !url) return '';
+  const foglia = riga.replace(/<[^>]*>/g, '').split(/&rarr;|→/).pop()
+                     .replace(/&nbsp;/g, ' ').trim();
+  if (!foglia) return '';
+  const voce = (n, nome, u) => ({'@type': 'ListItem', position: n, name: nome,
+                                 ...(u ? {item: u} : {})});
+  return `<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+    itemListElement: [voce(1, 'Decumulo', ORIGINE), voce(2, foglia)]
+  })}</script>\n`;
+};
 
 let pagine = 0, avvisi = 0;
 // i file che cominciano con _ non sono pagine: sono pezzi da includere
@@ -91,10 +117,15 @@ for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsW
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(url)}">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="${esc(new URL('anteprima.png', ORIGINE).href)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La curva del patrimonio: sale finché si lavora, scende dopo.">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#faf9f6">
 <link rel="icon" href="${FAVICON}">
-</head>`;
+<link rel="apple-touch-icon" href="${esc(new URL('icona-touch.png', ORIGINE).href)}">
+${briciole(html, url)}</head>`;
   });
 
   // 4. le cifre dentro al testo
@@ -128,9 +159,12 @@ const canonicale = f => {
 };
 const urls = readdirSync(A).filter(f => f.endsWith('.html') && f !== '404.html')
   .map(canonicale).filter(Boolean).sort();
+// `lastmod` non è una data inventata né quella del file: è la REVISIONE dei parametri, cioè
+// l'ultima volta che il contenuto è stato verificato. Dirla è un'informazione vera, e si ricava
+// da `regole.mjs` come tutto il resto.
 writeFileSync(join(A, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`
-  + urls.map(u => `  <url><loc>${u}</loc></url>`).join('\n')
+  + urls.map(u => `  <url><loc>${u}</loc><lastmod>${REVISIONE_ISO}</lastmod></url>`).join('\n')
   + `\n</urlset>\n`);
 // IL DOMINIO NON SI RISCRIVE, SI RICAVA. Sta già nei `canonical` di ogni pagina: scriverlo una
 // seconda volta qui vorrebbe dire che al primo cambio una delle due copie resta indietro, e il
@@ -142,6 +176,12 @@ writeFileSync(join(A, 'robots.txt'),
 // lo nomina. È un file dell'ospite, non del sito: sta qui e non fra i sorgenti, come sitemap e
 // robots, perché `sito/` non si modifica a mano.
 writeFileSync(join(A, 'CNAME'), dominio + '\n');
+// L'ANTEPRIMA DELLA CONDIVISIONE e l'icona per la schermata home di iOS. Sono gli unici due
+// file binari del sito, e sono DISEGNATI, non copiati: un'immagine messa lì a mano sarebbe
+// l'unica cosa in `sito/` che il build non sa rifare, e al primo cambio di colore resterebbe
+// indietro senza che nessuno se ne accorga.
+writeFileSync(join(A, 'anteprima.png'), anteprima());
+writeFileSync(join(A, 'icona-touch.png'), icona(180));
 console.log(`  ✓ sitemap.xml (${urls.length} pagine) · robots.txt · CNAME (${dominio})`);
 
 const aperte = daConfermare();

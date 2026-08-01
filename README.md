@@ -27,6 +27,7 @@ lancia da solo:
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
 | `node verifiche/consenso.mjs` | che il tag di misurazione non parta senza consenso |
+| `node verifiche/anteprime.mjs` | la scheda che si vede condividendo il link, e le briciole dichiarate |
 | `node verifiche/scadenze.mjs` | se i parametri sono ancora quelli correnti |
 
 Fuori dalla catena, perché apre Chrome e va lanciato quando si tocca il layout o si aggiunge
@@ -289,6 +290,61 @@ larghezza voluta, che sono viewport veri.
 l'avviso di chi è già in pensione, le caselle disattivate e la sezione delle scelte che sparisce
 non venivano mai resi, quindi nessuna misura poteva vederli. Regola generale: **un ramo di
 interfaccia che nessuno scenario rende non è coperto**, per quanto verde sia il resto.
+
+## Come il sito si presenta a chi non l'ha ancora aperto
+
+Chi riceve il link su WhatsApp o lo trova su Google **non vede il sito**: vede una scheda fatta di
+titolo, descrizione, immagine e briciole. La costruisce il build da quello che le pagine già
+dichiarano, e si può rompere in silenzio: aprendo il sito è tutto giusto lo stesso. Per questo
+c'è `verifiche/anteprime.mjs`.
+
+**L'immagine è disegnata, non è un file.** `anteprima.mjs` scrive un PNG con `zlib`, che sta già
+in Node: nessuna dipendenza, nessuno strumento esterno. Un'immagine messa lì a mano sarebbe
+l'unica cosa in `sito/` che il build non sa rifare, e al primo cambio di colore resterebbe
+indietro senza che nessuno se ne accorga. Disegna **la curva del patrimonio** che sale finché si
+lavora e scende dopo, negli stessi colori del sito: chi vede l'anteprima ha già visto il prodotto.
+
+**Due cose imparate disegnandola**, e valgono per qualunque grafica generata:
+- i due rami della curva accostati e basta si incontrano con pendenze diverse, e **il colmo viene
+  uno spigolo**: a 1200 px si legge come un errore di disegno. Si mescolano su una finestra;
+- riempiendo l'area **per segmento**, i rettangoli adiacenti si sovrappongono di un pixel e quella
+  colonna riceve la tinta due volte: nel risultato si vedono **strisce verticali**. Ogni colonna
+  si riempie una volta sola.
+
+**L'icona per iOS non è l'anteprima rimpicciolita**: dentro un quadrato salita più discesa
+diventa una punta, e a 180 px si legge come un accento. Porta lo stesso segno della favicon, con
+le stesse proporzioni. Un marchio è uno, in due misure.
+
+**`og:image` vuole un indirizzo assoluto.** Relativo, la scheda resta senza immagine e nel
+browser non cambia niente: è il difetto che il controllo esiste per prendere. L'origine si legge
+una volta sola dal canonical della home, perché la 404 un canonical non ce l'ha.
+
+**Le briciole sono dichiarate anche a chi indicizza** (`BreadcrumbList`), ricavandole dalla riga
+che la pagina già mostra: dichiarare un percorso diverso da quello visibile sarebbe una
+dichiarazione falsa a un motore di ricerca. E la sitemap porta `lastmod`, che non è la data del
+file né quella di oggi: è **la revisione dei parametri**, l'unica che significhi qualcosa su una
+pagina che espone cifre di legge.
+
+---
+
+## L'ingresso: 91 parole, non 182
+
+Fino al 01/08/2026 prima della prima casella c'erano **182 parole**, e quasi tutte erano il
+riquadro del perimetro: tre capoversi di «non si applica a…». Chi arrivava da una ricerca leggeva
+avvertenze prima di qualunque valore.
+
+Il perimetro però **non si poteva togliere**: un autonomo che compila dieci caselle e poi scopre
+che il conto non fa per lui sta peggio di uno avvisato subito. È rimasta quindi **la sola cosa che
+decide SE compilare**; il resto sono limiti di modello e stanno in `il-metodo.html`, dove stanno
+gli altri, più nel piè di pagina di ogni pagina. Regola già applicata altrove qui dentro: *non si
+avvisa tutti in anticipo di un caso che riguarda pochi*.
+
+**E un evento solo su Analytics, `verdetto`**, mandato una volta per apertura e **senza alcun
+parametro**: né l'esito né una cifra. Sapere quante visite arrivano non dice se il modulo è troppo
+lungo; sapere quante arrivano a una risposta sì. La prossima decisione sull'ingresso si prende su
+quel numero, non a impressione.
+
+---
 
 ## La misurazione delle visite, e il consenso che la precede
 

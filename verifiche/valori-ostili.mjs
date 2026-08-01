@@ -58,6 +58,10 @@ function prova(DATI){
 // stampa. Nei DOM finti non esiste, ed è la quinta volta che un'armatura incompleta fa
 // cadere codice buono: si completa l'armatura, non si indebolisce la pagina.
 globalThis.addEventListener = globalThis.addEventListener || (() => {});
+// `window` esiste sempre in un browser, e la pagina lo nomina per l'evento della misurazione.
+// Nei DOM finti non c'era: sesta volta che un'armatura incompleta fa cadere codice buono.
+// Puntato a `globalThis`, così `window.gtag` resta indefinito e l'evento non parte mai qui.
+globalThis.window = globalThis;
   globalThis.document = {body:{classList:{toggle(){}}}, querySelectorAll: () => [],
     getElementById: id => el[id] ??= new Proxy(Object.assign(finto(), {value: DATI[id] ?? ''}),
       {set(o, k, v){

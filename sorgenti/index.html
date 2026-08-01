@@ -230,6 +230,10 @@
 
   .nota{color:var(--soft);font-size:13px;margin:14px 0 0;line-height:1.5}
   .nota a{color:var(--acc);font-weight:600}
+  .salta{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--ink);
+    padding:10px 16px;border:1px solid var(--line);border-radius:0 0 8px 0;z-index:60;
+    font-size:14px;font-weight:600;text-decoration:none}
+  .salta:focus{left:0}
   .perimetro{font-size:13px;line-height:1.6;color:var(--soft);max-width:74ch;margin:0 0 26px;
     padding:12px 15px;background:#f6f7f5;border:1px solid var(--line);border-radius:9px}
   .avvertenza{margin:26px 0 0;padding:13px 16px;background:var(--card);
@@ -387,6 +391,9 @@
 
 <div class="pagina">
 
+<!-- Chi naviga da tastiera altrimenti attraversa testata e perimetro a ogni visita. Compare
+     solo quando riceve il fuoco: per tutti gli altri non esiste. -->
+<a class="salta" href="#dati">Vai alle caselle</a>
 <h1 id="cima">Decumulo</h1>
 <!-- «dalla fine del lavoro» era inesatto anche prima: la proiezione parte dall'anno in corso e
      comprende gli esercizi di attività, che sono quelli su cui incidono le due decisioni. Per
@@ -395,18 +402,19 @@
 all'età indicata: trattamento INPS, fondo pensione, TFR e risparmi, esercizio per esercizio, in
 euro di oggi. I dati inseriti restano nel browser.</p>
 
-<p class="perimetro"><b>Il calcolo è costruito sul rapporto di lavoro dipendente privato</b>:
-TFR, contribuzione a un fondo negoziale e contributo del datore di lavoro. Non si applica ai
+<!-- IL PERIMETRO, RIDOTTO A QUELLO CHE FA PERDERE TEMPO SE SI SCOPRE DOPO.
+     Fino al 01/08/2026 qui c'erano tre capoversi di avvertenze: 182 parole prima della prima
+     casella, quasi tutte «non si applica a…». Chi arriva da una ricerca leggeva limiti prima
+     di qualunque valore. Ma il perimetro non si poteva togliere: un autonomo che compila dieci
+     caselle e poi scopre che il conto non fa per lui sta peggio di uno avvisato subito.
+     Resta quindi la sola cosa che decide SE compilare; il resto sono limiti di modello, e
+     stanno dove stanno gli altri. È la regola già applicata altrove in questa pagina: non si
+     avvisa tutti in anticipo di un caso che riguarda pochi. -->
+<p class="perimetro"><b>Il calcolo riguarda il lavoro dipendente privato</b>: non si applica ai
 lavoratori autonomi né ai dipendenti pubblici, per i quali il trattamento di fine servizio segue
-regole diverse. <b>La limitazione riguarda gli esercizi di attività</b>: indicando una decorrenza
-già trascorsa il calcolo non richiede alcun dato di lavoro, e il fondo pensione non vi è
-rappresentato. <b>Non rappresenta chi percepisce già una rendita da un fondo pensione</b>: quel
-reddito ha una tassazione propria, diversa da quella di ogni casella qui sotto. La prestazione del
-fondo è rappresentata nelle due forme finora previste, capitale e rendita vitalizia:
-<a href="come-prendere-il-fondo.html">dal 1° luglio 2026 la legge ne ammette altre</a>, che il
-conto non quantifica.</p>
+regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a></p>
 
-<h2 class="sezione">I dati</h2>
+<h2 class="sezione" id="dati">I dati</h2>
 
 <!-- QUANTO BASTA DAVVERO. Il modulo ha molte caselle, ma il verdetto esce alla terza: chi arriva
      non ha modo di saperlo e vede un questionario. Dirlo prima è la differenza fra un modulo che
@@ -1659,6 +1667,11 @@ function calc(){
   // compilare. Con una sola persona già in pensione della coppia restano, perché all'altra
   // servono: lì basta la disattivazione, che è per colonna.
   document.body.classList.toggle('senza-lavoro', s.tuttoInPens);
+  // IL SEGNAPOSTO DEL NOME DICE IL RIPIEGO CHE IL CONTO USERÀ DAVVERO. Scritto nell'HTML
+  // diceva sempre «il primo», anche con una persona sola: il modulo prometteva un nome e le
+  // frasi ne usavano un altro («la persona»). Chi lascia la casella vuota deve poter leggere in
+  // anticipo come verrà chiamato.
+  EL('nome0').placeholder = s.N === 1 ? 'la persona' : 'il primo';
   // QUANTE CASELLE SERVONO PER IL VERDETTO. Due comuni (patrimonio, spesa) e quattro per
   // persona: sono esattamente quelle che la guardia più sotto controlla, e il numero si deriva
   // invece di scriverlo, perché cambia con «una persona / due persone». Sta qui, prima delle
@@ -1962,6 +1975,16 @@ function calc(){
     `A parità di date la spesa massima sostenibile è di circa <b>${E50(q)}</b> al mese` +
     (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '') +
     `, contro ${E0(s.spesa)} indicati.`;
+
+  // QUANTI ARRIVANO A UNA RISPOSTA. Sapere quante visite arrivano non dice la cosa che conta:
+  // se il modulo è troppo lungo, la gente lo abbandona e le visite restano identiche. Questo è
+  // l'unico evento del sito, si manda UNA VOLTA per apertura e **senza alcun parametro**: né
+  // l'esito né una cifra. Serve a decidere se accorciare il modulo, non a sapere com'è messo
+  // chi lo compila. `gtag` esiste solo dopo il consenso, quindi senza consenso non parte nulla.
+  if (!calc.detto && typeof window.gtag === 'function'){
+    calc.detto = true;
+    window.gtag('event', 'verdetto');
+  }
 
   if (r.annoZero !== null){
     t.className = 'risposta giu';
