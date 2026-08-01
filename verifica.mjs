@@ -25,6 +25,7 @@ const passi = [
   ['verifiche/coerenza.mjs',               'che le pagine dicano quello che il conto fa'],
   ['verifiche/consenso.mjs',               'che il tag non parta senza consenso'],
   ['verifiche/anteprime.mjs',              'la scheda che si vede condividendo il link'],
+  ['verifiche/scarica.mjs',                'il piano portato via in un foglio di calcolo'],
   // per ultimo, e non per importanza: è l'unico controllo che non guarda il codice ma il
   // calendario. Sta in fondo perché una data scaduta non invalida quello che sta sopra, e
   // vederla per prima bloccherebbe ogni modifica al codice per una ragione che non c'entra.
@@ -49,5 +50,5 @@ for (const [file, cosa] of passi){
 }
 
 console.log(rotto ? `\n\x1b[31m✗ fermato su ${rotto}\x1b[0m`
-                  : `\n\x1b[32m✓ tutto verde\x1b[0m — build, motore, frasi, valori ostili, tavole,\n  seconda implementazione, invarianti, schermi, coerenza, consenso, anteprime, scadenze`);
+                  : `\n\x1b[32m✓ tutto verde\x1b[0m — build, motore, frasi, valori ostili, tavole,\n  seconda implementazione, invarianti, schermi, coerenza, consenso, anteprime, scarica, scadenze`);
 if (rotto) process.exitCode = 1;

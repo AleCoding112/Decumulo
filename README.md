@@ -28,6 +28,7 @@ lancia da solo:
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
 | `node verifiche/consenso.mjs` | che il tag di misurazione non parta senza consenso |
 | `node verifiche/anteprime.mjs` | la scheda che si vede condividendo il link, e le briciole dichiarate |
+| `node verifiche/scarica.mjs` | il piano portato via: che il foglio di calcolo sia un file valido e dica quello che si vede |
 | `node verifiche/scadenze.mjs` | se i parametri sono ancora quelli correnti |
 
 Fuori dalla catena, perché apre Chrome e va lanciato quando si tocca il layout o si aggiunge
@@ -359,6 +360,35 @@ avvisa tutti in anticipo di un caso che riguarda pochi*.
 parametro**: né l'esito né una cifra. Sapere quante visite arrivano non dice se il modulo è troppo
 lungo; sapere quante arrivano a una risposta sì. La prossima decisione sull'ingresso si prende su
 quel numero, non a impressione.
+
+---
+
+## Portare via il piano
+
+In fondo al calcolatore ci sono tre comandi. **«Ricomincia da zero»** era chiamato *«Rimetti i
+valori di partenza»*, che faceva pensare a dei dati d'esempio: il codice cancella tutto e riapre
+la pagina come nuova, ed è quello che l'etichetta adesso dice. **«Salva in PDF o stampa»** apre la
+stampa del browser, che è già curata e verificata (apre da sé il dettaglio anno per anno, che su
+carta è la parte verificabile). **«Scarica il piano»** scrive un `.xlsx`.
+
+**Perché un `.xlsx` e non un CSV.** In Italia la virgola è insieme separatore decimale e
+separatore di colonna, ed Excel indovina: metà delle volte esce una colonna sola. Un `.xlsx` è uno
+zip con dentro qualche XML e si scrive senza librerie, come già si fa col PNG dell'anteprima. I
+numeri restano **numeri**, e il file si apre giusto in Excel, Fogli Google e Numbers.
+
+**L'archivio non è compresso**, di proposito: comprimerlo avrebbe voluto dire portarsi dentro un
+deflate per risparmiare venticinque chilobyte. In cambio il contenuto si rilegge senza
+decomprimere niente, e infatti il controllo lo fa.
+
+**IL FILE SI PORTA DIETRO LE PROPRIE IPOTESI**, e non è un ornamento: un foglio con dentro una
+proiezione a quarant'anni, riaperto fra sei mesi senza sapere con quali rendimenti e quale
+inflazione è stato fatto, è un foglio che mente. La prima scheda porta dati inseriti, ipotesi,
+verdetto e **in che valuta è la tabella**; la seconda porta la tabella e basta, pulita, così si
+può ordinare e ci si può fare un grafico.
+
+Il verdetto nel file **è quello letto dalla pagina**, non ricostruito, e il pulsante resta spento
+finché un verdetto non c'è: scaricare il conto di prima è il modo silenzioso di consegnare un
+documento sbagliato.
 
 ---
 
