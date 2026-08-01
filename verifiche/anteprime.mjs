@@ -45,6 +45,27 @@ const attr = (h, re) => (h.match(re) || [, ''])[1];
   const b = fs.readFileSync(join(SITO, 'anteprima.png'));
   c('l\'anteprima ha le proporzioni che le anteprime si aspettano',
     b.readUInt32BE(16) === 1200 && b.readUInt32BE(20) === 630);
+  // LA FAVICON COME FILE. Il data URI da solo non basta: Chrome non lo disegna, e `/favicon.ico`
+  // il browser lo chiede comunque — preferiti, cronologia, anteprima di un link — trovando un
+  // 404 se non c'è. Qui si controlla che ci sia, che sia un ICO vero (le prime sei cifre sono
+  // l'intestazione: riservato 0, tipo 1, quante misure) e che ogni pagina lo dichiari.
+  {
+    const p = join(SITO, 'favicon.ico');
+    if (!fs.existsSync(p)) c('favicon.ico esiste', false);
+    else {
+      const f = fs.readFileSync(p);
+      const misure = f.readUInt16LE(4);
+      c('favicon.ico è un ICO valido',
+        f.readUInt16LE(0) === 0 && f.readUInt16LE(2) === 1 && misure > 0,
+        `${misure} misure, ${f.length} byte`);
+      // ogni voce deve puntare dentro il file, o il browser legge fuori e mostra niente
+      const dentro = Array.from({length: misure}, (_, i) => {
+        const v = 6 + 16 * i;
+        return f.readUInt32LE(v + 12) + f.readUInt32LE(v + 8) <= f.length;
+      }).every(Boolean);
+      c('e ogni misura sta dentro il file', dentro);
+    }
+  }
   // un'immagine sopra il mezzo mega viene scartata da alcuni scraper, e comunque è un peso
   // che il sito non deve avere
   c('e sta abbondantemente sotto il limite pratico degli scraper',
@@ -61,7 +82,11 @@ const attr = (h, re) => (h.match(re) || [, ''])[1];
       ['og:description', /property="og:description" content="([^"]*)"/],
       ['og:image',       /property="og:image" content="([^"]*)"/],
       ['twitter:card',   /name="twitter:card" content="([^"]*)"/],
-      ['icona',          /rel="apple-touch-icon" href="([^"]*)"/]
+      ['icona',          /rel="apple-touch-icon" href="([^"]*)"/],
+      // tutte e due le forme: il file per chi non legge i data URI — Chrome — e l'SVG per gli
+      // altri. Con una sola delle due il difetto torna su una parte dei browser, cioè invisibile
+      ['favicon.ico',    /rel="icon" href="(\/favicon\.ico)"/],
+      ['favicon SVG',    /rel="icon" href="(data:image\/svg\+xml[^"]*)"/]
     ]) if (!attr(h, re)) manca.push(`${p}: ${nome}`);
   }
   c('ogni pagina porta titolo, descrizione, immagine e icona', manca.length === 0,

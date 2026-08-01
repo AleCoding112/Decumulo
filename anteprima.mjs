@@ -195,3 +195,40 @@ export function icona(lato = 180){
   t.tratto(p, lato * 0.106, VERDE);
   return t.finita();
 }
+
+// LA FAVICON COME FILE, oltre che come data URI.
+//
+// La curva era solo un `data:` dentro `<link rel="icon">`, e sembrava la scelta più pulita:
+// nessun file, nessuna richiesta. Ma **Chrome le favicon che arrivano da un data URI non le
+// disegna**, e soprattutto il browser chiede `/favicon.ico` per conto suo — nei preferiti, nella
+// cronologia, nei risultati di ricerca, nell'anteprima di un link — e lì trovava un 404.
+//
+// Non contraddice la pagina privacy, che promette di non caricare risorse da **domini terzi**:
+// questo file lo serve il dominio del sito, come `anteprima.png` e `icona-touch.png`. Il
+// commento nel build diceva «una richiesta in più è una richiesta che la privacy promette di non
+// fare», ed era una promessa più stretta di quella scritta nella pagina.
+//
+// L'ICO NON È UN FORMATO A SÉ: dal 2007 può contenere PNG interi. Sono sei byte di intestazione,
+// sedici per ciascuna misura, e poi i PNG che `icona()` già sa disegnare — così il marchio resta
+// uno solo, disegnato in un posto solo.
+export function ico(misure = [32, 16]){
+  const png = misure.map(n => icona(n));
+  const testa = Buffer.alloc(6);
+  testa.writeUInt16LE(0, 0);              // riservato
+  testa.writeUInt16LE(1, 2);              // 1 = icona (2 sarebbe un cursore)
+  testa.writeUInt16LE(misure.length, 4);
+  let scorre = 6 + 16 * misure.length;
+  const voci = misure.map((n, i) => {
+    const v = Buffer.alloc(16);
+    v.writeUInt8(n >= 256 ? 0 : n, 0);    // 0 vuol dire 256: un byte non ci arriva
+    v.writeUInt8(n >= 256 ? 0 : n, 1);
+    v.writeUInt8(0, 2); v.writeUInt8(0, 3);
+    v.writeUInt16LE(1, 4);                // piani
+    v.writeUInt16LE(32, 6);               // bit per pixel
+    v.writeUInt32LE(png[i].length, 8);
+    v.writeUInt32LE(scorre, 12);
+    scorre += png[i].length;
+    return v;
+  });
+  return Buffer.concat([testa, ...voci, ...png]);
+}

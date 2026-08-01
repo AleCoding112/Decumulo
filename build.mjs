@@ -14,7 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TESTI, REVISIONE, REVISIONE_ISO, blocco, daConfermare, tabellaRegole, statoParametri,
          tabellaSoglie, tabellaPareggi } from './regole.mjs';
-import { anteprima, icona } from './anteprima.mjs';
+import { anteprima, icona, ico } from './anteprima.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const DA  = join(QUI, 'sorgenti');
@@ -31,8 +31,10 @@ const SOSPETTE = [
   ['9,19',      'ivs']
 ];
 
-// La favicon: la curva del decumulo, disegnata qui. In linea come data URI perché una
-// richiesta a un file in più è una richiesta che la pagina privacy promette di non fare.
+// La favicon in SVG: la curva del decumulo, disegnata qui. Sta in linea perché a questa misura
+// pesa meno di una richiesta, e sopra gli schermi fitti resta netta a qualunque ingrandimento.
+// Non è però l'unica forma: il file `/favicon.ico` lo scrive `anteprima.mjs`, e il perché sta
+// scritto accanto al blocco che compone la testata.
 const FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">` +
   `<rect width="32" height="32" rx="7" fill="#faf9f6"/>` +
@@ -102,9 +104,16 @@ for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsW
 
   // 3-bis. I METADATI DELLA CONDIVISIONE, ricavati da quello che la pagina già dichiara.
   // Titolo, descrizione e canonical stanno scritti una volta sola in cima a ciascuna pagina:
-  // le anteprime li rileggono da lì invece di ripeterli, così non possono divergere. E la
-  // favicon è disegnata qui dentro, non è un file: il sito non deve chiedere niente a nessuno
-  // — è la stessa promessa scritta nella pagina privacy.
+  // le anteprime li rileggono da lì invece di ripeterli, così non possono divergere.
+  //
+  // LA FAVICON STA IN DUE FORME, e per un po' ne ha avuta una sola. Era il solo data URI, con
+  // la motivazione che «il sito non deve chiedere niente a nessuno»: ma la pagina privacy
+  // promette di non caricare risorse da **domini terzi**, non di non servire file propri — e
+  // `anteprima.png` e `icona-touch.png` stanno lì da sempre. Intanto **Chrome le favicon che
+  // arrivano da un data URI non le disegna**, e il browser chiede `/favicon.ico` per conto suo
+  // — preferiti, cronologia, anteprima di un link — trovandoci un 404. Ora l'ICO viene prima
+  // per chi guarda solo quello, e l'SVG dopo con il suo `type` per chi sa preferirlo: stesso
+  // marchio, disegnato una volta sola in `anteprima.mjs`.
   html = html.replace('</head>', () => {
     const dentro = (re) => (html.match(re) || [, ''])[1].trim();
     const titolo = dentro(/<title>([\s\S]*?)<\/title>/);
@@ -123,7 +132,8 @@ for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsW
 <meta property="og:image:alt" content="La curva del patrimonio: sale finché si lavora, scende dopo.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#faf9f6">
-<link rel="icon" href="${FAVICON}">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="${FAVICON}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${esc(new URL('icona-touch.png', ORIGINE).href)}">
 ${briciole(html, url)}</head>`;
   });
@@ -182,6 +192,7 @@ writeFileSync(join(A, 'CNAME'), dominio + '\n');
 // indietro senza che nessuno se ne accorga.
 writeFileSync(join(A, 'anteprima.png'), anteprima());
 writeFileSync(join(A, 'icona-touch.png'), icona(180));
+writeFileSync(join(A, 'favicon.ico'), ico());
 console.log(`  ✓ sitemap.xml (${urls.length} pagine) · robots.txt · CNAME (${dominio})`);
 
 const aperte = daConfermare();
