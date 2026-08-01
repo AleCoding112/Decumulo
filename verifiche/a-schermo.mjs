@@ -18,6 +18,10 @@
 //     IFRAME della larghezza voluta: dentro un iframe le media query rispondono
 //     alla sua larghezza, e il viewport è vero;
 //   · `--allow-file-access-from-files` serve, o l'iframe non si lascia leggere.
+//
+//  E UNA REGOLA DI SCRITTURA, che è costata due errori di sintassi: il codice che gira DENTRO il
+//  browser sta in template literal, quindi lì dentro non si scrivono virgolette inclinate,
+//  nemmeno nei commenti. Una sola chiude la stringa e il file non compila più.
 // ============================================================================
 import { execFileSync } from 'node:child_process';
 import { writeFileSync, readFileSync, mkdtempSync, readdirSync } from 'node:fs';
@@ -47,7 +51,12 @@ const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1965, nascita1:1
 const ASSETTI = {
   attivi: DATI,
   'già in pensione': {...DATI, annoPens0:2015, annoPens1:2020,
-                      stip0:'', stip1:'', ral0:'', ral1:''}
+                      stip0:'', stip1:'', ral0:'', ral1:''},
+  // UNA PERSONA SOLA, e non è un assetto in più per scrupolo: è il caso in cui si spegne la
+  // seconda di ogni coppia di righe, ed è lì che si è nascosto per mesi il difetto di `.cur`
+  // (spenta con `hidden` mentre un `display:grid` la teneva in pagina). Un ramo di interfaccia
+  // che nessuno scenario disegna non è coperto, per quanto verde sia il resto.
+  'una persona sola': {...DATI, quanti:'1', nome1:''}
 };
 const pagine = readdirSync(SITO).filter(f => f.endsWith('.html'));
 const dir = mkdtempSync(join(tmpdir(), 'decumulo-schermo-'));
@@ -92,6 +101,18 @@ addEventListener('load', () => setTimeout(() => {
           ? '.' + e.className.trim().split(/\\s+/)[0] : '')
           + ' «' + (e.textContent || '').trim().slice(0, 30) + '»');
     }
+    // NASCOSTO VUOL DIRE INVISIBILE, non «ha l'attributo».
+    // L'attributo hidden nasconde con una regola del browser, che ha la specificità più bassa
+    // che esista: QUALUNQUE display scritto su una classe la batte. Un elemento con display
+    // flex e hidden resta quindi in mezzo alla pagina, e il codice che lo spegne non spegne
+    // niente. È successo al banner del consenso, che non si chiudeva con nessuno dei due
+    // pulsanti; e le prove non se ne accorgevano perché guardavano el.hidden, cioè la
+    // proprietà, invece di quello che si vede.
+    const visibiliMaNascosti = [...d.querySelectorAll('[hidden]')]
+      .filter(e => i.contentWindow.getComputedStyle(e).display !== 'none')
+      .map(e => (e.id ? '#' + e.id : e.tagName) +
+                (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\\s+/)[0] : ''));
+
     const senzaNome = [];
     for (const e of d.querySelectorAll('input, select')){
       if (e.type === 'hidden' || e.offsetParent === null) continue;
@@ -101,7 +122,8 @@ addEventListener('load', () => setTimeout(() => {
     }
     out.push({p: i.dataset.p + (i.dataset.a ? ' (' + i.dataset.a + ')' : ''),
               w: +i.dataset.w, ecc: r.scrollWidth - r.clientWidth,
-              chi: [...new Set(chi)].slice(0, 3), senzaNome});
+              chi: [...new Set(chi)].slice(0, 3), senzaNome,
+              fantasmi: [...new Set(visibiliMaNascosti)]});
   }
   document.title = JSON.stringify(out);
 }, 3000));
@@ -136,6 +158,16 @@ if (anonimi.length){
   ko++; console.log(`  ✗ campi senza nome accessibile:`);
   for (const x of anonimi) console.log(`      ${x.p} a ${x.w} px: ${x.senzaNome.join(', ')}`);
 } else console.log('  ok  ogni campo visibile ha un nome che un lettore di schermo annuncia');
+// --- nascosto vuol dire invisibile -----------------------------------------
+{
+  const rotti = esiti.filter(x => x.fantasmi.length);
+  if (rotti.length){
+    ko++;
+    console.log(`  ✗ elementi con «hidden» che restano VISIBILI (un display d'autore lo batte):`);
+    const tutti = [...new Set(rotti.flatMap(x => x.fantasmi))];
+    for (const f of tutti) console.log('      · ' + f);
+  } else console.log('  ok  ogni elemento con «hidden» è davvero invisibile');
+}
 // --- e la stampa: su carta il dettaglio è la parte verificabile -------------
 // Un <details> chiuso non si apre col CSS, e per mesi si è creduto di sì. Qui si stampa davvero
 // e si cerca nel PDF una frase che sta SOLO dentro il dettaglio.
@@ -188,19 +220,24 @@ addEventListener('load', async () => {
   d = f.contentDocument; w = f.contentWindow;
   const tag = () => !!d.querySelector('script[src*="googletagmanager"]');
   const banner = () => d.getElementById('consenso');
+  // SI GUARDA QUELLO CHE SI VEDE, non l'attributo. Questa prova è stata verde per ore mentre il
+  // banner non si chiudeva con nessuno dei due pulsanti: controllava hidden, che il codice
+  // impostava davvero, mentre un display d'autore lo teneva in pagina. Una prova che misura
+  // l'intenzione invece dell'effetto è peggio di nessuna prova.
+  const inPagina = () => w.getComputedStyle(banner()).display !== 'none';
   const memoria = () => { try { return w.localStorage.getItem('decumulo-it-consenso'); }
                           catch(e){ return 'illeggibile'; } };
 
   out.push(['prima di ogni scelta il tag non è stato caricato', !tag()]);
-  out.push(['e il banner è visibile', banner() && banner().hidden === false]);
+  out.push(['e il banner è visibile', banner() && inPagina()]);
 
   d.getElementById('consensoNo').click(); await attesa(300);
   out.push(['dopo il rifiuto il tag continua a non esserci', !tag()]);
-  out.push(['il banner sparisce, e non torna a insistere', banner().hidden === true]);
+  out.push(['il banner sparisce DAVVERO dalla pagina, e non torna a insistere', !inPagina()]);
   out.push(['il rifiuto resta memorizzato', memoria() === 'no']);
 
   d.getElementById('consensoCambia').click(); await attesa(200);
-  out.push(['«Cambia» riapre la scelta da qualunque pagina', banner().hidden === false]);
+  out.push(['«Cambia» riapre la scelta da qualunque pagina', inPagina()]);
 
   d.getElementById('consensoSi').click(); await attesa(700);
   out.push(['solo dopo il consenso il tag viene caricato', tag()]);

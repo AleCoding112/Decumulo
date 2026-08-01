@@ -96,5 +96,49 @@ for (const file of ['il-metodo.html', 'come-prendere-il-fondo.html', 'contributo
   c(`${file}: i contenitori di tabelle scorrono da sé`, senza.length === 0, senza.join(', '));
 }
 
+// --- NASCOSTO VUOL DIRE INVISIBILE ------------------------------------------
+// L'attributo `hidden` nasconde con una regola del BROWSER, che ha la specificità più bassa che
+// esista: qualunque `display` scritto su una classe la batte. Un elemento con `display:flex` e
+// `hidden` resta quindi in mezzo alla pagina, e il codice che lo spegne non spegne niente.
+//
+// È successo due volte. La prima a `.sommario`, e fu aggiunta la riga gemella `[hidden]`. La
+// seconda al banner del consenso, che per ore non si è chiuso con NESSUNO dei due pulsanti,
+// mentre tutte le prove erano verdi: guardavano `el.hidden`, cioè l'intenzione, invece di quello
+// che si vede. E con lo stesso difetto è venuto fuori `.cur`, la riga del cursore che non si è
+// mai nascosta con una persona sola.
+//
+// Qui si guarda senza browser: se una classe dichiara un `display` ED è di un elemento che
+// qualcuno spegne con `hidden`, deve esistere la sua regola `[hidden]`.
+for (const file of fs.readdirSync(SITO).filter(f => f.endsWith('.html'))){
+  const h = fs.readFileSync(join(SITO, file), 'utf8');
+  const stile = [...h.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
+
+  // le classi con un `display` d'autore, escluse le regole `[hidden]` stesse e la stampa
+  const conDisplay = new Set();
+  for (const m of stile.matchAll(/([^{}]+)\{([^}]*)\}/g)){
+    const sel = m[1].replace(/\/\*[\s\S]*?\*\//g, '').trim().split('\n').pop();
+    if (sel.includes('[hidden]') || /display\s*:\s*none/.test(m[2])) continue;
+    if (!/(^|;)\s*display\s*:/.test(m[2])) continue;
+    for (const c of sel.match(/\.[\w-]+/g) || []) conDisplay.add(c.slice(1));
+  }
+  const protette = new Set([...stile.matchAll(/\.([\w-]+)\[hidden\]/g)].map(m => m[1]));
+
+  // le classi di elementi che vengono spenti: `hidden` scritto nel markup, oppure raggiunti
+  // dal codice con `closest('.classe')` per poi assegnargli `hidden`
+  const spente = new Set();
+  // L'ATTRIBUTO È `hidden`, NON `aria-hidden`. Con `\b` il trattino è un confine, quindi
+  // `aria-hidden="true"` risultava un elemento spento: ottavo falso positivo di questa famiglia
+  // in questo progetto, e sempre lo stesso errore — una regex che promette una precisione che
+  // non ha. Qui l'attributo si riconosce dal confine vero: spazio prima, fine o uguale dopo.
+  for (const m of h.matchAll(/<\w+((?:[^>"']|"[^"]*"|'[^']*')*)>/g))
+    if (/(?:^|\s)hidden(?=[\s>=]|$)/.test(m[1]))
+    for (const c of ((m[1].match(/class="([^"]*)"/) || [, ''])[1]).split(/\s+/)) if (c) spente.add(c);
+  for (const m of h.matchAll(/closest\('\.([\w-]+)'\)/g)) spente.add(m[1]);
+
+  const scoperte = [...spente].filter(c => conDisplay.has(c) && !protette.has(c));
+  c(`${file}: ogni elemento spento con «hidden» ha la sua regola`, scoperte.length === 0,
+    scoperte.map(x => `.${x} ha un display ma non .${x}[hidden]`).join(' · '));
+}
+
 console.log(ko ? `\n  ✗ ${ko} controlli falliti` : '\n  nessuna griglia esce dallo schermo');
 if (ko) process.exitCode = 1;

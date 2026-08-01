@@ -88,6 +88,9 @@
   .dec h3{font-size:16px;font-weight:600;margin:0 0 6px}
   .spiega{color:var(--soft);font-size:13.5px;margin:0 0 16px;max-width:74ch;line-height:1.55}
   .spiega a{color:var(--acc);font-weight:600;white-space:nowrap}
+  /* stessa ragione di `.sommario[hidden]`: con una persona sola, o per chi è già in pensione,
+     `riga.hidden = true` non spegneva niente e il cursore dell'altro restava in pagina. */
+  .cur[hidden]{display:none}
   .cur{display:grid;grid-template-columns:74px 1fr 250px;gap:6px 18px;align-items:center;
     padding:12px 0;border-top:1px solid var(--line)}
   .cur:first-child{border-top:0;padding-top:2px}

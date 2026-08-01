@@ -277,6 +277,22 @@ accanto, che si vede ma non si annuncia. Il nome accessibile lo compone `calc()`
 `.voce` della riga e aggiungendo il nome della persona. Non si duplica testo, e chi aggiunge una
 casella dentro una `.cella` è coperto senza fare nulla.
 
+**«Nascosto» vuol dire invisibile, non «ha l'attributo».** L'attributo `hidden` nasconde con una
+regola del *browser*, che ha la specificità più bassa che esista: **qualunque `display` scritto su
+una classe la batte**. Un elemento con `display:flex` e `hidden` resta in mezzo alla pagina, e il
+codice che lo spegne non spegne niente.
+
+È successo tre volte. A `.sommario`, e fu aggiunta la riga `[hidden]` gemella. Al **banner del
+consenso**, che per ore non si è chiuso con *nessuno* dei due pulsanti. E a `.cur`, la riga del
+cursore che non si è **mai** nascosta con una persona sola.
+
+**Le prove erano verdi tutte e tre le volte**, perché guardavano `el.hidden` — cioè l'intenzione —
+invece di quello che si vede. Ora ci sono due controlli: `schermi.mjs` lo verifica senza browser
+(se una classe dichiara un `display` ed è di un elemento spento con `hidden`, deve esistere la sua
+regola `[hidden]`), e `a-schermo.mjs` verifica in Chrome che **nessun elemento con `hidden` abbia
+un `display` diverso da `none`**. *Una prova che misura l'intenzione invece dell'effetto è peggio
+di nessuna prova.*
+
 **Un `<details>` non si apre col CSS.** `details > *{display:block}` mostra i figli, ma un
 dettaglio chiuso nasconde il contenuto con un meccanismo interno del browser: la tabella anno per
 anno — che su carta è la parte verificabile — non veniva stampata. Ad aprirlo è `beforeprint`, e
