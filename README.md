@@ -363,6 +363,59 @@ quel numero, non a impressione.
 
 ---
 
+## Le forme che consumano il montante invece di convertirlo
+
+Dal 1° luglio 2026 l'art. 11 c. 3-bis ammette, **in luogo della rendita vitalizia**, la rendita a
+durata definita, i prelievi liberamente determinabili e l'erogazione frazionata. Le prime due
+sono modellate; i prelievi liberi no, ed è una scelta motivata più sotto.
+
+**Non sono una quarta forma di rendita, ed è la ragione per cui l'interfaccia le separa.** Le tre
+forme classiche applicano un *coefficiente* al montante e lo convertono; queste lo **tengono nel
+fondo** (art. 11 c. 3-quinquies) e lo consumano a rate. Chi converte è coperto finché vive e non
+lascia nulla; chi consuma tiene i soldi e rischia di finirli. Cinque pulsanti in fila lo avrebbero
+nascosto: ce ne sono due gruppi, *convertire* e *tenere e consumare*.
+
+**Quello che la legge detta, e che quindi non si sceglie:**
+- la **durata definita** dura gli anni **interi** della vita attesa (art. 11 c. 3-ter): a 67 anni,
+  19. La tavola è `VITA_INTERA`, pubblicata dai fondi in attuazione delle Istruzioni COVIP del
+  25 giugno 2026. **Non è `SPERANZA_VITA`**, che porta i decimali e serve ai coefficienti: le due
+  coincidono in quindici età su ventuno, e coincidono a 67 anni, ma dove differiscono vale quella
+  ufficiale, perché è quella che i fondi applicano;
+- l'**erogazione frazionata** dura quello che si sceglie, **non meno di cinque anni**;
+- **la rata non è fissa**: a ogni scadenza è il montante disponibile diviso le rate che restano.
+  È la differenza con la RITA, che il conto fissa alla prima rata;
+- **l'imposta si paga rata per rata**, non tutta alla prestazione: l'anzianità cresce durante
+  l'erogazione, quindi l'aliquota scende. Tassare tutto all'inizio le avrebbe applicato
+  l'anzianità di quel solo anno per vent'anni;
+- **l'erogazione frazionata costa di più**: dal {{aliqFrazMax}} al {{aliqFrazMin}}, contro il
+  {{aliqFondoMax}}–{{aliqFondoMin}} delle altre. Chi ha trentacinque anni di iscrizione ci arriva
+  dove le altre *partono*.
+
+**I prelievi liberi non sono modellati, di proposito.** Sono una decisione presa esercizio per
+esercizio: rappresentarli vorrebbe dire attribuire a chi compila una politica di prelievo che non
+ha dichiarato. Ma il loro tetto è la somma delle rate della durata definita, che il conto espone:
+**lo scostamento è di profilo temporale, non di importo**, e questo si può dire.
+
+**Come è stata fatta la modifica senza toccare i risultati esistenti.** L'incasso è stato
+ristrutturato per spezzare l'imposta insieme al montante: `quota × (montante − base × aliquota)`
+è esattamente il `netto × quota` di prima, quindi le tre forme classiche danno **lo stesso
+risultato al centesimo** — verificato, il caso di prova non si è mosso di un euro.
+
+**Due difetti trovati costruendola, e valgono più del codice:**
+- con una durata a NaN il montante veniva **azzerato senza uscire da nessuna parte**: il piano
+  perdeva trecentomila euro e nulla lo diceva. C'è ora un pavimento a una rata e un'invariante
+  che lo impone sui 4.000 piani;
+- la seconda implementazione ha trovato che la pagina registrava come «montante alla prestazione»
+  il **residuo** invece del montante, perché lo leggeva dopo averlo ridotto. Le frasi dicevano un
+  fondo più piccolo di quello che era.
+
+**E un'invariante che era sbagliata io.** Pretendeva che dal fondo uscisse almeno metà del
+montante: ma con rendimento reale molto negativo le rate valgono meno, e non è denaro perso.
+Segnalava quattro piani sani su quattromila. La proprietà giusta non dipende dai rendimenti: il
+residuo dev'essere **uscito o rimasto**.
+
+---
+
 ## Portare via il piano
 
 In fondo al calcolatore ci sono tre comandi. **«Ricomincia da zero»** era chiamato *«Rimetti i

@@ -119,7 +119,15 @@ for (const file of fs.readdirSync(SITO).filter(f => f.endsWith('.html'))){
     const sel = m[1].replace(/\/\*[\s\S]*?\*\//g, '').trim().split('\n').pop();
     if (sel.includes('[hidden]') || /display\s*:\s*none/.test(m[2])) continue;
     if (!/(^|;)\s*display\s*:/.test(m[2])) continue;
-    for (const c of sel.match(/\.[\w-]+/g) || []) conDisplay.add(c.slice(1));
+    // LA CLASSE CHE CONTA È IL SOGGETTO DEL SELETTORE, non quelle degli antenati: in
+    // `.durataFraz u{display:block}` il display sta sulla `u`, e l'attributo `hidden` su
+    // `.durataFraz` funziona benissimo. Prendendo tutte le classi del selettore il controllo
+    // segnalava un codice giusto — nono falso positivo di questa famiglia in questo progetto,
+    // e sempre lo stesso errore: una regex che guarda più di quello che deve.
+    for (const parte of sel.split(',')){
+      const soggetto = parte.trim().split(/[\s>+~]+/).pop() || '';
+      for (const c of soggetto.match(/\.[\w-]+/g) || []) conDisplay.add(c.slice(1));
+    }
   }
   const protette = new Set([...stile.matchAll(/\.([\w-]+)\[hidden\]/g)].map(m => m[1]));
 

@@ -149,7 +149,19 @@
   .scambio b{color:var(--ink)}
   .scelte button u{display:block;text-decoration:none;font-size:10px;font-weight:600;
     text-transform:uppercase;letter-spacing:.07em;color:var(--su)}
-  .scelte{display:flex;gap:8px;flex-wrap:wrap}
+  /* le due famiglie stanno UNA SOTTO L'ALTRA: affiancate si spezzavano a metà, e «certa 10
+     anni» finiva su una riga per conto suo come se fosse di un altro gruppo */
+  .scelte{display:flex;flex-direction:column;gap:14px}
+  /* LE DUE FAMIGLIE, separate a vista. Convertire e consumare non sono due gradazioni della
+     stessa cosa: chi converte compra una copertura a vita e non lascia nulla, chi consuma
+     tiene i soldi e rischia di finirli. Cinque pulsanti in fila lo avrebbero nascosto. */
+  .famiglia{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+  .famiglia span{flex-basis:100%;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--tenue);margin:0 0 2px}
+  .durataFraz{margin:8px 0 0;font-size:13px;color:var(--soft)}
+  .durataFraz input{font:inherit;font-size:13px;width:74px;margin:0 6px;padding:4px 8px;
+    border:1px solid var(--line);border-radius:7px;text-align:right}
+  .durataFraz u{display:block;text-decoration:none;font-size:12px;color:var(--tenue);margin:3px 0 0}
   .scelte button{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;
     border:1px solid var(--line);background:#fff;color:var(--ink);
     font-variant-numeric:tabular-nums;text-align:left}
@@ -1020,6 +1032,9 @@ function leggi(){
     iscr:     numFra('iscr'+i, 1900, ANNO0 + 80),
     rita:     numFra('rita'+i, 0, ANNO0 + 80),
     quotaCap: numFra('quotaCap'+i, 0, 1),
+    // gli anni dell'erogazione frazionata: la legge ne impone almeno cinque, e non c'è un
+    // massimo scritto. Vuoto vale il minimo, che è il caso base.
+    anniFraz: Math.max(FRAZ_ANNI_MIN, numFra('anniFraz'+i, 0, 60) || FRAZ_ANNI_MIN),
     forma:    EL('forma'+i).value || 'vita'
   }));
   // L'ULTIMO ANNO DI LAVORO È DI CIASCUNO, e il valore di partenza è la propria pensione.
@@ -1100,6 +1115,33 @@ function leggi(){
 // imposta sulla prestazione: 15%, meno 0,30 punti per ogni anno di iscrizione oltre il
 // quindicesimo, col pavimento del 9% (art. 11 c. 6 D.Lgs. 252/2005)
 const aliquota = anni => Math.max(0.09, 0.15 - 0.003 * Math.max(0, anni - 15));
+// L'EROGAZIONE FRAZIONATA HA LA SUA, ed è peggiore: parte dal 20% e scende di 0,25 punti,
+// fermandosi al 15%. Chi ha trentacinque anni di iscrizione ci arriva dove le altre
+// prestazioni PARTONO. Non è un dettaglio: è la ragione per cui quella forma va guardata
+// coi numeri e non scelta per comodità.
+const aliquotaFraz = anni =>
+  Math.max(ALIQ_FRAZ_MIN, ALIQ_FRAZ_MAX - ALIQ_FRAZ_PASSO * Math.max(0, anni - 15));
+
+// LE FORME DI EROGAZIONE SONO DI DUE FAMIGLIE, e la differenza non è di grado.
+// CONVERTIRE: il montante diventa una rendita, di cui resta solo un coefficiente. Chi la
+//   prende è coperto finché vive, e alla fine non lascia nulla.
+// CONSUMARE: il montante NON si converte. Resta investito nel fondo (art. 11 c. 3-quinquies)
+//   e si svuota a rate; se si sopravvive alla durata l'erogazione finisce, ma quello che
+//   avanza alla morte va ai designati.
+// Le due famiglie non si combinano fra loro né con la rendita vitalizia.
+const CONSUMO = {
+  // art. 11 c. 3-ter: la durata NON si sceglie, sono gli anni interi della speranza di vita
+  durata:     {anni: x => vitaIntera(x.etaPens),        aliq: aliquota},
+  // art. 11 c. 3-bis: la durata la sceglie l'aderente, non meno di cinque anni
+  frazionata: {anni: x => Math.max(FRAZ_ANNI_MIN, x.anniFraz), aliq: aliquotaFraz}
+};
+// la tavola è a gradini per età intera: fuori dagli estremi non si estrapola, ci si appiattisce
+const vitaIntera = eta => {
+  const T = VITA_INTERA;
+  if (!(eta > T[0][0])) return T[0][1];
+  if (eta >= T.at(-1)[0]) return T.at(-1)[1];
+  return (T.find(([e]) => e === Math.floor(eta)) || T.at(-1))[1];
+};
 
 function simula(s, spesaMese){
   // DUE SPESE, UNA PER FASE. Prima c'era un numero solo per tutto il piano, e la nota chiedeva
@@ -1159,7 +1201,10 @@ function simula(s, spesaMese){
   const rendFondoDi = anno => anno < fermi ? Math.min(0, s.rendFondo) : s.rendFondo;
   let patr = s.patrimonio, annoZero = null;
   const f = P.map(x => ({ montante: x.fondo, versati: x.fondo, rendita: 0, annoRendita: null,
-                          rata: null }));
+                          rata: null,
+                          // le forme che consumano: quante rate mancano, con quale legge di
+                          // aliquota, e da che anno. A zero finché non si sceglie una di quelle.
+                          rate: 0, aliqCons: null, daCons: null, nCons: 0 }));
   // Il TFR lasciato in azienda: un salvadanaio a parte, che si rivaluta con la sua regola e
   // arriva tutto insieme nell'ultimo anno di lavoro. `messo` tiene la somma degli accantonamenti
   // (è quella che paga l'imposta), `pot` il montante rivalutato.
@@ -1176,6 +1221,10 @@ function simula(s, spesaMese){
     const lavora  = P.map((x, i) => anno <= x.ultimo   && !morto(i, anno));
     const inPens  = P.map((x, i) => anno >= x.annoPens && !morto(i, anno));
     const rate    = P.map(() => false);
+    // `rate` dice che in quell'esercizio esce una rata dal fondo; `consumo` distingue le rate
+    // DOPO la prestazione (forma che consuma) da quelle PRIMA (RITA). Senza, le fasi avrebbero
+    // chiamato «erogazione anticipata» un'erogazione che anticipata non è.
+    const consumo = P.map(() => false);
 
     let daLavoro = 0, daPensioni = 0, daFondo = 0, daRendita = 0, daRata = 0, daTfr = 0;
     P.forEach((x, i) => {
@@ -1261,6 +1310,13 @@ function simula(s, spesaMese){
       const riscatto = manca !== null && i === manca.chi && anno === manca.anno
                        && anno < annoIncasso;
       if ((anno === annoIncasso || riscatto) && f[i].montante > 0){
+        const consuma = riscatto ? null : CONSUMO[x.forma];
+        // IL MONTANTE ALLA PRESTAZIONE, preso prima di toccarlo. Chi consuma lascia dentro il
+        // residuo, quindi `f[i].montante` da qui in poi non è più «quanto vale il fondo alla
+        // pensione»: registrarlo dopo faceva scrivere il residuo al posto del montante, e le
+        // frasi della pagina dicevano un fondo più piccolo di quello che era. Se n'è accorta
+        // la seconda implementazione, che il montante lo registra prima.
+        const montanteAlla = f[i].montante;
         const base  = Math.min(f[i].versati, f[i].montante);
         // GLI ANNI DI PARTECIPAZIONE SI CONTANO FINO A QUI, non fino a una pensione che in caso
         // di premorienza non arriverà mai. Con `annoIncasso` il riscatto degli eredi scontava
@@ -1270,23 +1326,76 @@ function simula(s, spesaMese){
         const al    = aliquota(anno - x.iscr);
         const tasse = base * al;
         const netto = f[i].montante - tasse;
-        // la quota chiesta non può superare quella che la legge concede a QUESTO montante
+        // la quota chiesta non può superare quella che la legge concede a QUESTO montante.
+        // LA SOGLIA RESTA QUELLA DELLA RENDITA VITALIZIA anche scegliendo una forma nuova: la
+        // deroga dell'art. 11 c. 3 è scritta sulla rendita ottenuta convertendo il 70%, e la
+        // quota in capitale si abbina indifferentemente a una qualunque delle forme.
         const max   = quotaMax(f[i].montante, x.coeffEta);
         const quota = riscatto ? 1 : Math.min(x.quotaCap, max);
         const capitale = netto * quota;
         // la forma scelta non cambia quanto c'è, cambia quanto paga al mese
         const coeff = x.coeff !== undefined ? x.coeff : COEFF_RENDITA;
-        f[i].rendita = (netto - capitale) * coeff;
-        f[i].annoRendita = anno;
+        // L'IMPOSTA SI SPEZZA COME SI SPEZZA IL MONTANTE, e per le forme che convertono il conto
+        // non cambia di un euro: `quota × (montante − base × al)` è esattamente il `netto × quota`
+        // di prima. Serve invece alle forme che consumano, dove il residuo NON si tassa adesso:
+        // resta nel fondo e paga rata per rata, con l'aliquota dell'anno in cui la rata esce.
+        // Tassarlo tutto qui vorrebbe dire applicargli l'anzianità di oggi per vent'anni.
+        if (!consuma){
+          // chi converte: quello che resta dopo il capitale diventa una rendita, e del montante
+          // non resta traccia nel fondo
+          f[i].rendita = (netto - capitale) * coeff;
+          f[i].annoRendita = anno;
+        }
+        if (consuma && netto - capitale > 0){
+          const parte = 1 - quota;                       // quanto resta dentro
+          f[i].montante = f[i].montante * parte;
+          f[i].versati  = base * parte;
+          // IL PAVIMENTO A UNA RATA NON È UNO SCRUPOLO. Se la durata arrivasse a zero o a NaN
+          // — una casella vuota, una tavola senza quell'età — il montante verrebbe azzerato
+          // senza uscire da nessuna parte, e il piano perderebbe dei soldi senza dirlo.
+          // Succedeva davvero, prima che questa riga ci fosse: il conto finale calava di
+          // trecentomila euro e nulla in pagina lo segnalava. Con una rata sola esce tutto
+          // subito, che è sbagliato ma visibile.
+          const durata = Math.round(consuma.anni(x)) || 0;
+          f[i].rate     = Math.max(1, durata);
+          f[i].aliqCons = consuma.aliq;
+          f[i].daCons   = anno;
+          f[i].nCons    = f[i].rate;
+        }
         daFondo += capitale;
         // «di» + nome non si compone a pezzi: con i nomi vuoti veniva fuori «il fondo di il
         // primo». La forma articolata viaggia insieme al nome, come già fa il resto della pagina.
-        incassi.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, montante:f[i].montante, base, al, tasse, capitale,
+        incassi.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, montante:montanteAlla, base, al, tasse, capitale,
                       assegno:f[i].rendita/12, quota, chiesta:x.quotaCap, max, coeff,
                       soglia: soglia(x.coeffEta), etaPens: x.etaPens, coeffEta: x.coeffEta,
                       netto, forma:x.forma, convertito: netto - capitale,
+                      // quante rate e per quanti anni, se la forma consuma invece di convertire
+                      rate: consuma ? f[i].rate : 0, daCons: consuma ? anno : null,
                       limitata: x.quotaCap > max + 1e-9});
-        f[i].montante = 0;
+        // chi converte chiude qui la posizione; chi consuma la tiene aperta e la svuota a rate
+        if (!consuma || !(f[i].rate > 0)) f[i].montante = 0;
+      }
+
+      // --- LE RATE DELLA FORMA CHE CONSUMA -----------------------------------
+      // La rata NON è fissa: a ogni scadenza è il montante disponibile diviso le rate ancora da
+      // erogare (Istruzioni COVIP del 25 giugno 2026). È la differenza con la RITA, che il conto
+      // fissa alla prima rata: qui quello che il fondo rende nel frattempo alza le rate dopo,
+      // e quello che perde le abbassa. Il montante resta investito nel comparto scelto.
+      if (f[i].rate > 0 && f[i].montante > 0 && anno >= f[i].daCons){
+        const lorda = f[i].montante / f[i].rate;
+        const quotaTass = Math.min(f[i].versati / f[i].montante, 1);
+        const imponibile = lorda * quotaTass;
+        // l'anzianità cresce durante l'erogazione, quindi l'aliquota scende rata dopo rata
+        const tasse = imponibile * f[i].aliqCons(anno - x.iscr);
+        f[i].montante -= lorda;
+        f[i].versati  -= imponibile;
+        f[i].rate--;
+        daRata += lorda - tasse;
+        rate[i] = true;
+        consumo[i] = true;
+        // nell'anno della prestazione il rendimento è già stato applicato dal blocco
+        // dell'accumulo: applicarlo di nuovo lo conterebbe due volte
+        if (f[i].rate > 0 && anno > f[i].daCons) f[i].montante *= (1 + rendFondoDi(anno));
       }
       // la rendita è una cifra fissa: in euro di oggi si sgonfia
       // LA RENDITA DEL DEFUNTO SEGUE LA FORMA SCELTA, ed è il punto in cui la sezione 2
@@ -1326,8 +1435,10 @@ function simula(s, spesaMese){
 
     righe.push({anno, eta: P.map(x => anno - x.nascita), inizio, rendimento, spesa,
       daLavoro, daPensioni, daRendita, daFondo, daRata, daTfr, patr,
-      fondi: f.map(y => y.montante), lavora, inPens, rate,
-      regime: [lavora, inPens, rate].map(a => a.map(v => v?1:0).join('')).join('|')});
+      fondi: f.map(y => y.montante), lavora, inPens, rate, consumo,
+      // il regime taglia le fasi: `consumo` ci sta dentro perché il passaggio dalla RITA alla
+      // prestazione a rate cambia quello che la fase racconta, e va spezzata lì
+      regime: [lavora, inPens, rate, consumo].map(a => a.map(v => v?1:0).join('')).join('|')});
   }
   // I nomi viaggiano col risultato. Senza, `fasi()` ed `eventi()` leggevano una variabile
   // globale riscritta da `leggi()`: erano corretti solo se chiamati subito dopo, e con una
@@ -1355,7 +1466,7 @@ function fasi(r){
     const u = out[out.length-1];
     if (u && u.regime === g.regime) { u.a = g.anno; u.fine = g.patr; u.righe.push(g); }
     else out.push({regime:g.regime, da:g.anno, a:g.anno, fine:g.patr, righe:[g],
-                   lavora:g.lavora, inPens:g.inPens, rate:g.rate});
+                   lavora:g.lavora, inPens:g.inPens, rate:g.rate, consumo:g.consumo});
   }
   for (const f of out){
     // flusso ricorrente al mese: le rate della RITA sono ricorrenti e ci stanno dentro,
@@ -1366,19 +1477,24 @@ function fasi(r){
     f.flusso = ric / n / 12;
     f.rendimento = f.righe.reduce((s,g) => s + g.rendimento, 0) / n / 12;
     f.unaTantum = f.righe.reduce((s,g) => s + g.daFondo + g.daTfr, 0);
-    f.cosa = descrivi(f.lavora, f.inPens, f.rate, nomi, di);
+    f.cosa = descrivi(f.lavora, f.inPens, f.rate, nomi, di, f.consumo);
   }
   return out;
 }
 
 // Le fasi si descrivono in forma impersonale, così la stessa frase vale per una persona e per
 // due: niente «lavorate tutti e due» contro «lavori». Il numero lo dice la composizione.
-function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI){
+function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI, consumo = []){
   const n = lavora.length;
   const lav   = nomi.filter((_,i) => lavora[i]);
   const pen   = nomi.filter((_,i) => inPens[i] && !lavora[i]);
   const fermi = nomi.filter((_,i) => !lavora[i] && !inPens[i]);
-  const rit   = nomi.filter((_,i) => rate[i]);
+  // Le rate che escono dal fondo sono di due specie e non si chiamano allo stesso modo: PRIMA
+  // della pensione sono un'erogazione anticipata (la RITA), DOPO sono la prestazione stessa,
+  // erogata a rate invece che convertita in rendita. Chiamare «anticipata» la seconda avrebbe
+  // detto a chi legge che sta prendendo il fondo in anticipo mentre lo sta prendendo in tempo.
+  const rit   = nomi.filter((_,i) => rate[i] && !consumo[i]);
+  const cons  = nomi.filter((_,i) => consumo[i]);
   let t;
   if (n === 1){
     t = lav.length ? 'attività lavorativa in corso'
@@ -1396,6 +1512,8 @@ function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI){
 
   if (rit.length === n && n > 1) t += '; erogazione anticipata del fondo per entrambi';
   else if (rit.length === 1) t += `; erogazione anticipata del fondo ${di[nomi.indexOf(rit[0])]}`;
+  if (cons.length === n && n > 1) t += '; il fondo esce a rate per entrambi';
+  else if (cons.length === 1) t += `; il fondo ${di[nomi.indexOf(cons[0])]} esce a rate`;
   return t;
 }
 
@@ -2439,7 +2557,10 @@ function costruisciDecisioni(){
        ${passo(i, 2, 'Quanto in contanti',
          barra('cCap'+i, 0, 100, 1) + `<div class="esito" id="cCap${i}Esito"></div>`)}
        ${passo(i, 3, 'Che forma ha l\'assegno che resta',
-         `<div class="barra"><div class="scelte" id="cForma${i}"></div></div>
+         `<div class="barra"><div class="scelte" id="cForma${i}"></div>
+            <p class="durataFraz" id="cFraz${i}" hidden><label for="anniFraz${i}">Per quanti
+              anni</label><input type="number" id="anniFraz${i}" min="5" max="40" step="1"
+              value=""><u class="hint" id="cFraz${i}Nota"></u></p></div>
           <div class="esito" id="cForma${i}Esito"></div>`)}
        <p class="scambio" id="cScambio${i}"></p>
      </div>`).join('');
@@ -2475,12 +2596,20 @@ function costruisciDecisioni(){
 // donna è di un decimo. Il calcolatore ne mostra una sola, la pagina spiega la forbice.
 // Non chiederli in pagina: nessuno li sa a memoria e chiederli sposterebbe su di loro un lavoro
 // che tocca a noi.
+// LE FORME SONO DI DUE FAMIGLIE, e la differenza non è di grado: le prime tre CONVERTONO il
+// montante in una rendita, di cui resta solo un coefficiente; le ultime due lo TENGONO nel
+// fondo e lo consumano a rate. Metterle in fila come cinque etichette equivalenti avrebbe
+// fatto sembrare uguali due cose che non lo sono, e nascosto la scelta vera.
 const FORME = [
   {k:'vita', nome:'vitalizia',     fatt:1,          sotto:'finisce con l\'aderente'},
   {k:'rev',  nome:'reversibile',   fatt:FATT_REV,   sotto:'continua a chi resta'},
-  {k:'certa',nome:'certa 10 anni', fatt:FATT_CERTA, sotto:'10 anni garantiti'}
+  {k:'certa',nome:'certa 10 anni', fatt:FATT_CERTA, sotto:'10 anni garantiti'},
+  // art. 11 c. 3-bis: erogate dal fondo, col montante che resta investito
+  {k:'durata',     nome:'a durata definita', consuma:1, sotto:'per gli anni di vita attesa'},
+  {k:'frazionata', nome:'frazionata',        consuma:1, sotto:'per gli anni che si sceglie'}
 ];
-const FATT = Object.fromEntries(FORME.map(f => [f.k, f.fatt]));
+// solo le forme che convertono hanno un fattore: alle altre non si applica un coefficiente
+const FATT = Object.fromEntries(FORME.filter(f => !f.consuma).map(f => [f.k, f.fatt]));
 
 function aggiornaDecisioni(s, r){
   // I riquadri sono costruiti una volta per due persone: quelli in eccesso si spengono. E si
@@ -2722,14 +2851,51 @@ function aggiornaDecisioni(s, r){
     // --- passo 3: che forma ha l'assegno. Non cambia quanto c'è, cambia quanto paga al mese
     //     e chi protegge. I fattori sono stime dichiarate, non numeri di legge.
     const altro = NOMI[1-i];
-    EL('cForma'+i).innerHTML = FORME.map(f => {
-      const q = netto * (1 - qc) * COEFF_RENDITA * f.fatt / 12;
-      return `<button type="button" data-i="${i}" data-f="${f.k}"
-        class="${x.forma === f.k ? 'attiva' : ''}" ${inc && alMese(qc) >= 1 ? '' : 'disabled'}>
-        ${f.nome}<u>${f.sotto}</u><i>${inc && q >= 1 ? E0(q) + ' al mese' : '—'}</i></button>`;
-    }).join('');
+    // OGNI PULSANTE DICE QUANTO DÀ AL MESE, ma le due famiglie lo calcolano in modo diverso:
+    // chi converte applica il coefficiente, chi consuma divide il residuo per le rate. Sono
+    // due numeri che si possono confrontare, ed è tutto il punto della sezione.
+    const resto = netto * (1 - qc);
+    const primaRata = f => {
+      const n = f.k === 'durata' ? vitaIntera(x.etaPens)
+                                 : Math.max(FRAZ_ANNI_MIN, x.anniFraz);
+      // al lordo dell'imposta, che su queste forme si paga rata per rata
+      const al = (f.k === 'durata' ? aliquota : aliquotaFraz)(x.annoPens - x.iscr);
+      return resto / n * (1 - al * Math.min(1, (inc ? inc.base : 0) / Math.max(1, inc ? inc.montante : 1))) / 12;
+    };
+    // QUANTI ANNI DURA, SCRITTO SUL PULSANTE. Senza, la frazionata a cinque anni mostrava
+    // 4.355 € al mese contro i 1.184 della durata definita: aritmeticamente giusto e
+    // ingannevole da leggere, perché sembra che paghi quattro volte tanto mentre paga per un
+    // quarto del tempo. Un importo periodico senza la sua durata non è confrontabile con nulla.
+    const anniDi = f => f.k === 'durata' ? vitaIntera(x.etaPens)
+                      : Math.max(FRAZ_ANNI_MIN, x.anniFraz);
+    const gruppo = (titolo, quali) =>
+      `<div class="famiglia"><span>${titolo}</span>` + quali.map(f => {
+        const q = f.consuma ? primaRata(f) : netto * (1 - qc) * COEFF_RENDITA * f.fatt / 12;
+        const quanto = f.consuma
+          ? `per ${anniDi(f)} anni` + (f.k === 'durata' ? ', la vita attesa' : ', a scelta')
+          : f.sotto;
+        return `<button type="button" data-i="${i}" data-f="${f.k}"
+          class="${x.forma === f.k ? 'attiva' : ''}" ${inc && alMese(qc) >= 1 ? '' : 'disabled'}>
+          ${f.nome}<u>${quanto}</u><i>${inc && q >= 1 ? E0(q) + ' al mese' : '—'}</i></button>`;
+      }).join('') + '</div>';
+    EL('cForma'+i).innerHTML =
+      gruppo('Convertire in rendita', FORME.filter(f => !f.consuma))
+      + gruppo('Tenere il montante e consumarlo', FORME.filter(f => f.consuma));
+    // la casella della durata esiste solo per la forma che la lascia scegliere
+    EL('cFraz'+i).hidden = x.forma !== 'frazionata' || !inc || alMese(qc) < 1;
+    EL('cFraz'+i+'Nota').innerHTML = `non meno di ${FRAZ_ANNI_MIN} anni, che è il minimo di `
+      + `legge. A durata definita sarebbero ${vitaIntera(x.etaPens)}, con un'imposta più bassa`;
+
     EL('cForma'+i+'Esito').innerHTML = !inc || alMese(qc) < 1
       ? `<i>non c'è nessuna rendita da scegliere: esce tutto in contanti</i>`
+      : x.forma === 'durata'
+      ? `<i>${vitaIntera(x.etaPens)} rate, poi il fondo è finito: se ${x.nome} vive più a lungo
+         non arriva più niente. Quello che avanza alla morte va ai designati, e la rata non è
+         fissa — segue quanto rende il comparto</i>`
+      : x.forma === 'frazionata'
+      ? `<i>${Math.max(FRAZ_ANNI_MIN, x.anniFraz)} rate, con l'imposta che parte dal
+         ${fmt(aliquotaFraz(0)*100)}% invece che dal ${fmt(aliquota(0)*100)}%: è la forma più
+         libera e la più cara. Quello che avanza alla morte va ai designati</i>`
       : x.forma === 'rev'
       ? `<i>se ${x.nome} muore prima, ${altro} continua a prendere questi
          ${E0(alMese(qc))} al mese finché vive</i>`

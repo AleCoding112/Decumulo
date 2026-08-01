@@ -76,6 +76,35 @@ export const REGOLE = {
   ALIQ_FONDO_MIN: { nome: "Imposta sulla prestazione, minimo", val: 0.09, fonte: 'art. 11 c. 6 D.Lgs. 252/2005', verificata: true },
   ALIQ_FONDO_PASSO: { nome: "Riduzione per ogni anno oltre il quindicesimo", val: 0.003, fonte: '0,30 punti per ogni anno oltre il quindicesimo', verificata: true },
 
+  // L'EROGAZIONE FRAZIONATA HA UNA TASSAZIONE PROPRIA, ed è peggiore: si parte dal 20% invece
+  // che dal 15%, e la riduzione è di 0,25 punti invece di 0,30, per un massimo di 5 punti.
+  // Chi ha trentacinque anni di iscrizione ci arriva al 15%, cioè dove le altre prestazioni
+  // PARTONO. È la differenza che rende quella forma una scelta da guardare coi numeri e non
+  // una comodità in più. La rendita a durata definita e i prelievi seguono invece l'aliquota
+  // ordinaria delle prestazioni in capitale.
+  ALIQ_FRAZ_MAX: { nome: "Imposta sull'erogazione frazionata, massimo", val: 0.20,
+    fonte: 'art. 11 c. 6-bis D.Lgs. 252/2005 introdotto dalla L. 199/2025: DA RISCONTRARE sul testo, finora letto su documenti dei fondi e sulla nota Assogestioni', verificata: false },
+  ALIQ_FRAZ_MIN: { nome: "Imposta sull'erogazione frazionata, minimo", val: 0.15,
+    fonte: 'riduzione massima di 5 punti, raggiunta a 35 anni di partecipazione: DA RISCONTRARE sul testo', verificata: false },
+  ALIQ_FRAZ_PASSO: { nome: "Riduzione dell'imposta sull'erogazione frazionata", val: 0.0025,
+    fonte: '0,25 punti per ogni anno oltre il quindicesimo: DA RISCONTRARE sul testo', verificata: false },
+  FRAZ_ANNI_MIN: { nome: "Durata minima dell'erogazione frazionata", val: 5, come: 'anni',
+    fonte: 'art. 11 c. 3-bis D.Lgs. 252/2005: «per un periodo non inferiore a cinque anni»', verificata: true },
+
+  // LA DURATA DELLA RENDITA A DURATA DEFINITA NON SI SCEGLIE: sono gli anni INTERI della
+  // speranza di vita residua all'età della richiesta (art. 11 c. 3-ter). È una tavola diversa
+  // da SPERANZA_VITA, che porta i decimali e serve ai coefficienti di conversione: qui la legge
+  // vuole l'intero, e i fondi pubblicano proprio questa. Le due coincidono in quindici età su
+  // ventuno — e coincidono a 67 anni, che è l'ancora del progetto — ma dove differiscono vale
+  // questa, perché è quella che i fondi applicano.
+  VITA_INTERA: { nome: "Vita attesa residua in anni interi, per età",
+    val: [[50,34],[51,33],[52,32],[53,31],[54,30],[55,29],[56,28],[57,27],[58,26],[59,26],
+          [60,25],[61,24],[62,23],[63,22],[64,21],[65,20],[66,20],[67,19],[68,18],[69,17],
+          [70,16],[71,15],[72,15],[73,14],[74,13],[75,12],[76,12],[77,11],[78,10],[79,10],
+          [80,9],[81,8],[82,8],[83,7],[84,7],[85,6],[86,6],[87,5],[88,5],[89,4],[90,4]],
+    come: 'anni',
+    fonte: 'tavola pubblicata identica da più fondi in attuazione delle Istruzioni COVIP del 25 giugno 2026: DA RISCONTRARE sull\'allegato alle Istruzioni', verificata: false },
+
   // --- TFR ---------------------------------------------------------------
   TFR_SU_RAL: { nome: "TFR annuo, in quota della RAL", val: 0.069074, fonte: 'art. 2120 c.c.: RAL/13,5 meno lo 0,50% al Fondo di garanzia — articolo citato ma non ancora letto sul testo', verificata: false },
   TFR_RIV_FISSA: { nome: "Rivalutazione del TFR in azienda, parte fissa", val: 0.015, fonte: 'art. 2120 c. 4 c.c. — articolo citato ma non ancora letto sul testo', verificata: false },
@@ -246,6 +275,12 @@ export const TESTI = {
                       {minimumFractionDigits: 1, maximumFractionDigits: 1}),
   bandaAlta:        pc(V('BANDA_ALTA') - 1),
   bandaBassa:       pc(1 - V('BANDA_BASSA')),
+  aliqFrazMax:      pc(V('ALIQ_FRAZ_MAX')),
+  aliqFrazMin:      pc(V('ALIQ_FRAZ_MIN')),
+  aliqFrazPunti:    (V('ALIQ_FRAZ_PASSO') * 100).toLocaleString('it-IT',
+                      {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+  vitaInteraEs:     String((V('VITA_INTERA').find(([e]) => e === 67) || [, ''])[1]),
+  frazAnniMin:      String(V('FRAZ_ANNI_MIN')),
   aliqFondoMax:     pc(V('ALIQ_FONDO_MAX')),
   aliqFondoMin:     pc(V('ALIQ_FONDO_MIN')),
   aliqFondoPasso:   pc(V('ALIQ_FONDO_PASSO'), 2),
@@ -322,7 +357,12 @@ const CUMULO_SUPERSTITI = [${V('CUMULO_SUPERSTITI').map(([n,q]) => `[${n},${q}]`
 const EQUIV_BASSA = ${V('EQUIV_BASSA')}, EQUIV_ALTA = ${V('EQUIV_ALTA')};
 const FATT_REV = ${V('FATT_REV')}, FATT_CERTA = ${V('FATT_CERTA')};
 const CERTA_ANNI = ${V('CERTA_ANNI')};
-const BANDA_ALTA = ${V('BANDA_ALTA')}, BANDA_BASSA = ${V('BANDA_BASSA')};`;
+const BANDA_ALTA = ${V('BANDA_ALTA')}, BANDA_BASSA = ${V('BANDA_BASSA')};
+// La durata della rendita a durata definita: anni INTERI, tavola dei fondi (art. 11 c. 3-ter).
+const VITA_INTERA = [${V('VITA_INTERA').map(([e, v]) => `[${e},${v}]`).join(',')}];
+const ALIQ_FRAZ_MAX = ${V('ALIQ_FRAZ_MAX')}, ALIQ_FRAZ_MIN = ${V('ALIQ_FRAZ_MIN')},
+      ALIQ_FRAZ_PASSO = ${V('ALIQ_FRAZ_PASSO')};
+const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};`;
 }
 
 // --- la tabella completa delle regole, per la pagina «il metodo». Generata, non scritta:

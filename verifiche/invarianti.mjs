@@ -31,7 +31,7 @@ globalThis.document={body:{classList:{toggle(){}}},
   getElementById:id=>Object.assign(finto(),{value:String(DATI[id]??0)}),querySelectorAll:()=>[]};
 const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quotaMax,SOGLIA_TUTTO,soglia,coeffEta,
   COEFF_RENDITA,QUOTA_ORDINARIA,ASSEGNO_SOCIALE,TETTO_DEDUZIONE,TFR_SU_RAL,spazioDeducibile,contributi,costoAnnuo,pcTetto,
-  aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA};`)();
+  aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz};`)();
 
 let n=0; const rotte={};
 const ko=(k,d)=>{ (rotte[k]??=[]).push(d); };
@@ -43,7 +43,8 @@ for (let t=0; t<4000; t++){
     spesaPens: P(['', Math.round(R(0,9000))]),
     rend:+R(-2,12).toFixed(1), infl:+R(0,8).toFixed(1), rendFondo:+R(-2,12).toFixed(1),
     etaFine:I(70,105),
-    quanti: P(['1','2']), nome0:'Anna', nome1:'Bruno', forma0:P(['vita','rev','certa']), forma1:P(['vita','rev','certa']),
+    quanti: P(['1','2']), nome0:'Anna', nome1:'Bruno', forma0:P(['vita','rev','certa','durata','frazionata']), forma1:P(['vita','rev','certa','durata','frazionata']),
+    anniFraz0:P(['', I(1,40)]), anniFraz1:P(['', I(1,40)]),
     cresc0: P(['', +R(0,6).toFixed(1)]), cresc1: P(['', +R(0,6).toFixed(1)]),
     nascita0:n0, stip0:Math.round(R(0,9000)), ral0:Math.round(R(0,200000)),
     // LA DECORRENZA PUÒ ESSERE GIÀ TRASCORSA: chi è in pensione da anni usa questa pagina come
@@ -170,6 +171,39 @@ for (let t=0; t<4000; t++){
     for (const i of s.indici)
       if (g.lavora[i] !== (g.anno <= s.p[i].ultimo))
         ko('un esercizio di attività non segue l\'ultimo anno di quella persona', g.anno);
+  // --- LE FORME CHE CONSUMANO IL MONTANTE ------------------------------------
+  // Il difetto che questa invariante esiste per prendere è già successo: con una durata che
+  // arrivava a NaN il montante veniva azzerato SENZA uscire da nessuna parte, e il piano
+  // perdeva trecentomila euro senza che nulla in pagina lo dicesse. Un errore che toglie soldi
+  // in silenzio è peggio di uno che esplode.
+  //
+  // LA PRIMA VERSIONE DI QUESTA INVARIANTE ERA SBAGLIATA, e vale la pena averlo scritto:
+  // pretendeva che dal fondo uscisse almeno metà del montante. Ma su un piano con rendimento
+  // reale molto negativo le rate valgono molto meno del montante di partenza, e non è denaro
+  // perso: è un fondo che ha reso male. Segnalava quattro piani su quattromila, tutti sani.
+  // La proprietà giusta non dipende dai rendimenti: il residuo dev'essere USCITO o RIMASTO.
+  for (const i of s.indici){
+    const x = s.p[i];
+    if (x.forma !== 'durata' && x.forma !== 'frazionata') continue;
+    const inc = r.incassi.find(v => v.chi === x.nome);
+    if (!inc) continue;                        // fondo vuoto: niente da erogare
+    if (!(inc.convertito > 1)) continue;       // preso tutto in capitale: nessun residuo
+    if (!(inc.rate >= 1)) ko('forma che consuma senza nemmeno una rata', inc.rate);
+    if (x.forma === 'frazionata' && inc.rate < M.FRAZ_ANNI_MIN)
+      ko('erogazione frazionata sotto il minimo di legge', inc.rate);
+    if (x.forma === 'durata' && inc.rate !== M.vitaIntera(x.etaPens))
+      ko('durata definita diversa dalla vita attesa in anni interi',
+         `${inc.rate} invece di ${M.vitaIntera(x.etaPens)}`);
+    const uscite = r.righe.filter(g => g.anno >= inc.anno).reduce((a, g) => a + g.daRata, 0);
+    const dentro = r.righe.at(-1).fondi[i];
+    if (!(uscite > 0) && !(dentro > 0))
+      ko('il residuo di una forma che consuma non è né uscito né rimasto',
+         `residuo ${Math.round(inc.convertito)} sparito`);
+    // e chi consuma non converte: da quel fondo non esce nessuna rendita a vita
+    if (s.N === 1 && r.righe.some(g => g.anno > inc.anno && g.daRendita > 0))
+      ko('una forma che consuma ha prodotto anche una rendita', '');
+  }
+
   // --- niente rendimento su un buco
   if (!r.righe.every(g => g.inizio >= 0 || g.rendimento === 0)) ko('rendimento su patrimonio negativo','');
   // --- LO SCENARIO DEL SUPERSTITE: le proprietà che devono valere sempre
@@ -211,8 +245,14 @@ for (let t=0; t<4000; t++){
   //     Questa è l'invariante che lo impedisce, e gira su rendimenti da −50% a +100%.
   {
     const pv = M.simula({...s, prova: 10});
+    // L'ECCEZIONE È DI LEGGE, NON DEL MODELLO, e va esclusa o l'invariante segnala il sito
+    // giusto. Abbassando i rendimenti la prova può portare il montante SOTTO la soglia dei
+    // montanti di importo contenuto: lì la legge concede il 100% in capitale invece del 60%,
+    // ed esce più denaro subito. È lo stesso effetto di confine che la pagina dichiara per
+    // l'erogazione anticipata. Capita su circa un piano su diecimila, tutti già in perdita.
+    const confine = r.incassi.some((v, k) => pv.incassi[k] && Math.abs(v.max - pv.incassi[k].max) > 1e-9);
     if (!Number.isFinite(pv.finale)) ko('la prova di tenuta produce un finale non finito','');
-    else if (pv.finale > r.finale + 1e-6)
+    else if (pv.finale > r.finale + 1e-6 && !confine)
       ko('la prova di tenuta MIGLIORA il piano', `${Math.round(r.finale)} → ${Math.round(pv.finale)}`);
     if (r.annoZero !== null && (pv.annoZero === null || pv.annoZero > r.annoZero))
       ko('con la prova il patrimonio dura di più', `${r.annoZero} → ${pv.annoZero}`);

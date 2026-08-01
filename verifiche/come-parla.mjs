@@ -95,7 +95,17 @@ const SCENARI = {
   'già in pensione col fondo scritto lo stesso': {...BASE, quanti:'1', nome1:'',
                                       annoPens0:2015, fondo0:250000, rita0:0},
   'decorrenza nell\'anno in corso':  {...BASE, quanti:'1', nome1:'', annoPens0:2026,
-                                      stip0:'', ral0:'', rita0:0}
+                                      stip0:'', ral0:'', rita0:0},
+  // LE FORME CHE CONSUMANO IL MONTANTE. Scrivono frasi che nessun altro scenario produce: la
+  // durata in anni interi, l'avvertenza sulla sopravvivenza, la casella degli anni che compare
+  // solo per una delle due, e le rate che nelle fasi non sono «anticipate».
+  'rendita a durata definita':      {...BASE, forma0:'durata', forma1:'durata'},
+  'erogazione frazionata':          {...BASE, forma0:'frazionata', forma1:'frazionata',
+                                     anniFraz0:12, anniFraz1:12},
+  'una converte e l\'altra consuma': {...BASE, forma0:'durata', forma1:'rev'},
+  'durata definita, tutto in capitale dove si può':
+                                    {...BASE, forma0:'durata', forma1:'durata',
+                                     fondo0:15000, fondo1:15000, quotaCap0:1, quotaCap1:1}
 };
 
 // --- il calcolatore, eseguito senza browser ---------------------------------

@@ -63,7 +63,7 @@ globalThis.document = {
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
-  TETTO_DEDUZIONE, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS};`)();
+  TETTO_DEDUZIONE, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
 let ok = 0, ko = 0;
@@ -893,6 +893,67 @@ console.log('\n— chi è già in pensione —');
     due.s.tuttoInPens === true && due.s.spesaPens === null);
   t('e con uno che lavora ancora resta in vigore',
     con({annoPens0:2015, spesaPens:800}).s.spesaPens === 800);
+}
+
+// LE FORME CHE CONSUMANO IL MONTANTE invece di convertirlo (art. 11 c. 3-bis, dal 1° luglio
+// 2026). Non sono una quarta rendita: il montante non si converte, resta nel fondo e si svuota
+// a rate. Qui si tengono ferme le proprietà che la legge detta, non i numeri che ne escono.
+console.log('\n— la rendita a durata definita e l\'erogazione frazionata —');
+{
+  const con = o => { const st = leggiCon({quanti:'1', ...o}); return {s: st, r: M.simula(st)}; };
+  const D = con({forma0:'durata'}), F = con({forma0:'frazionata', anniFraz0:12});
+  const V = con({forma0:'vita'});
+  const incD = D.r.incassi[0], incF = F.r.incassi[0];
+
+  t('la durata non si sceglie: è la vita attesa in anni interi (art. 11 c. 3-ter)',
+    incD.rate === M.vitaIntera(D.s.p[0].etaPens),
+    `a ${D.s.p[0].etaPens} anni: ${incD.rate} rate`);
+  t('mentre l\'erogazione frazionata dura quello che si scrive', incF.rate === 12);
+  t('e non meno di quello che la legge impone',
+    con({forma0:'frazionata', anniFraz0:2}).r.incassi[0].rate === M.FRAZ_ANNI_MIN,
+    `${M.FRAZ_ANNI_MIN} anni`);
+
+  // il montante NON si converte: nessuna rendita, e le rate escono per tutti gli anni previsti
+  t('chi consuma non produce nessuna rendita a vita',
+    D.r.righe.every(g => g.daRendita === 0) && V.r.righe.some(g => g.daRendita > 0));
+  const anniD = D.r.righe.filter(g => g.consumo[0]).map(g => g.anno);
+  t('le rate escono dall\'anno della prestazione e per tutta la durata',
+    anniD.length === incD.rate && anniD[0] === incD.anno
+    && anniD.at(-1) === incD.anno + incD.rate - 1,
+    `dal ${anniD[0]} al ${anniD.at(-1)}`);
+  t('e dopo l\'ultima rata dal fondo non esce più niente',
+    D.r.righe.filter(g => g.anno > anniD.at(-1)).every(g => g.daRata === 0 && g.daFondo === 0));
+
+  // IL MONTANTE RESTA INVESTITO (art. 11 c. 3-quinquies): finché ci sono rate da erogare il
+  // fondo non è vuoto, e questo è ciò che distingue la forma dalla liquidazione in capitale
+  t('il montante resta investito finché ci sono rate da erogare',
+    D.r.righe.filter(g => g.anno >= incD.anno && g.anno < anniD.at(-1))
+             .every(g => g.fondi[0] > 0));
+
+  // L'IMPOSTA È DIVERSA, ed è la ragione per cui la frazionata va guardata coi numeri
+  t('l\'erogazione frazionata sconta un\'imposta più alta, alla stessa anzianità',
+    M.aliquotaFraz(25) > M.aliquota(25),
+    `${(M.aliquotaFraz(25)*100).toFixed(2)}% contro ${(M.aliquota(25)*100).toFixed(2)}%`);
+  t('e parte dal 20%, scendendo al 15% a trentacinque anni',
+    Math.abs(M.aliquotaFraz(15) - 0.20) < 1e-12 && Math.abs(M.aliquotaFraz(35) - 0.15) < 1e-12);
+  t('a parità di durata, la frazionata lascia meno della durata definita', (() => {
+      const n = M.vitaIntera(D.s.p[0].etaPens);
+      return con({forma0:'frazionata', anniFraz0:n}).r.finale < D.r.finale; })(),
+    'stessa durata, sola imposta diversa');
+
+  // la quota in capitale si abbina a QUALUNQUE forma, e la soglia resta quella della vitalizia
+  const cap = con({forma0:'durata', quotaCap0:0.6});
+  t('la quota in capitale si abbina anche alle forme che consumano',
+    cap.r.incassi[0].capitale > 0 && cap.r.incassi[0].rate === incD.rate);
+  t('e la soglia del «tutto in contanti» resta quella della rendita vitalizia',
+    Math.abs(cap.r.incassi[0].soglia - V.r.incassi[0].soglia) < 1e-9);
+
+  // niente si perde per strada: è il difetto vero trovato costruendo questa parte
+  t('il montante esce tutto: niente si perde per strada', (() => {
+      const uscito = D.r.righe.filter(g => g.anno >= incD.anno)
+                              .reduce((a, g) => a + g.daFondo + g.daRata, 0);
+      return uscito > incD.montante * 0.8; })(),
+    'con un fondo che rende, esce più del montante iniziale');
 }
 
 console.log('\n— casi limite —');

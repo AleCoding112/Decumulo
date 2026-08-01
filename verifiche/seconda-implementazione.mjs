@@ -38,6 +38,23 @@ const coeffEta = eta => {
   return C.at(-1)[1];
 };
 const soglia = c => (0.5 * V('ASSEGNO_SOCIALE')) / (0.7 * c);
+// L'erogazione frazionata ha una sua aliquota, peggiore: dal 20% al 15%, 0,25 punti l'anno.
+const aliqFraz = anni => Math.min(V('ALIQ_FRAZ_MAX'),
+  Math.max(V('ALIQ_FRAZ_MIN'), V('ALIQ_FRAZ_MAX') - V('ALIQ_FRAZ_PASSO') * (anni - 15)));
+// art. 11 c. 3-ter: la durata della rendita a durata definita è la vita attesa in anni INTERI.
+// Tavola letta da `regole.mjs`, non ricopiata: qui si riscrivono le regole, non i dati.
+const vitaIntera = eta => {
+  const T = V('VITA_INTERA');
+  if (!(eta > T[0][0])) return T[0][1];
+  if (eta >= T.at(-1)[0]) return T.at(-1)[1];
+  return (T.find(([e]) => e === Math.floor(eta)) || T.at(-1))[1];
+};
+// le due famiglie: chi converte in rendita e chi tiene il montante e lo consuma a rate
+const consumo = x => x.forma === 'durata'
+    ? {n: vitaIntera(x.annoPens - x.nascita), al: aliqFondo}
+  : x.forma === 'frazionata'
+    ? {n: Math.max(V('FRAZ_ANNI_MIN'), x.anniFraz || V('FRAZ_ANNI_MIN')), al: aliqFraz}
+  : null;
 const FATT = {vita: 1, rev: V('FATT_REV'), certa: V('FATT_CERTA')};
 
 // ------------------------------------------------------------------ il piano
@@ -82,7 +99,8 @@ function piano(D){
   // qui lo conterebbe due volte, e per giunta col coefficiente di un'età che non è più quella.
   // Regola scritta da capo, non ereditata: è il mestiere di questa implementazione.
   const dentro = D.p.map(x => x.annoPens < V('ANNO0') ? 0 : x.fondo);
-  const F = dentro.map(m => ({m, v: m, rend: 0, da: null, rata: null}));
+  const F = dentro.map(m => ({m, v: m, rend: 0, da: null, rata: null,
+                              rate: 0, alCons: null, daCons: null}));
   const T = D.p.map(() => ({pot: 0, messo: 0, anni: 0}));
   const righe = [], inc = [], liq = [];
 
@@ -161,10 +179,32 @@ function piano(D){
         const qmax = F[i].m < soglia(ce) ? 1 : V('QUOTA_ORDINARIA');
         const qCap = preMorte ? 1 : Math.min(x.quotaCap, qmax);
         E += netto * qCap;
-        F[i].rend = netto * (1 - qCap) * ce * (FATT[x.forma] ?? 1);
-        F[i].da = a;
+        const cons = preMorte ? null : consumo(x);
         inc.push({chi: i, a, mont: F[i].m, base, al, cap: netto * qCap, qmax});
-        F[i].m = 0;
+        if (cons && netto * (1 - qCap) > 0){
+          // CHI CONSUMA non converte e non si tassa adesso: il residuo resta nel fondo, e
+          // l'imposta la paga rata per rata, con l'anzianità dell'anno in cui la rata esce.
+          // Qui la quota si applica al MONTANTE e alla BASE separatamente: tassare il tutto e
+          // poi dividere darebbe lo stesso capitale ma una base residua sbagliata.
+          F[i].m = F[i].m * (1 - qCap);
+          F[i].v = base * (1 - qCap);
+          F[i].rate = Math.max(1, Math.round(cons.n) || 0);
+          F[i].alCons = cons.al;
+          F[i].daCons = a;
+        } else {
+          F[i].rend = netto * (1 - qCap) * ce * (FATT[x.forma] ?? 1);
+          F[i].da = a;
+          F[i].m = 0;
+        }
+      }
+      // le rate della forma che consuma: montante diviso le rate che restano, e il residuo
+      // continua a rendere. La rata non è fissa, ed è la differenza con la RITA.
+      if (F[i].rate > 0 && F[i].m > 0 && a >= F[i].daCons){
+        const lorda = F[i].m / F[i].rate;
+        const imponibile = lorda * Math.min(F[i].v / F[i].m, 1);
+        F[i].m -= lorda; F[i].v -= imponibile; F[i].rate--;
+        E += lorda - imponibile * F[i].alCons(a - x.iscr);
+        if (F[i].rate > 0 && a > F[i].daCons) F[i].m *= (1 + (fermo(a) ? Math.min(0, rf) : rf));
       }
       // la rendita del defunto continua solo se la forma la protegge
       const dura = !morto(i, a) || x.forma === 'rev'
@@ -278,6 +318,17 @@ const casi = {
   'decorrenza nell\'anno in corso':   {annoPens0:2026},
   'decorrenza l\'anno scorso':        {annoPens0:2025},
   'già in pensione, e il fondo scritto lo stesso': {annoPens0:2015, fondo0:250000},
+  // LE FORME CHE CONSUMANO IL MONTANTE invece di convertirlo. Sono il caso in cui le due
+  // implementazioni possono divergere di più, perché il residuo resta investito e l'imposta
+  // si paga rata per rata: un ordine diverso fra rendimento e prelievo si vede subito.
+  'rendita a durata definita':        {forma0:'durata', forma1:'durata'},
+  'durata definita con capitale al massimo': {forma0:'durata', forma1:'durata', quotaCap0:0.6, quotaCap1:0.6},
+  'durata definita, zero in capitale':{forma0:'durata', forma1:'durata', quotaCap0:0, quotaCap1:0},
+  'erogazione frazionata al minimo':  {forma0:'frazionata', forma1:'frazionata'},
+  'erogazione frazionata su vent\'anni': {forma0:'frazionata', forma1:'frazionata', anniFraz0:20, anniFraz1:20},
+  'una converte e l\'altra consuma':  {forma0:'durata', forma1:'rev'},
+  'consuma dopo aver preso la RITA':  {forma0:'durata', rita0:2034},
+  'consuma, e uno manca durante le rate': {forma0:'durata', forma1:'durata'},
 };
 
 
@@ -319,6 +370,7 @@ for (const [nome, over, prova, manca] of tutti){
       // decisione dell'altra e non verificherebbe più niente. La regola la riapplica da sé,
       // qui sotto, ed è l'unico modo perché il confronto possa ancora fallire.
       annoPens:x.annoPens, fondo:x.fondoScritto, pcVoi:x.pcVoi, pcDat:x.pcDat, pc:x.pc, cresc:x.cresc,
+      anniFraz:x.anniFraz,
       fondoIndividuale:x.fondoIndividuale, ultimo:x.ultimo,
       tfrAlFondo:x.tfrAlFondo, iscr:x.iscr, rita:x.rita, quotaCap:x.quotaCap, forma:x.forma}))};
   const P = piano(D);
