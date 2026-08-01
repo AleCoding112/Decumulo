@@ -1,0 +1,2815 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decumulo — quanto durano i risparmi dopo la fine del lavoro</title>
+<meta name="description" content="Calcolatore del decumulo per lavoratori dipendenti privati: pensione INPS, fondo pensione, TFR e risparmi, anno per anno e in euro di oggi. I dati restano nel browser.">
+<link rel="canonical" href="https://decumulo.it/">
+<style>
+  :root{
+    --ink:#1a1a1a; --soft:#6b6b6b; --tenue:#8a857a; --line:#e0ddd6; --bg:#faf9f6;
+    --card:#fff; --su:#2f6f4e; --giu:#a33a2a; --acc:#3b6ea5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  .pagina{max-width:900px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:22px;font-weight:700;margin:0 0 8px;color:var(--ink);letter-spacing:.14em;
+    text-transform:uppercase}
+
+  /* IL SOMMARIO IN ALTO. Non è navigazione: è il risultato che resta sott'occhio mentre si
+     compila. Compare solo dopo che si è passato il titolo e solo se il risultato vero è fuori
+     schermo — se lo si sta già guardando, ripeterlo sarebbe rumore.
+     ATTENZIONE AL NOME: «barra» è già la classe dei blocchi col cursore. Una regola
+     position:fixed su quel nome inchioda ogni cursore in cima allo schermo (successo il
+     31/07/2026). Prima di introdurre una classe si controlla che il nome sia libero. */
+  .sommario{position:fixed;top:0;left:0;right:0;z-index:20;margin:0;display:block;
+    background:var(--card);border-bottom:1px solid var(--line);text-decoration:none;
+    padding:9px 20px;font-size:13px;color:var(--soft);box-shadow:0 1px 6px rgba(0,0,0,.05)}
+  .sommario:hover{background:var(--bg)}
+  .sommario[hidden]{display:none}
+  .sommario .riga-somm{display:block;max-width:860px;margin:0 auto;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sommario .v{font-weight:700;color:var(--ink)}
+  .sommario.su .v{color:var(--su)} .sommario.giu .v{color:var(--giu)}
+  .sommario b{color:var(--ink)}
+  /* col sommario fissato in alto, saltando a un'ancora non deve coprirla */
+  html{scroll-padding-top:52px}
+
+  .risposta{margin:0 0 6px;font-size:30px;line-height:1.25;font-weight:600;letter-spacing:-.015em}
+  .occhiello{color:var(--soft);font-size:15px;line-height:1.6;margin:0 0 30px;max-width:68ch;
+    padding-bottom:22px;border-bottom:1px solid var(--line)}
+  .sezione{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--tenue);margin:34px 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .vuoto-avviso{color:var(--soft);font-size:14px;line-height:1.55;margin:0 0 14px;max-width:60ch}
+  .due input[type=text]{text-align:left}
+  .risposta em{font-style:normal}
+  .risposta.su em{color:var(--su)} .risposta.giu em{color:var(--giu)}
+  /* il verdetto: una parola sola sopra la frase, per capire com'è andata prima di leggere */
+  .risposta u{display:block;text-decoration:none;font-size:12px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.12em;margin:0 0 6px}
+  .risposta.su u{color:var(--su)} .risposta.giu u{color:var(--giu)}
+  .sotto{margin:0 0 26px;color:var(--soft)}
+
+  .grafico{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:14px 10px 6px;margin:0 0 10px}
+  svg{display:block;width:100%;height:auto}
+  .legenda{display:flex;gap:18px;flex-wrap:wrap;color:var(--soft);font-size:13px;
+    margin:0 0 10px;padding:0 4px}
+  .legenda span{display:flex;align-items:center;gap:6px}
+  .inflazione{margin:0 0 28px;padding:0 4px;max-width:70ch}
+  .chip{width:11px;height:11px;border-radius:2px;display:inline-block}
+
+  /* --- le fasi --- */
+  .fasi{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:4px 18px 8px;margin:0 0 28px}
+  .fasi h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+    color:var(--soft);margin:16px 0 10px}
+  .fase{display:grid;grid-template-columns:100px 1fr 208px 132px;gap:10px 16px;
+    align-items:baseline;padding:11px 0;border-top:1px solid var(--line)}
+  .fase:first-of-type{border-top:0}
+  .fase b{font-variant-numeric:tabular-nums;font-weight:600}
+  .fase .cosa{color:var(--soft);font-size:15px}
+  .fase .flusso{text-align:right;font-variant-numeric:tabular-nums;font-size:15px}
+  .fase .fine{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .fase i{display:block;font-style:normal;font-size:12px;color:var(--tenue);font-weight:400;
+    line-height:1.35;margin-top:2px}
+  .su-t{color:var(--su)} .giu-t{color:var(--giu)}
+  .unatantum{grid-column:1/-1;margin:2px 0 0;font-size:13px;color:var(--acc)}
+
+  /* --- le tre decisioni --- */
+  .decisioni{margin:0 0 28px}
+  .decisioni h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+    color:var(--soft);margin:0 0 6px}
+  .premessa{color:var(--soft);font-size:14px;margin:0 0 14px;max-width:70ch}
+  .dec{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px 18px;margin:0 0 12px}
+  .dec h3{font-size:16px;font-weight:600;margin:0 0 6px}
+  .spiega{color:var(--soft);font-size:13.5px;margin:0 0 16px;max-width:74ch;line-height:1.55}
+  .spiega a{color:var(--acc);font-weight:600;white-space:nowrap}
+  .cur{display:grid;grid-template-columns:74px 1fr 250px;gap:6px 18px;align-items:center;
+    padding:12px 0;border-top:1px solid var(--line)}
+  .cur:first-child{border-top:0;padding-top:2px}
+  .cur .chi{font-weight:600;font-size:14px}
+  .cur .barra,.passo .barra{display:flex;flex-direction:column;gap:3px}
+  .cur input[type=range],.passo input[type=range]{width:100%;margin:0;accent-color:var(--su)}
+  .cur .estremi,.passo .estremi{display:flex;justify-content:space-between;gap:18px;
+    font-size:11px;color:var(--tenue)}
+  .passo .ora{font-size:13px;color:var(--soft);text-align:center;
+    font-variant-numeric:tabular-nums}
+  .passo .ora b{font-size:15px;color:var(--ink)}
+  .passo .ora i,.cur .ora i{display:block;font-style:normal;font-size:11px;color:var(--tenue);
+    margin-top:1px;line-height:1.35}
+  .cur .esito{text-align:right;font-variant-numeric:tabular-nums;font-size:14px;line-height:1.4}
+  .cur .esito b{font-size:15px}
+  .cur .esito i{display:block;font-style:normal;font-size:12px;color:var(--tenue)}
+  .cur .esito i.forte{color:var(--su);font-weight:600;margin-top:4px}
+  .cur .ora{font-size:13px;color:var(--soft);text-align:center;font-variant-numeric:tabular-nums}
+  .cur .ora b{font-size:15px;color:var(--ink)}
+  .cur .ora i{display:block;font-style:normal;font-size:11px;color:var(--tenue);
+    margin-top:1px;line-height:1.35}
+  .picco{font-size:12px;color:var(--su);margin:5px 0 0;line-height:1.45}
+  .picco.piu{color:var(--soft)}
+  .picco.piu b{color:var(--su)}
+  .picco:empty{display:none}
+  .spiega.regole{margin:2px 0 18px;padding:11px 14px;background:#f6f7f5;border:1px solid var(--line);
+    border-radius:9px}
+  /* I due pulsanti del cursore stanno in riga e vanno a capo se non ci stanno. Il margine sta
+     sui pulsanti e non sul contenitore: quando sono nascosti tutti e due, la riga non deve
+     lasciare uno spazio vuoto sotto al cursore. */
+  .bottoni{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+  .torna{align-self:flex-start;margin:7px 0 0;padding:5px 11px;font:inherit;font-size:12px;
+    color:var(--soft);background:#fff;border:1px solid var(--line);border-radius:7px;
+    cursor:pointer}
+  .torna:hover{border-color:var(--su);color:var(--su)}
+  /* --- «come esce il fondo»: tre passi in fila, uno sotto l'altro --- */
+  .fondoP{border-top:1px solid var(--line);padding:14px 0 4px}
+  .fondoP:first-child{border-top:0;padding-top:2px}
+  .fondoP .capo{font-size:13.5px;color:var(--soft);line-height:1.5;margin:0 0 10px;
+    max-width:74ch}
+  .fondoP .capo b:first-child{color:var(--ink);font-size:15px;margin-right:8px}
+  .passo{display:grid;grid-template-columns:74px 1fr 250px;gap:6px 18px;align-items:center;
+    padding:8px 0}
+  .passo .np{grid-column:1;grid-row:1/4;align-self:center;
+    width:22px;height:22px;border-radius:50%;background:var(--su);color:#fff;
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;
+    margin-left:auto}
+  .passo .pt{grid-column:2;font-size:12px;font-weight:600;text-transform:uppercase;
+    letter-spacing:.07em;color:var(--tenue);margin-bottom:2px}
+  .passo .barra,.passo .esito{grid-column:2}
+  .passo .esito{grid-column:3;grid-row:2/4;text-align:right;font-variant-numeric:tabular-nums;
+    font-size:14px;line-height:1.4}
+  .passo .esito b{font-size:15px}
+  .passo .esito i{display:block;font-style:normal;font-size:12px;color:var(--tenue)}
+  .scambio{font-size:12.5px;color:var(--soft);margin:10px 0 0;line-height:1.55;max-width:74ch}
+  .scambio b{color:var(--ink)}
+  .scelte button u{display:block;text-decoration:none;font-size:10px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.07em;color:var(--su)}
+  .scelte{display:flex;gap:8px;flex-wrap:wrap}
+  .scelte button{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--ink);
+    font-variant-numeric:tabular-nums;text-align:left}
+  .scelte button.attiva{border-color:var(--su);background:#f1f6f2;font-weight:600}
+  .scelte button[disabled]{opacity:.45;cursor:not-allowed}
+  .scelte button i{display:block;font-style:normal;font-size:11.5px;color:var(--tenue)}
+
+  /* --- caselle --- */
+  fieldset{border:1px solid var(--line);border-radius:10px;background:var(--card);
+    margin:0 0 14px;padding:6px 18px 18px}
+  legend{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
+    color:var(--soft);padding:0 8px}
+  .caselle{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 20px}
+  label{display:block;font-size:13px;color:var(--soft);margin:0 0 4px}
+  input,select{width:100%;font:inherit;font-variant-numeric:tabular-nums;
+    padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+  input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
+
+  /* --- le due colonne, una per persona ---------------------------------
+     Tre colonne fisse: etichetta | persona | persona. I valori che la pagina
+     ricava stanno SOTTO la casella che li genera, non in una riga a parte. */
+  .due{display:grid;grid-template-columns:minmax(0,1fr) 134px 134px;gap:9px 14px;
+    align-items:start;max-width:566px}
+  .due .voce{font-size:13.5px;color:var(--soft);line-height:1.35;padding-top:10px}
+  .due .voce b{color:var(--ink);font-weight:600}
+  .due .voce.totale{padding-top:2px;font-weight:600;color:var(--ink)}
+  .cella{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .cella input,.cella select{width:100%;text-align:right}
+  .cella select{text-align:left;padding-right:4px}
+  .cella input[type=text]{text-align:left}
+  .cella .hint,.caselle .hint{display:block;text-decoration:none;font-style:normal;font-size:11px;
+    color:var(--tenue);text-align:right;font-variant-numeric:tabular-nums;line-height:1.3;
+    padding:1px 2px 0}
+  .cella .somma{display:block;text-align:right;font-size:15px;font-variant-numeric:tabular-nums;
+    padding:4px 2px 0}
+  .cella .somma.grande{font-size:17px}
+  .due .voce.totale u{display:block;text-decoration:none;font-weight:400;font-size:11.5px;
+    color:var(--tenue);text-transform:none;letter-spacing:0;margin-top:1px}
+  .somma-sep{grid-column:1/-1;height:1px;background:var(--line);margin:5px 0 1px}
+  /* i separatori diventano titoletti: dicono anche di cosa si sta parlando */
+  .gruppo{grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--tenue);margin:16px 0 0;padding-bottom:7px;
+    border-bottom:1px solid var(--line)}
+  .gruppo.largo{max-width:none;margin:22px 0 6px}
+  /* una persona sola: la seconda colonna non si nasconde con un display:none sparso,
+     si spegne in un punto solo e la griglia si ristringe di conseguenza */
+  .solo-uno .due{grid-template-columns:minmax(0,1fr) 134px;max-width:432px}
+  .solo-uno .p2{display:none}
+  .solo-uno .gruppo.largo{max-width:432px}
+  .solo-uno .somma-sep,.solo-uno .riga-sep{grid-column:1/3}
+  /* il titoletto porta con sé dove trovare le cifre e il rimando alla pagina */
+  .gruppo span{display:block;font-size:12px;font-weight:400;text-transform:none;
+    letter-spacing:0;color:var(--soft);margin-top:5px;line-height:1.5}
+  .gruppo a{color:var(--acc);font-weight:600;white-space:nowrap}
+  /* l'avviso non c'è, finché non serve a chi lo sta leggendo */
+  .avviso{max-width:566px;margin:12px 0 0;padding:11px 14px;background:#fbf1ee;
+    border:1px solid #e8cfc8;border-left:3px solid var(--giu);border-radius:0 8px 8px 0;
+    font-size:13px;line-height:1.55;color:var(--soft)}
+  .avviso b{color:var(--ink)}
+  /* un avviso che sta DENTRO la griglia delle caselle, accanto alla casella che lo provoca.
+     `.due` ha i contenuti a gruppi di tre: un elemento che non occupi tutta la riga sfalserebbe
+     ogni cella successiva, e non sarebbe un problema di stile ma di aritmetica della griglia. */
+  .avviso.riga-piena{grid-column:1/-1;max-width:none;margin:14px 0 4px}
+  /* le caselle che il piano non usa restano leggibili, ma si vede che non sono in gioco */
+  .due input:disabled,.due select:disabled{background:#f4f4f2;color:var(--tenue);
+    border-color:var(--line);cursor:not-allowed}
+  /* QUANDO IL PIANO NON HA NESSUN ESERCIZIO DI ATTIVITÀ le righe del lavoro e del fondo non si
+     limitano a essere inutili: portano con sé le proprie ISTRUZIONI, e restare a dire «chi non
+     versa scrive 0» sopra una casella che non si può scrivere è peggio dell'assenza. Si spengono
+     come si spegne la seconda persona: una classe sola sul body.
+     `.rigalav` si mette sulla sola etichetta e il selettore porta via le due celle che la
+     seguono: si tolgono così righe INTERE da una griglia a gruppi di tre, che è l'unico modo di
+     non sfalsare tutto quello che viene dopo. Gli elementi che occupano già la riga per intero
+     (i titoletti, i separatori) la portano da sé. */
+  .senza-lavoro .rigalav,
+  .senza-lavoro .rigalav + .cella,
+  .senza-lavoro .rigalav + .cella + .cella{display:none}
+  /* nell'area del risultato la colonna non è quella del modulo: la misura di lettura
+     la detta il testo, non la griglia delle caselle */
+  #lasciato{max-width:66ch;margin:14px 0 0;font-size:14px}
+
+  .nota{color:var(--soft);font-size:13px;margin:14px 0 0;line-height:1.5}
+  .nota a{color:var(--acc);font-weight:600}
+  .perimetro{font-size:13px;line-height:1.6;color:var(--soft);max-width:74ch;margin:0 0 26px;
+    padding:12px 15px;background:#f6f7f5;border:1px solid var(--line);border-radius:9px}
+  .avvertenza{margin:26px 0 0;padding:13px 16px;background:var(--card);
+    border:1px solid var(--line);border-left:3px solid var(--giu);border-radius:0 9px 9px 0;
+    font-size:13px;line-height:1.6;color:var(--soft);max-width:74ch}
+  .avvertenza b{color:var(--ink)}
+  .avvertenza a{color:var(--acc);font-weight:600}
+  /* il piè di pagina è condiviso con le pagine di contenuto */
+  .pie{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);
+    font-size:12.5px;line-height:1.6;color:var(--tenue)}
+  .pie p{margin:0 0 10px;max-width:78ch}
+  .pie b{color:var(--soft)}
+  .pie a{color:var(--soft)}
+  .pie-nav{font-size:13px}
+  .pie-nav a{color:var(--acc);white-space:nowrap}
+  .scelta{font-size:13px;color:var(--soft);margin:14px 0 0;display:flex;gap:16px;flex-wrap:wrap}
+  .scelta label{display:inline-flex;align-items:center;gap:5px;margin:0;cursor:pointer}
+  .scelta input{width:auto;margin:0}
+  .calcolato{margin:16px 0 0;padding:11px 14px;background:#f3f5f2;border-radius:8px;font-size:14px}
+  /* col fondino grigio, un riquadro senza testo è una barra vuota: sul modulo appena aperto
+     ce n'erano tre. Si spegne da sé quando non ha niente da dire. */
+  .calcolato:empty{display:none}
+  .salvataggio{display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    color:var(--tenue);font-size:13px;margin:22px 0 0;padding:0 4px}
+  .salvataggio button{font:inherit;color:var(--soft);background:none;cursor:pointer;
+    border:1px solid var(--line);border-radius:7px;padding:5px 11px}
+  .salvataggio button:hover{border-color:var(--tenue);color:var(--ink)}
+
+  details{background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:14px 18px;margin:0 0 14px}
+  summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--soft)}
+  .scorre{overflow-x:auto;margin-top:14px;max-height:560px}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th,td{padding:4px 7px;text-align:right;white-space:nowrap}
+  td.anno u{text-decoration:none;color:var(--tenue);font-size:11px;margin-left:5px}
+  th{font-weight:600;color:var(--tenue);position:sticky;top:0;background:var(--card);
+    border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  th:first-child,td:first-child{text-align:left}
+  td{border-bottom:1px solid #f2f0ea}
+  td.vuoto{color:#c9c4b8}
+  tr.pens td{background:#f6f8f6}
+
+  /* ------------------------------------------------------------------ LA STAMPA
+     Un calcolatore stampato non è più un calcolatore: è un documento. Quindi spariscono i
+     comandi (cursori, pulsanti, il sommario appiccicato in alto, il tasto che azzera) e resta
+     quello che si legge — compreso il dettaglio anno per anno, che sullo schermo sta chiuso ma
+     su carta è la parte verificabile. I riquadri non si spezzano a metà fra due pagine. */
+  /* ====================================================================
+     SCHERMI STRETTI. La soglia è 600 px e non è arbitraria: la griglia a tre colonne chiede
+     un'etichetta più 134+134 px più i vuoti, cioè circa 490 px, e sotto i 530 di larghezza
+     utile le caselle escono dallo schermo. Sopra i 600 le tre colonne stanno comode.
+
+     Fino al 01/08/2026 non c'era nessuna media query se non
+     quella di stampa: a 390 px le caselle uscivano dallo schermo tagliate, e
+     il modulo non si poteva compilare. Metà di chi arriva da una ricerca
+     arriva da un telefono, quindi non era un dettaglio di rifinitura.
+
+     LA SCELTA: sotto la soglia la seconda persona non sta ACCANTO alla prima
+     ma SOTTO. Affiancare due colonne da 134 px su 350 px disponibili si può
+     fare, ma si perde il riferimento di chi sia chi appena si scorre: ogni
+     casella porta allora il nome della propria persona, che il calcolo
+     scrive in `data-chi`.
+     ==================================================================== */
+  @media (max-width: 600px){
+    .pagina{padding:22px 14px 60px}
+
+    /* la griglia a tre colonne diventa un elenco: etichetta, poi una casella
+       per persona, ciascuna col proprio nome */
+    .due{grid-template-columns:1fr; max-width:none; gap:0}
+    .due .voce{padding:14px 0 4px}
+    .due .voce.totale{padding-top:12px}
+    .cella{margin-bottom:8px}
+    .cella input,.cella select,.cella .somma,.cella .hint{text-align:left}
+    .cella .hint{padding-left:0}
+    /* il nome della persona sopra la sua casella: senza, scorrendo non si sa
+       più a chi appartenga il campo che si sta compilando */
+    .due .cella[data-chi]::before{content:attr(data-chi);display:block;
+      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+      color:var(--tenue);margin:0 0 3px}
+    .solo-uno .due{grid-template-columns:1fr}
+    .solo-uno .due .cella[data-chi]::before{content:none}
+    .gruppo.largo,.solo-uno .gruppo.largo{max-width:none}
+
+    /* le fasi: quattro colonne fisse per 440 px non stanno in 350. Diventano due righe,
+       col periodo e la descrizione sopra e i due importi sotto */
+    .fase{grid-template-columns:1fr auto; gap:2px 12px; padding:12px 0}
+    .fase .cosa{grid-column:1/-1; font-size:14px}
+    .fase .flusso{text-align:left}
+
+    /* i cursori: numero e titolo sopra, cursore e esito sotto, tutto a piena riga */
+    .cur,.passo{grid-template-columns:1fr; gap:4px}
+    .cur .chi{padding-top:6px}
+    .cur .esito,.passo .esito{text-align:left}
+    .passo .np{grid-column:1;grid-row:auto;margin-left:0}
+    .passo .pt,.passo .barra,.passo .esito{grid-column:1;grid-row:auto}
+
+    /* i riquadri respirano meno, e il testo lungo non ha bisogno di misure */
+    fieldset{padding:4px 12px 14px}
+    .risposta{font-size:26px;line-height:1.2}
+    .scambio,.fondoP .capo,#lasciato{max-width:none}
+    /* la riga appiccicata in alto occupa due righe su schermo stretto:
+       meglio lasciarla scorrere che coprire mezzo schermo */
+    .sommario{padding:7px 14px;font-size:12px}
+  }
+
+  /* sotto i 380 px anche le due colonne delle ipotesi vanno in fila, e i rimandi alle pagine
+     smettono di pretendere una riga intera: su 320 px un link che non va a capo fa scorrere
+     tutta la pagina di lato, che è il difetto peggiore su un telefono */
+  @media (max-width: 380px){
+    .caselle{grid-template-columns:1fr}
+    /* TUTTI i rimandi, non solo quelli dei titoletti: il colpevole a 320 px era il link
+       dentro `.spiega`, e cercarli uno a uno vuol dire trovarne un altro alla prossima frase */
+    .gruppo a,.voce a,.spiega a,.pie-nav a{white-space:normal}
+  }
+
+  @media print {
+    :root{--bg:#fff}
+    body{background:#fff}
+    .pagina{max-width:none;padding:0}
+    .sommario,input[type=range],.bottoni,#azzera,.estremi,.scelte{display:none !important}
+    /* Le sezioni che sullo schermo si aprono con un clic, su carta devono essere già aperte.
+       QUESTA REGOLA DA SOLA NON BASTA, e per mesi si è creduto di sì: un <details> chiuso
+       nasconde il contenuto con un meccanismo interno del browser, non con un `display` sui
+       figli. Il titolo si stampava (un summary è sempre visibile), ma il contenuto no: la
+       tabella anno per anno, che su carta è la parte verificabile, mancava. Ad aprirlo è
+       `beforeprint`, qui sotto resta il fondino. Verificato sul PDF, non per convinzione. */
+    details > *{display:block !important}
+    details{background:#fff}
+    summary{list-style:none;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+    .scorre{overflow:visible;max-height:none}
+    th{position:static}
+    /* niente riquadri tagliati a metà, e niente titoli orfani in fondo alla pagina */
+    .dec,.fondoP,.passo,.cur,.fase,.chiave,.grafico,fieldset,table{break-inside:avoid}
+    h1,h2,h3,legend{break-after:avoid}
+    /* il grafico è la sintesi del piano: senza colori non dice niente */
+    .grafico,.grafico svg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    /* i valori scritti nelle caselle devono restare leggibili, il bordo non serve */
+    input,select{border-color:#ccc !important;background:#fff !important}
+    a{text-decoration:none;color:inherit}
+  }
+  tr.rossa td{color:var(--giu)}
+  tr.evento td{background:var(--bg);color:var(--acc);text-align:left;font-size:12px;
+    padding:7px 9px 6px;border-bottom:1px solid var(--line);white-space:normal;line-height:1.45}
+</style>
+</head>
+<body>
+<!-- IL SOMMARIO, E PERCHÉ ORA SI CLICCA. La pagina è lunga sette schermate, ma le sezioni sono
+     tutte vicine fra loro: l'unico salto lungo è tornare al risultato dal modulo o dalle scelte.
+     Un indice nel margine servirebbe solo sopra i 1400 px, e occuperebbe un secondo canale fisso
+     accanto a questo. Meglio rendere cliccabile quello che c'è già.
+     Il TESTO resta aria-hidden, perché duplica quello che sta scritto più sotto; il link porta
+     la propria etichetta, così per un lettore di schermo è una voce sola e sensata. -->
+<a class="sommario" id="sommario" href="#risultato" hidden aria-label="Torna al risultato"
+   ><span class="riga-somm" id="sommarioRiga" aria-hidden="true"></span></a>
+
+<div class="pagina">
+
+<h1 id="cima">Decumulo</h1>
+<!-- «dalla fine del lavoro» era inesatto anche prima: la proiezione parte dall'anno in corso e
+     comprende gli esercizi di attività, che sono quelli su cui incidono le due decisioni. Per
+     chi è già in pensione era per giunta una data che non esiste nel suo piano. -->
+<p class="occhiello">Proiezione del patrimonio di una o due persone dall'anno in corso fino
+all'età indicata: trattamento INPS, fondo pensione, TFR e risparmi, esercizio per esercizio, in
+euro di oggi. I dati inseriti restano nel browser.</p>
+
+<p class="perimetro"><b>Il calcolo è costruito sul rapporto di lavoro dipendente privato</b>:
+TFR, contribuzione a un fondo negoziale e contributo del datore di lavoro. Non si applica ai
+lavoratori autonomi né ai dipendenti pubblici, per i quali il trattamento di fine servizio segue
+regole diverse. <b>La limitazione riguarda gli esercizi di attività</b>: indicando una decorrenza
+già trascorsa il calcolo non richiede alcun dato di lavoro, e il fondo pensione non vi è
+rappresentato. <b>Non rappresenta chi percepisce già una rendita da un fondo pensione</b>: quel
+reddito ha una tassazione propria, diversa da quella di ogni casella qui sotto. La prestazione del
+fondo è rappresentata nelle due forme finora previste, capitale e rendita vitalizia:
+<a href="come-prendere-il-fondo.html">dal 1° luglio 2026 la legge ne ammette altre</a>, che il
+conto non quantifica.</p>
+
+<h2 class="sezione">I dati</h2>
+
+<!-- QUANTO BASTA DAVVERO. Il modulo ha molte caselle, ma il verdetto esce alla terza: chi arriva
+     non ha modo di saperlo e vede un questionario. Dirlo prima è la differenza fra un modulo che
+     si comincia e uno che si chiude. Le tre caselle sono quelle controllate in `calc()`. -->
+<!-- La frase la scrive `calc()`: quante caselle servono dipende da quante persone riguarda il
+     piano, e l'elenco dev'essere lo STESSO che la guardia controlla. Scritta a mano diceva
+     «tre dati», e il verdetto usciva senza patrimonio né entrate. Il link resta qui fuori
+     perché il build gli aggiunge da sé l'apertura in una scheda nuova. -->
+<p class="vuoto-avviso"><span id="bastano"></span>
+<a href="dove-trovare-i-numeri.html">Dove si ricava ciascun dato →</a></p>
+
+<!-- L'ORDINE DEI RIQUADRI NON È CASUALE: prima quello che si sa (le persone, quello che c'è),
+     poi quello che si sceglie (le ipotesi, che hanno già un valore di partenza). Prima era il
+     contrario, e la prima casella che incontrava chi arrivava era una previsione. -->
+<fieldset>
+  <legend>Le persone</legend>
+  <div class="due">
+    <div class="voce">Il piano riguarda</div>
+    <div class="cella"><select id="quanti">
+      <option value="1">una persona</option>
+      <option value="2">due persone</option></select></div>
+    <div class="cella p2"></div>
+
+    <div class="voce">Nome</div>
+    <div class="cella"><input type="text" id="nome0" value="" placeholder="il primo" maxlength="14"></div>
+    <div class="cella p2"><input type="text" id="nome1" value="" placeholder="il secondo" maxlength="14"></div>
+
+    <div class="voce">Anno di nascita</div>
+    <div class="cella"><input type="number" id="nascita0" min="1900" max="2026" value="" step="1"></div>
+    <div class="cella p2"><input type="number" id="nascita1" min="1900" max="2026" value="" step="1"></div>
+
+    <div class="voce rigalav">Retribuzione netta mensile</div>
+    <div class="cella"><input type="number" id="stip0" min="0" max="100000" value="" step="50"></div>
+    <div class="cella p2"><input type="number" id="stip1" min="0" max="100000" value="" step="50"></div>
+
+    <div class="voce rigalav">Retribuzione annua <b>lorda</b></div>
+    <div class="cella"><input type="number" id="ral0" min="0" max="10000000" value="" step="1000"></div>
+    <div class="cella p2"><input type="number" id="ral1" min="0" max="10000000" value="" step="1000"></div>
+
+    <div class="voce rigalav">Crescita annua della retribuzione</div>
+    <div class="cella"><input type="number" id="cresc0" min="-50" max="50" value="" step="0.1"
+        placeholder="facoltativo">
+      <u class="hint" id="crescReale0">&nbsp;</u></div>
+    <div class="cella p2"><input type="number" id="cresc1" min="-50" max="50" value="" step="0.1"
+        placeholder="facoltativo">
+      <u class="hint" id="crescReale1">&nbsp;</u></div>
+
+    <!-- Vuoto significa «fino alla propria pensione»: il caso base. Chi smette prima lo scrive,
+         ed è lì che si apre il buco fra la fine del lavoro e la decorrenza del trattamento. -->
+    <div class="voce rigalav">Ultimo anno di lavoro</div>
+    <div class="cella"><input type="number" id="ultimo0" min="1900" max="2106" value="" step="1"
+        placeholder="alla pensione">
+      <u class="hint" id="ultimoNota0">&nbsp;</u></div>
+    <div class="cella p2"><input type="number" id="ultimo1" min="1900" max="2106" value="" step="1"
+        placeholder="alla pensione">
+      <u class="hint" id="ultimoNota1">&nbsp;</u></div>
+
+    <div class="gruppo">La pensione INPS
+    <!-- L'ISTRUZIONE VALE PER CHI IL TRATTAMENTO LO ASPETTA. Chi lo percepisce già non ha
+         niente da simulare, e mandarlo a «La mia pensione futura» sarebbe mandarlo dove non
+         troverà il proprio dato. Regola del progetto: un'istruzione va provata sul caso che
+         descrive, e questa ne descriveva uno solo. -->
+    <span>Chi lo percepisce già trascrive l'importo <b>lordo</b> del cedolino e l'anno di
+    decorrenza effettivo. Per gli altri importo e data si trovano sul sito INPS, in
+    <b>«La mia pensione futura»</b>: il simulatore dà l'importo <b>lordo</b> e <b>in euro di
+    oggi</b>, ed è quello che va scritto qui, senza rivalutarlo.</span>
+    </div>
+
+    <div class="voce">Importo mensile <b>lordo</b></div>
+    <div class="cella"><input type="number" id="pens0" min="0" max="1000000" value="" step="50">
+      <u class="hint" id="pensNetta0">&nbsp;</u></div>
+    <div class="cella p2"><input type="number" id="pens1" min="0" max="1000000" value="" step="50">
+      <u class="hint" id="pensNetta1">&nbsp;</u></div>
+
+    <div class="voce">Anno di decorrenza</div>
+    <div class="cella"><input type="number" id="annoPens0" min="1900" max="2106" value="" step="1"></div>
+    <div class="cella p2"><input type="number" id="annoPens1" min="1900" max="2106" value="" step="1"></div>
+
+    <!-- L'AVVISO STA ACCANTO ALLA CASELLA CHE LO PROVOCA, ed è una reazione: compare solo a chi
+         ha scritto una decorrenza già trascorsa. Da lì in giù una parte del modulo non ha più
+         oggetto, e le caselle vengono disattivate invece che ignorate in silenzio. -->
+    <p class="avviso riga-piena" id="avvisoPensione" hidden></p>
+
+    <div class="gruppo rigalav">Il fondo pensione
+    <span>Senza fondo pensione il piano si calcola lo stesso: questo riquadro si lascia vuoto.
+    Con più posizioni si sommano le consistenze e si scrive l'anno di iscrizione più
+    remoto. La soglia del «tutto in contanti» si valuta però su ciascun fondo separatamente.
+    <a href="come-prendere-il-fondo.html">Come funziona la soglia →</a></span>
+    </div>
+
+    <!-- QUESTA CASELLA DECIDE SE LA QUOTA DELL'AZIENDA ESISTE, quindi sta prima di quella che
+         la chiede. Le etichette sono corte perché la colonna è stretta e un <select> tronca:
+         la spiegazione sta nella riga sotto, non dentro le opzioni. -->
+    <div class="voce rigalav">Tipo di fondo</div>
+    <div class="cella"><select id="tipoFondo0">
+      <option value="collettiva">di categoria</option>
+      <option value="individuale">aperto o PIP</option></select>
+      <u class="hint" id="tipoNota0">&nbsp;</u></div>
+    <div class="cella p2"><select id="tipoFondo1">
+      <option value="collettiva">di categoria</option>
+      <option value="individuale">aperto o PIP</option></select>
+      <u class="hint" id="tipoNota1">&nbsp;</u></div>
+
+    <div class="voce rigalav">Consistenza attuale</div>
+    <div class="cella"><input type="number" id="fondo0" min="0" max="100000000" value="" step="1000"></div>
+    <div class="cella p2"><input type="number" id="fondo1" min="0" max="100000000" value="" step="1000"></div>
+
+    <div class="voce rigalav">Anno di iscrizione</div>
+    <div class="cella"><input type="number" id="iscr0" min="1900" max="2106" value="" step="1"></div>
+    <div class="cella p2"><input type="number" id="iscr1" min="1900" max="2106" value="" step="1"></div>
+
+  </div>
+
+  <div class="gruppo largo rigalav">Quanto ci entra ogni anno
+  <span>Sul CCNL o sull'estratto conto del fondo sono righe separate, e <b>chi non versa
+  scrive 0</b>: lasciare la casella vuota vuol dire «non l'ho ancora compilata». La quota del
+  datore discende dal contratto collettivo e segue il fondo che il contratto individua: chi ha
+  sottoscritto per conto proprio un fondo aperto o un PIP di norma non la percepisce.
+  <a href="contributo-datore.html">Come funziona il contributo del datore →</a></span>
+</div>
+  <div class="due">
+    <div class="voce rigalav">Contributo a <b>carico del lavoratore</b>,<br>in % della RAL</div>
+    <div class="cella"><input type="number" id="pcVoi0" min="0" max="100" value="" step="0.1" placeholder="es. 1,2">
+      <u class="hint" id="pcVoiEuro0">&nbsp;</u></div>
+    <div class="cella p2"><input type="number" id="pcVoi1" min="0" max="100" value="" step="0.1" placeholder="es. 1,2">
+      <u class="hint" id="pcVoiEuro1">&nbsp;</u></div>
+
+    <div class="voce rigalav">Contributo del <b>datore</b> che ne consegue,<br>in % della RAL</div>
+    <div class="cella"><input type="number" id="pcDat0" min="0" max="100" value="" step="0.1" placeholder="es. 2,0">
+      <u class="hint" id="pcDatEuro0">&nbsp;</u></div>
+    <div class="cella p2"><input type="number" id="pcDat1" min="0" max="100" value="" step="0.1" placeholder="es. 2,0">
+      <u class="hint" id="pcDatEuro1">&nbsp;</u></div>
+
+    <div class="somma-sep rigalav"></div>
+
+    <div class="voce totale rigalav">Contributi <u>rilevanti ai fini del limite di deducibilità</u></div>
+    <div class="cella"><b class="somma" id="contrEuro0">—</b>
+      <u class="hint" id="restaTetto0">&nbsp;</u></div>
+    <div class="cella p2"><b class="somma" id="contrEuro1">—</b>
+      <u class="hint" id="restaTetto1">&nbsp;</u></div>
+
+    <div class="somma-sep rigalav"></div>
+
+    <div class="voce rigalav">Destinazione del <b>TFR</b><br>
+      <a class="mini" href="tfr-fondo-o-azienda.html">fondo o azienda →</a></div>
+    <div class="cella"><select id="tfrDove0"><option value="fondo">nel fondo</option>
+      <option value="azienda">in azienda</option></select>
+      <u class="hint" id="tfrAnno0">&nbsp;</u></div>
+    <div class="cella p2"><select id="tfrDove1"><option value="fondo">nel fondo</option>
+      <option value="azienda">in azienda</option></select>
+      <u class="hint" id="tfrAnno1">&nbsp;</u></div>
+
+    <div class="somma-sep rigalav"></div>
+
+    <div class="voce totale rigalav">Totale affluito al fondo</div>
+    <div class="cella"><b class="somma grande" id="totFondo0">—</b></div>
+    <div class="cella p2"><b class="somma grande" id="totFondo1">—</b></div>
+    </div>
+
+  <p class="avviso" id="avvisoDatore" hidden></p>
+
+  <!-- Non sono fatti da scrivere ma decisioni: si prendono coi cursori qui sopra.
+       Restano qui perché è da questi che leggono il modello e il salvataggio. -->
+  <input type="hidden" id="rita0" value="0"><input type="hidden" id="rita1" value="0">
+  <input type="hidden" id="pc0" value=""><input type="hidden" id="pc1" value="">
+  <!-- SI PARTE DALLA RENDITA, e per tutti e due uguale. Non è una preferenza: è il caso base
+       della legge (art. 11 c. 3: la prestazione È erogata in rendita, il capitale si RICHIEDE).
+       Qui c'erano 0,6 e 1 — le scelte di due persone vere, rimaste dalla pagina privata: la
+       pagina si apriva con la scelta già fatta, al massimo, in una sezione che dichiara di non
+       indicare un ottimo. E quella scelta decideva di nascosto anche il punto più alto della
+       contribuzione, che si sposta parecchio a seconda di come il fondo verrà riscosso. -->
+  <input type="hidden" id="quotaCap0" value="0"><input type="hidden" id="quotaCap1" value="0">
+  <input type="hidden" id="forma0" value="vita"><input type="hidden" id="forma1" value="vita">
+
+  <p class="calcolato" id="regola"></p>
+
+  <p class="calcolato" id="quandoSmettete"></p>
+</fieldset>
+
+<fieldset>
+  <legend>Quello che c'è oggi</legend>
+  <div class="caselle">
+    <div><label for="patrimonio">Patrimonio investito</label>
+      <input type="number" id="patrimonio" min="0" max="10000000000" value="" step="1000">
+      <u class="hint">quello che rende ed è disponibile: non l'abitazione</u></div>
+    <div><label for="spesa">Spesa mensile, oggi</label>
+      <input type="number" id="spesa" min="0" max="10000000" value="" step="50">
+      <u class="hint">quanto esce ogni mese, tutto compreso</u></div>
+    <div><label for="spesaPens">Spesa mensile in pensione</label>
+      <input type="number" id="spesaPens" min="0" max="10000000" value="" step="50" placeholder="uguale a oggi">
+      <u class="hint" id="spesaPensNota">se resta vuota, il conto tiene la stessa di adesso</u></div>
+  </div>
+  <p class="calcolato" id="calcolato"></p>
+  <p class="nota">Tutti i risultati sono in <b>euro di oggi</b>, confrontabili con la spesa
+  attuale. Le due spese restano ferme dentro la loro fase: il conto passa dalla prima alla
+  seconda l'anno in cui si smette di lavorare.</p>
+</fieldset>
+
+<fieldset>
+  <legend>Le ipotesi</legend>
+  <div class="caselle">
+    <div><label for="rend">Rendimento degli investimenti</label>
+      <input type="number" id="rend" min="-50" max="100" value="4" step="0.1"></div>
+    <div><label for="rendFondo">Rendimento del comparto del fondo</label>
+      <input type="number" id="rendFondo" min="-50" max="100" value="3" step="0.1"></div>
+    <div><label for="infl">Inflazione</label>
+      <input type="number" id="infl" min="-50" max="100" value="2" step="0.1"></div>
+    <div><label for="etaFine">Orizzonte del piano, in anni di età</label>
+      <input type="number" id="etaFine" min="0" max="120" value="95" step="1">
+      <!-- annoFine = max(nascita) + etaFine: il piano si ferma quando la persona più giovane
+           compie questa età. Con due date di nascita diverse non è indifferente, e va detto. -->
+      <u class="hint">il piano si ferma quando il più giovane compie questa età</u></div>
+  </div>
+  <!-- «Lordo» da solo non basta, e su questa casella cambia il risultato: sui rendimenti del
+       patrimonio il conto non applica alcuna imposta, quindi il numero va scritto già netto.
+       Chi scrive il lordo d'imposta sovrastima di più di un punto l'anno. -->
+  <p class="nota">Tutti e due i rendimenti si scrivono <b>al netto delle imposte</b> e <b>al
+  lordo dell'inflazione</b>: il conto toglie l'inflazione, <span id="reali"></span>.</p>
+  <p class="nota" id="confrontoRend">&nbsp;</p>
+  <p class="nota">Alla riscossione il fondo sconta un'imposta agevolata:
+  <b>{{aliqFondoMax}}, che scende di {{aliqFondoPunti}} punti per ogni anno di iscrizione oltre
+  il quindicesimo, fino a un minimo del {{aliqFondoMin}}</b>:
+  per questo conta l'anno di
+  iscrizione.</p>
+</fieldset>
+
+
+<h2 class="sezione" id="risultato">Il risultato</h2>
+<p class="vuoto-avviso" id="vuoto" hidden>Il risultato si aggiorna a ogni dato inserito.</p>
+<p class="risposta" id="titolo">&nbsp;</p>
+<p class="sotto" id="sottotitolo">&nbsp;</p>
+<!-- Il verdetto nasce da una traiettoria sola. Questa riga dice quanto dipende dall'ORDINE in
+     cui arrivano i rendimenti, che una traiettoria sola non può mostrare. Nessuna classe nuova:
+     `.nota` esiste già, e un nome in più è un nome che può collidere. -->
+<p class="nota" id="tenuta"></p>
+<!-- IL CONTRIBUTO DELL'AZIENDA CHE NON ARRIVA. È il numero più azionabile del sito e stava in
+     fondo, nella sezione delle decisioni, dove chi legge il verdetto non arriva. Qui sta il
+     FATTO (quanto non entra); la decisione, col cursore e il costo, resta dov'era. -->
+<p class="nota" id="superstite"></p>
+<p class="avviso" id="lasciato" hidden></p>
+
+<div class="grafico">
+  <svg id="svg" viewBox="0 0 880 330" role="img" aria-label="Il patrimonio anno per anno"></svg>
+</div>
+<p class="legenda">
+  <span><i class="chip" style="background:#cfe0d6"></i> il patrimonio investito</span>
+  <span><i class="chip" style="background:#dfe6ef"></i> i fondi pensione, non ancora riscossi</span>
+</p>
+<p class="nota inflazione" id="inflazione">&nbsp;</p>
+
+<div class="fasi">
+  <h2>Sviluppo del piano</h2>
+  <div id="fasi"></div>
+</div>
+
+<div class="decisioni" id="decisioni">
+  <h2>Le scelte da compiere</h2>
+  <p class="premessa">Due scelte che incidono sul risultato. Per la prima il calcolo individua un
+  ottimo, indicato sotto il cursore; per la seconda non è possibile, ed è spiegato il motivo.</p>
+
+  <div class="dec">
+    <h3 id="contribuzione">1. Entità della contribuzione</h3>
+    <p class="spiega"><b>Il contributo del datore è dovuto solo a fronte di quello del lavoratore</b>, e oltre
+    quella soglia non aumenta: la prima quota vale il contributo aziendale più la deduzione, la
+    parte eccedente vale la sola deduzione. Il cursore si arresta alla soglia di deducibilità o al limite dello stipendio netto, e indica
+    quale dei due. <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
+    <div id="decVersare"></div>
+  </div>
+
+  <div class="dec">
+    <h3>2. Modalità di erogazione del fondo</h3>
+    <p class="spiega"><b>Tre decisioni consecutive, e la prima condiziona le altre due</b>: quando
+    la prestazione inizia a essere erogata, quanto ne viene liquidato in capitale, in che forma
+    è convertita la parte residua. L'erogazione anticipata riduce il montante disponibile alla
+    pensione: un residuo contenuto è conseguenza di quella scelta.
+    <b>Il calcolo non indica un ottimo, ma dice a quali ipotesi la conclusione si rovescia</b>:
+    sotto quale rendimento del patrimonio la rendita torna a convenire, e di quanto quella
+    soglia si sposta se la vita è più lunga. Il metro è il patrimonio che resta alla fine,
+    quindi misura il lascito e non la protezione: la rendita per costruzione non lascia nulla,
+    e quello che il capitale non compra è un assegno che arriva comunque. Quanto la forma
+    dell'assegno protegga <b>chi resta</b> è quantificato accanto al risultato.
+    <a href="come-prendere-il-fondo.html">Perché, e come si sceglie →</a></p>
+    <div id="decFondo"></div>
+  </div>
+
+    <p class="spiega regole">I limiti applicabili sono documentati in due pagine:
+    <a href="rita.html">requisiti e tassazione dell'erogazione anticipata</a> e
+    <a href="come-prendere-il-fondo.html">limiti alla prestazione in capitale</a>.
+    Coi rendimenti indicati, <span id="doveRende"></span>.</p>
+</div>
+
+<details>
+  <summary>Anno per anno</summary>
+  <p class="scelta">Mostra gli importi in
+    <label><input type="radio" name="euro" id="euroOggi" checked> euro di oggi</label>
+    <label><input type="radio" name="euro" id="euroAllora"> euro di quell'anno</label>
+  </p>
+  <div class="scorre"><table id="tabella"></table></div>
+  <p class="nota">Importi <b>annui</b>; accanto all'anno, in corpo minore, l'età.
+  Ogni riga è verificabile manualmente: <i>consistenza precedente + rendimento + entrate −
+  spesa</i>. <a href="il-metodo.html">Metodo di calcolo →</a></p>
+</details>
+
+<p class="avvertenza"><b>Proiezione a fini informativi.</b> Non costituisce consulenza
+previdenziale, fiscale o in materia di investimenti. Il risultato dipende da ipotesi indicate da
+chi compila e da semplificazioni dichiarate, e alcuni parametri normativi non sono ancora
+verificati. <a href="il-metodo.html">Metodo di calcolo, ipotesi e limiti →</a></p>
+
+<!--@@INCLUDI _pie.html@@-->
+
+<p class="salvataggio">
+  <span id="statoSalvataggio"></span>
+  <button type="button" id="azzera">Rimetti i valori di partenza</button>
+</p>
+
+<script>
+let NOMI = ['il primo', 'il secondo'];   // i nomi li scrivono loro; questi sono i ripieghi
+// «di» + nome non si può comporre a pezzi in italiano: «di l'altro» non esiste. Ogni nome si
+// porta dietro la sua forma articolata, così le frasi restano scritte in italiano.
+let DI = ['del primo', 'del secondo'];
+
+// COEFFICIENTI DI CONVERSIONE: quanto paga all'anno, in rendita vitalizia, ogni euro convertito.
+// Crescono con l'età, e non di poco: chi converte a 60 anni prende quasi un terzo in meno di chi
+// converte a 70, perché l'assegno se lo prenderà per più anni. Tenere una costante sola sarebbe
+// giusto solo per chi va in pensione verso i 67 e sbagliato per tutti gli altri.
+//
+// MANUTENZIONE NOSTRA, non una casella: nessuno sa a memoria il coefficiente del proprio fondo,
+// e quasi nessuno ha voglia di andarselo a cercare. Non è nemmeno copiato da un fondo: viene
+// dalla speranza di vita ISTAT allungata di un margine (regole.mjs), e sta dentro le tavole vere
+// per costruzione — verifiche/tavole-dei-fondi.mjs lo controlla a ogni build.
+// BANDA_ALTA e BANDA_BASSA sono i due estremi misurati fra le convenzioni pubblicate: servono a
+// distinguere quello che vale per chiunque da quello che dipende dal fondo.
+//@@REGOLE@@
+
+
+// Il coefficiente di conversione cresce con l'età: chi converte a 60 anni prende quasi un terzo
+// in meno di chi converte a 70, perché l'assegno se lo prenderà per più anni. La tabella sta in
+// regole.mjs; qui c'è solo come si legge in mezzo a due righe.
+function coeffEta(eta){
+  const primo = COEFF_ETA[0], ultimo = COEFF_ETA[COEFF_ETA.length-1];
+  if (!(eta > primo[0])) return primo[1];
+  if (eta >= ultimo[0]) return ultimo[1];
+  for (let i = 1; i < COEFF_ETA.length; i++){
+    const [a1,c1] = COEFF_ETA[i-1], [a2,c2] = COEFF_ETA[i];
+    if (eta <= a2) return c1 + (c2-c1) * (eta-a1) / (a2-a1);
+  }
+  return ultimo[1];
+}
+
+// Gli anni che restano da vivere, secondo l'ISTAT, a una certa età. Stessa tavola da cui
+// escono i coefficienti, letta allo stesso modo: serve per dire a quale età è misurato il
+// confronto fra capitale e rendita, invece di sceglierla noi.
+function speranzaVita(eta){
+  const primo = SPERANZA_VITA[0], ultimo = SPERANZA_VITA[SPERANZA_VITA.length-1];
+  if (!(eta > primo[0])) return primo[1];
+  if (eta >= ultimo[0]) return ultimo[1];
+  for (let i = 1; i < SPERANZA_VITA.length; i++){
+    const [a1,v1] = SPERANZA_VITA[i-1], [a2,v2] = SPERANZA_VITA[i];
+    if (eta <= a2) return v1 + (v2-v1) * (eta-a1) / (a2-a1);
+  }
+  return ultimo[1];
+}
+
+// LA PENSIONE AI SUPERSTITI, e la riduzione che quasi nessuno si aspetta.
+// Al coniuge spetta il 60% della pensione del defunto, ma se ha redditi PROPRI elevati quella
+// quota viene tagliata del 25, 40 o 50% (Tabella F, art. 1 c. 41 L. 335/1995). Ignorarla
+// sovrastimerebbe chi resta, cioè sbaglierebbe nella direzione che questo conto rifiuta.
+//
+// I REDDITI CHE CONTANO sono quelli assoggettabili a IRPEF: la pensione propria e la
+// retribuzione. Restano fuori la rendita del fondo, che sconta un'imposta sostitutiva, e la
+// pensione ai superstiti stessa.
+//
+// LE DUE PROTEZIONI, senza le quali il conto costruirebbe un gradino che la legge non ha:
+//  · la salvaguardia di legge — superata una soglia, il totale (redditi + pensione ridotta) non
+//    può risultare inferiore a quello del limite massimo della fascia precedente. Senza, un euro
+//    di reddito in più ne farebbe perdere centinaia;
+//  · Corte costituzionale 162/2022 — la riduzione non può eccedere l'ammontare dei redditi
+//    che l'hanno provocata.
+function aiSuperstiti(lordaDefunto, redditiPropri){
+  const piena = Math.max(0, lordaDefunto) * REVERSIBILITA;
+  if (!(piena > 0)) return 0;
+  const R = Math.max(0, redditiPropri);
+  let taglio = 0, pavimento = 0, prima = 0;
+  for (const [volte, t] of CUMULO_SUPERSTITI){
+    const soglia = TRATT_MINIMO_ANNO * volte;
+    if (R > soglia){
+      // il pavimento vale per OGNI soglia superata, non solo per l'ultima: si tiene il più alto
+      pavimento = Math.max(pavimento, soglia + piena * (1 - prima) - R);
+      prima = t; taglio = t;
+    }
+  }
+  const ridotta = piena * (1 - taglio);
+  return Math.min(piena, Math.max(ridotta, pavimento, piena - R));
+}
+
+const soglia = coeff => (0.5 * ASSEGNO_SOCIALE) / (0.7 * coeff);
+const SOGLIA_TUTTO = soglia(COEFF_RENDITA);          // il riferimento a 67 anni
+const quotaMax = (montante, coeff) => montante < soglia(coeff || COEFF_RENDITA)
+  ? 1 : QUOTA_ORDINARIA;
+
+// --- quello che serve per rispondere a «quanto conviene versare nel fondo»
+
+// Il TFR lasciato in azienda si rivaluta dell'1,5% fisso più il 75% dell'inflazione
+// (art. 2120 c.c.), e su quella rivalutazione si paga il 17% di imposta sostitutiva ogni anno.
+
+// Tassazione separata della liquidazione (art. 19 TUIR): l'aliquota non è quella dell'ultimo
+// anno, è la media che si ottiene portando il TFR a «reddito di riferimento» — cioè dividendolo
+// per gli anni di servizio e moltiplicandolo per dodici. Con TFR piccoli o carriere lunghe è
+// molto più bassa dell'aliquota marginale, e va calcolata, non indovinata.
+function aliquotaTfr(totale, anni){
+  const rif = anni > 0 ? (totale / anni) * 12 : totale;
+  return rif > 0 ? irpef(rif) / rif : 0;
+}
+
+function irpef(imponibile){
+  let t = 0, sotto = 0;
+  for (const [tetto, al] of SCAGLIONI){
+    if (imponibile <= sotto) break;
+    t += (Math.min(imponibile, tetto) - sotto) * al;
+    sotto = tetto;
+  }
+  return t;
+}
+
+// QUANTO ENTRA NEL FONDO, data la percentuale che sceglie il lavoratore.
+// Il punto che cambia tutto: nei fondi negoziali il contributo del datore è dovuto SOLO se il
+// lavoratore versa la sua quota, e una volta scattato NON cresce se lui versa di più. Il valore
+// del denaro versato non è quindi una retta: è un gradino.
+//
+// La soglia è `pcVoi`, cioè quello che dichiarano di versare oggi, non il minimo del CCNL —
+// che varia da contratto a contratto e che non possiamo inventare. Regge perché nessuno versa
+// MENO del minimo contrattuale: o si aderisce e si versa l'aliquota del contratto, o non si
+// aderisce. Chi scrive 0 ha la soglia appena sopra lo zero, ed è lì che serve il messaggio.
+//
+// LA QUOTA STA IN UNA FUNZIONE SUA, e non dentro `contributi`, per due ragioni. La prima è che
+// la vista deve poterla nominare anche quando NON scatta: tutta la sezione 1 esiste per dire
+// «ecco quanto state lasciando lì». La seconda è che la ricalcolava a mano in tre punti diversi,
+// che è il modo sicuro perché uno dei tre resti indietro il giorno che la regola cambia.
+// E LA REGOLA È CAMBIATA QUI: il contributo del datore nasce dal contratto collettivo e segue
+// il fondo che il contratto individua. Chi ha sottoscritto per conto proprio un fondo aperto o
+// un PIP non lo riceve, e attribuirglielo è un errore in direzione ottimistica — il peggiore
+// dei due, perché fa versare in un fondo contando su denaro che non arriverà.
+const quotaDatore = x => x.fondoIndividuale ? 0
+  : Math.max(0, x.ral) * Math.max(0, x.pcDat) / 100;
+
+function contributi(x, pc){
+  const ral = Math.max(0, x.ral);
+  const lav = ral * Math.max(0, pc) / 100;
+  const scatta = x.pcVoi > 0 ? pc >= x.pcVoi - 1e-9 : pc > 0;
+  const dat = scatta ? quotaDatore(x) : 0;
+  return {lav, dat, tot: lav + dat, scatta};
+}
+// Sotto il tetto ci stanno i contributi del lavoratore E quelli del datore; il TFR è escluso
+// per legge (art. 8 c. 4 D.Lgs. 252/2005), anche quando viene conferito al fondo.
+const dedotto = tot => Math.min(Math.max(0, tot), TETTO_DEDUZIONE);
+function spazioDeducibile(x){
+  return Math.max(0, TETTO_DEDUZIONE - contributi(x, x.pcVoi).tot);
+}
+// La percentuale oltre la quale la deduzione non c'è più.
+// LA QUOTA DEL DATORE VA CONTATA COME SARÀ, NON COM'È OGGI: scatta appena si versa qualcosa, e
+// consuma il tetto anche per chi oggi versa zero. Calcolandola su `pcVoi` — che per quelli è
+// zero — il tetto risultava più in là del vero di tanti punti quanti ne mette l'azienda, e la
+// pagina indicava «dove finisce la deduzione» un punto in cui era già finita.
+function pcTetto(x){
+  if (!(x.ral > 0)) return Math.max(x.pcVoi, 0);
+  const dat = contributi(x, Math.max(x.pcVoi, 0.1)).dat;
+  return Math.max(x.pcVoi, (TETTO_DEDUZIONE - dat) / x.ral * 100);
+}
+// Dove si ferma il cursore. Un massimo di legge non c'è: si può versare quanto si vuole.
+// Il 50% della RAL è il limite di quello che qualcuno fa davvero — ma su stipendi bassi il
+// tetto deducibile può stare oltre il 50%, e allora il cursore deve arrivarci lo stesso.
+// E comunque non oltre quello che si può permettere: il versamento esce dallo stipendio netto,
+// e se lo supera il piano finisce a raccontare cose che non possono succedere. `costoAnnuo`
+// cresce con la percentuale, quindi il punto si trova per bisezione.
+function pcSpendibile(x){
+  const netto = Math.max(0, x.stip) * 12;
+  if (!(x.ral > 0)) return x.pcVoi;
+  if (costoAnnuo(x, 100) <= netto) return 100;
+  let lo = x.pcVoi, hi = 100;
+  if (costoAnnuo(x, lo) > netto) return lo;
+  for (let k = 0; k < 40; k++){ const m = (lo + hi) / 2; costoAnnuo(x, m) <= netto ? lo = m : hi = m; }
+  return lo;
+}
+function pcMassimo(x){
+  const voluto = Math.min(100, Math.max(PC_CURSORE, pcTetto(x), x.pcVoi));
+  return Math.max(x.pcVoi, Math.min(voluto, pcSpendibile(x)));
+}
+// Quanto esce DAVVERO dalla busta rispetto a quello che versa oggi.
+// La quota del datore CONSUMA il tetto ma non passa dalla vostra busta e non è vostro reddito:
+// qui si deduce solo la vostra, dentro lo spazio che resta una volta contato il datore. È la
+// scelta prudente: contando la deduzione anche sulla quota del datore, versare risulterebbe
+// perfino a costo negativo — vero solo se quella quota fosse dentro la vostra RAL, e non lo
+// sappiamo.
+const dedLav = c => Math.min(c.lav, Math.max(0, TETTO_DEDUZIONE - c.dat));
+const scontoIrpef = (x, pc) => {
+  const base = Math.max(0, x.ral * (1 - IVS));
+  return irpef(Math.max(0, base - dedLav(contributi(x, x.pcVoi))))
+       - irpef(Math.max(0, base - dedLav(contributi(x, pc))));
+};
+function costoAnnuo(x, pc){
+  return (contributi(x, pc).lav - contributi(x, x.pcVoi).lav) - scontoIrpef(x, pc);
+}
+const costoMensile = (x, pc) => costoAnnuo(x, pc) / 12;
+
+const fmt = (n, dec=0) => Math.abs(n) < 0.5 && dec===0 ? '0'
+  : n.toLocaleString('it-IT', {useGrouping:'always', minimumFractionDigits:dec,
+      maximumFractionDigits:dec}).replace('-','−');
+const E0 = n => fmt(Math.round(n)) + ' €';   // spazio unificatore: il € non va mai a capo da solo
+// La spesa sostenibile esce da una bisezione su una condizione di soglia: basta uno 0,2% di
+// rendimento in meno e si sposta di centinaia di euro. Darla all'euro prometterebbe una
+// precisione che non ha, quindi si arrotonda per DIFETTO a 50 € — il verso in cui il piano
+// continua a reggere.
+const E50 = n => E0(Math.floor(n / 50) * 50);
+// «il 1,2%» non si dice: 1 si legge «uno», 8 «otto», 11 «undici». La preposizione va elisa,
+// e dipende da come si LEGGE il numero, non da come si scrive.
+// E lo zero fa storia a sé: si legge «zero», quindi vuole «lo», non «il».
+const vocale = n => { const i = Math.floor(Math.abs(n)); return i === 1 || i === 8 || i === 11; };
+const zeta   = n => Math.abs(n) < 0.05;
+// i decimali si scrivono solo se ci sono: «11,9%» ma «50%», non «50,0%»
+const pcTesto = n => fmt(n, Math.abs(n * 10 % 10) < 1e-9 ? 0 : 1) + '%';
+const perc = (n, prep) => (zeta(n)   ? {il:'lo ',  al:'allo ', del:'dello '}[prep]
+                         : vocale(n) ? {il:"l'",   al:"all'",  del:"dell'"}[prep]
+                                     : {il:'il ',  al:'al ',   del:'del '}[prep]) + pcTesto(n);
+// LE DIFESE SUI VALORI. Un modulo pubblico prende addosso, il primo giorno, numeri che nessuno
+// di noi scriverebbe: un incollaggio sbagliato nell'orizzonte del piano (1e308) mandava il
+// ciclo degli anni a girare finché non finiva la memoria, e la scheda si piantava. Il campo
+// porta anche `min` e `max`, ma quello lo può aggirare chiunque: la difesa vera è qui.
+// Si limita il valore, non si riscrive la casella: quello che hanno scritto resta scritto.
+const fra = (v, min, max) => Math.min(max, Math.max(min, v));
+const num = id => { const v = parseFloat(EL(id).value); return Number.isFinite(v) ? v : 0; };
+const numFra = (id, min, max) => fra(num(id), min, max);
+// Vuoto e zero sono due informazioni diverse anche qui: «non l'ho compilata» significa che la
+// spesa resta quella di adesso, «0» significherebbe che in pensione non si spende niente.
+const numOpt = id => { const v = String(EL(id).value).trim();
+                       return v === '' ? null : (parseFloat(v) || 0); };
+// Rete di sicurezza: se un elemento sparisce dalla pagina — capita riscrivendo un paragrafo —
+// il calcolo NON deve morire in silenzio a metà. Segnala e tira dritto.
+const EL = id => {
+  const e = document.getElementById(id);
+  if (!e) { if (!EL.detti.has(id)) { EL.detti.add(id); console.warn('manca #' + id); } return EL.finto; }
+  return e;
+};
+EL.detti = new Set();
+EL.finto = new Proxy({}, {get: (_, k) => k === 'value' ? '' : undefined, set: () => true});
+
+function leggi(){
+  // Il piano riguarda una o due persone. N non è una costante: da qui in giù si itera su
+  // `indici`, mai su [0,1], così il modello non sa quante sono.
+  const N = EL('quanti').value === '1' ? 1 : 2;
+  const indici = N === 1 ? [0] : [0,1];
+  // IL NOME FINISCE DENTRO innerHTML in sei punti, grafico compreso: un «<» basta a rompere la
+  // pagina, e `<img src=x onerror=...>` verrebbe eseguito. Non c'è un server e nessuno può
+  // prefabbricare un link, quindi il danno uno se lo farebbe da solo — ma resta scritto nel
+  // salvataggio e si ripete a ogni visita. Si toglie all'origine, una volta: un nome non ha
+  // bisogno di parentesi angolari, e-commerciali o virgolette.
+  const scritti = indici.map(i =>
+    (EL('nome'+i).value || '').replace(/[<>&"']/g, '').trim());
+  NOMI = scritti.map((n, i) => n || (N === 1 ? 'la persona' : ['il primo', 'il secondo'][i]));
+  DI   = scritti.map((n, i) => n ? 'di ' + n
+                                 : (N === 1 ? 'della persona' : ['del primo', 'del secondo'][i]));
+  const p = indici.map(i => ({
+    nome:     NOMI[i],
+    // la forma articolata viaggia insieme al nome: «di» + nome non si compone a pezzi in
+    // italiano, e chi scrive una frase non deve andarsela a prendere da una globale
+    di:       DI[i],
+    nascita:  numFra('nascita'+i, 1900, ANNO0),
+    stip:     numFra('stip'+i, 0, 1e7),
+    // Vuoto e zero sono due informazioni diverse, come sui contributi: una casella non
+    // compilata vale zero nel conto e sospende il verdetto, uno zero scritto è una risposta.
+    stipVuoto: EL('stip'+i).value.trim() === '',
+    pensVuoto: EL('pens'+i).value.trim() === '',
+    ral:      numFra('ral'+i, 0, 1e8),
+    crescNom: numOpt('cresc'+i) === null ? null : fra(numOpt('cresc'+i), -50, 50),
+    pens:     numFra('pens'+i, 0, 1e6),
+    annoPens: numFra('annoPens'+i, 1900, ANNO0 + 80),
+    // Vuoto e una decorrenza passata sono due cose diverse, e per un anno non basta guardare
+    // se è zero: chi è già in pensione ha scritto un anno valido, e va distinto da chi non ha
+    // ancora compilato la casella. Da questa differenza dipende se il verdetto si dà.
+    annoPensVuoto: EL('annoPens'+i).value.trim() === '',
+    fondo:    numFra('fondo'+i, 0, 1e9),
+    pcVoi:    numFra('pcVoi'+i, 0, 100),
+    pcVoiVuoto: EL('pcVoi'+i).value.trim() === '',
+    pcDatVuoto: EL('pcDat'+i).value.trim() === '',
+    pcDat:    numFra('pcDat'+i, 0, 100),
+    // Il valore che spegne la quota del datore è quello ESPLICITO: un campo che non esiste, o
+    // che il salvataggio di una visita precedente ha lasciato vuoto, non deve togliere a nessuno
+    // un contributo che gli spetta. Si spegne solo chi dichiara di aver sottoscritto da sé.
+    fondoIndividuale: EL('tipoFondo'+i).value === 'individuale',
+    pc:       fra(EL('pc'+i).value === '' ? num('pcVoi'+i) : num('pc'+i), 0, 100),
+    tfrAlFondo: EL('tfrDove'+i).value !== 'azienda',
+    iscr:     numFra('iscr'+i, 1900, ANNO0 + 80),
+    rita:     numFra('rita'+i, 0, ANNO0 + 80),
+    quotaCap: numFra('quotaCap'+i, 0, 1),
+    forma:    EL('forma'+i).value || 'vita'
+  }));
+  // L'ULTIMO ANNO DI LAVORO È DI CIASCUNO, e il valore di partenza è la propria pensione.
+  // Prima era uno solo per tutti e due, ricavato dalla PRIMA delle due decorrenze: chi aveva
+  // accanto una persona più grande smetteva di lavorare quando andava in pensione l'altra, e
+  // perdeva stipendio, contributi, quota del datore e TFR di tutti gli anni in mezzo. Su una
+  // coppia con sette anni di differenza sono sette anni di reddito tolti a chi ancora lavora,
+  // e l'errore va in direzione pessimistica. Era un'ipotesi ereditata da una pagina scritta per
+  // due persone che volevano davvero smettere insieme: come regola generale è falsa.
+  // Vuoto vuol dire «fino alla propria pensione», che è il caso base; chi smette prima lo
+  // scrive. Non si può lavorare oltre la decorrenza: il conto pagherebbe stipendio e
+  // trattamento nello stesso esercizio, quindi il valore scritto viene ricondotto lì.
+  p.forEach((x, i) => {
+    // si tiene il valore GREZZO, non un «sì/no»: serve a distinguere chi ha scritto un anno
+    // valido da chi ne ha scritto uno oltre la propria pensione, che il conto riconduce
+    const scritto = numOpt('ultimo' + i);
+    x.ultimoScritto = scritto === null ? null : fra(scritto, 1900, ANNO0 + 80);
+    x.ultimo = x.ultimoScritto === null ? x.annoPens - 1
+                                        : Math.min(x.ultimoScritto, x.annoPens - 1);
+    // CHI È GIÀ IN PENSIONE. La decorrenza è passata, quindi nel piano non c'è nessun esercizio
+    // di attività: niente retribuzione, niente TFR che matura, niente contributi. Tutto questo
+    // il motore lo ricava già da `ultimo`, che resta indietro rispetto all'anno in corso.
+    //
+    // IL FONDO PENSIONE INVECE VA TOLTO A MANO, ed è il punto delicato. `annoIncasso` è
+    // `max(annoPens, ANNO0)`: senza questa riga il montante scritto verrebbe riscosso NEL 2026,
+    // cioè una seconda volta, perché chi l'ha già riscosso quel capitale ce l'ha dentro
+    // «patrimonio investito». Sarebbe un errore in direzione ottimistica, il peggiore qui.
+    // E il coefficiente di conversione sarebbe quello dell'età alla decorrenza passata, non
+    // dell'età di adesso: il conto sarebbe sbagliato anche per chi non l'avesse ancora preso.
+    // Chi non l'ha ancora riscosso resta fuori: è un limite dichiarato, non un conto sbagliato.
+    // La decorrenza NELL'ANNO IN CORSO non è questo caso: lì la riscossione cade nel piano,
+    // all'età giusta, ed è modellata come qualunque altra.
+    x.giaInPens = !x.annoPensVuoto && x.annoPens < ANNO0;
+    x.fondoScritto = x.fondo;
+    if (x.giaInPens) x.fondo = 0;
+    // il TFR non è una casella: matura comunque, ed è una quota fissa della RAL
+    x.tfrAnno = x.ral * TFR_SU_RAL;
+    // il coefficiente dipende dall'età a cui converte, la forma lo riduce ancora
+    x.etaPens = x.annoPens - x.nascita;
+    x.coeffEta = coeffEta(x.etaPens);
+    x.soglia = soglia(x.coeffEta);
+    x.coeff = x.coeffEta * (FATT[x.forma] !== undefined ? FATT[x.forma] : 1);
+    // L'INPS dice il LORDO («La mia pensione futura»), quindi il lordo si scrive e il netto
+    // lo fa la pagina: chiedere il netto vorrebbe dire chiedere un conto che non hanno fatto.
+    x.pensLorda = x.pens;
+    x.pens = (x.pens * 12 - irpef(x.pens * 12)) / 12;
+  });
+  // i rendimenti si scrivono come si leggono (nominali); il reale è un rapporto, non una
+  // sottrazione: (1+7%)/(1+2%) = 4,90%, non 5%
+  const infl = fra(num('infl'), -50, 100)/100;
+  const reale = nom => (1 + nom) / (1 + infl) - 1;
+  // LA CRESCITA DELLA RETRIBUZIONE SI SCRIVE NOMINALE, come i rendimenti, e il conto le toglie
+  // l'inflazione: chi scrive il 2% con l'inflazione al 2% sta dicendo «segue il costo della
+  // vita», e in euro di oggi non deve cambiare niente. Chiederla già reale avrebbe voluto dire
+  // chiedere un conto che nessuno ha in mente.
+  // Vuoto vuol dire «segue il costo della vita», che in euro di oggi è crescita zero: è anche
+  // l'unico modo perché il valore di partenza resti giusto se si cambia l'inflazione. Un numero
+  // scritto si prende alla lettera, nominale, e l'inflazione gliela toglie il conto.
+  p.forEach(x => { x.cresc = x.crescNom === null ? 0 : reale(x.crescNom / 100); });
+  // QUANDO IL PIANO NON HA NESSUN ESERCIZIO DI ATTIVITÀ, la spesa «di oggi» non ha anni a cui
+  // applicarsi: il passaggio fra le due spese cade all'ultimo anno di lavoro, che è già alle
+  // spalle, e il conto userebbe per intero quella «in pensione». La prima casella, che è quella
+  // che si sa, verrebbe scartata in silenzio. Le due spese qui coincidono, quindi ne vale una:
+  // la seconda si annulla e la pagina disattiva la casella dicendo perché.
+  const tuttoInPens = p.every(x => !x.annoPensVuoto && x.ultimo < ANNO0);
+  return {
+    N, indici, tuttoInPens,
+    patrimonio: numFra('patrimonio', 0, 1e10), spesa: numFra('spesa', 0, 1e7),
+    patrimonioVuoto: EL('patrimonio').value.trim() === '',
+    spesaPens: tuttoInPens || numOpt('spesaPens') === null
+      ? null : fra(numOpt('spesaPens'), 0, 1e7),
+    etaFine: numFra('etaFine', 0, 120), infl,
+    rendNom: numFra('rend', -50, 100)/100, rendFondoNom: numFra('rendFondo', -50, 100)/100,
+    rend: reale(numFra('rend', -50, 100)/100), rendFondo: reale(numFra('rendFondo', -50, 100)/100), p
+  };
+}
+
+// imposta sulla prestazione: 15%, meno 0,30 punti per ogni anno di iscrizione oltre il
+// quindicesimo, col pavimento del 9% (art. 11 c. 6 D.Lgs. 252/2005)
+const aliquota = anni => Math.max(0.09, 0.15 - 0.003 * Math.max(0, anni - 15));
+
+function simula(s, spesaMese){
+  // DUE SPESE, UNA PER FASE. Prima c'era un numero solo per tutto il piano, e la nota chiedeva
+  // di scrivere già quella della pensione: così però gli anni di lavoro venivano falsati. Il
+  // passaggio è l'anno in cui si smette di lavorare, che è lo stesso per tutti e due.
+  // `spesaMese` resta la spesa di ADESSO — la cerca spesaSostenibile — e quella della pensione
+  // la segue in proporzione, altrimenti il rapporto fra le due lo deciderebbe la bisezione.
+  const k = spesaMese === undefined || !(s.spesa > 0) ? 1 : spesaMese / s.spesa;
+  const spesaOggi = (spesaMese === undefined ? s.spesa : spesaMese) * 12;
+  const spesaPens = (s.spesaPens === null || s.spesaPens === undefined ? s.spesa : s.spesaPens)
+                    * k * 12;
+  // Il versamento in più entra nel fondo e insieme abbassa lo stipendio netto, ma solo di
+  // quello che costa davvero: la deduzione IRPEF il datore la applica ogni mese.
+  const P = s.p.map(x => {
+    // quanto entra nel fondo lo decide la percentuale scelta, non una casella: dentro c'è anche
+    // il contributo del datore, che c'è o non c'è a seconda che si arrivi al minimo
+    const c = contributi(x, x.pc);
+    // il TFR si ricalcola qui e non si eredita: così non può restare quello di una RAL vecchia
+    // questi sono i valori del PRIMO anno: se la retribuzione cresce, dentro il ciclo si
+    // ricalcolano anno per anno. `stipBase` è la retribuzione netta scritta nella casella,
+    // prima che il versamento in più se ne prenda un pezzo.
+    return {...x, vers: c.tot, versLav: c.lav, versDat: c.dat, scattaDatore: c.scatta,
+            tfrAnno: Math.max(0, x.ral) * TFR_SU_RAL, stipBase: x.stip,
+            stip: x.stip - costoMensile(x, x.pc)};
+  });
+  const annoFine = Math.max(...P.map(x => x.nascita)) + s.etaFine;
+  // IL PASSAGGIO FRA LE DUE SPESE è quando la casa è del tutto in pensione, cioè quando ha
+  // smesso l'ULTIMO. Prima leggeva `P[0].ultimo`, che era lecito solo perché tutti smettevano
+  // insieme: con due cessazioni sfalsate avrebbe fatto scattare la spesa da pensionati mentre
+  // uno dei due lavora ancora, e per giunta guardando sempre la prima colonna.
+  const smetteUltimo = Math.max(...P.map(x => x.ultimo));
+
+  // LO SCENARIO DEL SUPERSTITE. Come `s.prova`, è un secondo giro del motore sugli stessi dati,
+  // non un cambio del piano: il verdetto continua a rispondere a «quanto dura se tutto va come
+  // previsto», e questo risponde a «e se uno dei due mancasse».
+  // `s.manca` = {chi, anno, equiv}: chi manca, da quando, e quanto spende chi resta rispetto a
+  // prima. Il coefficiente non è una casella e non è una nostra stima: sono le due scale di
+  // equivalenza pubbliche, e il calcolo si fa con entrambe.
+  const manca  = s.manca || null;
+  const morto  = (i, anno) => manca !== null && i === manca.chi && anno >= manca.anno;
+  const resta  = manca === null ? -1 : P.findIndex((_, j) => j !== manca.chi);
+
+  // LA PROVA DI TENUTA. Il verdetto nasce da una traiettoria sola, con lo stesso rendimento tutti
+  // gli anni. Ma nel decumulo conta la SEQUENZA: gli stessi rendimenti in ordine diverso danno
+  // piani diversi, perché quello che manca all'inizio non c'è più a rendere dopo.
+  // `s.prova` spegne il rendimento per i primi esercizi. Non è una nuvola di scenari: quella
+  // richiederebbe una distribuzione che non possiamo citare, e questo sito non pubblica cifre
+  // che non può dichiarare. È una perturbazione sola, che chiunque può rifare a mano.
+  // Il TFR lasciato in azienda NON viene toccato, ed è corretto: la sua rivalutazione è fissata
+  // dall'art. 2120 c.c., non dal mercato. È l'unica posta che una prova di tenuta non scalfisce.
+  // `Math.min(0, …)` E NON ZERO SECCO, ed è un difetto trovato guardando l'output: chi scrive un
+  // rendimento più basso dell'inflazione ha un rendimento REALE negativo, e portarlo a zero gli
+  // migliorerebbe il piano. Una prova di tenuta che rende un piano più solido non è una prova.
+  // Così la perturbazione è per costruzione non migliorativa, ed è un'invariante controllabile.
+  const fermi = s.prova ? ANNO0 + s.prova : ANNO0;
+  const rendDi      = anno => anno < fermi ? Math.min(0, s.rend)      : s.rend;
+  const rendFondoDi = anno => anno < fermi ? Math.min(0, s.rendFondo) : s.rendFondo;
+  let patr = s.patrimonio, annoZero = null;
+  const f = P.map(x => ({ montante: x.fondo, versati: x.fondo, rendita: 0, annoRendita: null,
+                          rata: null }));
+  // Il TFR lasciato in azienda: un salvadanaio a parte, che si rivaluta con la sua regola e
+  // arriva tutto insieme nell'ultimo anno di lavoro. `messo` tiene la somma degli accantonamenti
+  // (è quella che paga l'imposta), `pot` il montante rivalutato.
+  const tfr = P.map(() => ({ pot: 0, messo: 0, anni: 0 }));
+  const incassi = [], rite = [], righe = [], liquidazioni = [];
+  // rivalutazione reale del TFR in azienda, al netto del 17% di imposta sostitutiva
+  const rivTfr = (1 + (TFR_RIV_FISSA + TFR_RIV_QUOTA * s.infl) * (1 - TFR_IMPOSTA_RIV))
+                 / (1 + s.infl) - 1;
+
+  for (let anno = ANNO0; anno <= annoFine; anno++){
+    const inizio = patr;
+    const spesa = (anno <= smetteUltimo ? spesaOggi : spesaPens)
+                  * (manca !== null && anno >= manca.anno ? manca.equiv : 1);
+    const lavora  = P.map((x, i) => anno <= x.ultimo   && !morto(i, anno));
+    const inPens  = P.map((x, i) => anno >= x.annoPens && !morto(i, anno));
+    const rate    = P.map(() => false);
+
+    let daLavoro = 0, daPensioni = 0, daFondo = 0, daRendita = 0, daRata = 0, daTfr = 0;
+    P.forEach((x, i) => {
+      // LA RETRIBUZIONE CRESCE, e con lei tutto quello che ne discende: il TFR, i contributi,
+      // la quota del datore e quello che resta in busta — compresa l'IRPEF, che si ricalcola
+      // sulla RAL di quell'anno perché può cambiare scaglione. Prima questi valori si
+      // calcolavano una volta sola: per un trentenne significava trent'anni di stipendio fermo.
+      const k = Math.pow(1 + (x.cresc || 0), anno - ANNO0);
+      const xA = k === 1 ? x : {...x, ral: x.ral * k};
+      const cA = k === 1 ? {tot: x.vers, lav: x.versLav, dat: x.versDat} : contributi(xA, x.pc);
+      const tfrA = k === 1 ? x.tfrAnno : Math.max(0, xA.ral) * TFR_SU_RAL;
+      const stipA = k === 1 ? x.stip : x.stipBase * k - costoMensile(xA, x.pc);
+
+      if (lavora[i]) daLavoro += stipA * 12;
+      // la pensione del superstite si tratta fuori dal ciclo: dall'anno in cui l'altro manca
+      // fa capo allo stesso contribuente della reversibilità, e l'IRPEF si calcola sulla somma
+      if (inPens[i] && !(manca !== null && anno >= manca.anno && i === resta))
+        daPensioni += x.pens * 12;
+
+      // --- il TFR lasciato in azienda. Matura comunque: la scelta è solo dove va a finire.
+      if (!x.tfrAlFondo){
+        if (lavora[i]){ tfr[i].pot = tfr[i].pot * (1 + rivTfr) + tfrA;
+                        tfr[i].messo += tfrA; tfr[i].anni++; }
+        if (anno === x.ultimo && tfr[i].pot > 0){
+          // l'imposta si paga sugli accantonamenti, non sulla rivalutazione: quella il 17%
+          // l'ha già pagato anno per anno
+          const al = aliquotaTfr(tfr[i].messo, tfr[i].anni);
+          const tasse = tfr[i].messo * al;
+          daTfr += tfr[i].pot - tasse;
+          liquidazioni.push({chi:x.nome, anno, lordo:tfr[i].pot, al, tasse,
+                             netto:tfr[i].pot - tasse, anni:tfr[i].anni});
+          tfr[i].pot = 0;
+        }
+      }
+
+      // --- fondo pensione, uno per persona
+      const annoIncasso = Math.max(x.annoPens, ANNO0);
+      // RITA: si comincia a prenderlo prima della pensione, a rate uguali fino alla pensione
+      const daRita = Math.min(Math.max(x.rita || annoIncasso, ANNO0), annoIncasso);
+      const nRate  = annoIncasso - daRita;
+
+      if (anno <= annoIncasso){
+        // L'imposta si paga su quello che è stato versato IN EURO DI ALLORA. Tenendo i conti in
+        // euro di oggi, la base imponibile va quindi sgonfiata di un anno di inflazione a ogni
+        // giro: un versamento del 2030 pesa meno, nel 2046, di uno del 2044.
+        if (anno > ANNO0) f[i].versati /= (1 + s.infl);
+        // si versa anche nell'ultimo anno di lavoro, pure se è quello dell'incasso.
+        // Il TFR conferito entra nel montante E nella base imponibile: reddito mai tassato,
+        // quindi all'uscita paga — ma con l'aliquota agevolata del fondo, non con l'IRPEF.
+        if (lavora[i]){
+          const tfrDentro = x.tfrAlFondo ? tfrA : 0;
+          const entrata = cA.tot + tfrDentro;
+          f[i].montante += entrata;
+          // Art. 11 c. 6: nella base imponibile non entra quello che NON è stato dedotto.
+          // Sopra il tetto il versamento ha già pagato l'IRPEF in busta: ritassarlo all'uscita
+          // sarebbe tassarlo due volte. Il TFR invece è reddito mai tassato, quindi entra tutto.
+          f[i].versati += Math.min(cA.tot, TETTO_DEDUZIONE) + tfrDentro;
+        }
+
+        if (nRate > 0 && anno >= daRita && anno < annoIncasso && f[i].montante > 0){
+          // la rata si fissa il primo anno e resta uguale: quello che non è ancora uscito
+          // continua a rendere, quindi alla pensione avanza qualcosa
+          if (f[i].rata === null){
+            f[i].rata = f[i].montante / nRate;
+            rite.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), da:anno, a:annoIncasso-1, rata:f[i].rata, n:nRate,
+                       totale:f[i].montante, netto:0});
+          }
+          const lorda = Math.min(f[i].rata, f[i].montante);
+          const quotaTass = Math.min(f[i].versati / f[i].montante, 1);
+          const imponibile = lorda * quotaTass;
+          const tasse = imponibile * aliquota(anno - x.iscr);
+          f[i].montante -= lorda;
+          f[i].versati  -= imponibile;
+          daRata += lorda - tasse;
+          rite[rite.findIndex(t => t.chi === x.nome)].netto += lorda - tasse;
+          rate[i] = true;
+        }
+        f[i].montante *= (1 + rendFondoDi(anno));
+      }
+      // Art. 14 c. 3 D.Lgs. 252/2005: chi manca prima della prestazione lascia l'INTERA
+      // posizione ai designati o agli eredi. Nel piano è capitale che entra in quell'esercizio,
+      // al netto dell'imposta: non c'è quota da convertire in rendita, e non c'è soglia.
+      const riscatto = manca !== null && i === manca.chi && anno === manca.anno
+                       && anno < annoIncasso;
+      if ((anno === annoIncasso || riscatto) && f[i].montante > 0){
+        const base  = Math.min(f[i].versati, f[i].montante);
+        // GLI ANNI DI PARTECIPAZIONE SI CONTANO FINO A QUI, non fino a una pensione che in caso
+        // di premorienza non arriverà mai. Con `annoIncasso` il riscatto degli eredi scontava
+        // l'aliquota di quattro anni di anzianità in più: 9,9% invece di 11,1%. Nel caso
+        // ordinario `anno` e `annoIncasso` coincidono, quindi la riga vale per tutti e due.
+        // Trovato dalla seconda implementazione, che è esattamente il suo mestiere.
+        const al    = aliquota(anno - x.iscr);
+        const tasse = base * al;
+        const netto = f[i].montante - tasse;
+        // la quota chiesta non può superare quella che la legge concede a QUESTO montante
+        const max   = quotaMax(f[i].montante, x.coeffEta);
+        const quota = riscatto ? 1 : Math.min(x.quotaCap, max);
+        const capitale = netto * quota;
+        // la forma scelta non cambia quanto c'è, cambia quanto paga al mese
+        const coeff = x.coeff !== undefined ? x.coeff : COEFF_RENDITA;
+        f[i].rendita = (netto - capitale) * coeff;
+        f[i].annoRendita = anno;
+        daFondo += capitale;
+        // «di» + nome non si compone a pezzi: con i nomi vuoti veniva fuori «il fondo di il
+        // primo». La forma articolata viaggia insieme al nome, come già fa il resto della pagina.
+        incassi.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, montante:f[i].montante, base, al, tasse, capitale,
+                      assegno:f[i].rendita/12, quota, chiesta:x.quotaCap, max, coeff,
+                      soglia: soglia(x.coeffEta), etaPens: x.etaPens, coeffEta: x.coeffEta,
+                      netto, forma:x.forma, convertito: netto - capitale,
+                      limitata: x.quotaCap > max + 1e-9});
+        f[i].montante = 0;
+      }
+      // la rendita è una cifra fissa: in euro di oggi si sgonfia
+      // LA RENDITA DEL DEFUNTO SEGUE LA FORMA SCELTA, ed è il punto in cui la sezione 2
+      // smette di essere teorica: la vitalizia semplice finisce con lui, la reversibile
+      // prosegue a chi resta, la certa fino al termine garantito.
+      const rendeAncora = f[i].annoRendita !== null && (!morto(i, anno)
+        || x.forma === 'rev'
+        || (x.forma === 'certa' && anno < f[i].annoRendita + CERTA_ANNI));
+      if (rendeAncora && anno >= f[i].annoRendita)
+        daRendita += f[i].rendita / Math.pow(1 + s.infl, anno - f[i].annoRendita);
+    });
+
+    // IL SUPERSTITE, e perché non basta sommare due importi netti.
+    // La pensione propria e quella ai superstiti fanno capo a UN SOLO contribuente: l'IRPEF si
+    // calcola sulla somma. Sommare due nette calcolate separatamente regalerebbe due volte gli
+    // scaglioni bassi, cioè uno sconto che non esiste.
+    // La reversibilità decorre da quando il defunto aveva diritto al proprio trattamento: la
+    // pensione indiretta, che spetterebbe a chi manca prima, dipende dalla sua storia
+    // contributiva e non è ricavabile da queste caselle. Il limite è dichiarato, non aggirato.
+    if (manca !== null && anno >= manca.anno && resta >= 0){
+      const sup = P[resta], def = P[manca.chi];
+      const kSup = Math.pow(1 + (sup.cresc || 0), anno - ANNO0);
+      const propria = anno >= sup.annoPens ? sup.pensLorda * 12 : 0;
+      // i redditi che fanno scattare la riduzione sono quelli assoggettabili a IRPEF: la
+      // pensione propria e la retribuzione. Non la rendita del fondo, che sconta un'imposta
+      // sostitutiva, né la pensione ai superstiti stessa.
+      const propri = propria + (lavora[resta] ? Math.max(0, sup.ral) * kSup : 0);
+      const rev = anno >= def.annoPens ? aiSuperstiti(def.pensLorda * 12, propri) : 0;
+      const lorda = propria + rev;
+      if (lorda > 0) daPensioni += lorda - irpef(lorda);
+    }
+
+    const rendimento = Math.max(inizio, 0) * rendDi(anno);
+    const entra = daLavoro + daPensioni + daRendita + daFondo + daRata + daTfr;
+    patr = inizio + rendimento + entra - spesa;
+    if (patr < 0 && annoZero === null) annoZero = anno;
+
+    righe.push({anno, eta: P.map(x => anno - x.nascita), inizio, rendimento, spesa,
+      daLavoro, daPensioni, daRendita, daFondo, daRata, daTfr, patr,
+      fondi: f.map(y => y.montante), lavora, inPens, rate,
+      regime: [lavora, inPens, rate].map(a => a.map(v => v?1:0).join('')).join('|')});
+  }
+  // I nomi viaggiano col risultato. Senza, `fasi()` ed `eventi()` leggevano una variabile
+  // globale riscritta da `leggi()`: erano corretti solo se chiamati subito dopo, e con una
+  // persona sola producevano frasi sbagliate su un risultato calcolato per due.
+  return {righe, annoFine, annoZero, finale: patr, incassi, rite, liquidazioni,
+          spesaOggi, spesaPens,
+          nomi: P.map(x => x.nome), di: P.map((x, i) => DI[i] || 'di ' + x.nome)};
+}
+
+// la spesa mensile più alta che porta il piano fino in fondo senza andare sotto zero
+function spesaSostenibile(s){
+  const regge = q => simula(s, q).annoZero === null;
+  if (!regge(0)) return null;
+  let lo = 0, hi = 200;
+  while (regge(hi) && hi < 1e6) hi *= 2;
+  for (let i = 0; i < 44; i++){ const m = (lo+hi)/2; regge(m) ? lo = m : hi = m; }
+  return Math.floor(lo);
+}
+
+// --- il racconto: si taglia dove cambia chi lavora e chi prende la pensione
+function fasi(r){
+  const nomi = r.nomi || NOMI, di = r.di || DI;
+  const out = [];
+  for (const g of r.righe){
+    const u = out[out.length-1];
+    if (u && u.regime === g.regime) { u.a = g.anno; u.fine = g.patr; u.righe.push(g); }
+    else out.push({regime:g.regime, da:g.anno, a:g.anno, fine:g.patr, righe:[g],
+                   lavora:g.lavora, inPens:g.inPens, rate:g.rate});
+  }
+  for (const f of out){
+    // flusso ricorrente al mese: le rate della RITA sono ricorrenti e ci stanno dentro,
+    // l'incasso in un colpo solo alla pensione no
+    const n = f.righe.length;
+    const ric = f.righe.reduce((s,g) =>
+      s + g.daLavoro + g.daPensioni + g.daRendita + g.daRata - g.spesa, 0);
+    f.flusso = ric / n / 12;
+    f.rendimento = f.righe.reduce((s,g) => s + g.rendimento, 0) / n / 12;
+    f.unaTantum = f.righe.reduce((s,g) => s + g.daFondo + g.daTfr, 0);
+    f.cosa = descrivi(f.lavora, f.inPens, f.rate, nomi, di);
+  }
+  return out;
+}
+
+// Le fasi si descrivono in forma impersonale, così la stessa frase vale per una persona e per
+// due: niente «lavorate tutti e due» contro «lavori». Il numero lo dice la composizione.
+function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI){
+  const n = lavora.length;
+  const lav   = nomi.filter((_,i) => lavora[i]);
+  const pen   = nomi.filter((_,i) => inPens[i] && !lavora[i]);
+  const fermi = nomi.filter((_,i) => !lavora[i] && !inPens[i]);
+  const rit   = nomi.filter((_,i) => rate[i]);
+  let t;
+  if (n === 1){
+    t = lav.length ? 'attività lavorativa in corso'
+      : pen.length ? 'trattamento INPS in erogazione'
+      : 'attività cessata, trattamento non ancora decorso';
+  } else if (lav.length === 2) t = 'attività lavorativa in corso per entrambi';
+  else if (lav.length === 1)
+    t = `lavora ${lav[0]}; ` + (pen.length
+      ? `${pen[0]} percepisce il trattamento INPS`
+      : `${fermi[0]} ha cessato e il trattamento non è ancora decorso`);
+  else if (pen.length === 2) t = 'entrambi i trattamenti INPS in erogazione';
+  else if (pen.length === 1)
+    t = `trattamento ${di[nomi.indexOf(pen[0])]} in erogazione, quello ${di[nomi.indexOf(fermi[0])]} non ancora decorso`;
+  else t = 'attività cessata, nessun trattamento ancora decorso';
+
+  if (rit.length === n && n > 1) t += '; erogazione anticipata del fondo per entrambi';
+  else if (rit.length === 1) t += `; erogazione anticipata del fondo ${di[nomi.indexOf(rit[0])]}`;
+  return t;
+}
+
+function scriviFasi(r){
+  const F = fasi(r);
+  let h = '';
+  for (const f of F){
+    const seg = f.da === f.a ? `${f.da}` : `${f.da}–${f.a}`;
+    const cl = f.flusso >= 0 ? 'su-t' : 'giu-t';
+    const testo = f.flusso >= 0
+      ? `accantonamento ${E0(f.flusso)} al mese`
+      : `disavanzo ${E0(-f.flusso)} al mese`;
+    const d = f.fine - f.righe[0].inizio;
+    const sotto = f.rendimento < 1
+      ? 'nessun rendimento: consistenza nulla o negativa'
+      : `rendimento medio ${E0(f.rendimento)} al mese`;
+    h += `<div class="fase"><b>${seg}</b><div class="cosa">${f.cosa}</div>
+      <div class="flusso ${cl}">${testo}<i>${sotto}</i></div>
+      <div class="fine">${E0(f.fine)}<i>${d >= 0 ? '+' : '−'}${E0(Math.abs(d))}</i></div>`;
+    if (f.unaTantum > 0){
+      const dentro = v => v.anno >= f.da && v.anno <= f.a;
+      const voci = r.incassi.filter(dentro).map(i => `fondo di ${i.chi} riscosso nel ${i.anno}`)
+        .concat(r.liquidazioni.filter(dentro).map(l => `TFR di ${l.chi} liquidato nel ${l.anno}`));
+      h += `<p class="unatantum">più ${E0(f.unaTantum)} una tantum: ` +
+        voci.join(' e ') + `</p>`;
+    }
+    h += `</div>`;
+  }
+  EL('fasi').innerHTML = h;
+}
+
+function disegna(r){
+  const W = 880, H = 330, L = 68, R = 16, T = 58, B = 26;
+  const xs = W - L - R, ys = H - T - B;
+  const g0 = r.righe;
+  const tot = g0.map(g => g.patr + g.fondi.reduce((a,b)=>a+b,0));
+  const max = Math.max(...tot, 1);
+  const min = Math.min(...g0.map(g => g.patr), 0);
+  const y = v => T + ys * (max - v) / (max - min);
+  const x = i => L + xs * i / Math.max(g0.length - 1, 1);
+  const via = a => a.map((p,i) => (i?'L':'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const pP = g0.map((g,i) => [x(i), y(g.patr)]);
+  const pT = g0.map((g,i) => [x(i), y(g.patr + g.fondi.reduce((a,b)=>a+b,0))]);
+  const base = y(0), fin = x(g0.length-1).toFixed(1);
+
+  let h = '';
+  // il passo va preso sull'ESCURSIONE, non sul massimo: se il patrimonio è sempre sotto zero
+  // il massimo vale 1, il passo diventa 0,5 e la griglia prova a disegnare milioni di righe
+  const passo = Math.pow(10, Math.floor(Math.log10(Math.max(max - min, 1)))) / 2;
+  for (let v = Math.ceil(min/passo)*passo; v <= max; v += passo){
+    h += `<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"
+      stroke="${v===0?'#c9c4b8':'#eeebe4'}"/>`;
+    h += `<text x="${L-8}" y="${(y(v)+4).toFixed(1)}" font-size="11" fill="#8a857a"
+      text-anchor="end">${v===0?'0':Math.round(v/1000)+'k'}</text>`;
+  }
+  // sopra lo zero è patrimonio, sotto è un buco: due colori, non uno
+  h += `<defs>
+    <clipPath id="sopra"><rect x="${L}" y="${T-6}" width="${xs}" height="${(base-T+6).toFixed(1)}"/></clipPath>
+    <clipPath id="sotto"><rect x="${L}" y="${base.toFixed(1)}" width="${xs}" height="${(H-B-base).toFixed(1)}"/></clipPath>
+  </defs>`;
+  const area = p => `${via(p)} L ${fin} ${base.toFixed(1)} L ${L} ${base.toFixed(1)} Z`;
+  h += `<path d="${area(pT)}" fill="#dfe6ef" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pP)}" fill="#cfe0d6" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pP)}" fill="#f0dad5" clip-path="url(#sotto)"/>`;
+  h += `<path d="${via(pP)}" fill="none" stroke="#2f6f4e" stroke-width="2" clip-path="url(#sopra)"/>`;
+  h += `<path d="${via(pP)}" fill="none" stroke="#a33a2a" stroke-width="2" clip-path="url(#sotto)"/>`;
+
+  // gli anni in cui cambia qualcosa. Tre file di etichette: ciascuna va nella prima fila
+  // dove non si accavalla con la precedente; se non ce n'è, resta solo la riga tratteggiata
+  const bordo = [-1e9, -1e9, -1e9];
+  for (const e of eventi(r)){
+    const i = g0.findIndex(v => v.anno === e.anno);
+    if (i < 0) continue;
+    const testo = e.breve + (e.altri ? ` +${e.altri}` : '');
+    const px = x(i), largh = testo.length * 5.5 + 12;
+    const dx = px + largh > W - R ? -5 : 5;              // le ultime si appoggiano a sinistra
+    const sx = dx < 0 ? px - largh : px;
+    h += `<line x1="${px.toFixed(1)}" x2="${px.toFixed(1)}" y1="${T-8}" y2="${H-B}"
+      stroke="#b9b3a6" stroke-dasharray="3 3"/>`;
+    const riga = bordo.findIndex(b => b <= sx);
+    if (riga < 0) continue;
+    bordo[riga] = sx + largh;
+    h += `<text x="${(px + dx).toFixed(1)}" y="${T - 38 + riga*13}" font-size="10.5"
+      fill="#8a857a" text-anchor="${dx < 0 ? 'end' : 'start'}">${testo}</text>`;
+  }
+  g0.forEach((v,i) => { if (v.anno % 10 === 0)
+    h += `<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#8a857a"
+      text-anchor="middle">${v.anno}</text>`; });
+  EL('svg').innerHTML = h;
+}
+
+// kOf(anno) converte gli importi: 1 in euro di oggi, (1+infl)^n in euro di quell'anno.
+// Serve perché le righe-evento stanno dentro la tabella e devono parlare la sua stessa lingua.
+function eventi(r, kOf = () => 1){
+  const ev = [];
+  // cambiamenti: solo se avvengono dentro il piano, non nel primo anno (sarebbero lo stato di
+  // partenza, non un cambiamento). I fatti — il fondo riscosso, i soldi finiti — invece si
+  // dicono sempre, anche se cadono nel 2026
+  const push = (anno, testo, breve) => { if (anno > ANNO0 && anno <= r.annoFine)
+    ev.push({anno, testo, breve}); };
+  const fatto = (anno, testo, breve) => { if (anno >= ANNO0 && anno <= r.annoFine)
+    ev.push({anno, testo, breve}); };
+
+  // smettere di lavorare e andare in pensione: se capita a tutti e due lo stesso anno
+  // è una cosa sola, non due
+  const nomi = r.nomi || NOMI;
+  const idx = r.righe.length ? r.righe[0].lavora.map((_, i) => i) : [];
+  const smette = idx.map(i => (r.righe.find(v => !v.lavora[i]) || {}).anno);
+  const inizio = idx.map(i => (r.righe.find(v => v.inPens[i]) || {}).anno);
+  if (smette[0] && smette[0] === smette[1])
+    push(smette[0], 'cessazione dell\'attività per entrambi', 'cessazione');
+  else idx.forEach(i => smette[i] &&
+    push(smette[i], `cessazione dell'attività ${(r.di||DI)[i]}`, `cessazione ${nomi[i]}`));
+  if (inizio[0] && inizio[0] === inizio[1])
+    push(inizio[0], 'decorrenza di entrambi i trattamenti', 'trattamenti');
+  else idx.forEach(i => inizio[i] &&
+    push(inizio[i], `decorrenza del trattamento ${(r.di||DI)[i]}`, `pens. ${nomi[i]}`));
+
+  for (const l of r.liquidazioni) fatto(l.anno,
+    `il TFR di ${l.chi} lasciato in azienda: ${E0(l.lordo * kOf(l.anno))} meno `
+    + `${E0(l.tasse * kOf(l.anno))} di imposta (${fmt(l.al*100,1)}%, tassazione separata su `
+    + `${l.anni} anni) → ${E0(l.netto * kOf(l.anno))}`, `TFR ${l.chi}`);
+  for (const t of r.rite) fatto(t.da, `${t.chi} comincia a prendere il fondo a rate (RITA): `
+    + `${E0(t.rata * kOf(t.da))} lordi l'anno, ${t.n} rate fino al ${t.a}`, `rate ${t.chi}`);
+  for (const i of r.incassi) fatto(i.anno, `il fondo di ${i.chi}: ${E0(i.montante * kOf(i.anno))}`
+    + ` meno ${E0(i.tasse * kOf(i.anno))} di imposta (${fmt(i.al*100,1)}%) → `
+    + `${E0(i.capitale * kOf(i.anno))} in contanti`
+    + (i.assegno > 1 ? ` e ${E0(i.assegno * kOf(i.anno))} al mese di rendita a vita` : '')
+    + (i.limitata ? `: la legge non permette di prenderne di più in contanti` : ''),
+    `fondo ${i.chi}`);
+  if (r.annoZero) fatto(r.annoZero, 'esaurimento del patrimonio', 'esaurito');
+
+  ev.sort((a,b) => a.anno - b.anno);
+  const out = [];
+  for (const e of ev){
+    const u = out[out.length-1];
+    // nel testo esteso ci sta tutto; nell'etichetta del grafico no, si contano le altre
+    if (u && u.anno === e.anno){ u.testo += ', e ' + e.testo; u.altri = (u.altri || 0) + 1; }
+    else out.push({...e});
+  }
+  return out;
+}
+
+function tabella(r, s){
+  const allora = EL('euroAllora').checked;
+  const kOf = anno => allora ? Math.pow(1 + s.infl, anno - ANNO0) : 1;
+  const ev = {}; eventi(r, kOf).forEach(e => ev[e.anno] = e.testo);
+  // «Pensioni» teneva dentro anche la rendita del fondo, e siccome quella non si rivaluta la
+  // colonna calava di ~80 € l'anno: sembrava che a erodersi fosse l'INPS. Sono due fonti
+  // diverse e adesso stanno in due colonne diverse.
+  let h = `<tr><th>Anno</th><th>Lavoro</th><th>Pensione INPS</th><th>Rendita del fondo</th>
+    <th>Fondo e TFR</th><th>Spesa</th><th>Rendim.</th><th>Patrimonio</th></tr>`;
+  for (const g of r.righe){
+    if (ev[g.anno]) h += `<tr class="evento"><td colspan="8">${g.anno} — ${ev[g.anno]}</td></tr>`;
+    // in euro di quell'anno: gli stessi soldi, ai prezzi di allora
+    const k = kOf(g.anno);
+    const c = v => v * k > 0.5 ? fmt(v * k) : '<span class="vuoto">—</span>';
+    const cl = g.patr < 0 ? 'rossa' : (g.lavora.some(v=>v) ? '' : 'pens');
+    h += `<tr class="${cl}"><td class="anno">${g.anno}<u>${g.eta.join('/')}</u></td>
+      <td>${c(g.daLavoro)}</td><td>${c(g.daPensioni)}</td><td>${c(g.daRendita)}</td>
+      <td>${c(g.daFondo + g.daRata + g.daTfr)}</td>
+      <td>−${fmt(g.spesa * k)}</td><td>${c(g.rendimento)}</td>
+      <td><b>${fmt(g.patr * k)}</b></td></tr>`;
+  }
+  EL('tabella').innerHTML = h;
+}
+
+// IL SOMMARIO IN ALTO, in un punto solo. Dipende da tre cose che cambiano in momenti diversi:
+// il risultato (a ogni calcolo), se si è passato il titolo e se il risultato è sullo schermo
+// (a ogni scorrimento). Lo stato sta qui e chi lo tocca richiama sempre la stessa funzione:
+// tre sorgenti di verità separate erano il modo sicuro per vederlo comparire quando non serve.
+//
+// In cima alla pagina NON deve comparire: lì non c'è ancora niente da tenere sott'occhio, e
+// coprirebbe il titolo del sito appena aperto.
+let sommarioTesto = '', sommarioClasse = '', risultatoInVista = true, sonoInCima = true;
+// IL SOMMARIO È IL TITOLO, ACCORCIATO. Non una metrica in più inventata per la riga in alto:
+// se quello che resta appiccicato dice una cosa e il risultato ne dice un'altra, chi legge deve
+// capire quale delle due vale. Per questo la chiamata sta ATTACCATA a ogni titolo, e non dopo:
+// chi cambia il titolo ha la sua riduzione sotto gli occhi.
+//
+// Perché il patrimonio residuo e non la spesa massima sostenibile, che pure si muove di più:
+// quella è una domanda che chi compila non ha fatto — è un'ipotesi controfattuale, e letta da
+// sola in cima allo schermo sembra un consiglio di spesa. Il residuo è invece roba loro.
+// Da solo non basterebbe («un milione alla fine» non dice se ci si è andati vicini), ma qui non
+// è solo: accanto c'è il verdetto, che dice esattamente quello.
+const sommarioDelTitolo = (coda, verdetto = 'Sostenibile', classe = 'su') =>
+  aggiornaSommario(`<span class="v">${verdetto}</span> · ${coda}`, classe);
+
+function aggiornaSommario(testo = sommarioTesto, classe = sommarioClasse){
+  sommarioTesto = testo; sommarioClasse = classe;
+  const b = EL('sommario');
+  b.className = 'sommario' + (classe ? ' ' + classe : '');
+  EL('sommarioRiga').innerHTML = testo;
+  b.hidden = !testo || risultatoInVista || sonoInCima;
+}
+
+// LE CASELLE DA CUI IL VERDETTO DIPENDE, in un punto solo.
+// Da qui escono due cose che devono coincidere: la frase che promette quante caselle servono e
+// la guardia che le pretende. Scritte in due punti, avevano già divergito una volta — «bastano
+// tre dati» sopra una guardia che ne controllava tre su sei — e sarebbero tornate a divergere
+// appena il numero avesse smesso di essere sempre lo stesso, cosa che succede da quando una
+// decorrenza può essere già trascorsa: a chi è in pensione la retribuzione non si chiede.
+//
+// `manca` non decide COSA serve, dice solo se quella casella è ancora da compilare. Vuoto e zero
+// restano due informazioni diverse: uno zero scritto è una risposta.
+function richieste(s){
+  const finePiano = Math.max(...s.p.map(x => x.nascita)) + s.etaFine;
+  const orizzonteNoto = s.p.every(x => x.nascita > 1900);
+  const comuni = [
+    {testo: 'la spesa mensile',        manca: !(s.spesa > 0)},
+    {testo: 'il patrimonio investito', manca: s.patrimonioVuoto}
+  ];
+  const dei = s.p.map(x => {
+    const voci = [
+      {testo: "l'anno di nascita", manca: !(x.nascita > 1900)},
+      // Si chiede la casella VUOTA, non una decorrenza futura: chi è già in pensione ha scritto
+      // un anno valido, e prima riceveva «serve la decorrenza del trattamento», cioè gli si
+      // diceva che aveva lasciato in bianco una casella che aveva compilato.
+      {testo: 'la decorrenza del trattamento', manca: x.annoPensVuoto}
+    ];
+    // Si chiede solo quello che il piano usa davvero: a chi ha già smesso di lavorare non
+    // servirebbe la retribuzione, e un trattamento che decorre oltre l'orizzonte non entra mai
+    // nel conto.
+    // MA LE CONDIZIONI GUARDANO IL VALORE SCRITTO, NON QUELLO DERIVATO. Con `x.ultimo`, che vale
+    // `annoPens − 1`, finché la decorrenza mancava non veniva chiesta nemmeno la retribuzione: il
+    // modulo appena aperto ne elencava quattro sotto una frase che ne prometteva sei, e le altre
+    // due comparivano dopo. Un elenco che si allunga mentre si compila è lo stesso difetto della
+    // frase sbagliata, in forma più lenta.
+    if ((x.ultimoScritto === null || x.ultimoScritto >= ANNO0)
+        && (x.annoPensVuoto || x.ultimo >= ANNO0))
+      voci.push({testo: 'la retribuzione netta mensile', manca: x.stipVuoto});
+    // L'ORIZZONTE SERVE PER SAPERE SE IL TRATTAMENTO CI ENTRA, ma senza anno di nascita non è
+    // ancora un orizzonte: `max(nascita) + etaFine` vale 95, cioè l'anno 95, e ogni decorrenza
+    // gli sta oltre. La casella del trattamento spariva così dall'elenco finché non si scriveva
+    // la nascita, per poi ricomparire: di nuovo un elenco che si allunga mentre si compila.
+    if (x.annoPensVuoto || !orizzonteNoto || x.annoPens <= finePiano)
+      voci.push({testo: "l'importo del trattamento INPS", manca: x.pensVuoto});
+    return {di: x.di, voci};
+  });
+  return {finePiano, comuni, dei,
+          quante: comuni.length + dei.reduce((a, g) => a + g.voci.length, 0)};
+}
+
+// Una voce sola porta il complemento in coda («la retribuzione della persona»); da due in su il
+// complemento passa davanti («della persona l'anno di nascita e la retribuzione»), che è il solo
+// ordine che regge in italiano senza ripeterlo a ogni voce.
+const elenco = v => v.length === 1 ? v[0]
+                                   : v.slice(0, -1).join(', ') + ' e ' + v[v.length - 1];
+
+// DUE ELENCHI UNO DENTRO L'ALTRO NON SI SEPARANO CON LA STESSA CONGIUNZIONE: con due persone
+// usciva «…l'importo del trattamento INPS e del secondo l'anno di nascita…», dove quella «e»
+// sembra un'altra voce del primo elenco. Quando un pezzo ne contiene già uno si separa col punto
+// e virgola, che è il livello di sopra. E se il complemento apre la frase vuole le virgole:
+// «servono della persona la retribuzione…» è sgrammaticato.
+function componi(comuni, dei){
+  const gruppi = dei.map((g, k) => g.voci.length === 1 ? `${g.voci[0]} ${g.di}`
+    : k === 0 && !comuni.length ? `, ${g.di}, ${elenco(g.voci)}`
+                                : `${g.di} ${elenco(g.voci)}`);
+  const pezzi = comuni.length ? [elenco(comuni), ...gruppi] : gruppi;
+  return pezzi.length > 1 && pezzi.some(p => p.includes(' e '))
+    ? pezzi.join('; ') : elenco([...comuni, ...gruppi]);
+}
+
+function calc(){
+  const s = leggi();
+  const r = simula(s);
+  const t = EL('titolo'), sub = EL('sottotitolo');
+  const giovane = s.p.reduce((a,b) => a.nascita > b.nascita ? a : b);
+
+  // UNA PERSONA SOLA: la seconda colonna si spegne in un punto solo. Sta QUI, prima di ogni
+  // uscita anticipata, perché dipende solo da come è compilato il modulo e non dal risultato.
+  // Stava in fondo, dopo i due `return` che gestiscono il modulo incompleto: chi arrivava sulla
+  // pagina vuota trovava «una persona» selezionato e DUE colonne di caselle, cioè un modulo
+  // largo il doppio del necessario proprio nel momento in cui deve sembrare affrontabile.
+  // Regola: quello che dipende dal modulo si applica prima di quello che dipende dal conto.
+  document.body.classList.toggle('solo-uno', s.N === 1);
+  // E QUANDO IL PIANO NON HA NESSUN ESERCIZIO DI ATTIVITÀ le righe del lavoro e del fondo
+  // spariscono del tutto, invece di restare disattivate. Disattivate portavano con sé le
+  // proprie istruzioni («chi non versa scrive 0», «con più posizioni si sommano le
+  // consistenze»): quattro capoversi che dicono come compilare caselle che non si possono
+  // compilare. Con una sola persona già in pensione della coppia restano, perché all'altra
+  // servono: lì basta la disattivazione, che è per colonna.
+  document.body.classList.toggle('senza-lavoro', s.tuttoInPens);
+  // QUANTE CASELLE SERVONO PER IL VERDETTO. Due comuni (patrimonio, spesa) e quattro per
+  // persona: sono esattamente quelle che la guardia più sotto controlla, e il numero si deriva
+  // invece di scriverlo, perché cambia con «una persona / due persone». Sta qui, prima delle
+  // uscite anticipate, perché è la frase che chi arriva sulla pagina vuota legge per prima.
+  const req = richieste(s);
+  const PAROLA = {4:'quattro', 5:'cinque', 6:'sei', 7:'sette', 8:'otto', 9:'nove', 10:'dieci'};
+  const voci = g => g.voci.map(v => v.testo);
+  // «per ciascuno» si può dire solo se a ciascuno serve davvero lo stesso: in una coppia con uno
+  // già in pensione le due liste sono diverse, e accorparle prometterebbe a uno una casella che
+  // non gli viene chiesta.
+  const uguali = req.dei.length > 1
+    && req.dei.every(g => voci(g).join('|') === voci(req.dei[0]).join('|'));
+  const parte = s.N === 1 ? `più ${elenco(voci(req.dei[0]))}`
+    : uguali ? `più, per ciascuno, ${elenco(voci(req.dei[0]))}`
+    : req.dei.map(g => `${g.di} ${elenco(voci(g))}`).join('; ');
+  EL('bastano').innerHTML = `Per il verdetto bastano
+    <b>${PAROLA[req.quante] || req.quante} dati</b>: ${elenco(req.comuni.map(v => v.testo))}${
+    uguali || s.N === 1 ? ', ' : '; '}${parte}. Il resto affina il conto e apre le decisioni sul
+    fondo pensione, e si può compilare dopo. Una casella lasciata vuota sospende il verdetto;
+    lo <b>zero</b> è una risposta, e il conto lo prende alla lettera.`;
+
+  // CHI HA UNA DECORRENZA GIÀ TRASCORSA: da lì in giù una parte del modulo non ha più oggetto.
+  // Le caselle si DISATTIVANO invece di essere ignorate in silenzio: un valore che il conto
+  // scarta senza dirlo è lo stesso difetto del verdetto dato senza patrimonio, in forma più
+  // piccola. E la disattivazione è reversibile: basta correggere l'anno perché tornino in gioco.
+  // Sta qui, prima delle uscite anticipate, perché dipende solo da come è compilato il modulo.
+  {
+    const SPENTE = ['stip', 'ral', 'cresc', 'ultimo',              // esercizi di attività
+                    'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];  // fondo
+    s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
+
+    // la seconda spesa esiste solo se c'è un passaggio fra due fasi: senza esercizi di attività
+    // le due coincidono, e tenerla attiva farebbe scrivere un numero che il conto scarta
+    EL('spesaPens').disabled = s.tuttoInPens;
+    EL('spesaPensNota').innerHTML = s.tuttoInPens
+      ? 'il piano è già tutto in pensione: vale la spesa di oggi'
+      : 'se resta vuota, il conto tiene la stessa di adesso';
+
+    const gia = s.indici.filter(i => s.p[i].giaInPens);
+    const el = EL('avvisoPensione');
+    el.hidden = gia.length === 0;
+    if (gia.length){
+      const tutti = gia.length === s.N;
+      // «Trattamento già in erogazione Anna dal 2015» non si dice: o il complemento è articolato
+      // e sta attaccato al nome del soggetto, o i soggetti si elencano dopo i due punti.
+      const quando = s.N === 1
+        ? `Trattamento già in erogazione dal <b>${s.p[gia[0]].annoPens}</b>.`
+        : gia.length === 1
+        ? `Trattamento ${s.p[gia[0]].di} già in erogazione dal <b>${s.p[gia[0]].annoPens}</b>.`
+        : `Trattamenti già in erogazione: ${gia.map(i =>
+             `${s.p[i].nome} dal <b>${s.p[i].annoPens}</b>`).join(' e ')}.`;
+      // la spiegazione una volta sola, i soggetti per ciascuno: con due riquadri per persona
+      // sarebbe uscita due volte identica, ed è il quarto caso in questo progetto
+      const chi = tutti ? 'Il piano non comprende esercizi di attività'
+        : `Per ${gia.map(i => s.p[i].nome).join(' e ')} il piano non comprende esercizi di attività`;
+      el.innerHTML = `${quando} ${chi}: retribuzione, TFR e
+        contributi restano fuori dal conto. <b>Il fondo pensione non è rappresentato</b>: la
+        prestazione già riscossa è parte del patrimonio investito, e indicarla qui la conterebbe
+        due volte. Chi non l'ha ancora riscossa non rientra in questo calcolo.`;
+    }
+  }
+  // E SU SCHERMO STRETTO ogni casella porta il nome della propria persona. Sotto i 640 px le
+  // due colonne diventano un elenco: senza il nome, scorrendo non si saprebbe più a chi
+  // appartenga il campo che si sta compilando. Lo mostra il CSS, non l'HTML: su schermo largo
+  // l'intestazione di colonna basta e ripeterlo sarebbe rumore.
+  // NON TUTTE LE CELLE SONO DI UNA PERSONA: «Il piano riguarda» sta nella stessa griglia e non
+  // appartiene a nessuno. Marcandole tutte compariva un'intestazione ANNA sopra quel menu, e un
+  // BRUNO orfano sotto. Il criterio è la presenza di un campo di quella persona, cioè di un id
+  // che finisce col suo indice.
+  // E IL NOME ACCESSIBILE DI OGNI CASELLA. Ventinove campi su trentotto non avevano
+  // un'etichetta collegata: il testo si vedeva, ma stava in un `<div>` accanto, e un lettore di
+  // schermo annunciava «casella di testo» e basta. In una griglia a due colonne non c'era
+  // nemmeno modo di sapere quale fosse di chi.
+  // Non si duplica il testo: si legge dalla `.voce` della stessa riga, che è già lì, e vi si
+  // aggiunge il nome della persona. Il rimando alla pagina che spiega la casella si toglie,
+  // perché è un collegamento, non parte del nome del campo.
+  const etichettaDi = cella => {
+    let e = cella.previousElementSibling;
+    while (e && !(e.classList && e.classList.contains('voce'))) e = e.previousElementSibling;
+    if (!e || !e.cloneNode) return '';
+    const c = e.cloneNode(true);
+    if (c.querySelectorAll) c.querySelectorAll('a').forEach(a => a.remove());
+    return (c.textContent || '').replace(/\s+/g, ' ').trim().replace(/[,;:]$/, '');
+  };
+  document.querySelectorAll('.due .cella').forEach(e => {
+    const i = e.classList.contains('p2') ? 1 : 0;
+    // lo stesso criterio del nome visibile: «Il piano riguarda» sta nella griglia ma non è di
+    // nessuno, e senza questa condizione un lettore di schermo annunciava «Il piano riguarda,
+    // Anna» su un menu che riguarda tutti e due
+    const suo = e.querySelector('[id$="' + i + '"]');
+    if (suo) e.dataset.chi = NOMI[i]; else delete e.dataset.chi;
+    const campo = e.querySelector('input, select');
+    if (!campo) return;
+    const voce = etichettaDi(e);
+    if (voce) campo.setAttribute('aria-label',
+      s.N === 2 && suo ? `${voce}, ${NOMI[i]}` : voce);
+  });
+
+  // QUELLO CHE DIPENDE DAL MODULO, PRIMA DI QUELLO CHE DIPENDE DAL CONTO.
+  // Questo blocco stava DOPO le due uscite anticipate. Conseguenza: chi aveva compilato RAL e
+  // contributi ma non ancora la decorrenza non vedeva NESSUN valore ricavato — né i contributi
+  // in euro, né quanto resta del tetto, né il TFR — perché il calcolo usciva prima di scriverli.
+  // Le hint tacevano per la mancanza di un campo che con loro non c'entra, e il modulo sembrava
+  // non rispondere. È lo stesso difetto delle due colonne, nella sua forma più fastidiosa.
+  // Verificato col metodo del progetto: impronta di tutto quello che la pagina scrive su dodici
+  // scenari, prima e dopo lo spostamento, confrontata riga per riga.
+  // i valori che la pagina ricava, accanto alla casella che li genera
+  s.indici.forEach(i => {
+    // i nomi li scrivono loro, ma i riquadri sono costruiti una volta sola: vanno riscritti
+    EL('chiVers'+i).textContent = NOMI[i];
+    EL('chiFondo'+i).textContent = NOMI[i];
+    // i cursori sono costruiti dal codice e non hanno una `.voce` accanto: il loro nome
+    // accessibile si compone qui, dove i nomi delle persone si conoscono
+    [['cVers', 'Percentuale della retribuzione versata al fondo'],
+     ['cQuando', 'Anno in cui il fondo comincia a essere erogato'],
+     ['cCap',   'Quota del fondo riscossa in capitale']]
+      .forEach(([k, che]) => EL(k+i).setAttribute
+        && EL(k+i).setAttribute('aria-label', `${che}, ${NOMI[i]}`));
+    const x = s.p[i];
+    // ogni valore ricavato sta sotto la casella da cui esce, non in una riga a parte
+    const H = (id, testo) => EL(id).innerHTML = testo;
+    H('pensNetta'+i, x.pensLorda > 0 ? E0(x.pens) + ' netti al mese' : '&nbsp;');
+    const co = contributi(x, x.pcVoi);
+    H('pcVoiEuro'+i, co.lav > 0.5 ? E0(co.lav) + " l'anno" : '&nbsp;');
+    H('pcDatEuro'+i, co.dat > 0.5 ? E0(co.dat) + " l'anno"
+        : x.fondoIndividuale ? (x.pcDat > 0 ? 'non conteggiato' : '&nbsp;')
+        : (x.pcDat > 0 ? 'subordinato al contributo indicato' : '&nbsp;'));
+    // la nota sotto il tipo di fondo parla solo quando c'è una conseguenza da dichiarare
+    H('tipoNota'+i, x.fondoIndividuale ? 'la quota del datore non spetta' : '&nbsp;');
+
+    // DUE TOTALI, e non uno. Contributi e TFR entrano tutti e due nel fondo, ma solo i primi
+    // consumano il tetto deducibile: sommarli in un numero solo faceva credere di essere già
+    // sopra i 5.300 quando invece resta quasi tutto lo spazio.
+    H('contrEuro'+i, co.tot < 0.5 ? '—' : E0(co.tot) + " l'anno");
+    H('restaTetto'+i, co.tot < 0.5 ? '&nbsp;'
+      : co.tot >= TETTO_DEDUZIONE - 0.5
+        ? `il tetto di ${E0(TETTO_DEDUZIONE)} è pieno`
+        : `dei ${E0(TETTO_DEDUZIONE)} deducibili ne restano ${E0(TETTO_DEDUZIONE - co.tot)}`);
+
+    // la crescita della retribuzione: si scrive nominale, e qui sotto si legge quello che
+    // resta tolta l'inflazione — che è quello che il conto usa davvero
+    H('crescReale'+i, x.crescNom === null
+      ? "segue l'inflazione: in euro di oggi resta ferma"
+      : Math.abs(x.cresc) < 5e-5
+        ? 'pari all\'inflazione: in euro di oggi resta ferma'
+        : `${x.cresc > 0 ? '+' : '−'}${fmt(Math.abs(x.cresc)*100, 2)}% l'anno oltre l'inflazione`);
+
+    // L'ULTIMO ANNO DI LAVORO. La casella vuota va spiegata dicendo quale anno il conto sta
+    // usando, o resta una casella che non si sa se conti. E quando si smette prima va detto
+    // quanto dura il tratto senza reddito da lavoro: è la domanda per cui la casella esiste.
+    {
+      const buco = x.annoPens - 1 - Math.max(x.ultimo, ANNO0 - 1);
+      H('ultimoNota'+i, x.annoPensVuoto ? '&nbsp;'
+        // chi è già in pensione non ha esercizi di attività nel piano: la casella non decide
+        // più niente, e dirle «alla decorrenza: 2014» sarebbe una data al contrario
+        : x.giaInPens ? 'nessun esercizio di attività nel piano'
+        : x.ultimoScritto === null ? `alla decorrenza: ${x.ultimo}`
+        : x.ultimoScritto > x.ultimo ? `ricondotto al ${x.ultimo}: la decorrenza è ${x.annoPens}`
+        : buco > 0 ? `poi ${buco} ${buco === 1 ? 'anno' : 'anni'} senza reddito da lavoro`
+        : "l'esercizio precedente la decorrenza");
+    }
+
+    // il TFR: quanto è, e che nel tetto non conta — accanto alla sua casella, non nel totale
+    H('tfrAnno'+i, x.tfrAnno < 0.5 ? '&nbsp;'
+      : E0(x.tfrAnno) + " l'anno" + (x.tfrAlFondo
+          ? ' · non consuma il tetto' : ' · non entra nel fondo'));
+
+    const dentro = co.tot + (x.tfrAlFondo ? x.tfrAnno : 0);
+    H('totFondo'+i, dentro < 0.5 ? '—' : E0(dentro) + " l'anno");
+  });
+
+  // L'AVVISO SUL CONTRIBUTO DEL DATORE non è un'istruzione preventiva: comparirebbe a tutti
+  // per un caso che riguarda pochi. Compare a chi ci è dentro, e dice cosa fare adesso.
+  (() => {
+    const guai = s.p.map((x, i) => {
+      if (!(x.ral > 0)) return null;
+      // Su un fondo sottoscritto per conto proprio gli altri tre avvisi non hanno senso: parlano
+      // tutti di una quota che lì non esiste. Questo li sostituisce, e porta con sé la via
+      // d'uscita — perché il caso dell'adesione collettiva a un fondo aperto esiste davvero.
+      if (x.fondoIndividuale)
+        return x.pcDat > 0
+          ? `<b>${x.nome}</b>: la quota indicata per il datore non viene conteggiata. Il
+             contributo dell'azienda discende dal contratto collettivo e segue il fondo che il
+             contratto individua, quindi su un fondo sottoscritto per conto proprio di regola non
+             spetta. Se il contratto lo riconosce anche su questo fondo, come avviene nelle
+             adesioni collettive, va indicato <b>di categoria</b>.`
+          : null;
+      if (x.pcDat > 0 && x.pcVoiVuoto)
+        return `<b>${x.nome}</b>: c'è la quota del datore ma non quella del lavoratore. Se
+          oggi non si versa niente va scritto <b>0</b>: il conto dirà quanto vale attivarla.`;
+      if (x.pcVoi > 0 && x.pcDatVuoto)
+        return `<b>${x.nome}</b>: manca la quota del datore. Se il contratto la prevede va
+          indicata anche se oggi non si percepisce: serve a quantificare quello a cui si sta
+          rinunciando.`;
+      if (x.pcVoiVuoto && x.pcDatVuoto && x.fondo > 0)
+        return `<b>${x.nome}</b>: nel fondo non affluisce alcun contributo. Se l'adesione è
+          avvenuta col solo TFR, va lasciato <b>0</b> nella quota del lavoratore e indicata quella
+          che il contratto <i>prevede</i> per il datore: il conto quantificherà cosa si sta
+          perdendo.`;
+      return null;
+    }).filter(Boolean);
+    const el = EL('avvisoDatore');
+    el.hidden = guai.length === 0;
+    el.innerHTML = guai.join('<br>');
+  })();
+
+  // QUANDO SI SMETTE, e soprattutto se resta un tratto scoperto. Fino al 31/07/2026 questo
+  // riquadro dichiarava che si smette insieme, l'anno prima della prima delle due decorrenze:
+  // era un'ipotesi, non un fatto, e toglieva anni di reddito a chi ha accanto una persona più
+  // grande. Ora l'anno è di ciascuno, e quello che conta è il divario fra la fine dell'attività
+  // e la decorrenza del trattamento: gli esercizi in cui non entra né l'uno né l'altro.
+  {
+    const dice = i => {
+      const x = s.p[i], buco = x.annoPens - 1 - Math.max(x.ultimo, ANNO0 - 1);
+      const chi = s.N === 1 ? '' : ' ' + (r.di || DI)[i];
+      // CHI È GIÀ IN PENSIONE non ha una cessazione da annunciare: il piano comincia con il
+      // trattamento già in erogazione, e la frase deve dire da quando, non quando finirà una
+      // attività finita anni fa.
+      // il complemento va dentro la frase, non dopo i due punti: con una coppia in cui l'altro
+      // lavora ancora, «il piano non comprende esercizi di attività» sarebbe falso del piano
+      return x.giaInPens
+        ? `Trattamento${chi} in erogazione dal <b>${x.annoPens}</b>, senza esercizi di attività
+           nel piano.`
+        : buco <= 0
+        ? `Cessazione dell'attività${chi} nel <b>${x.ultimo}</b>, l'esercizio precedente la
+           decorrenza.`
+        : `Cessazione dell'attività${chi} nel <b>${x.ultimo}</b>, con decorrenza del trattamento
+           dal ${x.annoPens}: <b>${buco} ${buco === 1 ? 'esercizio' : 'esercizi'}</b> senza
+           reddito da lavoro né trattamento, a carico del patrimonio.`;
+    };
+    EL('quandoSmettete').innerHTML = s.indici.map(dice).join(' ');
+  }
+
+
+  // Pagina appena aperta: le caselle sono vuote e non c'è niente da dire. Dare un verdetto su
+  // un piano di zero anni sarebbe peggio che non darlo — va chiesto quello che manca, e basta.
+  //
+  // LE CASELLE CHE SI CHIEDONO SONO QUELLE DA CUI IL VERDETTO DIPENDE, non solo quelle che
+  // mancando darebbero un piano di zero esercizi. Con la sola spesa, la nascita e la decorrenza
+  // il conto girava lo stesso, con patrimonio zero e nessuna entrata, e rispondeva «decumulo non
+  // sostenibile, il patrimonio si esaurisce nel <anno in corso>» a chi non aveva ancora scritto
+  // quanto ha e quanto guadagna. Un verdetto sicuro su un conto che non ha i suoi numeri, e con
+  // lo scostamento sempre nella stessa direzione, la più allarmante: le entrate mancanti valgono
+  // zero e la spesa no.
+  // Il patrimonio e le entrate si chiedono quindi PRIMA del verdetto; tutto il resto (RAL, fondo,
+  // contributi, TFR) affina il conto, e lasciarlo vuoto sposta il risultato per difetto.
+  // Lo STESSO elenco della frase qui sopra, filtrato su quello che è ancora da compilare.
+  // L'elenco si raggruppa per persona invece di ripetere il complemento a ogni voce: con due
+  // persone e quattro caselle a testa, «del primo» compariva cinque volte in una frase sola.
+  const finePiano = req.finePiano;
+  const soloMancanti = v => v.filter(o => o.manca).map(o => o.testo);
+  const comuni = soloMancanti(req.comuni);
+  const dei = req.dei.map(g => ({di: g.di, voci: soloMancanti(g.voci)}))
+                     .filter(g => g.voci.length);
+  const quanteMancano = comuni.length + dei.reduce((a, g) => a + g.voci.length, 0);
+  const frase = componi(comuni, dei);
+  // Un orizzonte già superato (età 20 per un cinquantenne, o un anno di nascita di un secolo
+  // fa) dà un piano di zero esercizi: prima la pagina annunciava serenamente che «il patrimonio
+  // non si riduce in nessuno dei −29 esercizi». Meglio dire che non torna.
+  if (!quanteMancano && finePiano < ANNO0){
+    t.className = 'risposta';
+    t.innerHTML = 'Orizzonte già superato.';
+    sub.innerHTML = `Con questi anni di nascita, un orizzonte di ${fmt(s.etaFine)} anni si
+      chiuderebbe nel ${finePiano}: prima dell'anno in corso. Il piano non ha esercizi da
+      calcolare.`;
+    EL('vuoto').hidden = false;
+    ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
+    EL('svg').innerHTML = '';
+    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite'].forEach(k => EL(k).innerHTML = '');
+    EL('lasciato').hidden = true;
+    aggiornaSommario('', '');
+    return;
+  }
+
+  EL('vuoto').hidden = quanteMancano === 0;
+  if (quanteMancano){
+    t.className = 'risposta';
+    t.innerHTML = 'Dati incompleti.';
+    sub.innerHTML = 'Per il calcolo ' + (quanteMancano === 1 ? 'serve' : 'servono')
+      + (frase.startsWith(',') ? '' : ' ') + frase + '.';
+    ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
+    EL('svg').innerHTML = '';
+    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite'].forEach(k =>
+      EL(k).innerHTML = '');
+    EL('lasciato').hidden = true;
+    aggiornaSommario('', '');   // senza verdetto non c'è niente da tenere sott'occhio
+    return;
+  }
+
+  // LA DOMANDA È «QUANTO DURA», NON «QUANTO NE RESTA». Il residuo è un'altra cosa e da solo
+  // non risponde: 2,8 milioni alla fine possono voler dire «non l'avete mai toccato» oppure
+  // «ci siete andati vicini». Il verdetto si ricava da due fatti — se il patrimonio cala mai,
+  // e se arriva in fondo — e solo dopo viene il numero.
+  const cala = r.righe.filter((g, k) => k > 0 && g.patr < r.righe[k-1].patr - 1);
+  const q = spesaSostenibile(s);
+  // la spesa sostenibile è quella di ADESSO: quella della pensione la segue in proporzione,
+  // e quando le due sono diverse va detto, o si legge un numero solo per due fasi diverse
+  const inPens = s.spesaPens !== null && s.spesaPens !== undefined
+                 && Math.abs(s.spesaPens - s.spesa) > 0.5;
+  const margine = q === null || q < 1 ? '' :
+    `A parità di date la spesa massima sostenibile è di circa <b>${E50(q)}</b> al mese` +
+    (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '') +
+    `, contro ${E0(s.spesa)} indicati.`;
+
+  if (r.annoZero !== null){
+    t.className = 'risposta giu';
+    t.innerHTML = `<u>Decumulo non sostenibile</u>
+      <em>Il patrimonio si esaurisce nel ${r.annoZero}</em>, ai
+      ${r.annoZero - giovane.nascita} anni ${DI[s.p.indexOf(giovane)]}.`;
+    sommarioDelTitolo(`il patrimonio si esaurisce nel ${r.annoZero}`, 'Non sostenibile', 'giu');
+    sub.innerHTML = q === null || q < 1
+      ? `Le entrate non coprono la spesa in nessuno scenario: è necessario posticipare la
+         cessazione dell'attività.`
+      : `Per raggiungere il ${r.annoFine} la spesa dovrebbe ridursi a circa <b>${E50(q)}</b> al mese`
+        + (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '')
+        + ` contro ${E0(s.spesa)} indicati, in alternativa a un posticipo della cessazione.`;
+  } else if (cala.length === 0){
+    // il caso più bello, e quello che il vecchio titolo non sapeva dire: non decumulano affatto
+    t.className = 'risposta su';
+    t.innerHTML = `<u>Decumulo sostenibile</u>
+      <em>Il patrimonio non si riduce</em> in nessuno dei
+      ${r.annoFine - ANNO0 + 1} esercizi del piano.`;
+    sub.innerHTML = `Le entrate coprono la spesa e l'eccedenza si accumula: al
+      ${r.annoFine} residuano <b>${E0(r.finale)}</b>. ` + margine;
+    sommarioDelTitolo(`non si riduce mai: al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
+  } else {
+    t.className = 'risposta su';
+    const giu = cala[0].anno;
+    // il minimo va cercato DA QUANDO comincia il calo: il patrimonio più basso in assoluto è
+    // quasi sempre il primo anno, e dirlo qui contraddirebbe la frase che lo precede
+    const min = r.righe.filter(g => g.anno >= giu).reduce((a, b) => b.patr < a.patr ? b : a);
+    t.innerHTML = `<u>Decumulo sostenibile</u>
+      <em>Il patrimonio arriva al ${r.annoFine}</em> con un residuo di ${E0(r.finale)}.`;
+    sommarioDelTitolo(`al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
+    sub.innerHTML = `Il patrimonio inizia a ridursi dal ${giu}. Consistenza minima nel
+      <b>${min.anno}</b>: ${E0(min.patr)}${min.anno < r.annoFine ? ', in ripresa negli esercizi successivi' : ''}. `
+      + margine;
+  }
+
+  // SE UNO DEI DUE MANCASSE.
+  //
+  // LA METRICA È STATA SCELTA MISURANDO, e la prima era sbagliata. Col patrimonio finale lo
+  // scenario diceva sistematicamente che chi resta sta MEGLIO: la spesa scende al 60-67% e quel
+  // risparmio domina la perdita di reddito. Vero nel modello, grottesco da pubblicare, e
+  // soprattutto risposta a una domanda che nessuno si fa.
+  // La domanda vera è se chi resta mantiene il tenore di vita. Quindi si confrontano due
+  // discese: quella delle ENTRATE RICORRENTI e quella della SPESA. La seconda non è una nostra
+  // stima, sono le due scale di equivalenza pubbliche, e danno la soglia con cui confrontarsi.
+  //
+  // Vale solo con due persone: se manca l'unica, non resta nessuno di cui dire qualcosa.
+  {
+    const el = EL('superstite');
+    if (s.N < 2 || r.righe.length === 0){ el.innerHTML = ''; }
+    else {
+      const entrate = (piano, anno) => { const g = piano.righe.find(v => v.anno === anno);
+        return g ? g.daLavoro + g.daPensioni + g.daRendita : 0; };
+      // l'esercizio DOPO il decesso: nell'anno stesso le entrate sono ancora miste
+      const quando = i => { const x = s.p[i];
+        return x.nascita + Math.round(x.etaPens + speranzaVita(x.etaPens)) + 1; };
+      const caso = (i, over) => {
+        const anno = quando(i);
+        if (anno > r.annoFine) return null;
+        const p = simula({...s, manca: {chi: i, anno: anno - 1, equiv: EQUIV_BASSA},
+          p: over ? s.p.map(y => ({...y, ...over})) : s.p});
+        const prima = entrate(r, anno), dopo = entrate(p, anno);
+        return prima > 0 ? {anno, q: dopo / prima} : null;
+      };
+      const casi = s.indici.map(i => caso(i, null));
+      if (casi.every(v => v === null)) el.innerHTML = '';
+      else {
+        const pcq = v => fmt(v.q * 100) + '%';
+        const dove = casi.map((v, i) => v === null ? null
+          : `${pcq(v)} ${s.N === 1 ? '' : 'mancando ' + s.p[i].nome}`).filter(Boolean);
+        const peggio = Math.min(...casi.filter(Boolean).map(v => v.q));
+        const verdetto = peggio >= EQUIV_ALTA
+          ? 'il tenore di vita è mantenuto'
+          : peggio >= EQUIV_BASSA
+          ? 'il margine è sottile, e dipende da quanto la spesa scende davvero'
+          : '<b>chi resta dovrebbe attingere al patrimonio più di adesso</b>';
+        // IL PEZZO AZIONABILE: la forma della rendita sposta questo rapporto, ed è la cosa che
+        // la sezione sull'erogazione dichiarava di non poter quantificare.
+        let leva = '';
+        // solo se una rendita c'è davvero e se lo spostamento conta: con un montante piccolo
+        // la reversibile muove il rapporto di un punto, e un punto non è una leva
+        const esisteRendita = r.incassi.some(v => v.convertito > 0);
+        if (esisteRendita && s.p.some(x => x.forma !== 'rev' && x.quotaCap < 1)){
+          const rev = s.indici.map(i => caso(i, {forma: 'rev'}));
+          const dopo = Math.min(...rev.filter(Boolean).map(v => v.q));
+          if (dopo > peggio + 0.02)
+            leva = ` Con la rendita <b>reversibile</b> il caso peggiore salirebbe da
+              ${fmt(peggio*100)}% a <b>${fmt(dopo*100)}%</b>.`;
+        }
+        el.innerHTML = `<b>Se uno dei due mancasse.</b> Alla speranza di vita ISTAT le entrate
+          ricorrenti di chi resta scenderebbero a ${dove.join(', ')}, contro una spesa che scende
+          fra il ${fmt(EQUIV_BASSA*100)}% e il ${fmt(EQUIV_ALTA*100)}% di quella di due
+          persone: ${verdetto}.${leva}
+          <a href="il-metodo.html">Come è stimato →</a>`;
+      }
+    }
+  }
+
+  // IL CONTRIBUTO DELL'AZIENDA CHE NON ARRIVA, portato accanto al risultato.
+  //
+  // PERCHÉ QUI E NON SOLO IN FONDO. È l'unico numero del sito che cambia un comportamento oggi,
+  // e stava nella sezione delle decisioni, cioè sotto il verdetto: chi legge «sostenibile» e
+  // chiude la pagina non lo vedeva mai.
+  //
+  // PERCHÉ NON È UN DOPPIONE. Qui sta il FATTO — quanto non entra — e in fondo resta la
+  // DECISIONE, col cursore, il costo in busta e il punto più alto. Sono due cose diverse, e la
+  // riga porta il rimando invece di ripetere il conto.
+  //
+  // QUELLO CHE NON SI PUÒ DIRE, ed è il vincolo che ha deciso la frase: **il minimo del
+  // contratto non lo sappiamo**. Serve a dire quanto costa attivare la contribuzione, e
+  // inventarlo sarebbe un errore in direzione ottimistica (la stessa ragione per cui il 30/07
+  // non si è cablato l'1%). Il modello fa scattare il datore a qualunque versamento positivo,
+  // quindi si potrebbe scrivere «basta lo 0,1%»: sarebbe esatto nel modello e falso nel mondo,
+  // perché nessun CCNL funziona così. Si dice quindi solo ciò che è esatto: quanto vale la
+  // quota, per quanti esercizi, e dove si legge il minimo. Il totale è **senza rendimento**,
+  // cioè per difetto: una somma che chiunque può rifare a mano.
+  {
+    const persi = s.p.map(x => {
+      if (!(x.ral > 0) || x.fondoIndividuale || !(x.pcDat > 0)) return null;
+      // zero SCRITTO, non casella vuota: al vuoto risponde l'istruzione accanto alla casella,
+      // che è un'altra cosa e sta in un altro posto
+      if (x.pcVoiVuoto || x.pcVoi > 0) return null;
+      const anni = x.ultimo - ANNO0 + 1;
+      if (anni < 1) return null;              // ha già smesso: non c'è più niente da attivare
+      const quota = quotaDatore(x);
+      return quota < 0.5 ? null : {nome: x.nome, quota, anni, tot: quota * anni};
+    }).filter(Boolean);
+    const el = EL('lasciato');
+    el.hidden = persi.length === 0;
+    if (persi.length){
+      // LA SPIEGAZIONE UNA VOLTA SOLA, I NUMERI PER CIASCUNO. Scritta per persona, con due
+      // riquadri usciva due volte identica: è il terzo caso in questo progetto in cui una frase
+      // giusta ripetuta diventa un muro. Il totale è la cosa nuova che la somma può dire, e i
+      // singoli restano perché il rimedio è di ciascuno.
+      const anno  = persi.reduce((a, v) => a + v.quota, 0);
+      const tutto = persi.reduce((a, v) => a + v.tot, 0);
+      const uno   = persi.length === 1;
+      const capo  = uno
+        ? `<b>${persi[0].nome}: ${E0(anno)} l'anno dall'azienda che oggi non arrivano.</b>`
+        : `<b>Ci sono ${E0(anno)} l'anno dall'azienda che oggi non arrivano</b>: `
+          + persi.map(v => `${v.nome} ${E0(v.quota)}`).join(', ') + '.';
+      const coda = uno
+        ? `Da qui alla cessazione sono ${persi[0].anni}
+           ${persi[0].anni === 1 ? 'esercizio' : 'esercizi'}: <b>${E0(tutto)}</b>`
+        : `Fino alla cessazione sono <b>${E0(tutto)}</b>`;
+      el.innerHTML = `${capo} Il contributo del datore è dovuto solo a fronte di quello del
+        lavoratore, qui indicato pari a zero. ${coda} in euro di oggi, senza contare quanto
+        renderebbero. <a href="#contribuzione">Quanto costa attivarlo →</a>`;
+    }
+  }
+
+  // LA PROVA DI TENUTA, e perché è una riga a parte invece che dentro il verdetto. Il titolo
+  // risponde a «regge?»; questa dice quanto quella risposta dipenda dall'ORDINE in cui arrivano
+  // i rendimenti. Nel decumulo la sequenza conta più della media: quello che manca all'inizio
+  // non c'è più a rendere dopo, e un piano che regge sulla media può non reggere su una brutta
+  // partenza. Misurato: sul caso di prova a 4.000 € di spesa il verdetto si rovescia davvero.
+  if (s.rend <= 0 && s.rendFondo <= 0){
+    // con rendimenti reali già non positivi la prova non toglie niente: mostrarla direbbe
+    // «regge lo stesso» su un confronto fra un piano e sé stesso
+    EL('tenuta').innerHTML = '';
+  } else {
+    const sotto = {...s, prova: PROVA_ANNI};
+    const p = simula(sotto);
+    const capo = `<b>Prova di tenuta.</b> Con i primi ${fmt(PROVA_ANNI)} esercizi a rendimento
+      reale nullo `;
+    const coda = ` <a href="il-metodo.html">Come è costruita →</a>`;
+    if (r.annoZero === null && p.annoZero !== null){
+      // il caso che vale la riga: il verdetto qui sopra non regge alla prova, e va detto forte
+      EL('tenuta').innerHTML = capo + `il patrimonio <b>si esaurisce nel ${p.annoZero}</b>.
+        Il verdetto dipende dalla sequenza dei rendimenti, non dalla loro sola media.` + coda;
+    } else if (r.annoZero === null){
+      const q2 = spesaSostenibile(sotto);
+      EL('tenuta').innerHTML = capo + `il piano regge lo stesso` + (q === null || q2 === null
+        ? `, e al ${r.annoFine} residuano <b>${E0(p.finale)}</b>.`
+        : `: la spesa massima sostenibile passa da ${E50(q)} a <b>${E50(q2)}</b> al mese.`) + coda;
+    } else if (p.annoZero < r.annoZero){
+      EL('tenuta').innerHTML = capo + `il patrimonio si esaurisce nel
+        <b>${p.annoZero}</b> anziché nel ${r.annoZero}.` + coda;
+    } else {
+      // stesso anno: «si esaurisce nel 2029 anziché nel 2029» è una frase che non dice niente
+      EL('tenuta').innerHTML = capo + `il patrimonio si esaurisce comunque nel
+        <b>${r.annoZero}</b>.` + coda;
+    }
+  }
+
+  // quello che entra davvero nel primo anno, pensioni già in corso comprese
+  const primo = r.righe[0];
+  const messiVia = primo
+    ? (primo.daLavoro + primo.daPensioni + primo.daRendita - primo.spesa) / 12 : 0;
+  // UN DISAVANZO DI FLUSSO NON È UN PATRIMONIO CHE CALA: se il rendimento lo copre, il
+  // patrimonio sale lo stesso. La frase diceva «il patrimonio è già in riduzione» leggendo solo
+  // le entrate, e finiva sopra un verdetto che dichiarava il contrario nella stessa schermata.
+  // È la seconda volta in questo progetto che un disavanzo ricorrente viene raccontato come una
+  // perdita di patrimonio: la conclusione sul patrimonio si prende dal patrimonio.
+  const calaSubito = primo && primo.patr < primo.inizio - 0.5;
+  EL('calcolato').innerHTML = messiVia >= 0
+    ? `Accantonamento corrente: <b>${E0(messiVia)}</b> al mese, differenza fra entrate e spesa.`
+    : `<span class="giu-t">La spesa eccede le entrate di ${E0(-messiVia)} al mese</span>: `
+      + (calaSubito
+         ? 'il patrimonio è in riduzione già dal primo esercizio.'
+         : 'la differenza esce dal patrimonio, che il rendimento mantiene comunque in crescita.');
+
+  EL('reali').innerHTML =
+    `al netto restano <b>${fmt(s.rend*100, 2)}%</b> per gli investimenti e
+     <b>${fmt(s.rendFondo*100, 2)}%</b> per i fondi pensione`;
+
+
+  // Questa frase descrive il rapporto fra due caselle, quindi si deriva. Scritta a mano diceva
+  // «il fondo rende meno», e appena i rendimenti sono cambiati è diventata falsa: una pagina
+  // non può affermare una cosa che le sue stesse caselle smentiscono.
+  const dif = s.rendFondoNom - s.rendNom;
+  const nomi = `Per i fondi pensione è indicato <b>${fmt(s.rendFondoNom*100,1)}%</b>, per gli
+    investimenti liberi <b>${fmt(s.rendNom*100,1)}%</b>: `;
+  EL('confrontoRend').innerHTML = nomi + (
+    Math.abs(dif) < 0.0005
+      ? `rendimento identico. Il fondo sconta l'imposta sostitutiva sui rendimenti anno per
+         anno, mentre sugli investimenti liberi l'imposta è dovuta al realizzo: a parità di
+         comparto il fondo dovrebbe rendere meno. Se il ${fmt(s.rendFondoNom*100,1)}% è un
+         rendimento lordo, va rettificato.`
+      : dif > 0
+      ? `<b>il fondo rende di più</b>, di ${fmt(dif*100,1)} punti. Il fondo sconta però
+         l'imposta sostitutiva sui rendimenti anno per anno, mentre sugli investimenti liberi
+         l'imposta è dovuta al realizzo. Se il ${fmt(s.rendFondoNom*100,1)}% è il rendimento
+         <i>lordo</i> del comparto il confronto è distorto a favore del fondo, e da esso
+         dipendono due esiti: la convenienza dell'erogazione anticipata e il valore della
+         contribuzione aggiuntiva.`
+      : `<b>il fondo rende meno</b>, di ${fmt(-dif*100,1)} punti, coerentemente con il fatto
+         che sconta l'imposta sostitutiva sui rendimenti anno per anno mentre sugli
+         investimenti liberi l'imposta è dovuta al realizzo.`);
+  EL('doveRende').innerHTML = Math.abs(dif) < 0.0005
+    ? 'coi rendimenti indicati i due posti rendono uguale, quindi qui non cambia niente'
+    : dif > 0 ? `coi rendimenti indicati fuori rendono <b>di meno</b> (${fmt(s.rendNom*100,1)}%
+                 contro ${fmt(s.rendFondoNom*100,1)}%), quindi anticipare costa`
+              : `coi rendimenti indicati fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}%
+                 contro ${fmt(s.rendFondoNom*100,1)}%)`;
+  EL('regola').innerHTML = r.incassi.length === 0
+    // Senza esercizi di attività la ragione l'ha già data l'avviso accanto alla decorrenza:
+    // ripeterla qui sarebbe un doppione, e per giunta sotto una sezione che non c'è più.
+    // E «nessuno dei DUE» si diceva anche con una persona sola: quinta volta che un numero
+    // cablato sopravvive al caso a una persona.
+    ? (s.tuttoInPens ? ''
+       : s.N === 1 ? 'Il fondo non viene riscosso dentro il piano.'
+                   : 'Nessuno dei due fondi viene riscosso dentro il piano.')
+    : r.incassi.map(i => {
+        const t = r.rite.find(v => v.chi === i.chi);
+        // se il fondo è già uscito a rate va detto PRIMA, altrimenti «è piccolo» sembra
+        // una buona notizia mentre è solo la conseguenza di averlo svuotato
+        const rita = t
+          ? `<b>Il fondo ${i.di} esce a rate</b>: ${E0(t.rata)} lordi l'anno dal ${t.da} al
+             ${t.a}, ${E0(t.totale)} complessivi (${E0(t.netto)} netti). Alla pensione, nel
+             ${i.anno}, il residuo è di <b>${E0(i.montante)}</b>, cioè la
+         solo la rivalutazione
+             maturata nel frattempo: `
+          : `Il fondo ${i.di} arriva a ${E0(i.montante)}: `;
+        const consentito = `${fmt(i.max*100)}%`, scelto = `${fmt(i.quota*100)}%`;
+        // quello che la legge concede e quello che si è scelto sono due cose diverse: finché la
+        // pagina partiva dal massimo coincidevano, e la frase se ne approfittava
+        const scelta = Math.abs(i.quota - i.max) < 1e-9 ? ''
+          : i.quota < 1e-9 ? ' Qui è tutto convertito in rendita.'
+          : ` Qui ne esce ${perc(i.quota*100,'il')} (${E0(i.capitale)}); il resto va in rendita.`;
+        return i.limitata
+          ? `<span class="giu-t">${rita} sopra la soglia, il ${fmt(i.chiesta*100)}% in capitale
+             non è consentito: il conto ne liquida il ${consentito} (${E0(i.capitale)}) e converte
+             il resto in rendita.</span>`
+          : rita + `se ne può riscuotere fino al ${consentito} in capitale` +
+            (i.max === 1
+              ? (i.montante < soglia(i.coeffEta * BANDA_ALTA)
+                  ? `, perché resta sotto la soglia che vale a ${fmt(i.etaPens)} anni — e ci resta
+                     con la tavola di qualunque fondo.`
+                  : `, perché resta sotto la soglia di ${E0(i.soglia)} che vale a
+                     ${fmt(i.etaPens)} anni. È una soglia stimata: col proprio fondo va verificata.`)
+              : '.') + scelta;
+      }).join('<br>');
+
+  // l'inflazione, resa concreta: la stessa cifra vista dai due lati
+  const anni = r.annoFine - ANNO0;
+  const gonfio = r.finale * Math.pow(1 + s.infl, anni);
+  EL('inflazione').innerHTML = r.righe.length === 0 ? '' :
+    `Importi in <b>euro di oggi</b>. In valore nominale i ${E0(r.finale)} del ${r.annoFine}
+     sarebbero <b>${E0(gonfio)}</b>: stesso potere d'acquisto, prezzi più alti.`;
+
+  scriviFasi(r); disegna(r); tabella(r, s); aggiornaDecisioni(s, r);
+  if (typeof salva === 'function') salva();
+}
+
+// ---------------------------------------------------------------------------
+//  Le tre decisioni. Ogni scelta è un cursore: si muove e si guarda il risultato.
+//  Il punto più alto è segnato, ma non c'è nessuna sentenza.
+// ---------------------------------------------------------------------------
+
+// rifà i conti cambiando una sola cosa a una sola persona
+function conAlt(s, i, campo, valore){
+  return simula({...s, p: s.p.map((x,j) => j === i ? {...x, [campo]: valore} : x)});
+}
+
+// il valore, fra quelli provati, che lascia più soldi alla fine
+// I CANDIDATI PER IL PUNTO PIÙ ALTO, e perché sono questi.
+// Fra un punto notevole e l'altro il patrimonio finale è LINEARE nella percentuale versata:
+// ogni euro in più fa sempre la stessa cosa (esce dalla busta, entra nel fondo, sconta la
+// stessa aliquota). Una funzione lineare a tratti ha il massimo su un vertice, quindi basta
+// provare i vertici invece di spazzolare tutto il cursore:
+//   · gli estremi, 0 e il massimo del cursore;
+//   · il gradino del datore, appena sopra quello che si versa oggi;
+//   · dove finisce la deduzione;
+//   · dove la deduzione fa scendere di scaglione IRPEF (lì cambia la pendenza).
+// Gli interi restano come rete di sicurezza. Tutto viene portato sul passo del cursore, 0,1:
+// un punto che il cursore non può raggiungere sarebbe un consiglio che non si può seguire.
+// E C'È UN GRADINO CHE DALLE PERCENTUALI NON SI VEDE: la soglia del «tutto in contanti».
+// Superarla di un euro fa scendere la quota liquidabile dal 100% al 60%, e il resto diventa una
+// rendita che non si rivaluta: nel conto quel salto vale decine di migliaia di euro. Il punto in
+// cui il montante la incrocia si trova per bisezione — il montante cresce con quello che si
+// versa — e vanno provati i due decimi che lo stringono. Senza, la pagina consigliava il decimo
+// di punto sbagliato (trovato il 31/07/2026 su un caso vero: 507 € lasciati lì).
+function pcSoglia(s, i, pcMax){
+  const scarto = pc => {
+    const inc = conAlt(s, i, 'pc', pc).incassi.find(z => z.chi === s.p[i].nome);
+    return inc ? inc.montante - inc.soglia : null;
+  };
+  const sotto = scarto(0), sopra = scarto(pcMax);
+  if (sotto === null || sopra === null || sotto > 0 || sopra < 0) return [];
+  let lo = 0, hi = pcMax;
+  for (let k = 0; k < 14; k++){ const m = (lo + hi) / 2; scarto(m) < 0 ? lo = m : hi = m; }
+  return [lo, hi];
+}
+
+function candidatiVersamento(x, pcMax, altri = []){
+  const base = Math.max(0, x.ral * (1 - IVS));
+  const notevoli = [0, x.pcVoi, x.pcVoi + 0.1, pcTetto(x), pcMax, ...altri];
+  if (x.ral > 0)
+    for (const [soglia] of SCAGLIONI)
+      if (soglia !== Infinity) notevoli.push((base - soglia) / x.ral * 100);
+  for (let v = 1; v <= pcMax; v++) notevoli.push(v);
+  const passo = new Set();
+  for (const v of notevoli){
+    if (!(v >= -0.05)) continue;
+    for (const p of [Math.floor(v * 10) / 10, Math.ceil(v * 10) / 10])
+      if (p >= 0 && p <= pcMax + 1e-9) passo.add(+p.toFixed(1));
+  }
+  return [...passo].sort((a, b) => a - b);
+}
+
+function migliore(s, i, campo, valori){
+  let best = null;
+  for (const v of valori){
+    const f = conAlt(s, i, campo, v).finale;
+    if (best === null || f > best.f) best = {v, f};
+  }
+  return best;
+}
+
+// IL PAREGGIO FRA CAPITALE E RENDITA, e perché è espresso in RENDIMENTO e non in età.
+// La prima idea era dire a che età la rendita recupera il capitale. Misurata, quell'età non
+// esiste: con qualunque rendimento dal 2% in su la rendita resta indietro anche portando il
+// piano a 115 anni. La longevità da sola non ribalta il confronto, e una pagina che promette
+// un'età d'incrocio prometterebbe una cosa che nei numeri non c'è.
+// Le ragioni sono due, e nessuna delle due è la longevità:
+//   · la rendita è NOMINALE — non si rivaluta, e in euro di oggi si sgonfia ogni anno;
+//   · il metro è il patrimonio finale, che è un LASCITO: la rendita per costruzione non ne
+//     lascia, quindi quel metro la penalizza per come è fatto.
+// Quello che invece si muove, e parecchio, è il rendimento del patrimonio: sotto una certa
+// soglia la rendita torna a convenire. Quella soglia è un numero derivato dalle caselle, non
+// una stima nostra, e dice al lettore su quale ipotesi poggia la conclusione — che è
+// l'informazione utile, visto che il rendimento è l'unica delle due cose che sta scrivendo lui.
+// L'età rientra come SECONDO fattore: la soglia si misura a due orizzonti, e la distanza fra i
+// due è quanto pesa vivere a lungo.
+// Sotto un −6% reale l'anno la domanda non è più «capitale o rendita»: lì si ferma la ricerca.
+// Non è un parametro del modello — non sposta nessun numero, decide solo quando la pagina
+// scrive «in nessuno scenario» invece di una cifra.
+const PAREGGIO_MIN = -0.06;
+
+function pareggioRendita(s, i, etaObiettivo){
+  const x = s.p[i];
+  // l'orizzonte del piano si misura sulla persona più giovane: per portare QUESTA persona
+  // all'età voluta va traslato della differenza d'età
+  const etaFine = etaObiettivo + x.nascita - Math.max(...s.p.map(y => y.nascita));
+  if (!(etaFine > 0)) return null;
+  const base = {...s, etaFine};
+  // `quotaCap: 1` è «il massimo che si può»: il modello lo taglia già a quello che la legge
+  // concede a quel montante, quindi non serve calcolare qui il massimo.
+  const con = (rend, q) => simula({...base, rend,
+    p: base.p.map((y, j) => j === i ? {...y, quotaCap: q} : y)}).finale;
+  const vinceRendita = rend => con(rend, 0) >= con(rend, 1);
+  if (vinceRendita(s.rend))     return {gia: true};
+  if (!vinceRendita(PAREGGIO_MIN)) return {mai: true};
+  let lo = PAREGGIO_MIN, hi = s.rend;
+  // dodici passi bastano: la cifra si mostra a due decimali di percentuale, e dodici bisezioni
+  // su un intervallo di otto punti arrivano a due millesimi di punto. Con ventidue il ricalcolo
+  // completo passava da 8 a 30 ms, cioè si sentiva mentre si scrive in una casella.
+  for (let k = 0; k < 12; k++){ const m = (lo + hi) / 2; vinceRendita(m) ? lo = m : hi = m; }
+  return {rend: lo};
+}
+
+function costruisciDecisioni(){
+  const barra = (id, min, max, step, extra = '') => `
+    <div class="barra">
+      <div class="ora" id="${id}Ora"></div>
+      <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${min}">
+      <div class="estremi"><span id="${id}Sx"></span><span id="${id}Dx"></span></div>
+      <p class="picco" id="${id}Picco"></p>
+      <p class="picco piu" id="${id}Piu"></p>
+      <p class="bottoni">
+        <button type="button" class="torna" id="${id}Torna" hidden></button>${extra}
+      </p>
+    </div>`;
+  // Il pulsante che porta il cursore al punto più alto sta SOLO qui: gli altri due cursori non
+  // hanno un massimo da raggiungere — il momento in cui prendere il fondo e la quota in contanti
+  // sono scelte fra rischi diversi, e la pagina dichiara di non indicare un ottimo.
+  const riga = (i, id, min, max, step) =>
+    `<div class="cur"><div class="chi" id="chiVers${i}">${NOMI[i]}</div>${
+      barra(id, min, max, step, `<button type="button" class="torna vai" id="${id}Vai" hidden></button>`)}
+      <div class="esito" id="${id}Esito"></div></div>`;
+
+  EL('decVersare').innerHTML =
+    [0,1].map(i => riga(i, 'cVers'+i, 0, PC_CURSORE, 0.1)).join('');
+
+  // Una sezione sola per il fondo: tre passi in fila, perché sono in fila davvero. Prendere il
+  // fondo a rate PRIMA cambia quello che c'è da dividere DOPO, e finché le due cose stavano in
+  // due riquadri distanti quel legame non si vedeva.
+  const passo = (i, n, titolo, dentro) =>
+    `<div class="passo"><div class="np">${n}</div><div class="pt">${titolo}</div>${dentro}</div>`;
+  EL('decFondo').innerHTML = [0,1].map(i =>
+    `<div class="fondoP">
+       <div class="capo"><b id="chiFondo${i}">${NOMI[i]}</b><span id="fCapo${i}"></span></div>
+       ${passo(i, 1, 'Quando comincia a uscire',
+         barra('cQuando'+i, ANNO0, ANNO0+60, 1) + `<div class="esito" id="cQuando${i}Esito"></div>`)}
+       ${passo(i, 2, 'Quanto in contanti',
+         barra('cCap'+i, 0, 100, 1) + `<div class="esito" id="cCap${i}Esito"></div>`)}
+       ${passo(i, 3, 'Che forma ha l\'assegno che resta',
+         `<div class="barra"><div class="scelte" id="cForma${i}"></div></div>
+          <div class="esito" id="cForma${i}Esito"></div>`)}
+       <p class="scambio" id="cScambio${i}"></p>
+     </div>`).join('');
+
+  [0,1].forEach(i => {
+    // il cursore mostra il TOTALE che entra nel fondo; al modello serve solo l'aggiunta
+    EL('cVers'+i).addEventListener('input', e => {
+      EL('pc'+i).value = e.target.value;
+      calc();
+    });
+    // Tornare a quello che si è scritto nella casella: svuotare il campo nascosto fa scattare
+    // il ripiego su pcVoi dentro leggi(). Senza questo, dopo aver mosso il cursore bisognerebbe
+    // ricentrarlo a mano su un decimo di punto.
+    EL('cVers'+i+'Torna').addEventListener('click', () => { EL('pc'+i).value = ''; calc(); });
+    EL('cVers'+i+'Vai').addEventListener('click', e => {
+      EL('pc'+i).value = e.currentTarget.dataset.pc; calc();
+    });
+    EL('cQuando'+i).addEventListener('input', e => {
+      EL('rita'+i).value = e.target.value; calc();
+    });
+    EL('cCap'+i).addEventListener('input', e => {
+      EL('quotaCap'+i).value = +e.target.value / 100; calc();
+    });
+  });
+}
+
+// Le forme di rendita più diffuse. `fatt` è quanto resta dell'assegno rispetto alla vitalizia
+// semplice: più la rendita protegge qualcuno, meno paga al mese.
+//
+// MANUTENZIONE NOSTRA, NON UNA CASELLA. Sono rapporti misurati sulle tavole pubblicate: −20% per
+// la reversibile al 100%, −2% per la certa 10 anni. Sulla reversibile la media dice poco, perché
+// dipende da chi resta: per un uomo con la moglie più giovane il taglio è di un terzo, per una
+// donna è di un decimo. Il calcolatore ne mostra una sola, la pagina spiega la forbice.
+// Non chiederli in pagina: nessuno li sa a memoria e chiederli sposterebbe su di loro un lavoro
+// che tocca a noi.
+const FORME = [
+  {k:'vita', nome:'vitalizia',     fatt:1,          sotto:'finisce con l\'aderente'},
+  {k:'rev',  nome:'reversibile',   fatt:FATT_REV,   sotto:'continua a chi resta'},
+  {k:'certa',nome:'certa 10 anni', fatt:FATT_CERTA, sotto:'10 anni garantiti'}
+];
+const FATT = Object.fromEntries(FORME.map(f => [f.k, f.fatt]));
+
+function aggiornaDecisioni(s, r){
+  // I riquadri sono costruiti una volta per due persone: quelli in eccesso si spengono. E si
+  // spengono anche quelli di chi è già in pensione: contribuzione ed erogazione del fondo sono
+  // scelte che riguardano il futuro, e per chi ha la decorrenza alle spalle sono già state
+  // compiute. Lasciare i cursori avrebbe messo in scena una decisione che non esiste più.
+  const scegli = i => i < s.N && !s.p[i].giaInPens;
+  [0,1].forEach(i => {
+    const riga = EL('chiVers'+i).closest('.cur'), blocco = EL('chiFondo'+i).closest('.fondoP');
+    if (riga)   riga.hidden   = !scegli(i);
+    if (blocco) blocco.hidden = !scegli(i);
+  });
+  // Se non resta nessuna scelta, la sezione intera sparisce: un titolo «Le scelte da compiere»
+  // sopra il vuoto è peggio dell'assenza, e la premessa prometterebbe due cursori inesistenti.
+  EL('decisioni').hidden = !s.indici.some(scegli);
+  s.indici.forEach(i => {
+    const x = s.p[i];
+
+    // --- 1. QUANTO VERSARE. Il cursore porta la percentuale a carico del lavoratore, da zero
+    //     al punto in cui la deduzione finisce. Il valore del denaro versato NON è una retta:
+    //     al minimo contrattuale scatta il contributo del datore, che è la fetta che rende di
+    //     più, e sopra quel punto resta solo lo sconto IRPEF. Il gradino va mostrato.
+    const pcMax = Math.max(pcMassimo(x), 0.1);
+    const cv = EL('cVers'+i);
+    const pcTop = Math.ceil(pcMax * 10) / 10;
+    cv.min = 0; cv.max = pcTop.toFixed(1); cv.step = 0.1;
+    cv.value = Math.min(Math.max(x.pc, 0), +cv.max);
+    cv.disabled = !(x.ral > 0);
+    const pc = +cv.value;
+    const c = contributi(x, pc), oggi = contributi(x, x.pcVoi);
+
+    EL('cVers'+i+'Ora').innerHTML = !(x.ral > 0)
+      ? `<b>—</b><i>senza la RAL non si può calcolare niente di tutto questo</i>`
+      : `<b>${E0(c.tot)}</b> l'anno nel fondo
+         <i>${E0(c.lav)} dal lavoratore` + (c.dat > 0.5
+            ? ` più <b>${E0(c.dat)}</b> del datore` : `, e <b>niente dal datore</b>`) + `</i>`
+         + `<i>${c.tot > TETTO_DEDUZIONE + 0.5
+              ? `si deducono i primi ${E0(TETTO_DEDUZIONE)}; gli altri
+                 <b>${E0(c.tot - TETTO_DEDUZIONE)}</b> no`
+              : c.tot >= TETTO_DEDUZIONE - 0.5
+              ? `è esattamente la quota che si deduce per intero`
+              : `dei ${E0(TETTO_DEDUZIONE)} che si deducono ne restano
+                 ${E0(TETTO_DEDUZIONE - c.tot)}`}</i>`;
+    EL('cVers'+i+'Sx').textContent = 'niente: 0 €';
+    // dire PERCHÉ il cursore si ferma lì: il 50% è una convenzione, lo stipendio è un vincolo
+    const fermaStipendio = pcSpendibile(x) < Math.min(100, Math.max(PC_CURSORE, pcTetto(x))) - 0.05;
+    EL('cVers'+i+'Dx').innerHTML = !(x.ral > 0) ? ''
+      : `${E0(x.ral * pcTop / 100)}: ` + (fermaStipendio
+          ? `oltre, il versamento supererebbe lo stipendio`
+          : `il ${fmt(pcTop,0)}% della RAL`);
+
+    // il gradino, detto per esteso: è la cosa che questa pagina esiste per far vedere
+    const perso = oggi.dat > 0.5 ? oggi.dat : quotaDatore(x);
+    if (!(x.ral > 0)){
+      EL('cVers'+i+'Picco').textContent = '';
+    } else if (x.fondoIndividuale){
+      // chi ha sottoscritto per conto proprio non ha un gradino da mostrare: dirgli quanto
+      // «starebbe lasciando lì» sarebbe indicargli un guadagno che non può prendere
+      EL('cVers'+i+'Picco').textContent = x.pcDat > 0
+        ? 'su un fondo sottoscritto per conto proprio la quota indicata non viene conteggiata: '
+          + 'il versamento rende la sola deduzione IRPEF'
+        : 'senza quota del datore, il versamento rende solo la deduzione IRPEF';
+    } else if (x.pcVoi > 0 && !c.scatta){
+      EL('cVers'+i+'Picco').innerHTML =
+        `<span class="giu-t">sotto ${perc(x.pcVoi,'il')} versato oggi il datore non
+         versa</span>: ${E0(perso)} l'anno di contributo che andrebbe perso`;
+    } else if (x.pcVoi > 0 && perso > 0.5){
+      EL('cVers'+i+'Picco').innerHTML =
+        `la quota del lavoratore fa scattare ${E0(perso)} l'anno dal datore. Oltre non aumenta:
+         quello che si versa in più rende solo la deduzione IRPEF.`;
+    } else if (x.pcDat > 0){
+      EL('cVers'+i+'Picco').innerHTML =
+        `<span class="giu-t">oggi non versano niente né il lavoratore né il datore</span>: basta
+         versare la quota minima prevista dal contratto perché scattino
+         ${E0(quotaDatore(x))} l'anno dall'azienda`;
+    } else {
+      EL('cVers'+i+'Picco').textContent =
+        'senza quota del datore, il versamento rende solo la deduzione IRPEF';
+    }
+
+    // il pulsante compare solo se il cursore si è mosso da quello che c'è nella casella
+    const spostato = Math.abs(pc - x.pcVoi) > 0.049 && x.ral > 0;
+    const bt = EL('cVers'+i+'Torna');
+    bt.hidden = !spostato;
+    if (spostato) bt.textContent = `torna ${perc(x.pcVoi,'al')}, quello versato oggi`;
+
+    // Il punto più alto, che adesso ESISTE: da quando il cursore va oltre il tetto, versare di
+    // più smette di convenire e il massimo cade dove finisce la deduzione — o più in là, se il
+    // fondo rende più del portafoglio. Prima era sempre all'estremo destro e non diceva niente.
+    const bVai = EL('cVers'+i+'Vai');
+    if (x.ral > 0 && pcMax > 0.05){
+      // si cerca su TUTTO il cursore, non solo da quello che si versa oggi in su: la frase dice
+      // «il punto più alto», e se il punto più alto stesse più in basso lo direbbe lo stesso
+      const b = migliore(s, i, 'pc',
+        candidatiVersamento(x, pcMax, pcSoglia(s, i, pcMax)));
+      const base = conAlt(s, i, 'pc', x.pcVoi).finale;
+      // il perché del punto, quando ce n'è uno: altrimenti la percentuale finiva scritta due volte
+      const dove = Math.abs(b.v - pcTetto(x)) < 0.06 ? ' — dove finisce la deduzione'
+                 : b.v >= pcMax - 0.06 ? ' — il massimo che il cursore permette'
+                 : b.v < 0.05 ? ' — nessun versamento'
+                 : Math.abs(b.v - x.pcVoi) < 0.06 ? ' — quello che si versa oggi'
+                 : '';
+      const vale = b.f - base;
+      EL('cVers'+i+'Piu').innerHTML = Math.abs(vale) < 1 ? ''
+        : `il punto più alto è <b>${perc(b.v,'il')}</b>${dove}: vale
+           ${E0(Math.abs(vale))} ${vale > 0 ? 'in più' : 'in meno'} rispetto al versamento di oggi,
+           a parità di come il fondo verrà riscosso`;
+      // il pulsante ci porta il cursore, ma solo se c'è davvero da spostarsi
+      const daSpostare = Math.abs(vale) >= 1 && Math.abs(b.v - pc) > 0.05;
+      bVai.hidden = !daSpostare;
+      if (daSpostare){
+        bVai.textContent = `al punto più alto: ${pcTesto(b.v)}`;
+        bVai.dataset.pc = b.v;
+      }
+    } else { EL('cVers'+i+'Piu').textContent = ''; bVai.hidden = true; }
+
+    // A destra: cosa costa e cosa lascia. La differenza, non il patrimonio di famiglia.
+    const f0 = conAlt(s, i, 'pc', x.pcVoi).finale;
+    const fx = conAlt(s, i, 'pc', pc).finale;
+    const costo = costoAnnuo(x, pc), d = fx - f0;
+    const primi = contributi(x, x.pcVoi), costoPrimi = costoAnnuo({...x, pcVoi: 0}, x.pcVoi);
+    EL('cVers'+i+'Esito').innerHTML = !(x.ral > 0)
+      ? `<i>—</i>`
+      : (Math.abs(d) < 1
+          ? `<i>com'è adesso: basta muovere il cursore per vedere quanto cambia</i>`
+          : `<b>${d > 0 ? '+' : '−'}${E0(Math.abs(d))}</b> alla fine
+             <i>${costo >= 0 ? 'costa' : 'lascia'} ${E0(Math.abs(costo)/12)} al mese
+                di stipendio netto, rispetto a oggi</i>`)
+        + (primi.tot > 0.5 && costoPrimi > 0.5
+            ? `<i class="forte">la quota del lavoratore ${perc(x.pcVoi,'del')} costa ${E0(costoPrimi)}
+               netti e ne fa entrare ${E0(primi.tot)}: ${fmt(primi.tot/costoPrimi,1)} volte
+               tanto</i>`
+            : '');
+
+    // ===== 2. COME ESCE IL FONDO — tre passi in fila, e il primo cambia gli altri due =====
+    const inc  = r.incassi.find(v => v.chi === x.nome);
+    const rita = r.rite.find(v => v.chi === x.nome);
+    const max  = inc ? inc.max : QUOTA_ORDINARIA;
+    const netto = inc ? inc.montante - inc.tasse : 0;
+
+    // Il capo della persona dice PRIMA la causa e poi la conseguenza: se il fondo alla pensione
+    // è piccolo perché è già uscito a rate, quel «piccolo» non deve sembrare una buona notizia.
+    EL('fCapo'+i).innerHTML = !inc
+      ? 'il fondo non viene riscosso dentro il piano'
+      : rita
+      ? `sta già uscendo a rate dal ${rita.da}: ${E0(rita.rata)} lordi l'anno, ${rita.n} rate,
+         <b>${E0(rita.netto)} netti in tutto</b>. Alla pensione ne restano
+         <b>${E0(inc.montante)}</b>, ed è poco <i>perché</i> è già stato preso, non perché il
+         fondo fosse piccolo.`
+      : `alla pensione, nel ${inc.anno}, vale <b>${E0(inc.montante)}</b>
+         (${E0(netto)} netti, tolta l'imposta del ${fmt(inc.al*100,1)}%)`;
+
+    // --- passo 1: quando comincia a uscire. La RITA si apre al massimo 10 anni prima.
+    const fine = Math.max(x.annoPens, ANNO0);
+    const primo = Math.max(ANNO0, x.ultimo + 1, fine - 10);
+    const cq = EL('cQuando'+i);
+    cq.min = primo; cq.max = fine;
+    cq.value = Math.min(Math.max(x.rita || fine, primo), fine);
+    cq.disabled = primo >= fine;
+    const anno = +cq.value, rate = fine - anno;
+    const alt = conAlt(s, i, 'rita', anno);
+    // Quando la finestra non c'è, il cursore va nascosto: due estremi uguali e una scritta
+    // ripetuta sopra e sotto non sono una scelta, sono rumore.
+    const senzaFinestra = primo >= fine;
+    cq.style.display = senzaFinestra ? 'none' : '';
+    cq.nextElementSibling.style.display = senzaFinestra ? 'none' : '';
+    EL('cQuando'+i+'Ora').innerHTML = senzaFinestra
+      ? `<b>tutto alla pensione</b>, nel ${fine}<i>qui non c'è niente da scegliere</i>`
+      : rate <= 0
+      ? `<b>tutto alla pensione</b>, nel ${fine}`
+      : `<b>a rate dal ${anno}</b><i>${rate} rate fino al ${fine-1}, poi quello che avanza</i>`;
+    EL('cQuando'+i+'Sx').textContent = `il prima possibile: ${primo}`;
+    EL('cQuando'+i+'Dx').textContent = `alla pensione, ${fine}`;
+    // come nella sezione 1: la differenza, non il numero da sette cifre che è di famiglia
+    const dAspetta = alt.finale - conAlt(s, i, 'rita', fine).finale;
+    const nSc = scoperti(alt);
+    // un trattino accanto a «alla fine» si legge come «zero euro»: se non c'è differenza va
+    // detto a parole, non con un segno
+    EL('cQuando'+i+'Esito').innerHTML =
+      (Math.abs(dAspetta) < 1
+        ? `<i>${senzaFinestra ? 'niente da scegliere: non cambia niente'
+                              : 'come ad aspettare la pensione'}</i>`
+        : `<b>${(dAspetta > 0 ? '+' : '−') + E0(Math.abs(dAspetta))}</b> alla fine
+           <i>rispetto ad aspettare la pensione</i>`)
+      // «anni scoperti» si legge come «restate senza soldi», e non è quello: sono gli anni in
+      // cui le entrate ricorrenti non bastano e la spesa esce dal patrimonio — che nel
+      // frattempo può benissimo continuare a salire. Va detto per esteso, o è un falso allarme.
+      + `<i>${nSc === 0 ? 'le entrate coprono la spesa tutti gli anni'
+          : `${nSc} ${nSc === 1 ? 'anno' : 'anni'} in cui la spesa esce dal patrimonio`}</i>`;
+    if (senzaFinestra){
+      // il cursore non c'è: va detto perché, altrimenti sembra che manchi qualcosa
+      EL('cQuando'+i+'Picco').textContent =
+        `la RITA serve a chi smette molto prima della pensione: ${x.nome} smette nel ${x.ultimo}`
+        + ` e la pensione arriva l'anno dopo, quindi non c'è nessun buco da coprire`;
+    } else {
+      const b = migliore(s, i, 'rita', Array.from({length: fine-primo+1}, (_,k) => primo+k));
+      EL('cQuando'+i+'Picco').textContent = b.v === fine
+        ? 'il punto più alto è aspettare la pensione'
+        : `il punto più alto è cominciare nel ${b.v}`;
+    }
+
+    // --- passo 2: quanto in contanti. Da ZERO al massimo che la legge concede a QUESTO fondo:
+    //     prendere tutto in rendita è il caso base, e prima non si poteva nemmeno scegliere.
+    const cc = EL('cCap'+i);
+    const maxPc = Math.round(max * 100);
+    cc.min = 0; cc.max = maxPc;
+    cc.value = Math.round(Math.min(x.quotaCap, max) * 100);
+    cc.disabled = !inc;
+    const qc = (+cc.value) / 100;
+    const coeff = inc ? inc.coeff : (x.coeff || COEFF_RENDITA);
+    const alMese = q => netto * (1 - q) * coeff / 12;
+    EL('cCap'+i+'Ora').innerHTML = !inc ? '—'
+      : `<b>${E0(netto * qc)}</b> subito<i>il ${fmt(qc*100)}% di quello che c'è</i>`;
+    EL('cCap'+i+'Sx').textContent = 'niente: tutto in rendita';
+    EL('cCap'+i+'Dx').textContent = maxPc >= 100
+      ? 'tutto: 100%' : `il massimo di legge: ${maxPc}%`;
+    EL('cCap'+i+'Esito').innerHTML = !inc ? '<i>—</i>'
+      : `<b>${E0(alMese(qc))}</b> al mese<i>${alMese(qc) < 1 ? 'niente rendita: è uscito tutto'
+          : `convertendo ${E0(netto * (1 - qc))}`}</i>`;
+    // La soglia del «tutto in contanti» la calcola il fondo con la propria tavola, non noi. Fra
+    // le tavole pubblicate il coefficiente varia di un terzo, quindi la soglia varia altrettanto:
+    // due cifre valgono per chiunque — sotto la prima spetta sempre, sopra la seconda mai — e in
+    // mezzo l'unica risposta onesta è che dipende dal fondo.
+    const sChiunque = soglia(x.coeffEta * BANDA_ALTA), sNessuno = soglia(x.coeffEta * BANDA_BASSA);
+    EL('cCap'+i+'Picco').textContent = !inc ? ''
+      : inc.montante < sChiunque
+        ? `sotto ${E0(sChiunque)} si prende tutto con qualunque fondo: questo ci sta sotto`
+      : maxPc >= 100
+        // la soglia è la stessa rendita, quindi il fondo che PAGA di più la raggiunge con meno
+        // montante: sono le tavole più generose ad abbassare la soglia, non le più avare
+        ? `si può prendere tutto, ma di misura: dove il fondo converte meglio la soglia scende a
+           ${E0(sChiunque)}. Va chiesto al fondo`
+      : inc.montante <= sNessuno
+        ? `a ${fmt(x.etaPens)} anni la soglia è ${E0(x.soglia)} e il fondo la supera, ma con le
+           tavole più prudenti arriva a ${E0(sNessuno)}. Va chiesto al fondo`
+        : `oltre il ${maxPc}% la legge non lo permette: nemmeno la soglia più alta fra le tavole
+           pubblicate, ${E0(sNessuno)}, arriva a questo fondo`;
+
+    // --- passo 3: che forma ha l'assegno. Non cambia quanto c'è, cambia quanto paga al mese
+    //     e chi protegge. I fattori sono stime dichiarate, non numeri di legge.
+    const altro = NOMI[1-i];
+    EL('cForma'+i).innerHTML = FORME.map(f => {
+      const q = netto * (1 - qc) * COEFF_RENDITA * f.fatt / 12;
+      return `<button type="button" data-i="${i}" data-f="${f.k}"
+        class="${x.forma === f.k ? 'attiva' : ''}" ${inc && alMese(qc) >= 1 ? '' : 'disabled'}>
+        ${f.nome}<u>${f.sotto}</u><i>${inc && q >= 1 ? E0(q) + ' al mese' : '—'}</i></button>`;
+    }).join('');
+    EL('cForma'+i+'Esito').innerHTML = !inc || alMese(qc) < 1
+      ? `<i>non c'è nessuna rendita da scegliere: esce tutto in contanti</i>`
+      : x.forma === 'rev'
+      ? `<i>se ${x.nome} muore prima, ${altro} continua a prendere questi
+         ${E0(alMese(qc))} al mese finché vive</i>`
+      : x.forma === 'certa'
+      ? `<i>se ${x.nome} muore entro 10 anni, le rate che restano vanno agli eredi</i>`
+      : `<i>finisce con ${x.nome}: agli eredi non resta niente</i>`;
+
+    // Lo scambio, che è la decisione vera. Il patrimonio finale premia i contanti per come è
+    // fatto — è una misura di lascito, e la rendita non lascia niente — quindi da solo non
+    // deciderebbe nulla. Quello che decide è a quali ipotesi la conclusione si rovescia:
+    // il pareggio in rendimento, misurato a due orizzonti di vita. Vedi `pareggioRendita`.
+    let sc = '';
+    if (inc && netto > 0){
+      const tutto = netto * max, nulla = alMese(0);
+      const anniPari = coeff > 0 ? 1 / coeff : 0;
+      sc = `<b>Da un capo all'altro</b>: prendere il massimo in contanti dà
+        <b>${E0(tutto)} subito</b> e <b>${E0(nulla)} al mese in meno</b>, a vita. Alla rendita
+        servono <b>${fmt(anniPari)} anni</b> per recuperarli, e ${x.nome} ne avrebbe
+        ${fmt(inc.anno - x.nascita + anniPari)}: sono sempre ${fmt(anniPari)} qualunque sia la
+        cifra, perché è l'inverso del ${fmt(coeff*100,1)}% con cui il fondo converte.
+        Il pareggio vero è più in là, perché nel frattempo i contanti rendono e la rendita
+        <b>non si rivaluta</b>: ${E0(nulla)} di oggi, dopo ${r.annoFine - inc.anno} anni, ne
+        varranno ${E0(nulla / Math.pow(1 + s.infl, r.annoFine - inc.anno))}.`;
+
+      // QUANTO PESA LA LONGEVITÀ, misurata invece che dichiarata. Fino al 31/07/2026 qui c'era
+      // scritto che un ottimo non si può indicare perché il modello non rappresenta la durata
+      // della vita. Provato: portando il piano a 105 anni i contanti restano avanti lo stesso,
+      // quindi la longevità non era la ragione. La ragione è il rendimento, e la longevità è
+      // quanto quella soglia si sposta fra un'età e l'altra.
+      const etaMedia = Math.round(inc.etaPens + speranzaVita(inc.etaPens));
+      const etaOriz  = r.annoFine - x.nascita;
+      // `breve` per il secondo estremo: ripetere «la rendita converrebbe sotto» due volte nella
+      // stessa frase è la stessa cosa detta due volte, non una forbice
+      const dice = (p, breve) => !p ? null
+        : p.gia ? 'la rendita è già avanti'
+        : p.mai ? 'la rendita non recupera comunque'
+        : (breve ? 'sotto ' : 'la rendita converrebbe sotto ') + fmt(p.rend*100, 2) + '%';
+      const pMedia = dice(pareggioRendita(s, i, etaMedia), false);
+      // il secondo orizzonte si mostra solo se è più in là del primo: due estremi uguali non
+      // sono una forbice. E NON si chiama «l'orizzonte scritto sopra»: nella casella c'è l'età
+      // della persona più giovane, quindi per l'altra è un numero diverso da quello che ha
+      // scritto — l'etichetta sarebbe falsa proprio per chi legge la propria riga.
+      const pOriz  = etaOriz > etaMedia ? dice(pareggioRendita(s, i, etaOriz), true) : null;
+      if (pMedia)
+        sc += ` <b>Quanto pesa vivere a lungo</b>: arrivando a ${etaMedia} anni, la speranza di
+          vita ISTAT alla decorrenza, ${pMedia}${pOriz
+            ? `; arrivando a ${etaOriz}, dove il piano si ferma, ${pOriz}` : ''}.
+          L'ipotesi in vigore è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.`;
+    }
+    EL('cScambio'+i).innerHTML = sc;
+
+  });
+
+  document.querySelectorAll('#decFondo .scelte button').forEach(b =>
+    b.addEventListener('click', () => {
+      EL('forma' + b.dataset.i).value = b.dataset.f; calc();
+    }));
+}
+
+// quanti anni il piano non copre le spese con le entrate ricorrenti
+const scoperti = f => f.righe.filter(g =>
+  g.daLavoro + g.daPensioni + g.daRendita + g.daRata < g.spesa).length;
+
+// SU CARTA IL DETTAGLIO È LA PARTE VERIFICABILE, e il CSS non può aprirlo: un <details> chiuso
+// non si apre con `display`. Si apre qui, prima che la stampa cominci, e si richiude dopo per non
+// lasciare la pagina diversa da come la si era lasciata.
+{
+  let chiusi = [];
+  addEventListener('beforeprint', () => {
+    chiusi = [...document.querySelectorAll('details:not([open])')];
+    chiusi.forEach(d => d.open = true);
+  });
+  addEventListener('afterprint', () => { chiusi.forEach(d => d.open = false); chiusi = []; });
+}
+
+// --- i dati restano scritti: senza questo, a ogni riapertura si ricomincia da capo
+const CHIAVE = 'decumulo-it';
+const caselle = () => document.querySelectorAll('input[id], select[id]');
+
+function salva(){
+  try {
+    const d = {};
+    caselle().forEach(e => d[e.id] = (e.type === 'radio' ? e.checked : e.value));
+    localStorage.setItem(CHIAVE, JSON.stringify(d));
+    return true;
+  } catch(e){ return false; }   // certi browser non lo permettono sui file aperti da disco
+}
+
+function ripristina(){
+  try {
+    const d = JSON.parse(localStorage.getItem(CHIAVE) || 'null');
+    if (!d) return false;
+    caselle().forEach(e => {
+      if (!(e.id in d)) return;
+      if (e.type === 'radio') e.checked = d[e.id]; else e.value = d[e.id];
+    });
+    return true;
+  } catch(e){ return false; }
+}
+
+document.querySelectorAll('input,select').forEach(e => e.addEventListener('input', calc));
+document.querySelectorAll('input[name=euro]').forEach(e => e.addEventListener('change', calc));
+
+EL('azzera').addEventListener('click', () => {
+  if (!confirm('Rimetto i valori di partenza? Quello che è stato scritto va perso.')) return;
+  try { localStorage.removeItem(CHIAVE); } catch(e){}
+  location.reload();
+});
+
+costruisciDecisioni();
+const avevaDati = ripristina();
+calc();
+
+// Il sommario si accorge da sé di quando serve: guarda due elementi, il titolo del sito (finché
+// si vede, siamo in cima e non serve niente) e il titolo del risultato (se si vede, il sommario
+// ripeterebbe quello che si sta guardando). Se il browser non ha l'osservatore non compare mai:
+// è una comodità, non un pezzo del calcolo.
+if (typeof IntersectionObserver === 'function'){
+  const guarda = (id, quale) => new IntersectionObserver(([e]) => {
+    quale(e.isIntersecting); aggiornaSommario();
+  }).observe(EL(id));
+  guarda('titolo', v => risultatoInVista = v);
+  guarda('cima',   v => sonoInCima = v);
+}
+EL('statoSalvataggio').textContent = salva()
+  ? (avevaDati ? 'Ripresi i dati salvati l\'ultima volta.'
+               : 'Quello che si scrive resta salvato in questo browser.')
+  : 'Attenzione: questo browser non permette di salvare, i dati si perdono alla chiusura.';
+</script>
+</div>
+</body>
+</html>

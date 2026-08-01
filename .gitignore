@@ -1,0 +1,9 @@
+# `sito/` È GENERATO, e non si versiona.
+# La regola del progetto è che non si modifica a mano: si rigenera con `node build.mjs`.
+# Tenerlo qui dentro produrrebbe un rumore di modifiche a ogni build e, peggio, permetterebbe
+# a una versione costruita a mano di finire online senza passare dai controlli.
+# Lo ricostruisce la pubblicazione automatica, che pubblica solo se `verifica.mjs` è verde.
+sito/
+
+.DS_Store
+node_modules/

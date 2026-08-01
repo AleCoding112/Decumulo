@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dove trovare i propri numeri: pensione attesa, RAL, fondo pensione</title>
+<meta name="description" content="Da quale documento si ricava ciascun dato: la pensione futura dal sito INPS, la retribuzione lorda dalla busta paga, il montante e l'anzianità dall'estratto conto del fondo.">
+<link rel="canonical" href="https://decumulo.it/dove-trovare-i-numeri.html">
+<!--@@INCLUDI _stile.html@@-->
+</head>
+<body>
+<div class="pagina">
+
+<p class="briciole"><a href="index.html">Decumulo</a> &rarr; dove trovare i numeri</p>
+
+<h1>Dove si ricava ciascun dato</h1>
+
+<p class="occhiello">Il calcolo richiede pochi dati, ma vanno presi dal documento giusto: due di
+essi sono comunemente confusi con grandezze simili, e l&rsquo;errore si propaga a tutto il
+risultato. Di seguito, per ciascuna casella, la fonte e l&rsquo;equivoco da evitare.</p>
+
+<h2>La pensione attesa</h2>
+
+<p>&Egrave; il dato da cui dipende tutto il resto, ed &egrave; l&rsquo;unico che non si pu&ograve;
+ricavare da un documento gi&agrave; in possesso: va richiesto.</p>
+
+<p><b>Per chi il trattamento lo percepisce gi&agrave;</b> non occorre alcuna simulazione:
+l&rsquo;importo &egrave; quello <b>lordo</b> del cedolino mensile e la decorrenza &egrave; quella
+effettiva, anche se collocata molti anni addietro. In tal caso il calcolo non richiede alcun dato
+relativo all&rsquo;attivit&agrave; lavorativa, e le sezioni che seguono non hanno oggetto.</p>
+
+<p><b>Dove.</b> Sito INPS, servizio <b>&laquo;La mia pensione futura&raquo;</b>, accessibile con
+SPID, CIE o CNS. Il simulatore restituisce la data di decorrenza stimata e l&rsquo;importo
+mensile.</p>
+
+<div class="chiave">
+  <p><b>Il simulatore INPS restituisce l&rsquo;importo lordo e a moneta costante</b>, cio&egrave;
+  in euro di oggi. &Egrave; esattamente quanto il calcolatore richiede: si trascrive senza
+  rivalutarlo e senza convertirlo in netto. Il netto lo determina il calcolo, applicando
+  l&rsquo;IRPEF.</p>
+</div>
+
+<p><b>Se la simulazione non &egrave; disponibile</b>, il servizio la fornisce solo in presenza di
+una posizione contributiva sufficiente. In tale caso il dato non pu&ograve; essere stimato
+attendibilmente da questo strumento: una proiezione fondata su un importo inventato non &egrave;
+una proiezione.</p>
+
+<h2>La retribuzione annua lorda</h2>
+
+<p><b>Dove.</b> Il contratto individuale di lavoro, oppure la busta paga: la retribuzione lorda
+mensile moltiplicata per il numero di mensilit&agrave; previste dal contratto, tredicesima e
+quattordicesima comprese.</p>
+
+<div class="chiave allarme">
+  <p><b>Non si trascrive il punto 1 della Certificazione Unica.</b> Quel campo espone
+  l&rsquo;imponibile fiscale, gi&agrave; al netto dei contributi previdenziali a carico del
+  lavoratore ({{ivs}} della retribuzione). Utilizzarlo comporta una sottostima della retribuzione
+  di circa un decimo, con effetto su TFR, contributi e aliquota IRPEF applicata.</p>
+  <p>La retribuzione annua lorda &egrave; quella <b>precedente</b> la trattenuta previdenziale.</p>
+</div>
+
+<p><b>A cosa serve.</b> Da essa discendono il TFR maturando ({{tfrSuRal}} della retribuzione), le
+percentuali di contribuzione, e l&rsquo;aliquota IRPEF con cui si determina il costo effettivo di
+un versamento aggiuntivo.</p>
+
+<h2>La retribuzione netta mensile</h2>
+
+<p><b>Dove.</b> Busta paga, importo effettivamente accreditato, in un mese ordinario e privo di
+elementi straordinari. Le mensilit&agrave; aggiuntive non vanno incluse nel valore mensile.</p>
+
+<h2>Il fondo pensione: consistenza e anzianit&agrave;</h2>
+
+<p><b>Dove.</b> L&rsquo;<b>estratto conto annuale</b> trasmesso dal fondo, o l&rsquo;area
+riservata del sito del fondo, che espone il valore aggiornato della posizione individuale.</p>
+
+<p><b>L&rsquo;anno di iscrizione</b> &egrave; quello di prima adesione alla previdenza
+complementare, non quello di adesione al fondo attuale. Rileva perch&eacute; determina
+l&rsquo;aliquota sulla prestazione, che scende di {{aliqFondoPunti}} punti per ogni anno oltre il
+quindicesimo. <span class="marca m-legge">legge</span> I periodi di partecipazione presso forme
+diverse <b>si cumulano</b>, se la posizione non &egrave; stata riscattata: va indicato pertanto
+l&rsquo;anno pi&ugrave; remoto.</p>
+
+<div class="chiave">
+  <p><b>Con pi&ugrave; posizioni</b> si sommano le consistenze e si indica l&rsquo;iscrizione
+  pi&ugrave; remota. La somma &egrave; corretta salvo che per un aspetto: la soglia entro cui
+  &egrave; ammessa la prestazione integralmente in capitale si valuta <b>su ciascuna
+  posizione</b>, non sul totale. <a href="come-prendere-il-fondo.html">Come funziona la
+  soglia</a>.</p>
+</div>
+
+<h2>Le percentuali di contribuzione</h2>
+
+<p><b>Dove</b>, in ordine di attendibilit&agrave;:</p>
+
+<ul>
+  <li>l&rsquo;<b>estratto conto del fondo</b>, che espone separatamente quanto ha versato il
+    lavoratore e quanto il datore di lavoro: &egrave; il documento che riporta i valori
+    effettivamente applicati;</li>
+  <li>la <b>busta paga</b>, alla voce relativa alla previdenza complementare;</li>
+  <li>il <b>contratto collettivo applicato</b>, alla sezione sulla previdenza complementare, che
+    indica la misura minima a carico del lavoratore e quella a carico del datore
+    <span class="marca m-ccnl">CCNL</span>.</li>
+</ul>
+
+<div class="chiave allarme">
+  <p><b>La quota del datore va indicata anche se oggi non viene percepita</b>, purch&eacute; il
+  contratto la preveda. Serve a quantificare l&rsquo;importo cui si sta rinunciando: il
+  contributo dell&rsquo;azienda &egrave; dovuto <b>solo a fronte</b> di quello del lavoratore, e
+  chi ha aderito con il solo TFR non lo riceve.
+  <a href="contributo-datore.html">Quando spetta e quanto vale</a>.</p>
+  <p>Chi non versa alcuna quota indica <b>0</b>, non lascia la casella vuota: sono due
+  informazioni diverse.</p>
+</div>
+
+<h2>Il tipo di fondo</h2>
+
+<p><b>Dove.</b> La denominazione del fondo compare sull&rsquo;estratto conto. I fondi negoziali
+sono istituiti dai contratti collettivi per un settore determinato; i fondi aperti e i piani
+individuali pensionistici sono sottoscritti su iniziativa dell&rsquo;interessato. L&rsquo;albo
+tenuto dalla COVIP riporta la forma di ciascuno.</p>
+
+<p>La distinzione rileva ai soli fini del contributo del datore di lavoro, che di regola non
+spetta sulle forme sottoscritte individualmente.</p>
+
+<h2>Il patrimonio investito e la spesa</h2>
+
+<p><b>Il patrimonio</b> comprende quanto &egrave; investito e disponibile: depositi, strumenti
+finanziari, polizze riscattabili. Non comprende l&rsquo;abitazione di residenza, che non produce
+reddito disponibile e non &egrave; liquidabile senza mutare le condizioni di vita.</p>
+
+<p><b>La spesa mensile</b> &egrave; la media delle uscite complessive, non il solo costo della
+vita corrente: vi rientrano imposte, premi assicurativi, manutenzioni e spese annuali,
+ripartite su dodici mesi. La rilevazione pi&ugrave; semplice &egrave; la variazione dei saldi in
+un anno, confrontata con le entrate del medesimo periodo.</p>
+
+<h2>Quello che non serve cercare</h2>
+
+<p>Le ipotesi non sono dati e non si reperiscono in alcun documento: rendimenti, inflazione e
+orizzonte del piano sono scelte di chi compila, e il calcolatore parte da valori prudenti. Non
+esiste una fonte da cui trascriverle, e conviene piuttosto verificare come cambia il risultato al
+loro variare.</p>
+
+<p><a class="torna" href="index.html">Al calcolatore, sui propri dati &rarr;</a></p>
+
+<div class="fonti">
+  <p><b>Riferimenti normativi e limiti di questa pagina.</b></p>
+  <ul>
+    <li><span class="marca m-legge">legge</span> Cumulo dei periodi di partecipazione ai fini
+      dell&rsquo;aliquota: art. 11 c. 6 D.Lgs. 252/2005 e circolare Agenzia delle Entrate 70/E
+      del 18 dicembre 2007.</li>
+    <li><span class="marca m-legge">legge</span> Limite alla prestazione in capitale, riferito
+      alla singola posizione: art. 11 c. 3 D.Lgs. 252/2005.</li>
+    <li><span class="marca m-ccnl">CCNL</span> Misura dei contributi: stabilita dagli accordi
+      collettivi. Questa pagina non riporta le percentuali di alcuno specifico contratto.</li>
+    <li>La descrizione dei documenti riflette la modulistica in uso; denominazioni e numerazione
+      dei campi possono variare. Il contenuto ha finalit&agrave; informativa e non costituisce
+      consulenza previdenziale o fiscale.</li>
+  </ul>
+</div>
+
+<!--@@INCLUDI _pie.html@@-->
+</div>
+</body>
+</html>

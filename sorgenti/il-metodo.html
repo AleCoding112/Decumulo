@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Come sono fatti i conti, e cosa non sanno</title>
+<meta name="description" content="Il metodo del calcolatore: euro di oggi, rendimenti reali, una riga rifatta a mano. E l'elenco completo di cosa il modello non rappresenta e di quali cifre non sono confermate.">
+<link rel="canonical" href="https://decumulo.it/il-metodo.html">
+<!--@@INCLUDI _stile.html@@-->
+</head>
+<body>
+<div class="pagina">
+
+<p class="briciole"><a href="index.html">Decumulo</a> &rarr; il metodo</p>
+
+<h1>Metodo di calcolo, ipotesi e limiti</h1>
+
+<p class="occhiello">Documentazione del modello: procedimento di calcolo, ipotesi adottate,
+fenomeni non rappresentati e stato di verifica di ciascun parametro. Una proiezione a
+quarant'anni ha valore solo se le sue assunzioni sono esplicite.</p>
+
+<h2>Procedimento</h2>
+
+<p>Il modello non impiega formule chiuse: procede per iterazione annuale dal {{anno0}} fino
+all'età indicata. Ogni esercizio è la somma di quattro componenti.</p>
+
+<div class="conto">
+<table>
+  <tbody>
+    <tr><td>Consistenza a inizio esercizio</td><td>619.761 €</td></tr>
+    <tr><td>Rendimento dell'esercizio</td><td>+18.228 €</td></tr>
+    <tr><td>Entrate (retribuzioni, trattamenti, rendite, prestazioni)</td><td>+40.110 €</td></tr>
+    <tr><td>Spesa</td><td>−39.600 €</td></tr>
+  </tbody>
+  <tfoot><tr><td>Consistenza a fine esercizio</td><td>638.499 €</td></tr></tfoot>
+</table>
+</div>
+
+<p>La tabella «anno per anno» del calcolatore riporta tutti gli esercizi con le componenti in
+colonne distinte. <b>Ogni valore è verificabile con un calcolo manuale</b>, e un risultato
+anomalo è riconducibile all'esercizio in cui si origina.</p>
+
+<h3>Base di calcolo del rendimento</h3>
+<p>Il rendimento è calcolato sulla consistenza a inizio esercizio: i flussi in entrata
+producono rendimento a partire dall'esercizio successivo. È una convenzione prudenziale, poiché
+un versamento effettuato a inizio anno produrrebbe rendimento per quasi l'intero periodo, e
+consente la verifica manuale di ciascuna riga.</p>
+
+<h3>Consistenza negativa</h3>
+<p>Una consistenza negativa non produce rendimento né oneri: l'indebitamento implicito non è
+rappresentato.</p>
+
+<h2>Espressione dei valori</h2>
+
+<p>Tutti gli importi sono espressi <b>a potere d'acquisto costante</b>, riferito all'anno
+iniziale. I rendimenti sono inseriti al lordo dell'inflazione e convertiti in termini reali dal
+rapporto (1+rendimento)/(1+inflazione). La tabella annuale consente la lettura in valori
+nominali.</p>
+
+<p>Il calcolo a valori costanti richiede di esplicitare quali grandezze sono indicizzate:</p>
+
+<ul>
+  <li><b>Indicizzate</b> — costanti in termini reali: trattamento INPS e assegno sociale.</li>
+  <li><b>Indicate da chi compila</b> — la <b>retribuzione</b> segue la crescita annua inserita,
+    espressa in termini nominali e convertita in reale con il medesimo rapporto usato per i
+    rendimenti: una crescita pari all'inflazione lascia la retribuzione costante a valori
+    correnti. Il TFR, i contributi e la quota del datore di lavoro seguono la retribuzione
+    esercizio per esercizio, così come l'IRPEF, ricalcolata sulla retribuzione dell'esercizio.</li>
+  <li><b>Costanti dentro la propria fase</b> — la <b>spesa</b>: quella indicata per il periodo di
+    attività si applica fino all'ultimo esercizio lavorativo compreso, quella indicata per il
+    periodo successivo dall'esercizio seguente. In assenza della seconda si applica la prima
+    all'intero orizzonte.</li>
+  <li><b>Non indicizzate</b> — decrescenti in termini reali: la rendita erogata dal fondo, che è
+    di importo nominale fisso, e la base imponibile della prestazione, determinata sui contributi
+    espressi in valori nominali dell'esercizio di versamento.</li>
+</ul>
+
+<h2>Prova di tenuta</h2>
+
+<p>La proiezione applica il medesimo rendimento a ogni esercizio. Nel decumulo, tuttavia, rileva
+la <b>sequenza</b> dei rendimenti e non soltanto la loro media: quanto non è stato conseguito nei
+primi esercizi non concorre alla formazione dei rendimenti successivi, e due successioni di pari
+media producono esiti differenti.</p>
+
+<p><span class="marca m-stima">stima</span> Il calcolatore espone pertanto un secondo calcolo
+sui medesimi dati, con i <b>primi {{provaAnni}} esercizi a rendimento reale nullo</b> tanto sul
+patrimonio quanto sui fondi pensione. Si tratta di una convenzione, non di una previsione: una
+distribuzione di scenari richiederebbe ipotesi probabilistiche che questa pagina non è in grado
+di documentare, mentre una perturbazione unica e dichiarata è verificabile da chiunque.</p>
+
+<p>Il <b>TFR mantenuto presso il datore di lavoro non è interessato</b> dalla prova, in quanto la
+sua rivalutazione è determinata dalla legge e non dall'andamento dei mercati
+<span class="marca m-legge">legge</span> (art. 2120 c. 4 c.c.).</p>
+
+<p>L'esito è riportato sotto il giudizio di sostenibilità e può <b>modificarlo</b>: un piano che
+regge sul rendimento medio può non reggere a una successione sfavorevole nei primi esercizi. Ove
+il giudizio non muti, è indicata la riduzione della spesa massima sostenibile.</p>
+
+<h2>Scenario del superstite</h2>
+
+<p>La proiezione principale conduce entrambi i soggetti fino all'et&agrave; indicata. Il
+calcolatore espone accanto al risultato un <b>secondo calcolo sui medesimi dati</b>, nel quale
+uno dei due viene a mancare: non modifica il giudizio di sostenibilit&agrave;, che continua a
+rispondere a un'ipotesi diversa.</p>
+
+<p><b>L'epoca del decesso</b> &egrave; posta alla speranza di vita ISTAT alla decorrenza del
+trattamento, la stessa tavola da cui discendono i coefficienti di conversione. Non &egrave; una
+previsione: &egrave; il riferimento che consente di collocare lo scenario senza chiederne la data
+a chi compila.</p>
+
+<h3>Che cosa muta, e in forza di quale disposizione</h3>
+
+<div class="scorre">
+<table>
+  <thead><tr><th>Componente</th><th>Trattamento</th></tr></thead>
+  <tbody>
+    <tr><td>Trattamento INPS di chi manca</td>
+        <td><span class="marca m-legge">legge</span> spetta al coniuge superstite nella misura
+            del <b>{{reversibilita}}</b>, ridotta del {{cumuloSoglie}} di redditi propri
+            (Tabella F, art. 1 c. 41 L. 335/1995)</td></tr>
+    <tr><td>Rendita del fondo</td>
+        <td>prosegue se la forma &egrave; <b>reversibile</b>; si estingue se vitalizia semplice;
+            se certa, fino al termine garantito</td></tr>
+    <tr><td>Posizione non ancora riscossa</td>
+        <td><span class="marca m-legge">legge</span> riscattata integralmente in capitale
+            (art. 14 c. 3 D.Lgs. 252/2005)</td></tr>
+    <tr><td>Spesa</td>
+        <td><span class="marca m-stima">stima</span> ridotta al {{equivBassa}}&ndash;{{equivAlta}}
+            di quella di due persone</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><b>La riduzione per redditi propri opera sui soli redditi assoggettabili a IRPEF</b>: il
+trattamento gi&agrave; percepito dal superstite e la retribuzione. Non vi concorrono la rendita
+del fondo, che sconta un'imposta sostitutiva, n&eacute; la pensione ai superstiti medesima. Il
+calcolo applica la clausola di salvaguardia di legge, per la quale il cumulo non pu&ograve;
+risultare inferiore a quello spettante al limite superiore della fascia precedente, e il limite
+posto dalla sentenza della Corte costituzionale 162/2022, per cui la riduzione non pu&ograve;
+eccedere l'ammontare dei redditi che la determinano.</p>
+
+<p><span class="marca m-stima">stima</span> La riduzione della spesa non &egrave; una nostra
+assunzione: {{equivBassa}} &egrave; il coefficiente della <b>scala di equivalenza Carbonaro</b>,
+impiegata dall'ISTAT per la povert&agrave; relativa; {{equivAlta}} discende dalla <b>scala OCSE
+modificata</b>. Il calcolatore espone entrambi gli estremi anzich&eacute; sceglierne uno.</p>
+
+<h3>Che cosa lo scenario misura, e perch&eacute; non il patrimonio</h3>
+
+<p>Il termine di raffronto non &egrave; la consistenza finale. Verificato: misurata su di essa lo
+scenario risulta <b>sistematicamente pi&ugrave; favorevole</b> della proiezione ordinaria,
+poich&eacute; la riduzione della spesa eccede la perdita di reddito. &Egrave; un esito corretto
+nel modello e privo di significato per chi legge.</p>
+
+<p>Il calcolatore confronta pertanto <b>due riduzioni</b>: quella delle entrate ricorrenti di chi
+resta e quella della spesa. Se la prima &egrave; meno accentuata della seconda il tenore di vita
+&egrave; conservato; in caso contrario il superstite deve attingere al patrimonio in misura
+maggiore. &Egrave; l'unico raffronto che risponde alla domanda posta.</p>
+
+<h3>Limiti dello scenario</h3>
+
+<ul>
+  <li>Presuppone il <b>vincolo coniugale o l'unione civile</b>: il trattamento ai superstiti non
+    spetta in assenza di tale rapporto. Il calcolatore non lo richiede.</li>
+  <li>Non rappresenta la <b>pensione indiretta</b>, spettante quando il decesso precede la
+    decorrenza del trattamento: dipende dalla posizione contributiva e non &egrave; ricavabile
+    dai dati richiesti. In tale ipotesi lo scenario risulta pertanto <b>prudenziale</b>.</li>
+  <li>Non rappresenta le maggiorazioni per figli a carico, poich&eacute; il modello non li
+    contempla.</li>
+</ul>
+
+<h2>Fenomeni non rappresentati</h2>
+
+<p>Per ciascuno è indicata la direzione dello scostamento rispetto a una rappresentazione
+completa.</p>
+
+<h3>Mortalità</h3>
+<p>La proiezione principale conduce i soggetti fino all'età indicata e non rappresenta il
+decesso. Lo <b>scenario del superstite</b>, esposto accanto al risultato, lo rappresenta in un
+calcolo distinto: si veda la sezione dedicata.</p>
+
+<p>Non è invece corretto attribuire alla sola mortalità l'esito del confronto fra le due forme.
+Verificato prolungando il piano oltre i cento anni di età, <b>la liquidazione in capitale
+rimane preferibile</b>: il fattore determinante è il rendimento reale del patrimonio, e la
+durata della vita agisce come fattore secondario. Concorrono due circostanze: la rendita non è
+indicizzata, e il termine di confronto è il patrimonio residuo, che costituisce una grandezza di
+lascito e che la rendita per costruzione non produce. In luogo di un ottimo il calcolatore
+espone quindi <b>la soglia di rendimento alla quale la conclusione si inverte</b>, misurata a
+due età.</p>
+
+<h3>Forme di erogazione introdotte dal 1&deg; luglio 2026</h3>
+<p><span class="marca m-legge">legge</span> L'art. 11 c. 3-bis D.Lgs. 252/2005, introdotto dalla
+legge 199/2025, ammette la <b>rendita a durata definita</b>, i <b>prelievi liberamente
+determinabili</b> e l'<b>erogazione frazionata</b> in luogo della rendita vitalizia. Il modello
+rappresenta la sola alternativa fra capitale e rendita vitalizia. <b>Non &egrave; possibile
+indicare la direzione dello scostamento</b>: le nuove forme mantengono il montante in gestione e
+ne restituiscono il residuo agli aventi diritto, il che le rende pi&ugrave; favorevoli sotto il
+profilo del lascito e meno protettive rispetto alla sopravvivenza oltre gli anni computati.
+&Egrave; il limite pi&ugrave; rilevante fra quelli qui elencati.</p>
+
+<h3>Profilo della spesa</h3>
+<p>La spesa ammette un solo scalino, collocato alla cessazione dell'attività da parte
+dell'<b>ultimo</b> dei soggetti rappresentati: finché uno prosegue l'attività, il nucleo percepisce
+ancora un reddito da lavoro. Quando la proiezione non comprende alcun esercizio di attività lo
+scalino non ha collocazione: la spesa è una sola, quella indicata come corrente, e la casella
+relativa alla spesa in pensione è disattivata. Non sono
+rappresentati né il profilo dei consumi per età né gli oneri sanitari e assistenziali della tarda
+età, che ne costituiscono la deviazione più rilevante: <b>la spesa degli ultimi esercizi risulta
+pertanto sottostimata</b>. In luogo di una previsione il calcolatore fornisce un margine,
+indicando la spesa massima compatibile con la tenuta del piano.</p>
+
+<h3>Imposizione sulle attività finanziarie</h3>
+<p>Il modello non applica alcuna imposta sui rendimenti: entrambi i rendimenti sono richiesti
+<b>al netto dell'imposizione</b>, come indicato accanto alle rispettive caselle. La rettifica è
+pertanto rimessa a chi compila, e non è verificabile dal calcolo.</p>
+<p><b>Se vi è inserito un rendimento al lordo dell'imposta, la consistenza finale risulta
+sovrastimata</b>, ed è lo scostamento più rilevante che possa originarsi da un dato inserito: sul
+patrimonio libero l'imposta sostitutiva è del 26% e opera al realizzo; sul comparto del fondo è
+del 20% e opera annualmente, ed è già scontata nei rendimenti pubblicati dai fondi.</p>
+
+<h3>Dinamica retributiva</h3>
+<p>La crescita della retribuzione è indicata da chi compila ed è applicata in misura costante
+per tutti gli esercizi di attività. Non ne è rappresentata la <b>forma</b>: gli avanzamenti si
+concentrano di norma nella prima parte della carriera e si attenuano in seguito, e non sono
+rappresentate le interruzioni né le riduzioni di orario. A parità di crescita media, l'anticipo
+degli incrementi produce un montante superiore a quello calcolato.</p>
+
+<h3>Perequazione del trattamento INPS</h3>
+<p>La rivalutazione è applicata in misura integrale. La disciplina vigente prevede la
+perequazione piena entro quattro volte il trattamento minimo e aliquote ridotte oltre tale
+limite: <b>i trattamenti di importo elevato risultano pertanto sovrastimati</b>.</p>
+
+<h3>Base imponibile della prestazione</h3>
+<p>L'imposta grava sui contributi dedotti e non sui rendimenti, già assoggettati a imposta
+sostitutiva in capo al fondo. Il modello assume tuttavia che l'intera posizione in essere alla
+data iniziale sia costituita da contributi, non disponendo della scomposizione fra contributi e
+rendimenti maturati. <b>L'imposta risultante è pertanto superiore a quella dovuta</b>, con
+scostamento in senso prudenziale.</p>
+
+<h3>Determinazione del TFR</h3>
+<p>Il TFR è determinato come quota fissa della retribuzione annua lorda. La <i>retribuzione
+utile ai fini del TFR</i> non coincide con la RAL, escludendone talune voci: il valore è
+un'approssimazione, non l'importo risultante dalla comunicazione del fondo.</p>
+
+<h3>Tassazione separata del TFR liquidato</h3>
+<p>È applicata l'aliquota media di cui all'art. 19 TUIR. Non sono rappresentate la
+riliquidazione operata dall'Amministrazione finanziaria sull'aliquota media del quinquennio
+precedente né la detrazione spettante ai redditi di importo contenuto: entrambe operano in
+riduzione dell'imposta.</p>
+
+<h3>Ambito della deduzione</h3>
+<p>È considerata la sola IRPEF erariale ({{scaglioni}}), applicata alla RAL al netto del
+{{ivs}} di contribuzione obbligatoria. Non sono rappresentate le addizionali regionale e
+comunale, parimenti risparmiate, né le detrazioni da lavoro dipendente, il cui carattere
+decrescente eleva l'aliquota marginale effettiva. <b>Il beneficio della contribuzione è pertanto
+sottostimato.</b></p>
+
+<p><span class="marca m-legge">legge</span> La seconda aliquota è del <b>33%</b> e non del 35%:
+la legge di bilancio 2026 l'ha ridotta con effetto dal 1° gennaio 2026. <b>La riduzione è
+sterilizzata per i redditi superiori a 200.000 €</b>, e il modello non lo rappresenta: al di sopra
+di quella soglia il beneficio della contribuzione risulta <b>sovrastimato</b>. È l'unico punto in
+cui l'imposizione è rappresentata in senso favorevole a chi compila.</p>
+
+<h3>Perimetro</h3>
+<p>Il modello rappresenta uno o due soggetti. <b>La cessazione dell'attività è indicata per
+ciascuno</b> e, in assenza di indicazione, coincide con l'esercizio precedente la decorrenza del
+rispettivo trattamento; non è ammessa oltre tale esercizio, poiché il calcolo attribuirebbe nel
+medesimo anno retribuzione e trattamento. Gli esercizi compresi fra la cessazione e la decorrenza
+sono privi di reddito da lavoro e di trattamento, e gravano pertanto sul patrimonio. Il
+patrimonio investito è trattato come aggregato unico con rendimento medio, senza ripartizione per
+classe di attività.</p>
+
+<p><b>La forma pensionistica è distinta ai soli fini del contributo datoriale.</b> Il calcolo lo
+riconosce sul fondo negoziale e sull'adesione collettiva a fondo aperto, e lo esclude sulle forme
+sottoscritte individualmente, per le quali di regola non è previsto
+<span class="marca m-ccnl">CCNL</span>. Sotto ogni altro profilo (regime fiscale, limite di
+deducibilità, soglia per la liquidazione integrale in capitale) le forme sono equiparate, come
+dispone il D.Lgs. 252/2005 <span class="marca m-legge">legge</span>.</p>
+
+<p><b>Più posizioni presso fondi diversi</b> sono rappresentabili sommandone le consistenze e
+indicando l'iscrizione più remota, che è quella rilevante ai fini dell'imposta. Ne risulta
+tuttavia una sola posizione, mentre la soglia per la liquidazione integrale in capitale si
+valuta su ciascuna: <b>l'importo liquidabile è pertanto sottostimato</b> per chi, avendo
+più fondi, si collochi al di sotto della soglia in ciascuno di essi.</p>
+
+<p><b>Il fondo pensione non è rappresentato per chi indica una decorrenza già trascorsa.</b>
+La prestazione riscossa prima dell'anno iniziale della proiezione è parte del patrimonio
+indicato, e rappresentarla nuovamente la computerebbe due volte; il coefficiente di conversione,
+inoltre, sarebbe quello dell'età alla decorrenza e non dell'età corrente. Per tali soggetti il
+calcolo non richiede né utilizza alcun dato relativo all'attività lavorativa: retribuzione, TFR
+e contribuzione restano estranei alla proiezione, e le relative caselle sono disattivate.
+<b>Chi non abbia ancora riscosso la prestazione non è pertanto rappresentato</b>: il montante
+residuo non è collocabile senza attribuirgli una data di erogazione che il calcolo non conosce.
+La decorrenza collocata <i>nell'anno in corso</i> non rientra in questa fattispecie: la
+riscossione cade all'interno della proiezione ed è rappresentata come ogni altra.</p>
+
+<p><b>La rendita già in erogazione non è rappresentata.</b> Non è disponibile una casella
+idonea: il trattamento INPS è assoggettato a IRPEF, mentre la rendita da previdenza
+complementare sconta un'imposta sostitutiva, e la spesa è espressa in valuta corrente mentre
+la rendita erogata non è indicizzata. Ogni collocazione della rendita fra i dati esistenti
+introdurrebbe un errore non evidente a chi legge.</p>
+
+<h2>Come è determinato il coefficiente di conversione</h2>
+
+<p>Il coefficiente di conversione è il numero che, moltiplicato per il montante, dà la rendita
+annua. Non è stabilito dalla legge: è fissato dalla convenzione assicurativa di ciascun fondo, e
+varia con l'età, il sesso, la forma della rendita, la periodicità delle rate e l'anno di
+nascita. <b>Non esiste un coefficiente unico da adottare</b>, e la tavola del singolo fondo è un
+documento contrattuale con una scadenza.</p>
+
+<p>Il calcolatore non adotta la tavola di alcun fondo. Il coefficiente è ricostruito da due
+elementi:</p>
+
+<div class="conto">
+<p><b>coefficiente = 1 / (anni di vita attesi &times; {{margine}})</b></p>
+</div>
+
+<p>Gli anni sono la <b>speranza di vita residua rilevata dall'ISTAT</b>, a sessi congiunti,
+nella rilevazione 2023: a 67 anni sono {{anni67}}. <span class="marca m-legge">legge</span> Che
+sia questo il riferimento corretto è confermato dall'art. 11 c. 3-ter D.Lgs. 252/2005, il quale,
+per determinare la durata della rendita a durata definita, impone di utilizzare la speranza di
+vita ISTAT. La disposizione riguarda quella prestazione e una diversa annata della tavola, non
+il coefficiente di conversione della rendita vitalizia.</p>
+
+<p><span class="marca m-stima">stima</span> Il margine di {{margine}} rappresenta gli anni che
+la compagnia computa in eccedenza rispetto alla speranza di vita della popolazione: chi
+sottoscrive una rendita presenta una durata di vita superiore alla media, e il caricamento della
+convenzione opera nella medesima direzione. A 67 anni la durata computata risulta pertanto di
+{{anniMargine}} anni, corrispondente a un coefficiente del {{coeff67}}.</p>
+
+<p>Il margine è l'unico valore stimato del procedimento, ed è misurato sulle tavole
+effettivamente pubblicate: quelle della convenzione Generali (Cometa, Solidarietà Veneto) e
+quelle basate sulla tavola A62I (Multifond, Alifond), che pur riferendosi a compagnie diverse
+concordano fra loro entro l'1%. <b>La curva che ne risulta è confrontata con tali tavole a ogni
+costruzione del sito</b>: fra 60 e 72 anni non se ne discosta oltre il 3%, e lo scostamento
+massimo rilevato è del 6% a 55 anni. Oltre i 75 anni il coefficiente non è più esteso.</p>
+
+<p>L'annata della rilevazione ISTAT non incide sul risultato: il margine è calibrato su quella
+tavola, sicché a un incremento della speranza di vita corrisponde un margine minore e il
+prodotto resta invariato. Le due grandezze si aggiornano congiuntamente.</p>
+
+<h3>Dispersione fra i fondi, e le due affermazioni che ne restano</h3>
+
+<p>A parità di età, i coefficienti pubblicati differiscono di circa un terzo fra l'ipotesi più
+favorevole e quella meno favorevole. Concorrono quattro fattori, nessuno dei quali dipende
+dall'aderente:</p>
+
+<ul>
+  <li><b>la convenzione</b>: la tavola demografica adottata (IPS55 o A62I) comporta uno scarto
+    dell'ordine del 10%;</li>
+  <li><b>il sesso</b>: i fondi negoziali applicano tuttora coefficienti differenziati, con
+    scarto di circa il 15% fra uomo e donna. La disciplina sull'indifferenziazione delle
+    tariffe assicurative non si applica ai regimi professionali;</li>
+  <li><b>la periodicità delle rate</b>: la rateazione mensile riduce il coefficiente di circa il
+    3% rispetto a quella annuale;</li>
+  <li><b>l'anno di nascita</b>: talune tavole computano un'età convenzionale inferiore a quella
+    effettiva per le generazioni più recenti, con riduzione ulteriore.</li>
+</ul>
+
+<p>Il calcolatore adotta un valore unico, che si colloca al centro dei valori pubblicati.
+Poiché gli estremi della dispersione sono anch'essi misurati, restano determinabili <b>due
+soglie che valgono con qualunque fondo</b>: a 67 anni, al di sotto di {{sogliaChiunque}} la
+liquidazione integrale in capitale è ammessa in ogni caso; al di sopra di {{sogliaNessuno}} non
+lo è in nessun caso. Fra i due valori l'esito dipende dalla tavola applicabile.</p>
+
+<p>Il tasso tecnico non concorre alla dispersione qui rappresentata, in quanto oggetto di scelta
+dell'aderente al momento della conversione: l'opzione per il tasso tecnico dell'1% eleva l'importo
+iniziale di circa il 13% e ne esclude la successiva rivalutazione. I valori adottati si riferiscono
+al tasso tecnico dello 0%.</p>
+
+<h2>Parametri e stato di verifica</h2>
+
+<p>I parametri risiedono in un unico file e da questo sono propagati sia al motore di calcolo
+sia alla tabella seguente: <b>le due fonti non possono divergere</b>.</p>
+
+<div class="scorre">
+<table>
+  <thead><tr><th>Cosa</th><th>Nel conto vale</th><th>Da dove viene</th><th>Stato</th></tr></thead>
+  <tbody>
+    <!--@@TABELLA_REGOLE@@-->
+  </tbody>
+</table>
+</div>
+
+<!--@@STATO_PARAMETRI@@-->
+
+<h2>Verifiche eseguite</h2>
+
+<p>Il motore è sottoposto a una batteria di controlli automatici che verificano, fra l'altro,
+la quadratura di ciascun esercizio, il rispetto del limite alla prestazione in capitale, la
+permanenza dell'aliquota entro l'intervallo di legge e la non eccedenza della base imponibile
+rispetto al montante.</p>
+
+<p>Il modello è stato inoltre <b>reimplementato una seconda volta a partire dalle sole
+regole</b>, senza accesso al codice del calcolatore, e le due implementazioni sono state
+confrontate su più scenari. La concordanza di due implementazioni indipendenti circoscrive
+l'eventuale errore alle regole anziché al procedimento di calcolo. Lo scostamento massimo
+rilevato è dell'ordine dei centesimi di euro su consistenze di alcuni milioni, riconducibile
+all'aritmetica in virgola mobile.</p>
+
+<p>Sono infine stati generati quattromila scenari casuali, con variazione di età, redditi,
+rendimenti anche negativi e inflazione fino all'8%, per verificare la tenuta delle medesime
+proprietà nei casi limite.</p>
+
+<p>La curva dei coefficienti di conversione è oggetto di un controllo distinto, che la confronta
+con i coefficienti trascritti dai documenti sulle rendite di quattro fondi pensione, riferiti a
+tre compagnie assicurative, e ne verifica la permanenza entro la dispersione dichiarata. Le
+tavole sono utilizzate come termine di riscontro e non come parametro del calcolo.</p>
+
+<div class="chiave">
+  <p><b>Le verifiche riguardano la correttezza del calcolo, non l'attendibilità del
+  risultato.</b> Una proiezione quarantennale dipende da rendimenti e inflazione non conoscibili
+  in anticipo. Il modello è utile a misurare <i>la variazione</i> prodotta da scelte diverse, non
+  a determinare la consistenza patrimoniale a una data futura.</p>
+</div>
+
+<p><a class="torna" href="index.html">Torna al calcolatore &rarr;</a></p>
+
+<!--@@INCLUDI _pie.html@@-->
+</div>
+</body>
+</html>
