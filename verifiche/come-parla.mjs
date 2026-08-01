@@ -105,7 +105,13 @@ const SCENARI = {
   'una converte e l\'altra consuma': {...BASE, forma0:'durata', forma1:'rev'},
   'durata definita, tutto in capitale dove si può':
                                     {...BASE, forma0:'durata', forma1:'durata',
-                                     fondo0:15000, fondo1:15000, quotaCap0:1, quotaCap1:1}
+                                     fondo0:15000, fondo1:15000, quotaCap0:1, quotaCap1:1},
+  // GLI ANNI SCRITTI A METÀ. Sono lo stato in cui la pagina si trova a ogni tasto premuto, e
+  // valgono uno scenario come gli altri: prima «207» diventava 1900, cioè una decorrenza
+  // passata, e il calcolatore rispondeva col paragrafo di chi ha già riscosso tutto.
+  'decorrenza scritta a metà':      {...BASE, annoPens0:'207'},
+  'erogazione anticipata scritta a metà': {...BASE, rita0:'204'},
+  'ultimo anno scritto a metà':     {...BASE, ultimo0:'203'}
 };
 
 // --- il calcolatore, eseguito senza browser ---------------------------------
@@ -165,6 +171,11 @@ for (const [nome, DATI] of Object.entries(SCENARI)){
   c(`${nome}: nessun elemento mancante`, avvisi.length === 0, avvisi.join(' · '));
   c(`${nome}: registro impersonale`, !persona, persona ? persona.join(', ') : '');
   c(`${nome}: nessun valore rotto in pagina`, !sporco, sporco ? sporco[0] : '');
+  // 1900 è il valore a cui il taglio riconduce un anno troppo piccolo: se compare in pagina,
+  // un numero che nessuno ha scritto è diventato una risposta. Non è un formato sbagliato —
+  // `SPORCO` non lo vedrebbe — è una data inventata, ed è peggio.
+  const inventata = testo.match(/\b1[0-8]\d\d\b|\b19[0-4]\d\b/);
+  c(`${nome}: nessuna data inventata`, !inventata, inventata ? inventata[0] : '');
 }
 
 console.log('\n— il sommario in alto —');

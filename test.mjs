@@ -190,8 +190,23 @@ t('un anno oltre la propria decorrenza viene ricondotto: mai stipendio e trattam
   conUltimo({ultimo0: 2050}).p[0].ultimo === DATI.annoPens0 - 1);
 t('e resta memoria di quello che è stato scritto, per poterlo dire',
   conUltimo({ultimo0: 2050}).p[0].ultimoScritto === 2050);
-t('zero non è vuoto: è un anno impossibile, e viene ricondotto invece di valere «come sempre»',
-  conUltimo({ultimo0: 0}).p[0].ultimoScritto === 1900);
+// UN ANNO SI LEGGE SOLO A QUATTRO CIFRE, e questa regola assorbe il vecchio caso dello zero.
+// «Vuoto e zero sono due informazioni diverse» vale per gli importi — uno zero di contributi è
+// una risposta — ma per un anno lo zero non è una risposta, è un tasto premuto a metà. Prima
+// finiva a 1900, e la pagina scriveva «cessazione dell'attività nel 1900» con centoventisei
+// esercizi senza reddito: una risposta inventata, non una risposta diversa.
+t('zero non è un anno: la casella vale come non compilata',
+  conUltimo({ultimo0: 0}).p[0].ultimoScritto === null
+  && conUltimo({ultimo0: 0}).p[0].ultimo === DATI.annoPens0 - 1);
+// LA REGRESSIONE VERA, ed è quella che ha segnalato lui: mentre si scrive «2079» si passa da
+// «2», «20», «207». Nessuno dei tre deve diventare una risposta.
+t('la decorrenza scritta a metà non manda in pensione: vale come casella vuota', (() => {
+    const q = conUltimo({annoPens0: '207'});
+    return q.p[0].annoPensVuoto && !q.p[0].giaInPens; })());
+t('l\'erogazione anticipata scritta a metà non fa partire il fondo a rate',
+  conUltimo({rita0: '204'}).p[0].rita === 0);
+t('l\'ultimo anno scritto a metà non cancella gli anni di lavoro',
+  conUltimo({ultimo0: '203'}).p[0].ultimo === DATI.annoPens0 - 1);
 t(`nel ${s.p[0].ultimo} lavorano tutti e due`,
   Math.abs(anno(s.p[0].ultimo).daLavoro - (s.p[0].stip + s.p[1].stip) * 12) < 1e-9);
 t(`nel ${DATI.annoPens1} non lavora più nessuno`, anno(DATI.annoPens1).daLavoro === 0);

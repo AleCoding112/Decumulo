@@ -974,6 +974,17 @@ const numFra = (id, min, max) => fra(num(id), min, max);
 // spesa resta quella di adesso, «0» significherebbe che in pensione non si spende niente.
 const numOpt = id => { const v = String(EL(id).value).trim();
                        return v === '' ? null : (parseFloat(v) || 0); };
+// UN ANNO NON SI LEGGE MENTRE LO SI SCRIVE. Per arrivare a «2079» si passa da 2, 20, 207: numeri
+// leciti, che il taglio agli estremi trasformava in una risposta diversa da quella che si stava
+// dando. Non era un difetto di forma, cambiava il conto:
+//  - la decorrenza finiva a 1900, cioè «già in pensione», e la pagina rispondeva con il paragrafo
+//    di chi ha già riscosso tutto — mentre uno stava ancora premendo i tasti;
+//  - l'erogazione anticipata finiva sull'anno in corso, e il fondo cominciava a uscire a rate;
+//  - l'ultimo anno di lavoro finiva a 1900, e sparivano dal piano sedici anni di retribuzione.
+// Finché le cifre non sono quattro la casella vale come non compilata, che è già uno stato che
+// la pagina sa gestire: sospende il verdetto e dice cosa manca.
+const annoScritto = id => /^\d{4}$/.test(String(EL(id).value).trim());
+const annoOpt = id => annoScritto(id) ? num(id) : null;
 // Rete di sicurezza: se un elemento sparisce dalla pagina — capita riscrivendo un paragrafo —
 // il calcolo NON deve morire in silenzio a metà. Segnala e tira dritto.
 const EL = id => {
@@ -1017,7 +1028,7 @@ function leggi(){
     // Vuoto e una decorrenza passata sono due cose diverse, e per un anno non basta guardare
     // se è zero: chi è già in pensione ha scritto un anno valido, e va distinto da chi non ha
     // ancora compilato la casella. Da questa differenza dipende se il verdetto si dà.
-    annoPensVuoto: EL('annoPens'+i).value.trim() === '',
+    annoPensVuoto: !annoScritto('annoPens'+i),
     fondo:    numFra('fondo'+i, 0, 1e9),
     pcVoi:    numFra('pcVoi'+i, 0, 100),
     pcVoiVuoto: EL('pcVoi'+i).value.trim() === '',
@@ -1030,7 +1041,7 @@ function leggi(){
     pc:       fra(EL('pc'+i).value === '' ? num('pcVoi'+i) : num('pc'+i), 0, 100),
     tfrAlFondo: EL('tfrDove'+i).value !== 'azienda',
     iscr:     numFra('iscr'+i, 1900, ANNO0 + 80),
-    rita:     numFra('rita'+i, 0, ANNO0 + 80),
+    rita:     annoScritto('rita'+i) ? numFra('rita'+i, 0, ANNO0 + 80) : 0,
     quotaCap: numFra('quotaCap'+i, 0, 1),
     // gli anni dell'erogazione frazionata: la legge ne impone almeno cinque, e non c'è un
     // massimo scritto. Vuoto vale il minimo, che è il caso base.
@@ -1050,7 +1061,7 @@ function leggi(){
   p.forEach((x, i) => {
     // si tiene il valore GREZZO, non un «sì/no»: serve a distinguere chi ha scritto un anno
     // valido da chi ne ha scritto uno oltre la propria pensione, che il conto riconduce
-    const scritto = numOpt('ultimo' + i);
+    const scritto = annoOpt('ultimo' + i);
     x.ultimoScritto = scritto === null ? null : fra(scritto, 1900, ANNO0 + 80);
     x.ultimo = x.ultimoScritto === null ? x.annoPens - 1
                                         : Math.min(x.ultimoScritto, x.annoPens - 1);
@@ -2031,7 +2042,12 @@ function calc(){
       // attività finita anni fa.
       // il complemento va dentro la frase, non dopo i due punti: con una coppia in cui l'altro
       // lavora ancora, «il piano non comprende esercizi di attività» sarebbe falso del piano
-      return x.giaInPens
+      // SENZA LA DECORRENZA NON C'È NIENTE DA DIRE. `ultimo` vale `annoPens − 1`, e con la
+      // casella vuota `annoPens` è il minimo del taglio: la pagina annunciava «cessazione
+      // dell'attività nel 1899» a chi l'aveva appena aperta. Trovato dal controllo sulle date
+      // inventate, non da un occhio: era lì da sempre, in cima al modulo vuoto.
+      return x.annoPensVuoto ? ''
+        : x.giaInPens
         ? `Trattamento${chi} in erogazione dal <b>${x.annoPens}</b>, senza esercizi di attività
            nel piano.`
         : buco <= 0
@@ -2041,7 +2057,7 @@ function calc(){
            dal ${x.annoPens}: <b>${buco} ${buco === 1 ? 'esercizio' : 'esercizi'}</b> senza
            reddito da lavoro né trattamento, a carico del patrimonio.`;
     };
-    EL('quandoSmettete').innerHTML = s.indici.map(dice).join(' ');
+    EL('quandoSmettete').innerHTML = s.indici.map(dice).filter(Boolean).join(' ');
   }
 
 
@@ -2383,17 +2399,18 @@ function calc(){
          solo la rivalutazione
              maturata nel frattempo: `
           : `Il fondo ${i.di} arriva a ${E0(i.montante)}: `;
-        const consentito = `${fmt(i.max*100)}%`, scelto = `${fmt(i.quota*100)}%`;
+        const consentito = `${fmt(i.max*100)}%`;
         // quello che la legge concede e quello che si è scelto sono due cose diverse: finché la
         // pagina partiva dal massimo coincidevano, e la frase se ne approfittava
         const scelta = Math.abs(i.quota - i.max) < 1e-9 ? ''
           : i.quota < 1e-9 ? ' Qui è tutto convertito in rendita.'
           : ` Qui ne esce ${perc(i.quota*100,'il')} (${E0(i.capitale)}); il resto va in rendita.`;
-        return i.limitata
-          ? `<span class="giu-t">${rita} sopra la soglia, il ${fmt(i.chiesta*100)}% in capitale
-             non è consentito: il conto ne liquida il ${consentito} (${E0(i.capitale)}) e converte
-             il resto in rendita.</span>`
-          : rita + `se ne può riscuotere fino al ${consentito} in capitale` +
+        // NON SI ANNUNCIA UN DIVIETO. Il cursore si ferma già al massimo di legge, quindi una
+        // richiesta più alta può arrivare solo da una scelta salvata prima che quel massimo
+        // cambiasse: dirle «il 60% non è consentito» significa rifiutare qualcosa che non ha
+        // chiesto, e per giunta parlando dello strumento («il conto ne liquida»). La stessa
+        // cosa la frase la dice già in positivo a tutti gli altri, ed è quella che vale.
+        return rita + `se ne può riscuotere fino al ${consentito} in capitale` +
             (i.max === 1
               ? (i.montante < soglia(i.coeffEta * BANDA_ALTA)
                   ? `, perché resta sotto la soglia che vale a ${fmt(i.etaPens)} anni — e ci resta
@@ -2733,8 +2750,9 @@ function aggiornaDecisioni(s, r){
     const primi = contributi(x, x.pcVoi), costoPrimi = costoAnnuo({...x, pcVoi: 0}, x.pcVoi);
     EL('cVers'+i+'Esito').innerHTML = !(x.ral > 0)
       ? `<i>—</i>`
+      // istruzioni per usare un cursore, scritte accanto al cursore: chi lo vede sa che si muove
       : (Math.abs(d) < 1
-          ? `<i>com'è adesso: basta muovere il cursore per vedere quanto cambia</i>`
+          ? `<i>com'è adesso</i>`
           : `<b>${d > 0 ? '+' : '−'}${E0(Math.abs(d))}</b> alla fine
              <i>${costo >= 0 ? 'costa' : 'lascia'} ${E0(Math.abs(costo)/12)} al mese
                 di stipendio netto, rispetto a oggi</i>`)
@@ -2776,8 +2794,12 @@ function aggiornaDecisioni(s, r){
     const senzaFinestra = primo >= fine;
     cq.style.display = senzaFinestra ? 'none' : '';
     cq.nextElementSibling.style.display = senzaFinestra ? 'none' : '';
+    // «NIENTE DA SCEGLIERE» SI DICE UNA VOLTA SOLA. Quando la finestra non c'è lo dicevano tre
+    // elementi in fila — qui, nell'esito, e nella riga che spiega perché — più i due estremi del
+    // cursore, che segnano lo stesso anno e sono già la dimostrazione. Resta quella che porta la
+    // ragione, cioè `Picco`: le altre due ripetevano una negazione senza aggiungerci niente.
     EL('cQuando'+i+'Ora').innerHTML = senzaFinestra
-      ? `<b>tutto alla pensione</b>, nel ${fine}<i>qui non c'è niente da scegliere</i>`
+      ? `<b>tutto alla pensione</b>, nel ${fine}`
       : rate <= 0
       ? `<b>tutto alla pensione</b>, nel ${fine}`
       : `<b>a rate dal ${anno}</b><i>${rate} rate fino al ${fine-1}, poi quello che avanza</i>`;
@@ -2790,8 +2812,7 @@ function aggiornaDecisioni(s, r){
     // detto a parole, non con un segno
     EL('cQuando'+i+'Esito').innerHTML =
       (Math.abs(dAspetta) < 1
-        ? `<i>${senzaFinestra ? 'niente da scegliere: non cambia niente'
-                              : 'come ad aspettare la pensione'}</i>`
+        ? (senzaFinestra ? '' : `<i>come ad aspettare la pensione</i>`)
         : `<b>${(dAspetta > 0 ? '+' : '−') + E0(Math.abs(dAspetta))}</b> alla fine
            <i>rispetto ad aspettare la pensione</i>`)
       // «anni scoperti» si legge come «restate senza soldi», e non è quello: sono gli anni in
@@ -2845,8 +2866,10 @@ function aggiornaDecisioni(s, r){
       : inc.montante <= sNessuno
         ? `a ${fmt(x.etaPens)} anni la soglia è ${E0(x.soglia)} e il fondo la supera, ma con le
            tavole più prudenti arriva a ${E0(sNessuno)}. Va chiesto al fondo`
-        : `oltre il ${maxPc}% la legge non lo permette: nemmeno la soglia più alta fra le tavole
-           pubblicate, ${E0(sNessuno)}, arriva a questo fondo`;
+        // simmetrico del primo ramo, e nella stessa forma: là «con qualunque fondo», qui «con
+        // nessuno». Diceva «oltre il 50% la legge non lo permette» — un divieto su un cursore
+        // che è già fermo lì — e poi girava la soglia al contrario, per negazioni
+        : `sopra ${E0(sNessuno)} non si prende tutto con nessun fondo: questo ci sta sopra`;
 
     // --- passo 3: che forma ha l'assegno. Non cambia quanto c'è, cambia quanto paga al mese
     //     e chi protegge. I fattori sono stime dichiarate, non numeri di legge.
