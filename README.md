@@ -1,7 +1,7 @@
 # Decumulo
 
 Calcolatore del decumulo per lavoratori dipendenti privati, più le pagine che ne spiegano le
-regole. Destinato al dominio **decumulo.it**, non ancora pubblicato.
+regole. **Online su [decumulo.it](https://decumulo.it) dal 1° agosto 2026.**
 
 ---
 
@@ -58,6 +58,11 @@ controlli non hanno visto.
 
 **Il dominio non si riscrive**: sta nei `canonical` delle pagine, e da lì il build ricava
 `robots.txt` e il file `CNAME` che serve a GitHub per rispondere su `decumulo.it`.
+
+Il DNS del dominio porta ai quattro indirizzi di GitHub Pages (`185.199.108-111.153`) più un
+`CNAME` per `www`. Il certificato è di Let's Encrypt, emesso e rinnovato da GitHub, e
+**Enforce HTTPS** è attivo. Chi tocca il DNS deve sapere che quei quattro record A vanno tutti
+e quattro: uno solo funziona finché quel nodo risponde.
 
 **Senza consenso non parte nulla verso l'esterno**: nessuna risorsa da domini terzi, nessun
 cookie. Con il consenso si attiva Google Analytics, ed è l'unica eccezione. Vedi la sezione
