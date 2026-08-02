@@ -447,6 +447,7 @@ export const TESTI = {
   mensPensione:     String(V('MENSILITA_PENSIONE')),
   reversibilita:    pc(V('REVERSIBILITA')),
   trattMinimo:      eur(V('TRATT_MINIMO')),
+  quattroMinimi:    eur(4 * V('TRATT_MINIMO')),
   trattMinimoAnno:  eur(V('TRATT_MINIMO') * V('TRATT_MINIMO_MENS')),
   equivBassa:       pc(V('EQUIV_BASSA')),
   equivAlta:        pc(V('EQUIV_ALTA')),
