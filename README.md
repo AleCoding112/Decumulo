@@ -275,9 +275,10 @@ anno di lavoro). Si scrive `campo: ''` esplicitamente in ogni armatura.
 regole.mjs      le cifre, con nome · fonte · verificata
 build.mjs       le porta ovunque servano
 verifica.mjs    un comando solo per tutto
-test.mjs        204 controlli sul motore
-verifiche/      come parla · valori ostili · tavole dei fondi · seconda implementazione ·
-                invarianti · schermi · coerenza · consenso · scadenze · a-schermo
+test.mjs        i controlli sul motore
+verifiche/      come parla · valori ostili · tavole dei fondi · riscontri esterni ·
+                seconda implementazione · invarianti · schermi · coerenza · consenso ·
+                anteprime · scarica · scadenze · a-schermo · occhi
 sorgenti/       index.html + le pagine; i file con _ sono pezzi da includere
 sito/           quello che si pubblica
 ```

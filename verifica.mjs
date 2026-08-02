@@ -50,6 +50,13 @@ for (const [file, cosa] of passi){
   }
 }
 
+// LA RIGA FINALE SI GENERA DALL'ELENCO. Era scritta a mano e nominava tredici passi mentre
+// l'elenco ne aveva quattordici: aggiungendo i riscontri esterni il riepilogo non se n'è
+// accorto e ha continuato a dichiarare verde una lista incompleta. È la stessa divergenza che
+// tutto il resto del progetto esiste per impedire — due posti che dicono la stessa cosa — nel
+// punto meno sorvegliato, cioè quello che si legge alla fine e si crede sulla parola.
+const nome = f => f.replace(/^verifiche\//, '').replace(/\.mjs$/, '');
 console.log(rotto ? `\n\x1b[31m✗ fermato su ${rotto}\x1b[0m`
-                  : `\n\x1b[32m✓ tutto verde\x1b[0m — build, motore, frasi, valori ostili, tavole,\n  seconda implementazione, invarianti, schermi, coerenza, consenso, anteprime, scarica, scadenze`);
+  : `\n\x1b[32m✓ tutto verde\x1b[0m — ${passi.length} passi: `
+    + passi.map(([f]) => nome(f)).join(' · '));
 if (rotto) process.exitCode = 1;
