@@ -1107,6 +1107,43 @@ console.log("\n— l'abitazione —");
   // e non si pagano provvigioni su una vendita che non c'è stata
   t('e nessuna provvigione su una vendita che non c\'è stata',
     aiFigli.s.casa.costiVendita === 0);
+
+  // --- LA RICCHEZZA, NON IL SOLO PATRIMONIO ---------------------------------
+  // IL DIFETTO CHE QUESTI CONTROLLI IMPEDISCONO, ed era già stato pubblicato per qualche ora:
+  // confrontare i due mondi sul solo patrimonio investito ignora che chi resta possiede ancora
+  // l'abitazione. Sul caso di prova la pagina diceva «+127.984 € rispetto a restare» mentre il
+  // confronto vero era −192.016 €: il SEGNO OPPOSTO, e sempre a favore della vendita.
+  // Stessa forma del difetto della metrica del superstite: un metro che vede solo il capitale
+  // finanziario premia sistematicamente chi converte un bene in denaro.
+  t('chi resta possiede ancora la casa, e il conto lo sa',
+    con({...CASA, casaCosa:'resto'}).s.casa.immobileDopo === 300000);
+  t('chi va in affitto non possiede più nulla', vende.s.casa.immobileDopo === 0);
+  t('e chi ricompra possiede la casa nuova', piccola.s.casa.immobileDopo === 180000);
+
+  // LA PROPRIETÀ CHE CHIUDE LA QUESTIONE, ed è esatta: cambiare casa con una di PARI VALORE non
+  // può arricchire nessuno. Quello che si perde è esattamente il costo dell'atto, capitalizzato
+  // fino alla fine del piano. Se il confronto tornasse a guardare il solo patrimonio, questo
+  // controllo direbbe che permutare due case identiche fa guadagnare trecentomila euro.
+  {
+    const pari  = con({casaCosa:'piccola', casaAnno:2045, casaValore:300000, casaNuova:300000});
+    const resto = con({casaCosa:'resto', casaValore:300000});
+    const ricchezza = p => p.r.finale + p.s.casa.immobileDopo;
+    const costi = pari.s.casa.costiVendita + pari.s.casa.costiAcquisto;
+    const atteso = costi * Math.pow(1 + pari.s.rend, pari.r.annoFine - 2045);
+    t('permutare due case di pari valore costa esattamente i costi dell\'atto',
+      Math.abs((ricchezza(resto) - ricchezza(pari)) - atteso) < 1,
+      eur(costi) + ' nel 2045, che alla fine del piano valgono ' + eur(atteso));
+  }
+
+  // E IL VERSO. Con rendimento reale nullo e costi da pagare, vendere per andare in affitto non
+  // può arricchire: si perdono i costi e si comincia a pagare un canone senza nulla che lo
+  // compensi. Un confronto che dicesse il contrario starebbe misurando un'altra cosa.
+  {
+    const q = leggiCon({...CASA, casaCosa:'affitto', casaCanone:1000, rend:2, infl:2});
+    const ric = st => M.simula(st).finale + st.casa.immobileDopo;
+    t('a rendimento reale nullo vendere e affittare non arricchisce',
+      ric(q) < ric({...q, casa: {...q.casa, attiva: false, immobileDopo: q.casa.valore}}));
+  }
 }
 
 console.log('\n— casi limite —');

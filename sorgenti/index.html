@@ -1257,6 +1257,18 @@ function leggi(){
   // Per la casa più piccola resta zero: costerebbe meno di manutenzione e di utenze, ma di
   // quanto non lo sappiamo, e non contarlo tiene lo scenario dalla parte prudente.
   casa.spesaAnnua = casa.attiva && casaCosa === 'affitto' ? casaCanone * 12 : 0;
+  // QUALE IMMOBILE SI POSSIEDE ALLA FINE DEL PIANO, e serve per una ragione sola: confrontare
+  // due mondi in cui la ricchezza non ha la stessa forma.
+  // IL DIFETTO CHE QUESTA RIGA RIPARA, trovato il 02/08/2026 subito dopo la pubblicazione:
+  // la riga «+127.984 € alla fine rispetto a restare dove si è» misurava il solo patrimonio
+  // investito, e chi resta la casa CE L'HA ANCORA. Sullo stesso caso il confronto vero era
+  // −192.016 €: non un numero impreciso, il segno opposto. Ed era prevedibile — il metro
+  // premia il capitale finanziario e non vede il bene che si è ceduto, che è esattamente il
+  // difetto già visto sulla metrica dello scenario del superstite.
+  // In euro di oggi non si rivaluta nulla, coerentemente con quanto la pagina dichiara.
+  casa.immobileDopo = !casa.attiva ? casaValore
+    : casaCosa === 'affitto' ? 0
+    : casaNuova;
   return {
     casa,
     N, indici, tuttoInPens,
@@ -2803,8 +2815,12 @@ function casaModulo(s){
 
 function pareggioCasa(s){
   if (!s.casa || !s.casa.attiva || !(s.casa.spesaAnnua > 0)) return null;
-  const con   = rend => simula({...s, rend}).finale;
-  const senza = rend => simula({...s, rend, casa: {...s.casa, attiva: false}}).finale;
+  // LA METRICA È LA RICCHEZZA, non il solo patrimonio investito: chi resta possiede ancora
+  // l'abitazione, e una soglia calcolata ignorandola sarebbe una soglia su un metro diverso da
+  // quello con cui la riga qui sopra confronta i due mondi.
+  const c = s.casa;
+  const con   = rend => simula({...s, rend}).finale + c.immobileDopo;
+  const senza = rend => simula({...s, rend, casa: {...c, attiva: false}}).finale + c.valore;
   const meglio = rend => con(rend) >= senza(rend);
   const qui = meglio(s.rend);
   // la ricerca si ferma agli estremi: oltre, la risposta è «in nessuno scenario plausibile»,
@@ -3302,8 +3318,15 @@ function aggiornaDecisioni(s, r){
       const costi = c.costiVendita + c.costiAcquisto;
       // il confronto è con lo stesso piano senza il cambio di casa: è la sola misura che
       // risponde alla domanda «e se restassi dove sono»
+      // IL CONFRONTO È FRA RICCHEZZE, non fra patrimoni investiti: nel ramo «resto» c'è ancora
+      // l'abitazione, e ometterla spostava il confronto di tutto il suo valore, sempre a favore
+      // della vendita. Senza il valore scritto la ricchezza non è confrontabile, e allora la
+      // frase dichiara che sta guardando il solo patrimonio invece di far credere altro.
       const senza = simula({...s, casa: {...c, attiva: false}}).finale;
-      const d = r.finale - senza;
+      const misurabile = c.valore > 0 || c.immobileDopo > 0;
+      const d = misurabile
+        ? (r.finale + c.immobileDopo) - (senza + c.valore)
+        : r.finale - senza;
       eco.innerHTML =
         (c.ricavato !== 0 || costi > 0
           ? `<b>${c.ricavato < 0 ? '−' : ''}${E0(Math.abs(c.ricavato))}</b> nel patrimonio
@@ -3319,7 +3342,10 @@ function aggiornaDecisioni(s, r){
         + (Math.abs(d) < 1
             ? `<i>alla fine del piano non cambia nulla</i>`
             : `<i><b>${d > 0 ? '+' : '−'}${E0(Math.abs(d))}</b> alla fine del piano rispetto a
-               restare dove si è</i>`);
+               restare dove si è, ` + (misurabile
+                 ? `contando anche l'abitazione che si possiede in ciascuno dei due casi`
+                 : `sul solo patrimonio investito: senza il valore dell'abitazione i due casi
+                    non sono confrontabili per intero`) + `</i>`);
 
       // IL PAREGGIO, solo per l'affitto: è l'unica delle due scelte che impegni a una spesa
       // ricorrente, quindi l'unica il cui esito dipenda dal rendimento del patrimonio.

@@ -761,6 +761,22 @@ console.log('\n— chi è già in pensione —');
     /nulla che la compensi/.test(nudo(figli)('casaScambio'))
     && !/il ricavato possa rendere/.test(nudo(figli)('casaScambio')));
 
+  // IL CONFRONTO DICHIARA SU COSA È FATTO, ed è la riparazione del difetto più grave della
+  // feature: misurato sul solo patrimonio investito, il confronto ignorava che chi resta
+  // possiede ancora la casa, e dava il SEGNO OPPOSTO (+127.984 € invece di −192.016 €).
+  c('il confronto dichiara di contare anche l\'abitazione',
+    /contando anche l'abitazione/.test(nudo(affitto)('casaEsito'))
+    && /contando anche l'abitazione/.test(nudo(piccola)('casaEsito')));
+  c('e senza il valore dichiara che non è confrontabile per intero',
+    /solo patrimonio investito/.test(nudo(figli)('casaEsito'))
+    && !/contando anche l'abitazione/.test(nudo(figli)('casaEsito')),
+    nudo(figli)('casaEsito').slice(-70));
+  // IL VERSO, che è la cosa che quel difetto rovesciava: su questo scenario vendere e andare in
+  // affitto PEGGIORA la ricchezza, e la pagina deve dirlo col segno giusto.
+  c('e su questo scenario il segno è negativo, come dev\'essere',
+    /−[\d.]+ € alla fine del piano/.test(nudo(affitto)('casaEsito')),
+    (nudo(affitto)('casaEsito').match(/[+−][\d.]+ € alla fine/) || [''])[0]);
+
   // I COSTI RESTANO IN CHIARO: sono l'unica stima nostra della sezione, e chi ha spuntato
   // condizioni diverse deve poterli vedere per correggere il valore che scrive.
   c('i costi della compravendita si mostrano, e sono dichiarati stima',
