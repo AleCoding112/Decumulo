@@ -118,6 +118,29 @@ addEventListener('load', () => setTimeout(() => {
       .map(e => (e.id ? '#' + e.id : e.tagName) +
                 (typeof e.className === 'string' && e.className ? '.' + e.className.trim().split(/\\s+/)[0] : ''));
 
+    // UN RIQUADRO CHE MOSTRA MENO DI QUANTO CONTIENE, e perché è un controllo a parte.
+    // Tutto il resto qui misura lo SBORDO — qualcosa che esce di lato. Questo misura la
+    // SOVRAPPOSIZIONE, che non sborda niente: la pagina resta larga uguale, ogni misura è
+    // verde, e il testo è scritto sopra un altro testo.
+    // È successo il 02/08/2026, ed è finito online: una regola nuda per la classe «barra»,
+    // scritta con un'altezza di dieci pixel per la barra della composizione, si è presa anche
+    // il contenitore delle scelte sul fondo — che quella classe ce l'aveva da sempre, ed era
+    // stilata solo in forma annidata, quindi nessuno l'aveva mai vista scoperta.
+    // Un riquadro alto 354 px ne mostrava 10, e tutto il seguito della pagina ci finiva sopra.
+    // La misura è generale e non costa niente: un elemento che non scorre e non taglia deve
+    // mostrare tutto quello che contiene. Sulla pagina sana la lista è VUOTA — nessun falso
+    // allarme da tollerare, quindi qualunque voce qui dentro è un difetto vero.
+    const schiacciati = [];
+    for (const e of d.querySelectorAll('body *')){
+      const o = i.contentWindow.getComputedStyle(e);
+      if (o.display === 'none' || o.overflowY !== 'visible' || o.position === 'absolute') continue;
+      if (e.clientHeight > 0 && e.scrollHeight > e.clientHeight + 2)
+        schiacciati.push((e.id ? '#' + e.id : e.tagName)
+          + (typeof e.className === 'string' && e.className
+             ? '.' + e.className.trim().split(/\\s+/)[0] : '')
+          + ' mostra ' + e.clientHeight + ' px di ' + e.scrollHeight);
+    }
+
     const senzaNome = [];
     for (const e of d.querySelectorAll('input, select')){
       if (e.type === 'hidden' || e.offsetParent === null) continue;
@@ -128,6 +151,7 @@ addEventListener('load', () => setTimeout(() => {
     out.push({p: i.dataset.p + (i.dataset.a ? ' (' + i.dataset.a + ')' : ''),
               w: +i.dataset.w, ecc: r.scrollWidth - r.clientWidth,
               chi: [...new Set(chi)].slice(0, 3), senzaNome,
+              schiacciati: [...new Set(schiacciati)].slice(0, 5),
               fantasmi: [...new Set(visibiliMaNascosti)]});
   }
   document.title = JSON.stringify(out);
@@ -163,6 +187,19 @@ if (anonimi.length){
   ko++; console.log(`  ✗ campi senza nome accessibile:`);
   for (const x of anonimi) console.log(`      ${x.p} a ${x.w} px: ${x.senzaNome.join(', ')}`);
 } else console.log('  ok  ogni campo visibile ha un nome che un lettore di schermo annuncia');
+// --- un riquadro che mostra meno di quanto contiene ------------------------
+{
+  const stretti = esiti.filter(x => x.schiacciati.length);
+  if (stretti.length){
+    ko++;
+    console.log('  ✗ riquadri schiacciati: mostrano meno di quello che contengono,');
+    console.log('    quindi il resto della pagina ci finisce sopra senza sbordare da nessuna parte:');
+    for (const x of stretti){
+      console.log(`      ${x.p} a ${x.w} px`);
+      for (const s of x.schiacciati) console.log('        · ' + s);
+    }
+  } else console.log('  ok  nessun riquadro mostra meno di quanto contiene');
+}
 // --- nascosto vuol dire invisibile -----------------------------------------
 {
   const rotti = esiti.filter(x => x.fantasmi.length);

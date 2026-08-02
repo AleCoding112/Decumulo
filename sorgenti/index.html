@@ -330,21 +330,27 @@
      l'altro. Un bordo aggiungerebbe inchiostro che non è un dato, e su segmenti sottili
      sporcherebbe il colore che invece deve dire la classe. Gli angoli tondi stanno solo ai
      due capi della barra, che sono i suoi estremi veri. */
-  .barra{display:flex;gap:2px;height:10px;margin:15px 0 9px}
-  .barra i{display:block;min-width:2px}
-  .barra i:first-child{border-radius:5px 0 0 5px}
-  .barra i:last-child{border-radius:0 5px 5px 0}
+  /* SI ANNIDA SOTTO `.quote`, E NON È PIGNOLERIA: `.barra` ESISTE GIÀ, ed è il contenitore
+     delle scelte sul fondo. Era stilata solo in forma annidata — `.cur .barra`, `.passo .barra`
+     — e una regola NUDA `.barra{height:10px}` se l'è presa tutta, schiacciando a dieci pixel un
+     riquadro alto trecento: tutto il testo seguente ci finiva sopra. La pagina non sbordava e
+     nessuna misura se n'è accorta, perché sovrapporre non è sbordare. Il progetto l'idioma ce
+     l'aveva già scritto due volte sopra: un nome generico si porta sempre il suo contenitore. */
+  .quote{margin:15px 0 0}
+  .quote .barra{display:flex;gap:2px;height:10px;margin:0 0 9px}
+  .quote .barra i{display:block;min-width:2px}
+  .quote .barra i:first-child{border-radius:5px 0 0 5px}
+  .quote .barra i:last-child{border-radius:0 5px 5px 0}
   /* LA LEGENDA PORTA I VALORI IN CHIARO, e non è un ripiego: dentro un segmento sottile
      un'etichetta non ci sta senza essere tagliata, e affidare i numeri al solo passaggio del
      mouse li toglierebbe a chi usa il telefono e a chi legge con la tastiera. Scritti qui
      stanno sempre, per tutti. Il testo resta del colore del testo — il quadratino colorato
      accanto è quello che porta l'identità: un numero verde sarebbe inchiostro che finge. */
-  .legendaBarra{display:flex;flex-wrap:wrap;gap:5px 18px;font-size:12.5px;color:var(--soft);
-    font-variant-numeric:tabular-nums;margin:0}
-  .legendaBarra span{display:flex;align-items:center;gap:7px}
-  .legendaBarra u{width:9px;height:9px;border-radius:2px;text-decoration:none;flex:none}
-  .legendaBarra b{color:var(--ink);font-weight:600}
-  .legendaBarra:empty{display:none}
+  /* e la legenda è quella del grafico, `.legenda` con i suoi `.chip`, non una seconda scritta
+     da capo: due legende diverse nella stessa pagina si sarebbero viste */
+  .quote .legenda{gap:5px 18px;font-size:12.5px;font-variant-numeric:tabular-nums;margin:0}
+  .quote .legenda b{color:var(--ink);font-weight:600}
+  .quote .legenda:empty{display:none}
   .nota{color:var(--soft);font-size:13px;margin:14px 0 0;line-height:1.5}
   .nota a{color:var(--acc);font-weight:600}
   .salta{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--ink);
@@ -821,8 +827,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
        numeri che uno conosce, invece di una casella con dentro un numero da inventare. -->
   <div class="gruppo largo">Come sono investiti i risparmi</div>
   <div class="caselle strette" id="composizione"></div>
-  <div class="barra" id="barra"></div>
-  <div class="legendaBarra" id="legendaBarra"></div>
+  <div class="quote">
+    <div class="barra" id="barra"></div>
+    <div class="legenda" id="legendaBarra"></div>
+  </div>
   <p class="nota">Contano solo le proporzioni, non il totale: se non torna col patrimonio
   scritto sopra non cambia nulla. Nei <b>conti deposito</b> rientra la liquidità vincolata;
   nelle <b>obbligazioni</b>, sia i titoli di Stato sia quelle societarie.</p>
@@ -3359,7 +3367,7 @@ function disegnaComposizione(){
   barra.innerHTML = viste.map(([, i]) =>
     `<i style="flex:${quote[i]};background:${TINTE[i]}"></i>`).join('');
   leg.innerHTML = viste.map(([[nome], i]) =>
-    `<span><u style="background:${TINTE[i]}"></u>${nome} <b>${fmt(quote[i] * 100)}%</b></span>`)
+    `<span><i class="chip" style="background:${TINTE[i]}"></i>${nome} <b>${fmt(quote[i] * 100)}%</b></span>`)
     .join('');
   // SI CONFRONTANO LE DUE CIFRE COME LE SI SCRIVE, non con una tolleranza. Nella casella il
   // valore ci va arrotondato a due decimali, quindi «derivato» e «riscritto a mano» distano al
