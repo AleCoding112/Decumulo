@@ -38,7 +38,7 @@ const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1
 // col risultato in bianco. Settima volta che un'armatura incompleta mente sul codice buono.
 const finto = () => {
   const o = {value:'', className:'', checked:false, min:'', max:'', disabled:false,
-    style:{}, dataset:{}, addEventListener(){}, closest:() => null, hidden:false,
+    style:{}, dataset:{}, addEventListener(){}, setAttribute(){}, closest:() => null, hidden:false,
     get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }};
   let html = '', testo = '';
   Object.defineProperty(o, 'innerHTML', {

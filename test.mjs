@@ -58,6 +58,9 @@ const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'',
 // il pulsante del punto più alto ci tiene la percentuale a cui deve portare il cursore.
 const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
   min:'', max:'', disabled:false, hidden:false, style:{}, dataset:{}, addEventListener(){},
+  // I NOMI ACCESSIBILI SI SCRIVONO CON `setAttribute`, e senza questo la pagina cadeva qui: è
+  // la settima volta che un'armatura incompleta fa cadere codice buono. Si completa l'armatura.
+  setAttribute(){}, getAttribute(){ return null; },
   closest(){ return finto(); }, classList:{toggle(){}, add(){}, remove(){}},
   get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
 // `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della
@@ -74,7 +77,7 @@ globalThis.document = {
   querySelectorAll: () => []
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
-  quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
+  quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
   numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
@@ -416,6 +419,20 @@ t('CHI SCRIVE ZERO ha la soglia appena sopra lo zero, non a una percentuale inve
 t('nessuna soglia cablata: senza minimo scritto il gradino segue quello che versano',
   M.contributi({...A, pcVoi:0.4}, 0.4).scatta && M.contributi({...A, pcVoi:3}, 2.9).dat === 0,
   'con 0,4% scatta a 0,4%; con 3% a 2,9% ancora no');
+
+// --- COME SI LEGGE UNA PERCENTUALE, che decide l'articolo -------------------
+// L'elisione dipende da come si LEGGE il numero scritto, non dal suo valore, e prima si
+// guardava il valore. Due casi veri lo rompevano: «0,55%» — un minimo contrattuale che
+// esiste — si legge «zero virgola cinquantacinque» e usciva come «il 0,55%»; e un valore
+// come 0,96 si SCRIVE «1,0%», si legge «uno virgola zero» e vuole «l'», mentre la sua parte
+// intera è 0.
+console.log('\n— l\'articolo segue come si legge il numero, non quanto vale —');
+for (const [n, atteso] of [[0,'lo 0%'], [0.55,'lo 0,6%'], [0.8,'lo 0,8%'], [0.96,"l'1,0%"],
+                           [1,"l'1%"], [1.2,"l'1,2%"], [3,'il 3%'], [8,"l'8%"], [11,"l'11%"],
+                           [18,'il 18%'], [50,'il 50%']])
+  t(`${fmt(n)} → ${atteso}`, M.perc(n, 'il') === atteso, M.perc(n, 'il'));
+t('e la preposizione articolata segue la stessa regola',
+  M.perc(3,'sul') === 'sul 3%' && M.perc(1.2,'sul') === "sull'1,2%" && M.perc(0,'sul') === 'sullo 0%');
 
 // --- LA QUOTA MINIMA DEL CONTRATTO, quando non coincide con quella versata ---
 // IL DIFETTO CHE CHIUDE, misurato il 02/08/2026: chi versa il 3% avendo un minimo contrattuale

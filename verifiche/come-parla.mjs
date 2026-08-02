@@ -143,6 +143,8 @@ function esegui(DATI){
   const osservatori = {};
   const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
     min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){}, closest:() => null,
+    // stessa ragione dell'armatura in test.mjs: i nomi accessibili si scrivono con `setAttribute`
+    setAttribute(){}, getAttribute(){ return null; },
     hidden:false, get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
   const elementi = {};
   globalThis.IntersectionObserver = class {
@@ -332,6 +334,28 @@ for (const [nome, DATI, atteso] of [
   const frase = (scritte[dove] || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   c(nome, atteso.test(frase), frase.slice(0, 95));
 }
+// --- e QUANDO la domanda sul minimo compare -------------------------------
+// Non è nel modulo: era una casella la cui etichetta conteneva la propria condizione («se si
+// versa di più»), e stava fra i due numeri a cui serve. Ora è una reazione, e compare
+// esattamente dove la pagina afferma dove sta il gradino — cioè col cursore sotto quello che si
+// versa. Se comparisse sempre sarebbe la terza casella di prima con un vestito nuovo; se non
+// restasse visibile dopo la risposta, un numero scritto diventerebbe non più correggibile.
+console.log('\n— la domanda sul minimo compare dove serve —');
+for (const [nome, DATI, atteso] of [
+  ['col cursore fermo su quello che si versa, no', {...BASE, quanti:'1', pcVoi0:3}, false],
+  ['portandolo sotto, sì',                         {...BASE, quanti:'1', pcVoi0:3, pc0:2}, true],
+  ['e resta visibile dopo aver risposto',          {...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2}, true],
+  ['a chi non versa niente no: lì è vera comunque',{...BASE, quanti:'1', pcVoi0:0, pc0:0}, false],
+  ['e senza quota del datore nemmeno, perché non c\'è gradino',
+   {...BASE, quanti:'1', pcVoi0:3, pc0:2, pcDat0:''}, false],
+  ['né su un fondo sottoscritto per conto proprio',
+   {...BASE, quanti:'1', pcVoi0:3, pc0:2, tipoFondo0:'individuale'}, false]
+]){
+  const {elementi} = esegui(DATI);
+  c(nome, elementi.chiediMin0.hidden === !atteso,
+    `compare: ${!elementi.chiediMin0.hidden}, atteso: ${atteso}`);
+}
+
 // e il numero che la frase promette dev'essere quello che il conto usa davvero
 {
   const {scritte} = esegui({...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2, pc0:1.19});

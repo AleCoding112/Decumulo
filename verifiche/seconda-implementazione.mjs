@@ -265,7 +265,7 @@ const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/s
   .map(m => m[1]).find(t => /function simula\(/.test(t));
 let DATI = {};
 const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, hidden:false, style:{}, addEventListener(){},
+  min:'', max:'', disabled:false, hidden:false, style:{}, addEventListener(){}, setAttribute(){},
   closest(){ return finto(); }, classList:{toggle(){}, add(){}, remove(){}},
   get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
 // `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della

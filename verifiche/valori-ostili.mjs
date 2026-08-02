@@ -54,7 +54,7 @@ const scelta = a => a[Math.floor(Math.random() * a.length)];
 function prova(DATI){
   const scritte = {}, avvisi = [], el = {};
   const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-    min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){},
+    min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){}, setAttribute(){},
     closest:() => null, hidden:false,
     get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
   globalThis.IntersectionObserver = class { constructor(){} observe(){} };

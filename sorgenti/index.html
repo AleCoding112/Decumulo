@@ -120,6 +120,16 @@
   .cur .ora b{font-size:15px;color:var(--ink)}
   .cur .ora i{display:block;font-style:normal;font-size:11px;color:var(--tenue);
     margin-top:1px;line-height:1.35}
+  /* LA DOMANDA SUL MINIMO occupa la riga intera. `.cur` ha TRE colonne (74px 1fr 250px) e un
+     quarto figlio finirebbe nella prima colonna della riga dopo, larga 74 px: è la stessa
+     aritmetica di griglia che il 30/07 aveva sfalsato il riquadro dei contributi.
+     E `[hidden]` va dichiarato, perché `display:flex` qui sotto batterebbe quello del browser:
+     quarta volta in questa pagina, dopo `.sommario`, `.cur` e `.casaSe`. */
+  .cur .chiediMin{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;
+    margin:8px 0 0;font-size:12px;color:var(--soft);line-height:1.5}
+  .cur .chiediMin[hidden]{display:none}
+  .cur .chiediMin input{width:70px;padding:4px 8px;font-size:12px;text-align:right}
+  .cur .chiediMin .pct{margin-left:-4px;color:var(--tenue)}
   .picco{font-size:12px;color:var(--su);margin:5px 0 0;line-height:1.45}
   .picco.piu{color:var(--soft)}
   .picco.piu b{color:var(--su)}
@@ -220,6 +230,10 @@
   .due .voce{font-size:13.5px;color:var(--soft);line-height:1.35;padding-top:10px}
   .due .voce b{color:var(--ink);font-weight:600}
   .due .voce.totale{padding-top:2px;font-weight:600;color:var(--ink)}
+  /* l'istruzione per compilare, sotto l'etichetta: più piccola e più chiara del nome del campo,
+     perché è un aiuto e non un'altra domanda */
+  .due .voce .come{display:block;margin-top:2px;font-size:12px;color:var(--tenue)}
+  .due .voce .come b{color:var(--soft);font-weight:600}
   .cella{display:flex;flex-direction:column;gap:2px;min-width:0}
   .cella input,.cella select{width:100%;text-align:right}
   .cella select{text-align:left;padding-right:24px;background-position:right 7px center}
@@ -408,7 +422,8 @@
     :root{--bg:#fff}
     body{background:#fff}
     .pagina{max-width:none;padding:0}
-    .sommario,input[type=range],.bottoni,#azzera,.estremi,.scelte{display:none !important}
+    .sommario,input[type=range],.bottoni,#azzera,.estremi,.scelte,
+    .chiediMin{display:none !important}
     /* Le sezioni che sullo schermo si aprono con un clic, su carta devono essere già aperte.
        QUESTA REGOLA DA SOLA NON BASTA, e per mesi si è creduto di sì: un <details> chiuso
        nasconde il contenuto con un meccanismo interno del browser, non con un `display` sui
@@ -584,37 +599,42 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
   </div>
 
   <div class="gruppo largo rigalav">Quanto ci entra ogni anno
-  <span>Sul CCNL o sull'estratto conto del fondo sono righe separate, e <b>chi non versa
-  scrive 0</b>: lasciare la casella vuota vuol dire «non l'ho ancora compilata». La quota minima
-  si compila <b>solo se si versa più di quella</b>: è la soglia sotto cui il datore smette, e
-  lasciata vuota vale quella indicata sopra. La quota del
-  datore discende dal contratto collettivo e segue il fondo che il contratto individua: chi ha
-  sottoscritto per conto proprio un fondo aperto o un PIP di norma non la percepisce.
+  <!-- UNA RIGA, E CI SI TORNA PER LA SECONDA VOLTA. Il 30/07 questo capoverso era di 90 parole
+       e fu ridotto a una riga: «occupa spazio inutile, formatta male la pagina e toglie la voglia
+       di usare il calcolatore». Il 02/08 ci ho ATTACCATO una frase invece di riscriverlo, e il
+       muro è tornato. Tutto quello che diceva è coperto da messaggi che compaiono a chi
+       riguardano: il fondo sottoscritto per conto proprio da `tipoNota` e da `avvisoDatore`,
+       lo zero contro il vuoto dalle etichette qui sotto.
+       Regola, terza volta che serve: un capoverso non si allunga, si riscrive. -->
+  <span>Sul CCNL o sull'estratto conto del fondo sono righe separate.
   <a href="contributo-datore.html">Come funziona il contributo del datore →</a></span>
 </div>
   <div class="due">
-    <div class="voce rigalav">Contributo a <b>carico del lavoratore</b>,<br>in % della RAL</div>
+    <!-- LE DUE ETICHETTE SONO IN DUE TEMPI VERBALI, E DEVE VEDERSI. Dicevano tutte e due
+         «Contributo …, in % della RAL» e sembravano la stessa domanda fatta due volte, mentre
+         la prima chiede un fatto di oggi e la seconda un condizionale — quello che l'azienda
+         metterebbe SE si versasse. Chi oggi non riceve niente, leggendo un'etichetta al
+         presente, scrive 0, e a quel punto la pagina non può più dirgli quanto si sta
+         perdendo: è l'errore corretto il 30/07 e che l'etichetta aveva riperso.
+         L'istruzione sta nella riga sotto l'etichetta, non in un capoverso lontano: il
+         suggerimento sotto la casella è già occupato dal valore in euro. -->
+    <div class="voce rigalav">Quanto si versa oggi<br>
+      <span class="come">in % della RAL — <b>0</b> se non si versa niente</span></div>
     <div class="cella"><input type="text" inputmode="decimal" id="pcVoi0" value="" placeholder="es. 1,2">
       <u class="hint" id="pcVoiEuro0">&nbsp;</u></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="pcVoi1" value="" placeholder="es. 1,2">
       <u class="hint" id="pcVoiEuro1">&nbsp;</u></div>
 
-    <!-- IL MINIMO DEL CONTRATTO, FACOLTATIVO. Serve a una cosa sola: sapere dove sta il gradino.
-         Fino al 02/08/2026 il gradino era piazzato su quello che si versa oggi, e reggeva
-         sull'osservazione che nessuno versa MENO del minimo contrattuale — vera, ma che non dice
-         nulla di chi versa DI PIÙ. A quello la pagina diceva il falso: «sotto il 3% versato oggi
-         il datore non versa», mentre il datore versa fino al minimo del suo contratto.
-         Vuota vale «quello che verso è il minimo», che è il caso di quasi tutti: chi non la
-         compila non vede cambiare niente. -->
-    <div class="voce rigalav">Quota minima <b>chiesta dal contratto</b>,<br>se si versa di più</div>
-    <div class="cella"><input type="text" inputmode="decimal" id="pcMin0" value=""
-        placeholder="come sopra">
-      <u class="hint" id="pcMinNota0">&nbsp;</u></div>
-    <div class="cella p2"><input type="text" inputmode="decimal" id="pcMin1" value=""
-        placeholder="come sopra">
-      <u class="hint" id="pcMinNota1">&nbsp;</u></div>
-
-    <div class="voce rigalav">Contributo del <b>datore</b> che ne consegue,<br>in % della RAL</div>
+    <!-- IL MINIMO DEL CONTRATTO NON STA PIÙ QUI, ed è la correzione che vale di più in questo
+         riquadro. Era una casella la cui etichetta conteneva la propria condizione — «se si
+         versa di più» — quindi prima di rispondere bisognava stabilire se si era in quel caso;
+         e stava IN MEZZO ai due numeri a cui serve, cioè la si incontrava prima di sapere
+         perché esistesse. Serve a una cosa sola, dire dove sta il gradino, e quella domanda
+         diventa viva in un momento preciso: quando si porta il cursore SOTTO quello che si
+         versa. È lì che ora viene fatta, come reazione — la stessa regola di `avvisoDatore` e
+         delle caselle dell'abitazione, che compaiono solo a chi prevede di cambiarla. -->
+    <div class="voce rigalav">Quanto ci metterebbe l'azienda<br>
+      <span class="come">in % della RAL — anche se oggi <b>non arriva</b></span></div>
     <div class="cella"><input type="text" inputmode="decimal" id="pcDat0" value="" placeholder="es. 2,0">
       <u class="hint" id="pcDatEuro0">&nbsp;</u></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="pcDat1" value="" placeholder="es. 2,0">
@@ -622,7 +642,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
     <div class="somma-sep rigalav"></div>
 
-    <div class="voce totale rigalav">Contributi <u>rilevanti ai fini del limite di deducibilità</u></div>
+    <!-- «rilevanti ai fini del limite di deducibilità» diceva la stessa cosa in burocratese, e
+         soprattutto non diceva PERCHÉ la riga esiste. Il suggerimento sotto la cifra parla già
+         di «tetto»: la riga usa la stessa parola, o sono due nomi per una cosa sola. -->
+    <div class="voce totale rigalav">Contributi <u>gli unici che contano per il tetto</u></div>
     <div class="cella"><b class="somma" id="contrEuro0">—</b>
       <u class="hint" id="restaTetto0">&nbsp;</u></div>
     <div class="cella p2"><b class="somma" id="contrEuro1">—</b>
@@ -1086,13 +1109,21 @@ const E50 = n => E0(Math.floor(n / 50) * 50);
 // «il 1,2%» non si dice: 1 si legge «uno», 8 «otto», 11 «undici». La preposizione va elisa,
 // e dipende da come si LEGGE il numero, non da come si scrive.
 // E lo zero fa storia a sé: si legge «zero», quindi vuole «lo», non «il».
-const vocale = n => { const i = Math.floor(Math.abs(n)); return i === 1 || i === 8 || i === 11; };
-const zeta   = n => Math.abs(n) < 0.05;
 // i decimali si scrivono solo se ci sono: «11,9%» ma «50%», non «50,0%»
 const pcTesto = n => fmt(n, Math.abs(n * 10 % 10) < 1e-9 ? 0 : 1) + '%';
-const perc = (n, prep) => (zeta(n)   ? {il:'lo ',  al:'allo ', del:'dello '}[prep]
-                         : vocale(n) ? {il:"l'",   al:"all'",  del:"dell'"}[prep]
-                                     : {il:'il ',  al:'al ',   del:'del '}[prep]) + pcTesto(n);
+// L'ELISIONE SI DECIDE SU COME SI LEGGE IL NUMERO SCRITTO, non sul valore, e prima si guardava
+// il valore. Due trappole, tutte e due raggiungibili con numeri veri:
+//  · «0,8%» si legge «zero virgola otto» e vuole «lo», pur non essendo zero — e i minimi
+//    contrattuali sotto l'1% esistono (0,55%), quindi usciva «il 0,55%»;
+//  · 0,96 si SCRIVE «1,0%», si legge «uno virgola zero» e vuole «l'», mentre la parte intera
+//    del valore è 0.
+// Si prende quindi la parte intera dal testo già formattato, che è quella che si legge.
+const interoDetto = n => parseInt(pcTesto(n), 10);
+const perc = (n, prep) => { const i = interoDetto(n);
+  return (i === 0                        ? {il:'lo ', al:'allo ', del:'dello ', sul:'sullo '}[prep]
+        : i === 1 || i === 8 || i === 11 ? {il:"l'",  al:"all'",  del:"dell'",  sul:"sull'"}[prep]
+                                         : {il:'il ', al:'al ',   del:'del ',   sul:'sul '}[prep])
+    + pcTesto(n); };
 // LE DIFESE SUI VALORI. Un modulo pubblico prende addosso, il primo giorno, numeri che nessuno
 // di noi scriverebbe: un incollaggio sbagliato nell'orizzonte del piano (1e308) mandava il
 // ciclo degli anni a girare finché non finiva la memoria, e la scheda si piantava. Il campo
@@ -2155,7 +2186,7 @@ function calc(){
   // Sta qui, prima delle uscite anticipate, perché dipende solo da come è compilato il modulo.
   {
     const SPENTE = ['stip', 'ral', 'cresc', 'ultimo',              // esercizi di attività
-                    'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcMin', 'pcDat', 'tfrDove'];  // fondo
+                    'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];  // fondo
     s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
 
     // la seconda spesa esiste solo se c'è un passaggio fra due fasi: senza esercizi di attività
@@ -2208,7 +2239,10 @@ function calc(){
     while (e && !(e.classList && e.classList.contains('voce'))) e = e.previousElementSibling;
     if (!e || !e.cloneNode) return '';
     const c = e.cloneNode(true);
-    if (c.querySelectorAll) c.querySelectorAll('a').forEach(a => a.remove());
+    // via il collegamento (è un rimando, non parte del nome del campo) e via l'istruzione per
+    // compilare: un lettore di schermo annuncerebbe «Quanto si versa oggi in % della RAL 0 se
+    // non si versa niente, Anna» prima di ogni campo. L'aiuto lo legge chi lo cerca.
+    if (c.querySelectorAll) c.querySelectorAll('a, .come').forEach(a => a.remove());
     return (c.textContent || '').replace(/\s+/g, ' ').trim().replace(/[,;:]$/, '');
   };
   document.querySelectorAll('.due .cella').forEach(e => {
@@ -2251,14 +2285,6 @@ function calc(){
     H('pensNetta'+i, x.pensLorda > 0 ? E0(x.pens) + ' netti al mese' : '&nbsp;');
     const co = contributi(x, x.pcVoi);
     H('pcVoiEuro'+i, co.lav > 0.5 ? E0(co.lav) + " l'anno" : '&nbsp;');
-    // LA CASELLA DEL MINIMO PARLA SOLO QUANDO HA UNA CONSEGUENZA. Vuota, dice che cosa sta
-    // valendo, così non sembra una casella dimenticata; scritta sopra quello che si versa, è
-    // l'unico caso in cui va segnalata, perché il gradino verrebbe a trovarsi oltre.
-    H('pcMinNota'+i, x.pcMin == null
-        ? (x.pcVoi > 0 ? 'vale ' + perc(x.pcVoi,'il') + ' qui sopra' : '&nbsp;')
-      : x.pcMin > x.pcVoi + 1e-9 && x.pcVoi > 0
-        ? 'è più di quello che si versa: il datore non sta versando'
-      : x.pcMin > 0 ? 'il gradino del datore sta qui' : 'nessuna quota minima a carico');
     H('pcDatEuro'+i, co.dat > 0.5 ? E0(co.dat) + " l'anno"
         : x.fondoIndividuale ? (x.pcDat > 0 ? 'non conteggiato' : '&nbsp;')
         : (x.pcDat > 0 ? 'subordinato al contributo indicato' : '&nbsp;'));
@@ -2975,10 +3001,18 @@ function costruisciDecisioni(){
   // né sulla forma dell'assegno, dove il confronto è fra un lascito e un assegno e la pagina
   // dichiara di non indicare un ottimo — lì un pulsante «vai al più alto» sarebbe la sentenza
   // che il riquadro dice di non dare.
+  // LA DOMANDA SUL MINIMO STA QUI, non nel modulo, e l'elemento c'è sempre anche quando è
+  // nascosto: `leggi()` lo interroga a ogni calcolo, e un campo che compare e scompare dal DOM
+  // sarebbe un `EL()` mancante a ogni giro. Sta dentro il riquadro del cursore perché è lì che
+  // la risposta cambia qualcosa, e `costruisciDecisioni` gira prima di `ripristina()`: il
+  // salvataggio lo trova come tutti gli altri campi.
   const riga = (i, id, min, max, step) =>
     `<div class="cur"><div class="chi" id="chiVers${i}">${NOMI[i]}</div>${
       barra(id, min, max, step, `<button type="button" class="torna vai" id="${id}Vai" hidden></button>`)}
-      <div class="esito" id="${id}Esito"></div></div>`;
+      <div class="esito" id="${id}Esito"></div>
+      <p class="chiediMin" id="chiediMin${i}" hidden><span id="chiediMinTesto${i}"></span>
+        <input type="text" inputmode="decimal" id="pcMin${i}" value="" placeholder="es. 1,2"><span
+        class="pct">%</span></p></div>`;
 
   EL('decVersare').innerHTML =
     // gli estremi qui sono solo quelli di partenza: `aggiornaDecisioni` li rifà sui numeri
@@ -3021,6 +3055,7 @@ function costruisciDecisioni(){
     EL('cVers'+i+'Vai').addEventListener('click', e => {
       EL('pc'+i).value = e.currentTarget.dataset.pc; calc();
     });
+    EL('pcMin'+i).addEventListener('input', calc);
     EL('cQuando'+i).addEventListener('input', e => {
       EL('rita'+i).value = e.target.value; calc();
     });
@@ -3187,6 +3222,25 @@ function aggiornaDecisioni(s, r){
     } else {
       EL('cVers'+i+'Picco').textContent =
         'senza quota del datore, il versamento rende solo la deduzione IRPEF';
+    }
+
+    // LA DOMANDA SUL MINIMO, e quando è viva. Compare a chi porta il cursore SOTTO quello che
+    // versa: è l'unico punto in cui la pagina afferma dove sta il gradino, ed è dove poteva
+    // dire il falso a chi versa più del minimo contrattuale. Resta poi visibile a chi ha già
+    // risposto, o un numero scritto diventerebbe invisibile e non più correggibile.
+    // NON compare a chi versa zero: lì il gradino è appena sopra lo zero e la frase che gli si
+    // rivolge è vera con qualunque minimo, quindi sarebbe una domanda che non cambia risposta.
+    // E non compare dove una quota del datore non c'è: senza gradino non c'è soglia da collocare.
+    {
+      const serve = x.ral > 0 && !x.fondoIndividuale && x.pcDat > 0
+        && (x.pcMin !== null || (x.pcVoi > 0 && pc < x.pcVoi - 0.049));
+      EL('chiediMin'+i).hidden = !serve;
+      EL('pcMin'+i).setAttribute('aria-label', `Quota minima chiesta dal contratto, ${NOMI[i]}`);
+      if (serve)
+        EL('chiediMinTesto'+i).innerHTML = x.pcMin === null
+          ? `Il gradino è disegnato ${perc(x.pcVoi,'sul')} che si versa oggi.
+             <b>Se il contratto ne chiede meno</b>, indicarlo qui:`
+          : `Quota minima chiesta dal contratto, sotto la quale il datore non versa:`;
     }
 
     // il pulsante compare solo se il cursore si è mosso da quello che c'è nella casella
