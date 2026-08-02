@@ -7,3 +7,8 @@ sito/
 
 .DS_Store
 node_modules/
+
+# Gli scatti di `verifiche/occhi.mjs`: si producono per guardarli e si rifanno in dieci secondi.
+# Versionarli metterebbe due megabyte di PNG a ogni modifica di stile in una cronologia che oggi
+# si legge tutta.
+verifiche/scatti/

@@ -107,6 +107,14 @@
   .cur input[type=range],.passo input[type=range]{width:100%;margin:0;accent-color:var(--su)}
   .cur .estremi,.passo .estremi{display:flex;justify-content:space-between;gap:18px;
     font-size:11px;color:var(--tenue)}
+  /* L'ESTREMO SINISTRO NON VA MAI A CAPO, ed è una riparazione del 02/08. Togliendo il tetto del
+     50% quello DESTRO è passato da «19.000 €: il 50% della RAL» a «28.690 €: oltre, il versamento
+     supererebbe lo stipendio»: in un flex `space-between` la frase lunga schiaccia l'altra, e
+     «niente: 0 €» si spezzava fra la cifra e il simbolo. Il sinistro è sempre corto — due parole
+     e un importo — quindi può pretendere la sua riga; il destro va a capo per conto suo.
+     NESSUNA MISURA POTEVA VEDERLO: non è uno sbordamento, la pagina resta larga uguale. */
+  .cur .estremi span:first-child,.passo .estremi span:first-child{white-space:nowrap}
+  .cur .estremi span:last-child,.passo .estremi span:last-child{text-align:right}
   .passo .ora{font-size:13px;color:var(--soft);text-align:center;
     font-variant-numeric:tabular-nums}
   .passo .ora b{font-size:15px;color:var(--ink)}
@@ -263,7 +271,15 @@
   .solo-uno .due{grid-template-columns:minmax(0,1fr) 170px;max-width:620px}
   .solo-uno .p2{display:none}
   .solo-uno .gruppo.largo{max-width:620px}
-  .solo-uno .somma-sep,.solo-uno .riga-sep{grid-column:1/3}
+  /* `1/3` QUI FABBRICAVA UNA COLONNA CHE NON C'ERA. Con una persona sola le colonne dichiarate
+     sono due, quindi `1/-1` vale già `1/3` e questa riga non serviva; ma sotto i 600 px la
+     griglia diventa di UNA colonna, e chiedere «da 1 a 3» costringeva il browser a crearne una
+     implicita. Conseguenza: il riquadro dei contributi era l'unico del modulo che su un telefono
+     NON si impilava — etichetta schiacciata in 116 px e casella accanto — mentre tutti gli altri
+     diventavano un elenco. Nessuna misura poteva vederlo: non sborda niente, la griglia si
+     limita a spezzarsi in due. L'ha trovato uno scatto a 390 px.
+     `1/-1` è giusto in tutti e tre gli assetti, quindi basta la regola generale più sopra. */
+  .solo-uno .somma-sep,.solo-uno .riga-sep{grid-column:1/-1}
   /* il titoletto porta con sé dove trovare le cifre e il rimando alla pagina */
   .gruppo span{display:block;font-size:12px;font-weight:400;text-transform:none;
     letter-spacing:0;color:var(--soft);margin-top:5px;line-height:1.5}

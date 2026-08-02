@@ -39,7 +39,20 @@ node verifiche/a-schermo.mjs     nove pagine × quattro larghezze in due assetti
                                 niente sborda, ogni campo ha un nome, la stampa contiene il
                                 dettaglio anno per anno. E il CONSENSO provato cliccando davvero:
                                 è l'unico posto dove si può vedere che il tag non parte prima
+
+node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con gli occhi:
+                                il modulo dei contributi, il risultato, il cursore portato sotto
+                                quello che si versa, e i due pezzi a 390 px. Afferma una cosa
+                                sola, che la console sia pulita
 ```
+
+**I due si dividono il lavoro, e la divisione va tenuta.** `a-schermo.mjs` **misura** e dà un
+verdetto; `occhi.mjs` **guarda** e non afferma quasi niente. Serve perché esiste una classe di
+difetti che nessuna misura vede — non sbordano, la pagina resta larga uguale, sono solo brutti.
+Il giorno che è stato scritto ne ha trovati due nel giro di dieci minuti: «niente: 0 €» spezzato
+fra la cifra e il simbolo, e il riquadro dei contributi che su un telefono era **l'unico del
+modulo a non impilarsi**, perché un `grid-column:1/3` gli fabbricava una colonna che non c'era.
+Tutte e due con `a-schermo.mjs` verde.
 
 `sito/` **non si modifica a mano**: si rigenera. Oltre alle pagine il build scrive `sitemap.xml`
 e `robots.txt`, e mette in ogni testa i metadati per le anteprime — **ricavandoli dal titolo,
