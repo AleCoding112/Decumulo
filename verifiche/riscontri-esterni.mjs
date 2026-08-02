@@ -71,6 +71,27 @@ for (const r of RISCONTRI){
                       : `il nostro dà ${nostro.toFixed(2)}, scarto ${scarto.toFixed(2)} €`);
 }
 
+// --- gli ancoraggi che la norma dichiara -------------------------------------
+// DISTINTI DAI PRECEDENTI, e la differenza va tenuta: sopra ci sono cifre calcolate da ALTRI, che
+// possono smentirci; qui ci sono i valori che il testo stesso enuncia — «1.000 euro», «fino a
+// 32.000», «si azzera a 40.000» — riportati dalla circolare dell'Agenzia delle Entrate 4/E del
+// 16 maggio 2025. Non sono un secondo parere, sono la trascrizione: provano che la banda è stata
+// copiata giusta, non che il conto sia giusto.
+console.log('\n  — gli ancoraggi enunciati dalla norma (circolare AdE 4/E del 16 maggio 2025) —');
+{
+  const u = R => detrazione(V('ULTERIORE_DETRAZIONE'), R);
+  const s = R => { for (const [fino, q] of V('SOMMA_CUNEO')) if (R <= fino) return R * q; return 0; };
+  c('sotto i 20.000 l\'ulteriore detrazione non spetta: lì opera la somma', u(19999) === 0);
+  c('da 20.000 a 32.000 vale 1.000 € piatti', u(20001) === 1000 && u(32000) === 1000);
+  c('a 36.000 è la metà, per il rapporto (40.000 − reddito) / 8.000', u(36000) === 500,
+    `${u(36000)} €`);
+  c('e a 40.000 si azzera, per limite e non per salto', u(40000) === 0 && u(40001) === 0);
+  c('la somma applica 7,1%, 5,3% e 4,8% alle tre fasce del reddito da lavoro',
+    Math.abs(s(8000) - 8000*0.071) < 1e-9 && Math.abs(s(12000) - 12000*0.053) < 1e-9
+    && Math.abs(s(18000) - 18000*0.048) < 1e-9 && s(20001) === 0,
+    'e oltre i 20.000 non spetta: da lì in poi c\'è l\'ulteriore detrazione');
+}
+
 // --- e che quelle cifre entrino DAVVERO nel conto ----------------------------
 // Un riscontro sulla formula non basta: la formula potrebbe essere giusta e non essere chiamata
 // da nessuno. È esattamente com'era fino al 02/08/2026 — la legge esisteva, il conto no.
@@ -104,7 +125,7 @@ console.log('\n  — la copertura —');
   console.log(`  ..  ${con.length} regole su ${tutte.length} hanno un riscontro esterno dichiarato`);
   for (const [k, r] of con) console.log(`      · ${k} → ${r.riscontro}`);
   // il riscontro dichiarato deve puntare a un file che esiste ed esercitare davvero quella regola
-  const qui = new Set(['DETRAZIONE_LAV', 'DETRAZIONE_PENS']);
+  const qui = new Set(['DETRAZIONE_LAV', 'DETRAZIONE_PENS', 'ULTERIORE_DETRAZIONE']);
   c('ogni regola che dichiara di essere riscontrata qui lo è davvero',
     con.filter(([, r]) => r.riscontro.includes('riscontri-esterni'))
        .every(([k]) => qui.has(k)),

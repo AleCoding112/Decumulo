@@ -73,6 +73,32 @@ export const REGOLE = {
     fonte: 'art. 13 c. 3-bis TUIR: «aumentata di un importo pari a 50 euro, se il reddito complessivo è superiore a 25.000 euro ma non a 29.000 euro»',
     verificata: true },
 
+  // IL TAGLIO DEL CUNEO, che sono DUE istituti e vanno insieme.
+  // Testo verificato sulla circolare dell'Agenzia delle Entrate 4/E del 16 maggio 2025, che cita
+  // la legge alla lettera. Spettano ai soli titolari di reddito di LAVORO dipendente: i
+  // pensionati sono esclusi per legge, ed è un'asimmetria che il conto deve rispettare.
+  //
+  // PERCHÉ NON SE NE PUÒ MODELLARE UNO SOLO. Sotto i 20.000 € spetta la somma, sopra l'ulteriore
+  // detrazione: sono i due tratti di una misura sola. Rappresentandone uno solo si fabbricherebbe
+  // uno scalino di 1.000 € a 20.000 che la legge non ha.
+  //
+  // LA SOMMA NON È UNA DETRAZIONE: non tocca l'imposta, «non concorre alla formazione del
+  // reddito» e si aggiunge al netto. La percentuale si applica al reddito di LAVORO, mentre la
+  // soglia dei 20.000 guarda il reddito COMPLESSIVO: qui coincidono, perché negli esercizi
+  // lavorativi il modello non rappresenta altri redditi IRPEF.
+  SOMMA_CUNEO: { nome: "Somma per i redditi da lavoro fino a 20.000 €", come: 'cuneo',
+    val: [[8500, 0.071], [15000, 0.053], [20000, 0.048]],
+    fonte: 'art. 1 c. 4 L. 207/2024, testo riportato dalla circolare Agenzia delle Entrate 4/E del 16 maggio 2025: 7,1% del reddito di lavoro fino a 8.500 €, 5,3% fino a 15.000, 4,8% oltre, se il reddito complessivo non supera 20.000 €. Esclusi i titolari di redditi di pensione',
+    verificata: true },
+  // L'ULTERIORE DETRAZIONE ha la stessa forma delle bande dell'art. 13 — base + quota ×
+  // (fino − reddito) / denominatore — quindi la calcola la stessa funzione.
+  // La prima banda è a zero: sotto i 20.000 non spetta, perché lì opera la somma.
+  ULTERIORE_DETRAZIONE: { nome: "Ulteriore detrazione per i redditi da lavoro 20.000-40.000 €",
+    come: 'detrazione', riscontro: 'verifiche/riscontri-esterni.mjs',
+    val: [[20000, 0, 0, 0], [32000, 1000, 0, 0], [40000, 0, 1000, 8000]],
+    fonte: 'art. 1 c. 6 L. 207/2024, testo riportato dalla circolare Agenzia delle Entrate 4/E del 16 maggio 2025: «1.000 euro se il reddito complessivo è superiore a 20.000 euro ma non a 32.000 euro; al prodotto tra 1.000 euro e l\'importo corrispondente al rapporto tra 40.000 euro, diminuito del reddito complessivo, e 8.000 euro». Esclusi i titolari di redditi di pensione',
+    verificata: true },
+
   // NON è tutta IVS, e il nome lo diceva male: 9,19 = 8,89 al Fondo pensioni + 0,30 alla CIG
   // straordinaria (tabelle INPS delle aliquote contributive). Chi lavora in un'azienda non
   // soggetta alla CIGS trattiene 8,89: la differenza vale 0,30 punti di RAL, e il conto la
@@ -388,8 +414,11 @@ const irpefNetta = (reddito, pensione) => {
   // di reddito, quindi dedurne uno ne restituisce anche quella parte: la pendenza si somma
   // all'aliquota di scaglione. Ricavata dalle bande, così se la legge cambia si muove da sé.
   {
-    const b = V('DETRAZIONE_LAV').find(([fino]) => base <= fino);
-    e.aliqMargEff = e.aliqMarg + (b && b[3] > 0 ? b[2] / b[3] : 0);
+    const pendenza = tab => { const b = tab.find(([fino]) => base <= fino);
+      return b && b[3] > 0 ? b[2] / b[3] : 0; };
+    // due detrazioni decrescenti, due pendenze che si sommano all'aliquota di scaglione
+    e.aliqMargEff = e.aliqMarg + pendenza(V('DETRAZIONE_LAV'))
+                  + pendenza(V('ULTERIORE_DETRAZIONE'));
   }
 }
 
@@ -473,7 +502,11 @@ export const TESTI = {
   exCosta:    eur(ESEMPIO.costa),
   exVolte:    ESEMPIO.volte.toLocaleString('it-IT', {minimumFractionDigits:1, maximumFractionDigits:1}) + '×',
   exAliquota: pc(ESEMPIO.aliqMarg),
-  exAliquotaEff: pc(ESEMPIO.aliqMargEff, 1)
+  exAliquotaEff: pc(ESEMPIO.aliqMargEff, 1),
+  // l'aliquota marginale effettiva più alta: scaglione + le due detrazioni che decrescono insieme
+  exAliquotaMax: pc(V('SCAGLIONI')[1][1]
+    + V('DETRAZIONE_LAV')[2][2] / V('DETRAZIONE_LAV')[2][3]
+    + V('ULTERIORE_DETRAZIONE')[2][2] / V('ULTERIORE_DETRAZIONE')[2][3], 1)
 };
 
 // --- il blocco di costanti che finisce dentro il calcolatore ---------------
@@ -497,6 +530,8 @@ const SCAGLIONI = [${V('SCAGLIONI').map(([t, a]) => `[${t === Infinity ? 'Infini
 const DETRAZIONE_LAV = [${V('DETRAZIONE_LAV').map(b => `[${b.join(',')}]`).join(', ')}];
 const DETRAZIONE_PENS = [${V('DETRAZIONE_PENS').map(b => `[${b.join(',')}]`).join(', ')}];
 const DETRAZIONE_PENS_PIU = ${V('DETRAZIONE_PENS_PIU')};
+const SOMMA_CUNEO = [${V('SOMMA_CUNEO').map(b => `[${b.join(',')}]`).join(', ')}];
+const ULTERIORE_DETRAZIONE = [${V('ULTERIORE_DETRAZIONE').map(b => `[${b.join(',')}]`).join(', ')}];
 const MENS_PENS = ${V('MENSILITA_PENSIONE')};
 const PROVA_ANNI = ${V('PROVA_ANNI')};
 const REVERSIBILITA = ${V('REVERSIBILITA')};
@@ -531,6 +566,8 @@ const mostra = r => Array.isArray(r.val)
   // LE BANDE DELLE DETRAZIONI hanno una forma sola — base + quota × (fino − reddito) / den — e
   // senza un formato loro finivano nel ramo delle aliquote, che le rendeva «195.500% fino a
   // 15.000 €». Il numero era giusto e la frase assurda: se ne accorge solo chi guarda la pagina.
+  : r.come === 'cuneo' ? r.val.map(([fino, q]) =>
+      `${pc(q, 1)} del reddito da lavoro fino a ${eur(fino)}`).join(' · ') + ' · nulla oltre'
   : r.come === 'detrazione' ? r.val.map(([fino, base, quota, den]) =>
       (base ? eur(base) : '')
       + (quota ? (base ? ' + ' : '') + `${eur(quota)} × (${eur(fino)} − reddito) / `

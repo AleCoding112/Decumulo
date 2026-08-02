@@ -37,8 +37,15 @@ const detrazione = (tab, R) => {
 const irpefNetta = (reddito, pensione) => {
   const R = Math.max(0, reddito);
   const piu = pensione && R > 25000 && R <= 29000 ? V('DETRAZIONE_PENS_PIU') : 0;
+  // l'ulteriore detrazione del cuneo spetta al solo lavoro: i pensionati sono esclusi per legge
+  const cuneo = pensione ? 0 : detrazione(V('ULTERIORE_DETRAZIONE'), R);
   return Math.max(0, irpef(R)
-    - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu);
+    - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu - cuneo);
+};
+// la somma non passa dall'imposta: si aggiunge al netto
+const sommaCuneo = R => {
+  for (const [fino, q] of V('SOMMA_CUNEO')) if (R <= fino) return Math.max(0, R) * q;
+  return 0;
 };
 const aliqFondo = anni => Math.min(V('ALIQ_FONDO_MAX'),
   Math.max(V('ALIQ_FONDO_MIN'), V('ALIQ_FONDO_MAX') - V('ALIQ_FONDO_PASSO') * (anni - 15)));
@@ -163,7 +170,8 @@ function piano(D){
         // leggerla e ha prodotto NaN per sessanta casi su sessanta, dichiarandoli tutti uguali.
         const base = Math.max(0, ral * (1 - V('IVS')));
         const ded  = c => Math.min(c.lav, Math.max(0, V('TETTO_DEDUZIONE') - c.dat));
-        E += base - q.lav - irpefNetta(base - ded(q), false);
+        const R = base - ded(q);
+        E += base - q.lav - irpefNetta(R, false) + sommaCuneo(R);
       }
       if (inPens && !(manca !== null && a >= manca.anno && i === resta))
         E += x.pens * V('MENSILITA_PENSIONE')

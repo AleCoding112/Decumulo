@@ -77,7 +77,7 @@ globalThis.document = {
   querySelectorAll: () => []
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
-  irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE,
+  irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE, sommaCuneo, ULTERIORE_DETRAZIONE,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, nettoAnnuo, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
   numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
@@ -337,8 +337,13 @@ console.log('\n— quanto valgono, sui due lati del conto —');
   // il lavoro: la derivata. Dedurre fa risalire la detrazione, quindi rende più dell'aliquota.
   const beneficio = ral => { const base = ral * (1 - M.IVS);
     return M.irpefNetta(base, false) - M.irpefNetta(base - 1000, false); };
-  t('dedurre 1.000 € con RAL 38.000 vale 417 € e non 330: la detrazione risale',
-    Math.round(beneficio(38000)) === 417, `${Math.round(beneficio(38000))} €`);
+  // TRE PENDENZE SI SOMMANO, e il conto torna a mano: 33% di scaglione, più 1.910/22.000 della
+  // detrazione dell'art. 13, più 1.000/8.000 dell'ulteriore detrazione, che con questa RAL cade
+  // nel tratto in cui si azzera. Fa 54,18%, cioè 542 € su mille dedotti — non 330.
+  t('dedurre 1.000 € con RAL 38.000 vale 542 € e non 330: tre pendenze si sommano',
+    Math.round(beneficio(38000)) === 542,
+    `${Math.round(beneficio(38000))} € · 33% + 1.910/22.000 + 1.000/8.000 = ${
+      (100*(0.33 + 1910/22000 + 1000/8000)).toFixed(2)}%`);
   t('e il beneficio supera l\'aliquota di scaglione a ogni reddito in cui la detrazione c\'è',
     [22000, 30000, 38000, 45000].every(r => beneficio(r) > 250));
 }
@@ -563,6 +568,42 @@ console.log('\n— l\'adesione decide la quota del datore, non il tipo di fondo 
 // La casella del netto è sparita il 02/08/2026: chiedeva il netto di un mese ordinario, la
 // pagina istruiva a escludere le mensilità aggiuntive e il conto moltiplicava per dodici, così
 // tredicesima e quattordicesima non entravano mai nel piano. La RAL le comprende tutte.
+// --- IL TAGLIO DEL CUNEO: due istituti, un tratto solo -----------------------
+// Somma sotto i 20.000, ulteriore detrazione sopra. Verificati sulla circolare AdE 4/E del
+// 16 maggio 2025, che cita la legge alla lettera. Modellarne uno solo avrebbe fabbricato uno
+// scalino di 1.000 € a 20.000 che la legge non ha: qui si controlla proprio che non ci sia.
+console.log('\n— il taglio del cuneo, e gli scalini che la legge ha davvero —');
+{
+  const netto = ral => M.nettoAnnuo({...A, ral, pcVoi:0, pcDat:0, pc:0}, 0);
+  // il reddito imponibile è la RAL al netto dell'IVS: si sceglie la RAL che porta al reddito voluto
+  const ralPer = R => R / (1 - M.IVS);
+  t('a 20.000 di reddito non c\'è nessuno scalino: la somma cede il passo alla detrazione',
+    Math.abs(netto(ralPer(20100)) - netto(ralPer(19900))) < 300,
+    `${Math.round(netto(ralPer(20100)) - netto(ralPer(19900)))} € di differenza su 200 € di reddito`);
+  t('e senza la somma lo scalino ci sarebbe: è la ragione per cui vanno insieme',
+    M.detrazione(M.ULTERIORE_DETRAZIONE, 20100) - M.detrazione(M.ULTERIORE_DETRAZIONE, 19900) === 1000,
+    'mille euro di detrazione che compaiono di colpo, compensati dalla somma che si spegne');
+  // GLI SCALINI CHE LA LEGGE HA: le percentuali della somma cambiano di colpo a 8.500 e 15.000.
+  // Si fissano perché non sembrino un difetto a chi li incontra.
+  t('a 8.500 e 15.000 la somma cambia percentuale di colpo, ed è la legge',
+    Math.abs(M.sommaCuneo(8500) - 8500*0.071) < 1e-9
+    && Math.abs(M.sommaCuneo(8501) - 8501*0.053) < 1e-9,
+    'art. 1 c. 4 L. 207/2024: percentuali per fascia, non per scaglioni');
+  // L'ASIMMETRIA CHE LA LEGGE IMPONE: i pensionati sono esclusi da entrambi gli istituti.
+  t('il cuneo non tocca la pensione: i pensionati sono esclusi per legge',
+    M.irpefNetta(30000, true) === M.irpef(30000) - M.detrazione(M.DETRAZIONE_PENS, 30000)
+    && M.irpefNetta(30000, false) < M.irpef(30000) - M.detrazione(M.DETRAZIONE_LAV, 30000),
+    'art. 1 c. 4 e 6: «con esclusione» dei titolari di redditi di pensione');
+  // e il vertice del decalage dev'essere fra i candidati, o il punto più alto si cerca dove non c'è
+  t('le soglie del cuneo sono vertici della spezzata, e stanno fra i candidati', (() => {
+      const x = {...A, ral: 45000};
+      const cand = M.candidatiVersamento(x, Math.max(M.pcMassimo(x), 0.1));
+      const base = x.ral * (1 - M.IVS);
+      return [32000, 40000].every(s => cand.some(v =>
+        Math.abs(v - (base - s) / x.ral * 100) < 0.11)); })(),
+    'dove la pendenza cambia di dodici punti e mezzo');
+}
+
 console.log('\n— la retribuzione netta si ricava dalla lorda —');
 {
   const netto = M.nettoAnnuo(A, A.pcVoi);

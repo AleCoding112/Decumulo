@@ -1081,8 +1081,20 @@ const detrazione = (tab, R) => {
 function irpefNetta(reddito, pensione){
   const R = Math.max(0, reddito);
   const piu = pensione && R > 25000 && R <= 29000 ? DETRAZIONE_PENS_PIU : 0;
-  return Math.max(0, irpef(R) - detrazione(pensione ? DETRAZIONE_PENS : DETRAZIONE_LAV, R) - piu);
+  // L'ULTERIORE DETRAZIONE spetta ai soli titolari di reddito di LAVORO: i pensionati sono
+  // esclusi dalla legge, non da noi (art. 1 c. 6 L. 207/2024). Ha la forma delle altre bande,
+  // quindi la calcola la stessa funzione.
+  const cuneo = pensione ? 0 : detrazione(ULTERIORE_DETRAZIONE, R);
+  return Math.max(0, irpef(R) - detrazione(pensione ? DETRAZIONE_PENS : DETRAZIONE_LAV, R)
+                    - piu - cuneo);
 }
+// LA SOMMA NON È UNA DETRAZIONE: non tocca l'imposta, «non concorre alla formazione del reddito»
+// e si somma al netto. La percentuale si applica al reddito di lavoro; la soglia dei 20.000
+// guarda il reddito complessivo, che qui è lo stesso numero.
+const sommaCuneo = R => {
+  for (const [fino, q] of SOMMA_CUNEO) if (R <= fino) return Math.max(0, R) * q;
+  return 0;
+};
 
 // QUANTO ENTRA NEL FONDO, data la percentuale che sceglie il lavoratore.
 // Il punto che cambia tutto: nei fondi negoziali il contributo del datore è dovuto SOLO se il
@@ -1191,15 +1203,22 @@ const dedLav = c => Math.min(c.lav, Math.max(0, TETTO_DEDUZIONE - c.dat));
 function nettoAnnuo(x, pc){
   const base = Math.max(0, x.ral) * (1 - IVS);
   const c = contributi(x, pc);
-  return base - c.lav - irpefNetta(base - dedLav(c), false);
+  // il reddito complessivo è la retribuzione al netto di quello che va al fondo: i contributi
+  // trattenuti in busta non formano reddito di lavoro dipendente (art. 51 c. 2 lett. h)
+  const R = base - dedLav(c);
+  return base - c.lav - irpefNetta(R, false) + sommaCuneo(R);
 }
 const scontoIrpef = (x, pc) => {
   const base = Math.max(0, x.ral * (1 - IVS));
   return irpefNetta(base - dedLav(contributi(x, x.pcVoi)), false)
        - irpefNetta(base - dedLav(contributi(x, pc)), false);
 };
+// IL COSTO È LA DIFFERENZA FRA DUE BUSTE, e detto così si aggiorna da solo. Prima era scritto
+// come «quello che si versa in più, meno lo sconto IRPEF»: identico finché il netto dipendeva
+// solo dall'imposta, ma la somma del cuneo NON passa dall'imposta — quella formula l'avrebbe
+// ignorata e il costo sarebbe rimasto indietro senza che niente lo dicesse.
 function costoAnnuo(x, pc){
-  return (contributi(x, pc).lav - contributi(x, x.pcVoi).lav) - scontoIrpef(x, pc);
+  return nettoAnnuo(x, x.pcVoi) - nettoAnnuo(x, pc);
 }
 const costoMensile = (x, pc) => costoAnnuo(x, pc) / 12;
 
@@ -2996,8 +3015,11 @@ function candidatiVersamento(x, pcMax, altri = []){
   // senza il suo vertice fra i candidati il massimo di una spezzata si cerca dove non c'è
   const notevoli = [0, x.pcVoi, x.pcVoi + 0.1, sogliaDatore(x), sogliaDatore(x) + 0.1,
                     pcTetto(x), pcMax, ...altri];
+  // LE SOGLIE DI REDDITO SONO VERTICI DELLA SPEZZATA, e vanno tutte: gli scaglioni IRPEF e ora
+  // anche quelle del cuneo (20.000, 32.000, 40.000), dove la pendenza cambia di dodici punti e
+  // mezzo. Cercare il massimo senza un vertice è la lezione già pagata col gradino del datore.
   if (x.ral > 0)
-    for (const [soglia] of SCAGLIONI)
+    for (const soglia of [...SCAGLIONI.map(([t]) => t), 20000, 32000, 40000])
       if (soglia !== Infinity) notevoli.push((base - soglia) / x.ral * 100);
   for (let v = 1; v <= pcMax; v++) notevoli.push(v);
   const passo = new Set();
