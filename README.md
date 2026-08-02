@@ -18,11 +18,11 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 213 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su diciotto scenari e legge le frasi che scrive |
+| `node test.mjs` | 260 controlli sul motore, letto da `sito/index.html` |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su ventiquattro scenari e legge le frasi che scrive |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
-| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 44 casi |
+| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali + le funzioni di legge ai punti esatti |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
@@ -49,7 +49,7 @@ a nessuno**, che è la promessa scritta in `privacy.html`.
 
 ## Pubblicare
 
-Otto pagine, un 404, tre file di servizio (`sitemap.xml`, `robots.txt`, `CNAME`). Il sito è
+Nove pagine, un 404, tre file di servizio (`sitemap.xml`, `robots.txt`, `CNAME`). Il sito è
 statico: non c'è un server da mantenere, e `sito/` si può servire da qualunque parte.
 
 **Pubblica GitHub, e solo se i controlli passano.** `.github/workflows/pubblica.yml` esegue
@@ -169,6 +169,31 @@ nell'anno in corso non è questo caso**: lì la riscossione cade dentro il piano
 Quando *nessuno* ha esercizi di attività (`s.tuttoInPens`) spariscono anche le righe del lavoro e
 del fondo (classe `senza-lavoro` sul body, come `solo-uno`) e la seconda spesa: caselle
 disattivate che si portano dietro le proprie istruzioni sono peggio dell'assenza.
+
+**2-octies. La spesa abitativa vive fuori dai due moltiplicatori, e non è un dettaglio.**
+La spesa passa da due fattori: `k`, con cui `spesaSostenibile` cerca per bisezione la spesa
+massima, e `equiv`, la scala di equivalenza dello scenario del superstite. **Il canone di
+locazione non deve passare da nessuno dei due**, e si somma dopo. Da `k` perché un affitto non è
+comprimibile a scelta di chi ci abita: lasciandocelo dentro, il conto «risolverebbe» un piano
+stretto facendo pagare meno di affitto, e la spesa massima uscirebbe più alta del vero proprio
+per chi ha meno margine. Da `equiv` perché la scala vale sui consumi, e lo stesso appartamento
+costa uguale per uno o per due.
+**Le due prove sono separate, e la prima da sola non bastava**: l'invariante scritta sulla
+bisezione restava verde su tutti i 4.000 piani mentre il canone finiva dentro `equiv`, perché
+nessun piano generato aveva insieme la casa e il superstite. Ora ci sono un'invariante per
+ciascuno e due casi di seconda implementazione che li combinano; spostando quella riga, i
+controlli falliscono (provato).
+
+**2-nonies. L'abitazione non entra nel patrimonio, ed è un evento in un anno solo.**
+Non produce reddito e non è disponibile finché ci si abita: entra nel conto solo se si dichiara
+di volerla cambiare. Il ricavato affluisce in un esercizio (`daCasa`, voce di flusso come le
+altre, quindi dentro la quadratura di riga) e la spesa muta da lì in poi. **Il calcolo non dice
+se convenga**: per la locazione pubblica il *pareggio in rendimento*, cioè sotto quale rendimento
+reale la conclusione si rovescia; per la casa più piccola dichiara che una soglia non c'è, perché
+non c'è nulla di ricorrente da bilanciare. Un verdetto sarebbe la restituzione di un'ipotesi
+scritta da chi compila.
+Il ricavato **può essere negativo** (una casa nuova più cara) e va scritto col segno: è un caso
+lecito, non uno da escludere.
 
 **3. Nel calcolatore ci sono tre tipi di testo, e solo uno può andarsene in pagina.**
 I *risultati* restano (sono calcolati). Le *istruzioni per compilare* restano accanto alla

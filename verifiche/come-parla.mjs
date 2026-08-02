@@ -111,7 +111,30 @@ const SCENARI = {
   // passata, e il calcolatore rispondeva col paragrafo di chi ha già riscosso tutto.
   'decorrenza scritta a metà':      {...BASE, annoPens0:'207'},
   'erogazione anticipata scritta a metà': {...BASE, rita0:'204'},
-  'ultimo anno scritto a metà':     {...BASE, ultimo0:'203'}
+  'ultimo anno scritto a metà':     {...BASE, ultimo0:'203'},
+  // L'ABITAZIONE. Scrive prosa che nessun altro scenario produce: il ricavato coi costi in
+  // chiaro, la fase «abitazione in locazione», la riga-evento nella tabella e il pareggio in
+  // rendimento. I quattro casi coprono i quattro rami della frase.
+  'casa venduta per una più piccola': {...BASE, casaCosa:'piccola', casaAnno:2045,
+                                       casaValore:300000, casaNuova:180000},
+  'casa venduta, si va in affitto':   {...BASE, casaCosa:'affitto', casaAnno:2045,
+                                       casaValore:300000, casaCanone:900},
+  // il ramo in cui il canone pesa più di quanto il ricavato possa rendere: la pagina deve
+  // dirlo, non tacere né consigliare
+  'affitto caro, la vendita peggiora il piano': {...BASE, casaCosa:'affitto', casaAnno:2045,
+                                       casaValore:120000, casaCanone:1800},
+  // l'abitazione lasciata a qualcuno: la scelta è compiuta, il valore no. È il caso descritto
+  // dall'istruzione accanto alla casella, e un'istruzione va provata sul caso che descrive.
+  'casa lasciata ai figli, si va in affitto': {...BASE, casaCosa:'affitto', casaAnno:2045,
+                                       casaValore:'', casaCanone:900},
+  // l'anno scritto a metà, come per le altre date: «204» non deve valere una vendita nel 204
+  'cambio di casa scritto a metà':    {...BASE, casaCosa:'affitto', casaAnno:'204',
+                                       casaValore:300000, casaCanone:900},
+  // e la scelta che resta aperta a chi ha la decorrenza alle spalle: è la ragione per cui la
+  // sezione delle scelte non sparisce più del tutto
+  'già in pensione, e cambia casa':   {...BASE, quanti:'1', nome1:'', annoPens0:2015,
+                                       stip0:'', ral0:'', rita0:0, casaCosa:'affitto',
+                                       casaAnno:2030, casaValore:250000, casaCanone:800}
 };
 
 // --- il calcolatore, eseguito senza browser ---------------------------------
@@ -652,8 +675,18 @@ console.log('\n— chi è già in pensione —');
     && /non è rappresentato/.test(gia.scritte.avvisoPensione || ''));
   c('le caselle di attività e del fondo sono disattivate, non ignorate',
     spente(gia, [...ATTIVITA, ...FONDO]));
-  c('la sezione delle scelte sparisce: sono decisioni già compiute',
-    gia.elementi.decisioni.hidden === true);
+  // I DUE RIQUADRI DEL FONDO SPARISCONO, LA SEZIONE NO — ed è cambiato quando è arrivata la
+  // scelta sull'abitazione. Contribuzione ed erogazione sono decisioni sul futuro lavorativo,
+  // già compiute da chi ha la decorrenza alle spalle; cambiare casa resta aperta, ed è proprio
+  // a chi è in decumulo che serve. Prima qui si controllava che sparisse tutto: quel controllo
+  // codificava un'ipotesi che non vale più, e portarselo dietro avrebbe impedito la feature.
+  c('i due riquadri del fondo spariscono: sono decisioni già compiute',
+    gia.elementi.decContrib.hidden === true && gia.elementi.decErog.hidden === true);
+  c('ma la sezione resta, perché la scelta sull\'abitazione è ancora aperta',
+    gia.elementi.decisioni.hidden === false && gia.elementi.decCasa.hidden === false);
+  c('e la premessa conta le scelte che ci sono davvero, non tre',
+    /^Una scelta che incide/.test(gia.scritte.premessaScelte || ''),
+    (gia.scritte.premessaScelte || '').slice(0, 60));
   c('la seconda spesa si spegne, perché non c\'è una seconda fase',
     gia.elementi.spesaPens.disabled === true
     && /già tutto in pensione/.test(gia.scritte.spesaPensNota || ''));
@@ -692,6 +725,53 @@ console.log('\n— chi è già in pensione —');
   c('e le scelte restano, perché uno lavora ancora',
     mista.elementi.decisioni.hidden === false
     && mista.elementi.fondo1.disabled === false && mista.elementi.fondo0.disabled === true);
+}
+
+// --- L'ABITAZIONE: tre difetti trovati LEGGENDO L'OUTPUT, non il codice ---------------
+// Nessuno dei controlli generici li vedeva: erano frasi vere in un ramo e false in un altro.
+{
+  const CASA = {casaAnno:2045, casaValore:300000};
+  const piccola = esegui({...BASE, ...CASA, casaCosa:'piccola', casaNuova:180000});
+  const affitto = esegui({...BASE, ...CASA, casaCosa:'affitto', casaCanone:900});
+  const figli   = esegui({...BASE, casaAnno:2045, casaValore:'', casaCosa:'affitto', casaCanone:900});
+  const nudo = r => (k) => (r.scritte[k] || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+
+  // 1. LA PREMESSA PROMETTEVA UNA SOGLIA CHE IL RIQUADRO NEGA. Il pareggio in rendimento esiste
+  //    solo per l'affitto: per la casa più piccola non c'è nulla di ricorrente da bilanciare, e
+  //    il riquadro lo dichiara. La premessa diceva il contrario di quello che introduce.
+  c('la premessa promette la soglia solo dove la soglia c\'è',
+    /sotto quale rendimento/.test(nudo(affitto)('premessaScelte'))
+    && !/sotto quale rendimento/.test(nudo(piccola)('premessaScelte')),
+    nudo(piccola)('premessaScelte').slice(-70));
+  c('e per la casa più piccola dichiara che non indica se convenga',
+    /senza indicare se convenga/.test(nudo(piccola)('premessaScelte'))
+    && /non c'è una soglia da dichiarare/.test(nudo(piccola)('casaScambio')));
+
+  // 2. e 3. «VENDITA» DOVE NON C'È STATA NESSUNA VENDITA. Chi lascia l'abitazione a qualcuno
+  //    sceglie l'affitto senza scrivere il valore: la riga-evento diceva «vendita
+  //    dell'abitazione: nessun ricavato», e il pareggio confrontava il canone con un ricavato
+  //    che non esiste. Due fatti raccontati, nessuno dei due avvenuto.
+  const evento = r => (nudo(r)('tabella').match(/2045 — [^—]{0,120}/) || [''])[0];
+  c('senza valore la tabella non annuncia una vendita',
+    /abitazione lasciata/.test(evento(figli)) && !/vendita/.test(evento(figli)),
+    evento(figli).slice(0, 64));
+  c('mentre col valore scritto la vendita si dice',
+    /vendita dell'abitazione/.test(evento(affitto)));
+  c('e il pareggio non confronta il canone con un ricavato che non c\'è',
+    /nulla che la compensi/.test(nudo(figli)('casaScambio'))
+    && !/il ricavato possa rendere/.test(nudo(figli)('casaScambio')));
+
+  // I COSTI RESTANO IN CHIARO: sono l'unica stima nostra della sezione, e chi ha spuntato
+  // condizioni diverse deve poterli vedere per correggere il valore che scrive.
+  c('i costi della compravendita si mostrano, e sono dichiarati stima',
+    /costi della compravendita \(stima\)/.test(nudo(affitto)('casaEsito')));
+  c('chi compra ne paga di più di chi vende soltanto',
+    /22.068/.test(nudo(piccola)('casaEsito')) && /10.980/.test(nudo(affitto)('casaEsito')));
+  // la fase si spezza dove cambia la spesa, o il flusso medio mescolerebbe due regimi diversi
+  c('la locazione taglia una fase e la nomina',
+    /abitazione in locazione/.test(nudo(affitto)('fasi')));
+  c('e chi resta proprietario non la vede nominata',
+    !/locazione/.test(nudo(piccola)('fasi')));
 }
 
 console.log(ko ? `\n✗ ${ko} controlli falliti` : '\n✓ il calcolatore parla come deve');

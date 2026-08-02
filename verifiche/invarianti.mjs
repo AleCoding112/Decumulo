@@ -66,16 +66,77 @@ for (let t=0; t<4000; t++){
   // l'ultimo anno di lavoro: vuoto (fino alla propria pensione), prima, o anche dopo —
   // quest'ultimo dev'essere ricondotto, e le invarianti lo controllano
   DATI.ultimo0=P(['', I(2020,2060)]); DATI.ultimo1=P(['', I(2020,2060)]);
+  // L'ABITAZIONE. L'anno si estrae da un intervallo che contiene sia l'anno in corso sia la
+  // fine di molti piani: così vengono attraversati tutti e tre i confini — la vendita già
+  // trascorsa che va ricondotta, quella nel primo esercizio, e quella oltre l'orizzonte, che
+  // non deve entrare nel conto. Il prezzo della nuova può superare il valore venduto: il
+  // ricavato negativo è un caso lecito, non uno da escludere.
+  DATI.casaCosa = P(['resto','resto','piccola','affitto']);
+  DATI.casaAnno = P(['', I(2015,2075)]);
+  DATI.casaValore = P(['', Math.round(R(0,700000))]);
+  DATI.casaNuova  = P(['', Math.round(R(0,700000))]);
+  DATI.casaCanone = P(['', Math.round(R(0,3000))]);
   let s,r;
   try { s=M.leggi(); r=M.simula(s); } catch(e){ ko('il motore va in errore', e.message); continue; }
   n++;
   // --- niente NaN, niente infiniti, da nessuna parte
   if (!r.righe.every(g=>[g.patr,g.inizio,g.rendimento,g.daLavoro,g.daPensioni,g.daRendita,
-      g.daFondo,g.daRata,g.daTfr].every(Number.isFinite))) ko('NaN o Infinity in una riga','');
-  // --- CONTABILITÀ: ogni riga deve quadrare
+      g.daFondo,g.daRata,g.daTfr,g.daCasa].every(Number.isFinite))) ko('NaN o Infinity in una riga','');
+  // --- CONTABILITÀ: ogni riga deve quadrare. `daCasa` ci sta dentro perché è una voce di
+  // flusso come le altre: se un giorno entrasse nel patrimonio senza passare di qui, la riga
+  // smetterebbe di essere rifacibile a mano ed è quello che la tabella promette.
   for (const g of r.righe){
-    const q = g.inizio+g.rendimento+g.daLavoro+g.daPensioni+g.daRendita+g.daFondo+g.daRata+g.daTfr-g.spesa-g.patr;
+    const q = g.inizio+g.rendimento+g.daLavoro+g.daPensioni+g.daRendita+g.daFondo+g.daRata+g.daTfr+g.daCasa-g.spesa-g.patr;
     if (Math.abs(q) > 1e-6*Math.max(1,Math.abs(g.patr))) ko('una riga non quadra', q);
+  }
+  // --- L'ABITAZIONE ------------------------------------------------------------------
+  {
+    const c = s.casa;
+    const somma = r.righe.reduce((a,g)=>a+g.daCasa, 0);
+    const dentro = c.attiva && c.anno <= r.annoFine;
+    // il ricavato entra UNA VOLTA SOLA, e solo se l'anno cade dentro il piano
+    if (Math.abs(somma - (dentro ? c.ricavato : 0)) > 1e-6)
+      ko('il ricavato della casa non entra una volta sola', somma+' contro '+(dentro?c.ricavato:0));
+    if (dentro && r.righe.some(g => g.daCasa !== 0 && g.anno !== c.anno))
+      ko('il ricavato della casa entra in un anno che non è il suo','');
+    // scegliere «resto» deve lasciare il piano identico a quello di chi non ha scritto nulla:
+    // se una casella della casa filtrasse nel conto da spenta, sarebbe invisibile in pagina
+    if (!c.attiva){
+      const nudo = M.simula({...s, casa: {...c, valore:0, nuova:0, canone:0,
+                                          ricavato:0, spesaAnnua:0}});
+      if (Math.abs(nudo.finale - r.finale) > 1e-6)
+        ko('la casa muove il piano anche da spenta', nudo.finale - r.finale);
+    }
+    // IL CANONE NON PASSA DALLA BISEZIONE. `spesaSostenibile` cerca la spesa massima scalando
+    // `spesa` di un fattore: se il canone finisse dentro quel fattore, il conto «risolverebbe»
+    // un piano stretto facendo pagare meno di affitto, che non è una leva di chi ci abita.
+    // La proprietà si controlla al contrario, ed è esatta: la differenza di spesa fra due
+    // simulazioni con importi diversi non deve dipendere dal canone.
+    if (c.attiva && c.spesaAnnua > 0 && s.spesa > 0){
+      const a1 = M.simula(s, s.spesa), a2 = M.simula(s, s.spesa * 2);
+      const senza = {...s, casa: {...c, spesaAnnua: 0}};
+      const b1 = M.simula(senza, s.spesa), b2 = M.simula(senza, s.spesa * 2);
+      for (let k = 0; k < a1.righe.length; k++){
+        const d1 = a1.righe[k].spesa - b1.righe[k].spesa;
+        const d2 = a2.righe[k].spesa - b2.righe[k].spesa;
+        if (Math.abs(d1 - d2) > 1e-6){ ko('il canone si muove con la spesa cercata', d1+' contro '+d2); break; }
+      }
+      // E NEMMENO DALLA SCALA DI EQUIVALENZA, che è un moltiplicatore diverso e va controllato
+      // a parte: la prima versione di questa invariante guardava solo la bisezione, e spostando
+      // il canone dentro `equiv` restava verde su tutti e 4.000 i piani.
+      // Un appartamento già affittato costa uguale in uno o in due; la scala vale sui consumi.
+      if (s.N === 2){
+        const quando = Math.min(c.anno + 3, r.annoFine);
+        const m = {chi: 0, anno: quando, equiv: 0.60};
+        const conM   = M.simula({...s, manca: m});
+        const senzaM = M.simula({...s, manca: m, casa: {...c, spesaAnnua: 0}});
+        const dopo = conM.righe.findIndex(g => g.anno === quando);
+        if (dopo >= 0 && Math.abs((conM.righe[dopo].spesa - senzaM.righe[dopo].spesa)
+                                  - c.spesaAnnua) > 1e-6)
+          ko('il canone si riduce con la scala di equivalenza',
+             (conM.righe[dopo].spesa - senzaM.righe[dopo].spesa) + ' contro ' + c.spesaAnnua);
+      }
+    }
   }
   for (let i=1;i<r.righe.length;i++)
     if (Math.abs(r.righe[i].inizio - r.righe[i-1].patr) > 1e-9) ko('discontinuità fra due anni','');

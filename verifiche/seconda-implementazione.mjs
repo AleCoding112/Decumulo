@@ -94,6 +94,20 @@ function piano(D){
   };
 
   let patr = D.patrimonio;
+  // L'ABITAZIONE, ricostruita dalle cifre grezze. Il calcolatore passa quello che sta scritto
+  // nelle caselle — non `attiva`, non `ricavato`, non `spesaAnnua` — altrimenti questa
+  // implementazione erediterebbe la decisione dell'altra invece di verificarla.
+  const casa = (() => {
+    const c = D.casa;
+    if (!c || c.cosa === 'resto' || c.anno === null || c.anno === undefined) return null;
+    const anno = Math.max(V('ANNO0'), c.anno);
+    const costiV = c.valore > 0 ? c.valore * V('COSTI_VENDITA') : 0;
+    const costiA = c.cosa === 'piccola' && c.nuova > 0
+      ? c.nuova * V('COSTI_ACQUISTO') + V('COSTI_ATTO') : 0;
+    return {anno,
+      ricavato: c.valore - costiV - (c.cosa === 'piccola' ? c.nuova + costiA : 0),
+      canoneAnno: c.cosa === 'affitto' ? c.canone * 12 : 0};
+  })();
   // CHI HA LA DECORRENZA GIÀ TRASCORSA NON HA FONDO DENTRO IL PIANO. La prestazione è stata
   // riscossa prima dell'anno iniziale, quindi quel capitale sta già nel patrimonio: contarlo
   // qui lo conterebbe due volte, e per giunta col coefficiente di un'età che non è più quella.
@@ -224,10 +238,16 @@ function piano(D){
       if (lorda > 0) E += lorda - irpef(lorda);
     }
 
+    // L'ABITAZIONE. La regola si riapplica qui da capo e NON si eredita dal calcolatore: il
+    // ricavato si ricalcola dalle cifre grezze, e il canone si somma DOPO la scala di
+    // equivalenza. Se un giorno la pagina lo mettesse dentro il moltiplicatore, questo confronto
+    // deve poter fallire — è tutto il suo mestiere.
+    if (casa !== null && a === casa.anno) E += casa.ricavato;
     // due spese: quella di adesso vale finché lavora almeno uno dei due, compreso il suo
     // ultimo esercizio
     const spesaAnno = (a <= ultimo ? D.spesa : (D.spesaPens ?? D.spesa)) * 12
-                      * (manca !== null && a >= manca.anno ? manca.equiv : 1);
+                      * (manca !== null && a >= manca.anno ? manca.equiv : 1)
+                      + (casa !== null && a >= casa.anno ? casa.canoneAnno : 0);
     patr = ini + Math.max(ini, 0) * (fermo(a) ? Math.min(0, r) : r) + E - spesaAnno;
     righe.push({a, patr});
   }
@@ -276,7 +296,12 @@ const base = {quanti:'2', patrimonio:100000, spesa:3300, spesaPens:'', cresc0:''
   // il confronto senza confrontare nulla
   tipoFondo0:'collettiva', tipoFondo1:'collettiva',
   // vuoto, non assente: assente varrebbe '0' e vorrebbe dire «smesso nel 1900»
-  ultimo0:'', ultimo1:''};
+  ultimo0:'', ultimo1:'',
+  // L'ABITAZIONE, scritta per esteso anche quando non si usa. È la settima volta che questa
+  // regola serve: un campo assente vale '0', e per `casaAnno` zero non è «nessuna scelta» —
+  // sotto le quattro cifre vale come non compilato, quindi passerebbe lo stesso, ma `casaCosa`
+  // a '0' non è nemmeno una delle tre opzioni e il ripiego renderebbe il caso illeggibile.
+  casaCosa:'resto', casaAnno:'', casaValore:'', casaNuova:'', casaCanone:''};
 
 const casi = {
   'i due, come stanno':       {},
@@ -293,6 +318,15 @@ const casi = {
   'pensione a 62 anni':       {annoPens0:2034, annoPens1:2041},
   'pensione a 72 anni':       {annoPens0:2044, annoPens1:2051},
   'fondi piccoli':            {fondo0:9000, fondo1:4000},
+  // --- l'abitazione. Il caso dell'affitto è il solo in cui la spesa cambia dentro il piano
+  // per una ragione che non è il pensionamento, quindi il solo che possa scoprire un canone
+  // finito per sbaglio dentro un moltiplicatore.
+  'casa venduta, una più piccola': {casaCosa:'piccola', casaAnno:2045, casaValore:300000, casaNuova:180000},
+  'casa venduta, in affitto':      {casaCosa:'affitto', casaAnno:2045, casaValore:300000, casaCanone:900},
+  'casa lasciata, in affitto':     {casaCosa:'affitto', casaAnno:2045, casaValore:'', casaCanone:900},
+  'casa cambiata subito':          {casaCosa:'piccola', casaAnno:2026, casaValore:300000, casaNuova:180000},
+  'casa nuova più cara di quella venduta': {casaCosa:'piccola', casaAnno:2040, casaValore:200000, casaNuova:320000},
+  'casa venduta oltre l\'orizzonte': {casaCosa:'affitto', casaAnno:2090, casaValore:300000, casaCanone:900},
   'spesa che rompe il piano': {spesa:7000},
   'in pensione si spende meno':  {spesaPens:2200},
   'in pensione si spende di più':{spesaPens:4200},
@@ -345,6 +379,15 @@ const SUP = {
   'manca il primo, rendita certa':       {chi:0, anno:2045, equiv:0.60, o:{forma0:'certa'}},
   'con la scala di equivalenza alta':    {chi:0, anno:2055, equiv:0.667},
   'pensioni alte: la Tabella F morde':   {chi:0, anno:2055, equiv:0.60, o:{pens0:3400, pens1:3000}},
+  // LA CASA INSIEME AL SUPERSTITE, e senza questo caso la copertura era finta. I casi della
+  // casa avevano `equiv` sempre a 1 e quelli del superstite non avevano casa: spostando il
+  // canone dentro il moltiplicatore della scala di equivalenza — l'errore preciso contro cui
+  // quella riga è scritta — il confronto restava verde su tutti e 58.
+  // Un appartamento già affittato costa uguale in uno o in due: la scala vale sui consumi.
+  'manca uno, e si è in affitto':        {chi:0, anno:2050, equiv:0.60,
+    o:{casaCosa:'affitto', casaAnno:2045, casaValore:300000, casaCanone:900}},
+  'manca uno prima del cambio di casa':  {chi:0, anno:2040, equiv:0.667,
+    o:{casaCosa:'affitto', casaAnno:2045, casaValore:280000, casaCanone:750}},
   'manca PRIMA di riscuotere il fondo':  {chi:0, anno:2035, equiv:0.60},
   'manca prima di andare in pensione':   {chi:0, anno:2030, equiv:0.60},
 };
@@ -363,6 +406,10 @@ for (const [nome, over, prova, manca] of tutti){
   const R = M.simula(s);
   const D = {patrimonio:s.patrimonio, spesa:s.spesa, spesaPens:s.spesaPens, rend:s.rendNom, infl:s.infl,
     prova:s.prova, manca:s.manca,
+    // SI PASSANO LE CIFRE SCRITTE, non `attiva`/`ricavato`/`spesaAnnua`: quelli sono già il
+    // risultato delle regole che questa implementazione deve rifare per conto suo.
+    casa: {cosa:s.casa.cosa, anno:s.casa.anno, valore:s.casa.valore,
+           nuova:s.casa.nuova, canone:s.casa.canone},
     rendFondo:s.rendFondoNom, etaFine:s.etaFine,
     p: s.p.map(x => ({nascita:x.nascita, stip:x.stip, ral:x.ral, pens:x.pensLorda,
       // SI PASSA IL VALORE SCRITTO, NON QUELLO GIÀ AZZERATO. `leggi()` toglie il fondo a chi ha

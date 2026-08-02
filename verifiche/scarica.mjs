@@ -93,21 +93,27 @@ const c = (nome, cond, extra = '') => {
 // I file sono archiviati SENZA compressione: comprimerli avrebbe voluto dire portarsi dentro
 // un deflate, per risparmiare venticinque chilobyte. Qui torna comodo, perché si rileggono
 // senza decomprimere niente.
-const dentro = {};
-{
-  // SI LEGGE L'ARCHIVIO DAVVERO, camminando sulle intestazioni locali. Il primo tentativo
-  // ritagliava i byte cercando il nome e poi il tag di chiusura: sembrava funzionare e invece
-  // consegnava fette sbagliate, e i due controlli sui numeri fallivano su un file corretto.
-  // Un lettore vero è più corto di una fetta indovinata, e non può prendere l'una per l'altra.
+// SI LEGGE L'ARCHIVIO DAVVERO, camminando sulle intestazioni locali. Il primo tentativo
+// ritagliava i byte cercando il nome e poi il tag di chiusura: sembrava funzionare e invece
+// consegnava fette sbagliate, e i due controlli sui numeri fallivano su un file corretto.
+// Un lettore vero è più corto di una fetta indovinata, e non può prendere l'una per l'altra.
+// È una funzione e non un blocco perché serve due volte: il secondo piano, quello col cambio
+// di casa, si rilegge con lo stesso lettore invece di fidarsi di una seconda ritagliatura.
+function leggiZip(b){
+  const out = {};
   let q = 0;
-  while (bytes.readUInt32LE(q) === 0x04034b50){
-    const lung = bytes.readUInt32LE(q + 18);
-    const lnome = bytes.readUInt16LE(q + 26), lextra = bytes.readUInt16LE(q + 28);
-    const nome = bytes.toString('utf8', q + 30, q + 30 + lnome);
+  while (b.readUInt32LE(q) === 0x04034b50){
+    const lung = b.readUInt32LE(q + 18);
+    const lnome = b.readUInt16LE(q + 26), lextra = b.readUInt16LE(q + 28);
+    const nome = b.toString('utf8', q + 30, q + 30 + lnome);
     const a = q + 30 + lnome + lextra;
-    dentro[nome] = bytes.toString('utf8', a, a + lung);
+    out[nome] = b.toString('utf8', a, a + lung);
     q = a + lung;
   }
+  return out;
+}
+const dentro = leggiZip(bytes);
+{
   c('ogni pezzo si rilegge dall\'archivio', Object.keys(dentro).length === 7,
     `${Object.keys(dentro).length} pezzi riletti`);
 
@@ -157,6 +163,50 @@ const dentro = {};
 
   c('e nomina le persone come le nomina la pagina',
     s.indici.every(i => piano.includes(s.p[i].nome)));
+
+  // L'ABITAZIONE. Senza questo controllo il foglio poteva restare muto sul cambio di casa e
+  // tutto il resto sarebbe stato verde lo stesso: chi lo riapre fra sei mesi troverebbe un
+  // patrimonio che a un certo anno fa un salto senza che nulla nel file lo spieghi.
+  // Il caso base non cambia casa, quindi la scheda NON deve nominarla: si prova il ramo
+  // giusto rileggendo il piano con la scelta compiuta.
+  c('senza cambio di casa il foglio non ne parla', !/L'ABITAZIONE/.test(piano));
+}
+
+// --- 5. IL CAMBIO DI CASA, SE C'È, STA NEL FILE -----------------------------
+{
+  // GLI ELEMENTI DEL DOM FINTO SONO MEMOIZZATI (`elementi[id] ??=`): il loro `value` è fissato
+  // alla prima lettura, quindi riscrivere `DATI` dopo non cambia nulla e i controlli
+  // fallirebbero su un codice giusto. Si scrive dove scriverebbe una persona — nella casella —
+  // e si tiene allineato anche `DATI` per gli elementi non ancora creati.
+  // È l'ottava volta che un'armatura incompleta fa cadere codice buono: si completa l'armatura.
+  const scrivi = o => Object.entries(o).forEach(([k, v]) => {
+    DATI[k] = v;
+    if (elementi[k]) elementi[k].value = String(v);
+  });
+  const salva = {casaCosa: DATI.casaCosa ?? '', casaAnno: DATI.casaAnno ?? '',
+                 casaValore: DATI.casaValore ?? '', casaCanone: DATI.casaCanone ?? ''};
+  scrivi({casaCosa: 'affitto', casaAnno: 2045, casaValore: 300000, casaCanone: 900});
+  const s2 = M.leggi(), r2 = M.simula(s2);
+  const dentro2 = leggiZip(Buffer.from(M.pianoInFoglio(s2, r2)));
+  scrivi(salva);
+
+  const piano2 = dentro2['xl/worksheets/sheet1.xml'];
+  const tab2   = dentro2['xl/worksheets/sheet2.xml'];
+  for (const [nome, re] of [
+    ['la scelta compiuta',       /venderla e andare in affitto/],
+    ['l\'anno del cambio',       /In che anno/],
+    ['il canone',                /Canone mensile/],
+    ['i costi, dichiarati stima', /Costi della compravendita \(stima\)/],
+    ['il ricavato netto',        /Ricavato netto/]
+  ]) c(`col cambio di casa il foglio dichiara ${nome}`, re.test(piano2));
+
+  // LA COLONNA IN PIÙ, per la stessa ragione della tabella in pagina: il foglio esiste per
+  // essere rifatto a mano, e una riga a cui manca una voce di flusso non torna.
+  c('e la tabella guadagna la colonna della casa', /Casa/.test(tab2));
+  const intest = (tab2.match(/<row [^>]*>[\s\S]*?<\/row>/) || [''])[0];
+  c('che nell\'intestazione sta fra il fondo e la spesa',
+    intest.indexOf('Casa') > intest.indexOf('Fondo e TFR')
+    && intest.indexOf('Casa') < intest.indexOf('Spesa'));
 }
 
 // --- 4. IL PULSANTE È SPENTO FINCHÉ NON C'È UN PIANO ------------------------

@@ -41,7 +41,11 @@ const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'',
   // Era 0,6, ed è stata la spia del cambio di legge: dal 1° luglio 2026 il massimo è 0,5.
   fondo0:90000, pcVoi0:1.5, pcDat0:2.0, tfrDove0:'fondo', iscr0:2018, rita0:2042, quotaCap0:0.5,
   nascita1:1982, stip1:1900, ral1:36000, pens1:1700, annoPens1:2050,
-  fondo1:30000, pcVoi1:1.2, pcDat1:1.6, tfrDove1:'fondo', iscr1:2012, rita1:2050, quotaCap1:1};
+  fondo1:30000, pcVoi1:1.2, pcDat1:1.6, tfrDove1:'fondo', iscr1:2012, rita1:2050, quotaCap1:1,
+  // L'ABITAZIONE, scritta per esteso anche nel caso base che non la usa. Un campo assente vale
+  // '0', e `casaCosa:'0'` non è nessuna delle tre opzioni: il caso di prova diventerebbe
+  // illeggibile senza che nulla fallisca. Settima volta che questa regola serve.
+  casaCosa:'resto', casaAnno:'', casaValore:'', casaNuova:'', casaCanone:''};
 
 // Il DOM finto deve esporre tutto quello che la pagina tocca, o lo script non arriva in fondo:
 // oltre a value/innerHTML servono textContent, checked, addEventListener e — da quando i
@@ -66,7 +70,7 @@ globalThis.document = {
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
-  numero, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
+  numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
 let ok = 0, ko = 0;
@@ -1015,6 +1019,94 @@ console.log('\n— la rendita a durata definita e l\'erogazione frazionata —')
                               .reduce((a, g) => a + g.daFondo + g.daRata, 0);
       return uscito > incD.montante * 0.8; })(),
     'con un fondo che rende, esce più del montante iniziale');
+}
+
+console.log("\n— l'abitazione —");
+{
+  const con = o => { const st = leggiCon(o); return {s: st, r: M.simula(st)}; };
+  const CASA = {casaValore:300000, casaAnno:2045};
+  const base = con({});
+  const vende = con({...CASA, casaCosa:'affitto', casaCanone:1000});
+  const piccola = con({...CASA, casaCosa:'piccola', casaNuova:180000});
+
+  t('senza scelta l\'abitazione non tocca il conto',
+    con({...CASA, casaCosa:'resto', casaCanone:1000}).r.finale === base.r.finale);
+  // LA REGOLA DELLE QUATTRO CIFRE. Mentre si digita 2045 si passa da 2, 20, 204: senza questa
+  // regola ognuno di quei tasti sarebbe una vendita in un anno diverso, con la spesa che cambia.
+  t('un anno a meno di quattro cifre vale come non compilato',
+    con({...CASA, casaCosa:'affitto', casaCanone:1000, casaAnno:204}).r.finale === base.r.finale,
+    'digitando «204» il piano resta quello di partenza');
+
+  t('il ricavato entra nel suo anno, al netto dei costi',
+    Math.abs(vende.r.righe.find(x => x.anno === 2045).daCasa
+             - 300000 * (1 - M.COSTI_VENDITA)) < 1e-6,
+    eur(300000 * (1 - M.COSTI_VENDITA)) + ' su 300.000 di valore');
+  t('e in nessun altro anno',
+    vende.r.righe.filter(x => x.daCasa !== 0).length === 1);
+  t('chi compra paga anche le imposte d\'atto e il notaio, chi affitta no',
+    Math.abs(piccola.r.righe.find(x => x.anno === 2045).daCasa
+             - (300000 * (1 - M.COSTI_VENDITA) - 180000 * (1 + M.COSTI_ACQUISTO) - M.COSTI_ATTO))
+      < 1e-6);
+
+  // LA SPESA CAMBIA SOLO DA QUELL'ANNO, e solo per l'affitto: una casa più piccola costerebbe
+  // meno di manutenzione, ma di quanto non lo sappiamo e non contarlo tiene lo scenario dalla
+  // parte prudente.
+  const primaDopo = (p, anno) => p.r.righe.find(x => x.anno === anno).spesa;
+  t('il canone entra nella spesa dall\'anno del cambio',
+    Math.abs(primaDopo(vende, 2045) - primaDopo(base, 2045) - 12000) < 1e-6);
+  t('e non un esercizio prima',
+    Math.abs(primaDopo(vende, 2044) - primaDopo(base, 2044)) < 1e-6);
+  t('la casa più piccola non muove la spesa: il conto resta prudente',
+    Math.abs(primaDopo(piccola, 2045) - primaDopo(base, 2045)) < 1e-6);
+
+  // IL CANONE NON È DISCREZIONALE, e questa è la proprietà per cui la spesa abitativa vive
+  // fuori da `spesa`. Se `spesaSostenibile` potesse comprimerlo, la spesa massima uscirebbe
+  // più alta del vero e il verdetto sarebbe generoso proprio a chi ha meno margine.
+  {
+    const q = M.spesaSostenibile(vende.s);
+    const conQ = M.simula(vende.s, q), senzaCanone = M.simula({...vende.s,
+      casa: {...vende.s.casa, spesaAnnua: 0}}, q);
+    t('la spesa massima sostenibile non comprime il canone',
+      Math.abs((conQ.righe.find(x => x.anno === 2050).spesa
+                - senzaCanone.righe.find(x => x.anno === 2050).spesa) - 12000) < 1e-6,
+      'cercando ' + eur(q) + ' €/mese il canone resta 12.000 l\'anno');
+  }
+  // IL VERSO, E IL CONFRONTO GIUSTO PER MISURARLO. Scritto come «vendere non alza la spesa
+  // sostenibile» era falso, ed era il test a essere sbagliato: la vendita porta 289.020 € nel
+  // patrimonio, che più che compensano il canone. Sono due effetti opposti dentro la stessa
+  // scelta, e un test che li somma non misura nessuno dei due.
+  // La proprietà vera si isola A PARITÀ DI RICAVATO: fermo restando quello che è entrato, un
+  // canone da pagare abbassa la spesa che il piano può reggere.
+  t('a parità di ricavato, il canone abbassa la spesa sostenibile',
+    M.spesaSostenibile(vende.s)
+      < M.spesaSostenibile({...vende.s, casa: {...vende.s.casa, spesaAnnua: 0}}),
+    'e il ricavato la alza: sono due effetti opposti della stessa scelta');
+
+  // Una vendita oltre l'orizzonte non entra: sarebbe un incasso fuori dal piano.
+  t('una vendita oltre l\'orizzonte non entra nel conto',
+    con({...CASA, casaCosa:'affitto', casaCanone:1000, casaAnno:2099}).r.finale
+      === base.r.finale);
+  // Un anno già trascorso si riconduce all'anno in corso: quel capitale, se c'è, sta già dentro
+  // «patrimonio investito», e la casella serve a chi la vendita deve ancora farla.
+  t('un anno già trascorso si riconduce all\'anno in corso',
+    con({...CASA, casaCosa:'affitto', casaCanone:1000, casaAnno:2015}).s.casa.anno === 2026);
+
+  // IL RICAVATO NEGATIVO È UN CASO LECITO: chi compra più caro di quanto vende spende
+  // patrimonio, e il piano deve dirlo invece di ignorarlo.
+  const piuCara = con({...CASA, casaCosa:'piccola', casaNuova:400000});
+  t('una casa nuova più cara toglie patrimonio, invece di essere ignorata',
+    piuCara.s.casa.ricavato < 0 && piuCara.r.finale < base.r.finale);
+
+  // L'abitazione lasciata a qualcuno: nessun ricavato, ma la spesa cambia lo stesso. È il caso
+  // che l'istruzione accanto alla casella descrive, e va provato proprio su quello.
+  const aiFigli = con({casaCosa:'affitto', casaAnno:2045, casaValore:'', casaCanone:1000});
+  t('senza valore non c\'è ricavato, ma il canone si paga lo stesso',
+    aiFigli.s.casa.ricavato === 0
+    && Math.abs(primaDopo(aiFigli, 2045) - primaDopo(base, 2045) - 12000) < 1e-6
+    && aiFigli.r.finale < base.r.finale);
+  // e non si pagano provvigioni su una vendita che non c'è stata
+  t('e nessuna provvigione su una vendita che non c\'è stata',
+    aiFigli.s.casa.costiVendita === 0);
 }
 
 console.log('\n— casi limite —');

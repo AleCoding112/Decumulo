@@ -56,7 +56,12 @@ const ASSETTI = {
   // seconda di ogni coppia di righe, ed è lì che si è nascosto per mesi il difetto di `.cur`
   // (spenta con `hidden` mentre un `display:grid` la teneva in pagina). Un ramo di interfaccia
   // che nessuno scenario disegna non è coperto, per quanto verde sia il resto.
-  'una persona sola': {...DATI, quanti:'1', nome1:''}
+  'una persona sola': {...DATI, quanti:'1', nome1:''},
+  // IL CAMBIO DI ABITAZIONE, per la stessa ragione dell'assetto qui sopra: senza, tre caselle
+  // e il riquadro dell'esito non venivano MAI disegnati, e nessuna delle quarantaquattro
+  // combinazioni li avrebbe visti sbordare. Le caselle compaiono solo con la scelta compiuta.
+  'cambio di abitazione': {...DATI, casaValore:320000, casaCosa:'affitto',
+                           casaAnno:2040, casaCanone:950}
 };
 const pagine = readdirSync(SITO).filter(f => f.endsWith('.html'));
 const dir = mkdtempSync(join(tmpdir(), 'decumulo-schermo-'));

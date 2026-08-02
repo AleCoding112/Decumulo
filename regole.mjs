@@ -19,7 +19,7 @@
 // esattamente il difetto che tutto il resto del build esiste per impedire.
 // La forma confrontabile serve alla guardia in `verifiche/scadenze.mjs`: una data che nessuno
 // può confrontare non protegge da niente.
-export const REVISIONE_ISO = '2026-08-01';
+export const REVISIONE_ISO = '2026-08-02';
 export const REVISIONE = new Date(REVISIONE_ISO + 'T00:00:00Z')
   .toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'});
 
@@ -246,6 +246,32 @@ export const REGOLE = {
     fonte: 'scala OCSE modificata: 1 per il primo adulto, 0,5 per il secondo',
     verificata: true },
 
+  // --- l'abitazione, quando si decide di cambiarla -------------------------
+  // I COSTI DI UNA COMPRAVENDITA NON SONO UNA CASELLA: chi compila sa quanto vale casa sua, non
+  // quanto chiede l'agenzia della porta accanto. Sono tre, e hanno tre nature diverse — per
+  // questo non stanno in un numero solo. Due scalano col prezzo, il terzo no: l'onorario del
+  // notaio e l'imposta di registro (che si calcola sul valore CATASTALE, non sul prezzo di
+  // mercato) restano quasi fermi mentre il prezzo sale.
+  //
+  // LA PROVVIGIONE NON È FISSATA DA NESSUNA LEGGE, e va detto: le fonti di settore rilevano una
+  // forbice del 2-5% per ciascuna parte oltre IVA. Si adotta il 3%, che è il valore più citato.
+  // Chi ha spuntato meno lo corregga alzando il valore che scrive: il conto mostra in chiaro
+  // quanto sta togliendo, proprio perché questa cifra è discutibile.
+  COSTI_VENDITA: { nome: "Costi a carico di chi vende, in quota del prezzo", val: 0.0366,
+    fonte: 'provvigione di mediazione 3% oltre IVA al 22%: non è fissata per legge, le fonti di settore rilevano il 2-5% per ciascuna parte',
+    verificata: true },
+  COSTI_ACQUISTO: { nome: "Provvigione a carico di chi compra, in quota del prezzo", val: 0.0366,
+    fonte: 'provvigione di mediazione 3% oltre IVA al 22%, dovuta da entrambe le parti: non è fissata per legge',
+    verificata: true },
+  // Registro 2% sul valore catastale con un minimo di 1.000 €, ipotecaria e catastale 50 €
+  // ciascuna (Agenzia delle Entrate, acquisto prima casa da privato), più l'onorario notarile,
+  // libero dal 2017 e rilevato dalle fonti di settore fra 2.000 e 5.000 €.
+  // NON è una quota del prezzo: su un'abitazione da 150.000 € pesa il triplo che su una da
+  // 450.000. Tenerlo fisso è meno sbagliato che farlo scalare.
+  COSTI_ATTO: { nome: "Imposte d'atto e onorario notarile, in cifra fissa", val: 4500,
+    fonte: "imposta di registro 2% del valore catastale (minimo 1.000 €) più ipotecaria e catastale di 50 € ciascuna, art. 1 Tariffa parte I DPR 131/1986 e agevolazione prima casa; onorario notarile libero, 2.000-5.000 € secondo le fonti di settore",
+    verificata: true },
+
   // --- convenzioni nostre, non di legge -----------------------------------
   ANNO0:      { nome: 'Anno di partenza del conto', val: 2026, come: 'secco', fonte: 'l\'anno da cui parte il conto', verificata: true },
   PC_CURSORE: { nome: "Limite del cursore dei versamenti", val: 50, come: 'percento', fonte: 'dove si ferma il cursore: nessuno versa più del 50% della RAL', verificata: true },
@@ -330,6 +356,14 @@ export const TESTI = {
                       {minimumFractionDigits: 2, maximumFractionDigits: 2}),
   vitaInteraEs:     String((V('VITA_INTERA').find(([e]) => e === 67) || [, ''])[1]),
   frazAnniMin:      String(V('FRAZ_ANNI_MIN')),
+  // l'abitazione: le tre voci del costo di una compravendita, più il totale su un esempio, che
+  // è il modo in cui la cifra si capisce davvero (una percentuale sola non dice quanto pesa)
+  costiVendita:     pc(V('COSTI_VENDITA'), 2),
+  costiAcquisto:    pc(V('COSTI_ACQUISTO'), 2),
+  costiAtto:        eur(V('COSTI_ATTO')),
+  costiEsVendita:   eur(300000 * V('COSTI_VENDITA')),
+  costiEsCambio:    eur(300000 * V('COSTI_VENDITA')
+                        + 180000 * V('COSTI_ACQUISTO') + V('COSTI_ATTO')),
   aliqFondoMax:     pc(V('ALIQ_FONDO_MAX')),
   aliqFondoMin:     pc(V('ALIQ_FONDO_MIN')),
   aliqFondoPasso:   pc(V('ALIQ_FONDO_PASSO'), 2),
@@ -412,7 +446,11 @@ const BANDA_ALTA = ${V('BANDA_ALTA')}, BANDA_BASSA = ${V('BANDA_BASSA')};
 const VITA_INTERA = [${V('VITA_INTERA').map(([e, v]) => `[${e},${v}]`).join(',')}];
 const ALIQ_FRAZ_MAX = ${V('ALIQ_FRAZ_MAX')}, ALIQ_FRAZ_MIN = ${V('ALIQ_FRAZ_MIN')},
       ALIQ_FRAZ_PASSO = ${V('ALIQ_FRAZ_PASSO')};
-const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};`;
+const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};
+// I costi di una compravendita: due quote del prezzo e una cifra fissa, perché l'onorario del
+// notaio e l'imposta di registro sul valore catastale non scalano col prezzo di mercato.
+const COSTI_VENDITA = ${V('COSTI_VENDITA')}, COSTI_ACQUISTO = ${V('COSTI_ACQUISTO')},
+      COSTI_ATTO = ${V('COSTI_ATTO')};`;
 }
 
 // --- la tabella completa delle regole, per la pagina «il metodo». Generata, non scritta:

@@ -150,6 +150,16 @@
   .passo .esito i{display:block;font-style:normal;font-size:12px;color:var(--tenue)}
   .scambio{font-size:12.5px;color:var(--soft);margin:10px 0 0;line-height:1.55;max-width:74ch}
   .scambio b{color:var(--ink)}
+  /* --- l'abitazione. Il numero del titolo lo scrive il codice, perché i riquadri sopra
+     spariscono per chi è già in pensione e la numerazione deve seguirli. --- */
+  .np-dec{font-style:normal;color:var(--tenue);margin-right:7px;font-variant-numeric:tabular-nums}
+  .casaSe[hidden]{display:none}
+  /* Il ricavato è il numero per cui la sezione esiste: sta su una riga sua, non a destra come
+     gli esiti dei cursori, perché qui non c'è un cursore accanto a cui allinearlo. */
+  .casaEsito{margin:14px 0 0;font-size:14px;line-height:1.5;font-variant-numeric:tabular-nums}
+  .casaEsito:empty{display:none}
+  .casaEsito b{font-size:15px}
+  .casaEsito i{display:block;font-style:normal;font-size:12px;color:var(--tenue);margin-top:3px}
   .scelte button u{display:block;text-decoration:none;font-size:10px;font-weight:600;
     text-transform:uppercase;letter-spacing:.07em;color:var(--su)}
   /* le due famiglie stanno UNA SOTTO L'ALTRA: affiancate si spezzavano a metà, e «certa 10
@@ -626,6 +636,13 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <div><label for="spesaPens">Spesa mensile in pensione</label>
       <input type="text" inputmode="decimal" id="spesaPens" value="" placeholder="uguale a oggi">
       <u class="hint" id="spesaPensNota">se resta vuota, il conto tiene la stessa di adesso</u></div>
+    <!-- L'ABITAZIONE NON ENTRA NEL PATRIMONIO, ed è la ragione per cui questa casella è
+         separata da quella sopra: non rende e non è disponibile finché ci si abita. Serve
+         soltanto a quantificare la scelta di cambiarla, che sta fra «Le scelte». Chi non ha
+         quella intenzione la lascia vuota e non cambia nulla nel conto. -->
+    <div><label for="casaValore">Valore dell'abitazione</label>
+      <input type="text" inputmode="decimal" id="casaValore" value="" placeholder="facoltativo">
+      <u class="hint">non entra nel patrimonio: serve solo se si prevede di cambiarla</u></div>
   </div>
   <p class="calcolato" id="calcolato"></p>
   <p class="nota">Tutti i risultati sono in <b>euro di oggi</b>, confrontabili con la spesa
@@ -692,11 +709,13 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
 <div class="decisioni" id="decisioni">
   <h2>Le scelte da compiere</h2>
-  <p class="premessa">Due scelte che incidono sul risultato. Per la prima il calcolo individua un
-  ottimo, indicato sotto il cursore; per la seconda non è possibile, ed è spiegato il motivo.</p>
+  <p class="premessa" id="premessaScelte">&nbsp;</p>
 
-  <div class="dec">
-    <h3 id="contribuzione">1. Entità della contribuzione</h3>
+  <!-- I NUMERI DEI TITOLI LI SCRIVE `aggiornaDecisioni`, e non sono un vezzo: i primi due
+       riquadri spariscono per chi ha la decorrenza alle spalle, e una sezione che si apre con
+       «3.» sarebbe un elenco che ha perso i primi due pezzi senza dirlo. -->
+  <div class="dec" id="decContrib">
+    <h3 id="contribuzione"><i class="np-dec" id="nContrib"></i>Entità della contribuzione</h3>
     <p class="spiega"><b>Il contributo del datore è dovuto solo a fronte di quello del lavoratore</b>, e oltre
     quella soglia non aumenta: la prima quota vale il contributo aziendale più la deduzione, la
     parte eccedente vale la sola deduzione. Il cursore si arresta alla soglia di deducibilità o al limite dello stipendio netto, e indica
@@ -704,8 +723,8 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <div id="decVersare"></div>
   </div>
 
-  <div class="dec">
-    <h3>2. Modalità di erogazione del fondo</h3>
+  <div class="dec" id="decErog">
+    <h3><i class="np-dec" id="nErog"></i>Modalità di erogazione del fondo</h3>
     <p class="spiega"><b>Tre decisioni consecutive, e la prima condiziona le altre due</b>: quando
     la prestazione inizia a essere erogata, quanto ne viene liquidato in capitale, in che forma
     è convertita la parte residua. L'erogazione anticipata riduce il montante disponibile alla
@@ -718,6 +737,51 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     dell'assegno protegga <b>chi resta</b> è quantificato accanto al risultato.
     <a href="come-prendere-il-fondo.html">Perché, e come si sceglie →</a></p>
     <div id="decFondo"></div>
+  </div>
+
+  <!-- L'ABITAZIONE. Sta fra le scelte e non fra i dati perché è una decisione, e sta qui anche
+       per chi è già in pensione: è l'unica di questa sezione che non riguardi il futuro
+       lavorativo, ed è proprio a chi ha la decorrenza alle spalle che serve.
+       IL CONTO NON DICE SE CONVENGA. Dice quanto libera la vendita, come cambia la spesa, e —
+       per l'affitto, che è l'unica delle due a introdurre un impegno ricorrente — sotto quale
+       rendimento la scelta smette di reggere. Un verdetto qui sarebbe la restituzione di
+       un'ipotesi scritta da chi compila, e per giunta su una decisione che non è finanziaria. -->
+  <div class="dec" id="decCasa">
+    <h3><i class="np-dec" id="nCasa"></i>L'abitazione</h3>
+    <p class="spiega"><b>L'abitazione non fa parte del patrimonio investito</b>: non produce
+    reddito e non è disponibile finché ci si abita. Diventa parte del conto solo se si prevede di
+    cambiarla, e allora contano due cose distinte: <b>quanto libera la vendita</b>, una volta
+    tolti i costi della compravendita, e <b>come cambia la spesa</b> da quell'anno in poi.
+    <b>Il calcolo non indica quale scelta convenga</b>, e non è una cautela di stile: il confronto
+    fra l'affitto e la proprietà dipende dal rendimento del patrimonio, che è un'ipotesi scritta
+    qui sopra, non un dato. Viene invece indicato <b>sotto quale rendimento la conclusione si
+    rovescia</b>, come per la rendita.
+    <a href="casa-e-decumulo.html">Quanto resta di una vendita &rarr;</a></p>
+      <div class="caselle">
+        <div><label for="casaCosa">Che cosa si prevede di fare</label>
+          <select id="casaCosa">
+            <option value="resto">restare dove si è</option>
+            <option value="piccola">venderla e comprarne una più piccola</option>
+            <option value="affitto">venderla e andare in affitto</option>
+          </select>
+          <u class="hint" id="casaCosaNota">se resta la prima, l'abitazione non entra nel conto</u></div>
+        <div class="casaSe" id="cellaCasaAnno" hidden><label for="casaAnno">In che anno</label>
+          <input type="text" inputmode="numeric" id="casaAnno" value="">
+          <u class="hint">l'anno in cui si cambia casa</u></div>
+        <div class="casaSe" id="cellaCasaNuova" hidden><label for="casaNuova">Prezzo della nuova</label>
+          <input type="text" inputmode="decimal" id="casaNuova" value="">
+          <u class="hint">in euro di oggi, come tutto il resto</u></div>
+        <div class="casaSe" id="cellaCasaCanone" hidden><label for="casaCanone">Canone mensile</label>
+          <input type="text" inputmode="decimal" id="casaCanone" value="">
+          <u class="hint">quanto si pagherebbe di affitto, oggi</u></div>
+      </div>
+      <!-- Chi lascia l'abitazione ai figli e va in affitto è lo stesso caso con ricavato nullo:
+           basta non scrivere il valore. Detto qui perché è l'unico modo di scoprirlo. -->
+      <p class="nota" id="casaIstruzione" hidden>Se l'abitazione non viene venduta ma lasciata a
+      qualcuno, si lascia vuoto il <b>valore dell'abitazione</b> fra i dati: la spesa cambia lo
+      stesso e non entra alcun ricavato.</p>
+    <div class="casaEsito" id="casaEsito"></div>
+    <p class="scambio" id="casaScambio"></p>
   </div>
 
     <p class="spiega regole">I limiti applicabili sono documentati in due pagine:
@@ -1149,7 +1213,52 @@ function leggi(){
   // che si sa, verrebbe scartata in silenzio. Le due spese qui coincidono, quindi ne vale una:
   // la seconda si annulla e la pagina disattiva la casella dicendo perché.
   const tuttoInPens = p.every(x => !x.annoPensVuoto && x.ultimo < ANNO0);
+  // --- L'ABITAZIONE. Non entra nel patrimonio: è una posta che diventa denaro solo se si
+  // decide di cambiarla, e allora lo fa in un anno solo. Finché la scelta è «resto», niente di
+  // tutto questo tocca il conto e lo stato resta spento.
+  //
+  // L'ANNO SEGUE LA REGOLA DELLE QUATTRO CIFRE, come ogni altro anno della pagina: mentre si
+  // digita 2040 si passa da 2, 20, 204, e ognuno di quelli sarebbe una vendita in un anno
+  // diverso — con la spesa che cambia e un ricavato che entra. Sotto le quattro cifre la
+  // scelta vale come non ancora compilata.
+  const casaCosa   = EL('casaCosa').value || 'resto';
+  const casaAnnoS  = annoOpt('casaAnno');
+  const casaValore = numFra('casaValore', 0, 1e10);
+  const casaNuova  = numFra('casaNuova', 0, 1e10);
+  const casaCanone = numFra('casaCanone', 0, 1e7);
+  // Un anno già trascorso si riconduce all'anno in corso: il conto parte da lì e una vendita
+  // avvenuta prima è già dentro il patrimonio che si è scritto sopra.
+  const casaAnno = casaAnnoS === null ? null : Math.max(ANNO0, fra(casaAnnoS, 1900, ANNO0 + 80));
+  const casa = {
+    cosa: casaCosa, anno: casaAnno, valore: casaValore, nuova: casaNuova, canone: casaCanone,
+    // la scelta è compiuta solo quando c'è anche l'anno: senza, non si saprebbe quando
+    attiva: casaCosa !== 'resto' && casaAnno !== null,
+    // QUANTO ESCE DI COSTI, mostrato in chiaro e non nascosto nel netto. La provvigione la paga
+    // chi vende e la paga chi compra, quindi chi fa tutte e due le operazioni la paga due volte;
+    // imposte d'atto e notaio li paga solo chi compra. Se non si vende nulla (l'abitazione
+    // lasciata a qualcuno) non c'è provvigione di vendita da pagare.
+    costiVendita: casaValore > 0 ? casaValore * COSTI_VENDITA : 0,
+    costiAcquisto: casaCosa === 'piccola' && casaNuova > 0
+      ? casaNuova * COSTI_ACQUISTO + COSTI_ATTO : 0
+  };
+  // Quello che entra nel patrimonio l'anno del cambio. Può essere NEGATIVO, e non è un caso da
+  // escludere: chi compra una casa che costa più di quella che vende sta spendendo patrimonio,
+  // e il piano deve dirlo invece di ignorarlo.
+  casa.ricavato = casa.attiva
+    ? casaValore - casa.costiVendita
+      - (casaCosa === 'piccola' ? casaNuova + casa.costiAcquisto : 0)
+    : 0;
+  // LA SPESA ABITATIVA È UN FLUSSO A PARTE, e da qui in giù non si mescola mai con `spesa`.
+  // Due ragioni, e tutte e due cambierebbero il risultato: la bisezione di `spesaSostenibile`
+  // scala la spesa cercando quella massima, e un canone d'affitto scalato vorrebbe dire
+  // «il piano regge se si paga meno di affitto», che non è una scelta di chi ci abita; la
+  // scala di equivalenza del superstite riduce i consumi di chi resta, ma non il canone dello
+  // stesso appartamento, che si paga uguale in uno o in due.
+  // Per la casa più piccola resta zero: costerebbe meno di manutenzione e di utenze, ma di
+  // quanto non lo sappiamo, e non contarlo tiene lo scenario dalla parte prudente.
+  casa.spesaAnnua = casa.attiva && casaCosa === 'affitto' ? casaCanone * 12 : 0;
   return {
+    casa,
     N, indici, tuttoInPens,
     patrimonio: numFra('patrimonio', 0, 1e10), spesa: numFra('spesa', 0, 1e7),
     patrimonioVuoto: EL('patrimonio').value.trim() === '',
@@ -1263,10 +1372,23 @@ function simula(s, spesaMese){
   const rivTfr = (1 + (TFR_RIV_FISSA + TFR_RIV_QUOTA * s.infl) * (1 - TFR_IMPOSTA_RIV))
                  / (1 + s.infl) - 1;
 
+  // L'ABITAZIONE. Un evento solo, in un anno solo: entra il ricavato e da lì in poi cambia la
+  // spesa. `casa.attiva` è falso finché la scelta è «resto» o manca l'anno, e allora tutto
+  // questo blocco vale zero — il piano è identico a quello di chi non ha compilato nulla.
+  const casa = s.casa && s.casa.attiva ? s.casa : null;
+
   for (let anno = ANNO0; anno <= annoFine; anno++){
     const inizio = patr;
+    // LA SPESA ABITATIVA STA FUORI DAI DUE MOLTIPLICATORI, ed è il punto su cui questa funzione
+    // si può sbagliare senza che nulla lo segnali.
+    // `k` è la bisezione di `spesaSostenibile`, che cerca la spesa massima: lasciandoci dentro
+    // il canone, il conto «risolverebbe» un piano stretto pagando meno di affitto, che non è
+    // una leva di chi ci abita. `equiv` è la scala di equivalenza dello scenario del superstite,
+    // che riduce i consumi di chi resta: un appartamento già affittato costa uguale in uno o in
+    // due. Entrambi si applicano quindi PRIMA, e il canone si somma dopo.
     const spesa = (anno <= smetteUltimo ? spesaOggi : spesaPens)
-                  * (manca !== null && anno >= manca.anno ? manca.equiv : 1);
+                  * (manca !== null && anno >= manca.anno ? manca.equiv : 1)
+                  + (casa !== null && anno >= casa.anno ? casa.spesaAnnua : 0);
     const lavora  = P.map((x, i) => anno <= x.ultimo   && !morto(i, anno));
     const inPens  = P.map((x, i) => anno >= x.annoPens && !morto(i, anno));
     const rate    = P.map(() => false);
@@ -1276,6 +1398,12 @@ function simula(s, spesaMese){
     const consumo = P.map(() => false);
 
     let daLavoro = 0, daPensioni = 0, daFondo = 0, daRendita = 0, daRata = 0, daTfr = 0;
+    // IL RICAVATO DEL CAMBIO DI CASA, in un esercizio solo. È una voce a sé e non si somma a
+    // `daFondo`: nelle fasi compare fra le una tantum, e chi rilegge la tabella deve poter
+    // distinguere il fondo riscosso dalla casa venduta.
+    // Può essere negativo (una casa nuova più cara di quella venduta), e allora esce patrimonio.
+    let daCasa = 0;
+    if (casa !== null && anno === casa.anno) daCasa = casa.ricavato;
     P.forEach((x, i) => {
       // LA RETRIBUZIONE CRESCE, e con lei tutto quello che ne discende: il TFR, i contributi,
       // la quota del datore e quello che resta in busta — compresa l'IRPEF, che si ricalcola
@@ -1478,22 +1606,28 @@ function simula(s, spesaMese){
     }
 
     const rendimento = Math.max(inizio, 0) * rendDi(anno);
-    const entra = daLavoro + daPensioni + daRendita + daFondo + daRata + daTfr;
+    const entra = daLavoro + daPensioni + daRendita + daFondo + daRata + daTfr + daCasa;
     patr = inizio + rendimento + entra - spesa;
     if (patr < 0 && annoZero === null) annoZero = anno;
 
     righe.push({anno, eta: P.map(x => anno - x.nascita), inizio, rendimento, spesa,
-      daLavoro, daPensioni, daRendita, daFondo, daRata, daTfr, patr,
+      daLavoro, daPensioni, daRendita, daFondo, daRata, daTfr, daCasa, patr,
       fondi: f.map(y => y.montante), lavora, inPens, rate, consumo,
+      // se da quest'anno si paga un affitto: serve alla fase, che altrimenti terrebbe insieme
+      // gli anni prima e dopo il cambio e ne medierebbe il flusso
+      inAffitto: casa !== null && casa.spesaAnnua > 0 && anno >= casa.anno,
       // il regime taglia le fasi: `consumo` ci sta dentro perché il passaggio dalla RITA alla
-      // prestazione a rate cambia quello che la fase racconta, e va spezzata lì
-      regime: [lavora, inPens, rate, consumo].map(a => a.map(v => v?1:0).join('')).join('|')});
+      // prestazione a rate cambia quello che la fase racconta, e va spezzata lì. `inAffitto`
+      // per la stessa ragione: la spesa cambia di colpo, e una fase sola a cavallo del cambio
+      // mostrerebbe un accantonamento medio che non c'è stato in nessuno dei due tratti.
+      regime: [lavora, inPens, rate, consumo].map(a => a.map(v => v?1:0).join('')).join('|')
+              + (casa !== null && casa.spesaAnnua > 0 && anno >= casa.anno ? '|a' : '')});
   }
   // I nomi viaggiano col risultato. Senza, `fasi()` ed `eventi()` leggevano una variabile
   // globale riscritta da `leggi()`: erano corretti solo se chiamati subito dopo, e con una
   // persona sola producevano frasi sbagliate su un risultato calcolato per due.
   return {righe, annoFine, annoZero, finale: patr, incassi, rite, liquidazioni,
-          spesaOggi, spesaPens,
+          spesaOggi, spesaPens, casa,
           nomi: P.map(x => x.nome), di: P.map((x, i) => DI[i] || 'di ' + x.nome)};
 }
 
@@ -1525,15 +1659,17 @@ function fasi(r){
       s + g.daLavoro + g.daPensioni + g.daRendita + g.daRata - g.spesa, 0);
     f.flusso = ric / n / 12;
     f.rendimento = f.righe.reduce((s,g) => s + g.rendimento, 0) / n / 12;
-    f.unaTantum = f.righe.reduce((s,g) => s + g.daFondo + g.daTfr, 0);
-    f.cosa = descrivi(f.lavora, f.inPens, f.rate, nomi, di, f.consumo);
+    // il ricavato del cambio di casa è una tantum come il fondo riscosso e il TFR liquidato.
+    // Si somma col suo segno: una casa nuova più cara di quella venduta lo rende negativo.
+    f.unaTantum = f.righe.reduce((s,g) => s + g.daFondo + g.daTfr + (g.daCasa || 0), 0);
+    f.cosa = descrivi(f.lavora, f.inPens, f.rate, nomi, di, f.consumo, f.righe[0].inAffitto);
   }
   return out;
 }
 
 // Le fasi si descrivono in forma impersonale, così la stessa frase vale per una persona e per
 // due: niente «lavorate tutti e due» contro «lavori». Il numero lo dice la composizione.
-function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI, consumo = []){
+function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI, consumo = [], inAffitto = false){
   const n = lavora.length;
   const lav   = nomi.filter((_,i) => lavora[i]);
   const pen   = nomi.filter((_,i) => inPens[i] && !lavora[i]);
@@ -1563,6 +1699,9 @@ function descrivi(lavora, inPens, rate = [], nomi = NOMI, di = DI, consumo = [])
   else if (rit.length === 1) t += `; erogazione anticipata del fondo ${di[nomi.indexOf(rit[0])]}`;
   if (cons.length === n && n > 1) t += '; il fondo esce a rate per entrambi';
   else if (cons.length === 1) t += `; il fondo ${di[nomi.indexOf(cons[0])]} esce a rate`;
+  // L'affitto non è di nessuno dei due: riguarda l'abitazione, quindi non prende il nome di
+  // una persona e resta uguale con una persona sola o con due.
+  if (inAffitto) t += '; abitazione in locazione';
   return t;
 }
 
@@ -1582,12 +1721,18 @@ function scriviFasi(r){
     h += `<div class="fase"><b>${seg}</b><div class="cosa">${f.cosa}</div>
       <div class="flusso ${cl}">${testo}<i>${sotto}</i></div>
       <div class="fine">${E0(f.fine)}<i>${d >= 0 ? '+' : '−'}${E0(Math.abs(d))}</i></div>`;
-    if (f.unaTantum > 0){
+    // IL SEGNO VA GUARDATO, non dato per positivo: il cambio di casa può togliere patrimonio
+    // invece di aggiungerne, e «più −18.000 € una tantum» non è italiano né aritmetica.
+    if (f.unaTantum !== 0){
       const dentro = v => v.anno >= f.da && v.anno <= f.a;
       const voci = r.incassi.filter(dentro).map(i => `fondo di ${i.chi} riscosso nel ${i.anno}`)
         .concat(r.liquidazioni.filter(dentro).map(l => `TFR di ${l.chi} liquidato nel ${l.anno}`));
-      h += `<p class="unatantum">più ${E0(f.unaTantum)} una tantum: ` +
-        voci.join(' e ') + `</p>`;
+      if (r.casa && r.casa.anno >= f.da && r.casa.anno <= f.a)
+        voci.push(r.casa.cosa === 'piccola'
+          ? `abitazione cambiata nel ${r.casa.anno}`
+          : `abitazione venduta nel ${r.casa.anno}`);
+      h += `<p class="unatantum">${f.unaTantum >= 0 ? 'più' : 'meno'} ` +
+        `${E0(Math.abs(f.unaTantum))} una tantum: ` + voci.join(' e ') + `</p>`;
     }
     h += `</div>`;
   }
@@ -1693,6 +1838,29 @@ function eventi(r, kOf = () => 1){
     + (i.assegno > 1 ? ` e ${E0(i.assegno * kOf(i.anno))} al mese di rendita a vita` : '')
     + (i.limitata ? `: la legge non permette di prenderne di più in contanti` : ''),
     `fondo ${i.chi}`);
+  // IL CAMBIO DI CASA. È un fatto e non un cambiamento: si dice anche se cade nell'anno in
+  // corso, perché in quell'anno il patrimonio si muove davvero e la riga della tabella deve
+  // poter essere rifatta a mano. I costi si dicono in chiaro: sono una stima nostra, e chi
+  // legge deve poter vedere quanto pesano invece di trovarli già dentro il netto.
+  if (r.casa){
+    const c = r.casa, k = kOf(c.anno), costi = c.costiVendita + c.costiAcquisto;
+    // SENZA VALORE NON C'È STATA NESSUNA VENDITA, ed è l'unico modo di rappresentare
+    // l'abitazione lasciata a qualcuno. Chiamarla «vendita dell'abitazione: nessun ricavato»
+    // raccontava un fatto che non è avvenuto.
+    const venduta = c.valore > 0;
+    const dettaglio = c.cosa === 'piccola'
+      ? `${E0(c.valore * k)} dalla vendita, ${E0(c.nuova * k)} per la nuova`
+      : `${E0(c.valore * k)} dalla vendita`;
+    fatto(c.anno,
+      (c.cosa === 'piccola' ? 'cambio dell\'abitazione: '
+       : venduta ? 'vendita dell\'abitazione: ' : 'abitazione lasciata: ')
+      + (c.valore > 0 || c.nuova > 0
+          ? `${dettaglio}, meno ${E0(costi * k)} di costi della compravendita → `
+            + `${c.ricavato >= 0 ? '' : '−'}${E0(Math.abs(c.ricavato) * k)} nel patrimonio`
+          : 'nessun ricavato')
+      + (c.spesaAnnua > 0 ? `; da qui la spesa comprende ${E0(c.canone * k)} al mese di canone` : ''),
+      c.cosa === 'piccola' ? 'cambio casa' : venduta ? 'vendita casa' : 'lascia casa');
+  }
   if (r.annoZero) fatto(r.annoZero, 'esaurimento del patrimonio', 'esaurito');
 
   ev.sort((a,b) => a.anno - b.anno);
@@ -1713,17 +1881,28 @@ function tabella(r, s){
   // «Pensioni» teneva dentro anche la rendita del fondo, e siccome quella non si rivaluta la
   // colonna calava di ~80 € l'anno: sembrava che a erodersi fosse l'INPS. Sono due fonti
   // diverse e adesso stanno in due colonne diverse.
+  // LA COLONNA DELLA CASA COMPARE SOLO SE SERVE, e non si somma a quella del fondo: sotto la
+  // tabella c'è scritto che ogni riga si rifà a mano, quindi il ricavato deve stare in una
+  // colonna sua o quel conto non torna. Metterlo dentro «Fondo e TFR» avrebbe unito in un
+  // numero solo una prestazione previdenziale e il prezzo di una casa.
+  const conCasa = !!(r.casa && r.casa.ricavato !== 0);
+  const nCol = conCasa ? 9 : 8;
   let h = `<tr><th>Anno</th><th>Lavoro</th><th>Pensione INPS</th><th>Rendita del fondo</th>
-    <th>Fondo e TFR</th><th>Spesa</th><th>Rendim.</th><th>Patrimonio</th></tr>`;
+    <th>Fondo e TFR</th>${conCasa ? '<th>Casa</th>' : ''}<th>Spesa</th><th>Rendim.</th>
+    <th>Patrimonio</th></tr>`;
   for (const g of r.righe){
-    if (ev[g.anno]) h += `<tr class="evento"><td colspan="8">${g.anno} — ${ev[g.anno]}</td></tr>`;
+    if (ev[g.anno]) h += `<tr class="evento"><td colspan="${nCol}">${g.anno} — ${ev[g.anno]}</td></tr>`;
     // in euro di quell'anno: gli stessi soldi, ai prezzi di allora
     const k = kOf(g.anno);
     const c = v => v * k > 0.5 ? fmt(v * k) : '<span class="vuoto">—</span>';
+    // il ricavato può essere negativo, e allora va scritto col segno invece di sparire
+    const cc = v => Math.abs(v * k) > 0.5
+      ? (v < 0 ? '−' + fmt(-v * k) : fmt(v * k)) : '<span class="vuoto">—</span>';
     const cl = g.patr < 0 ? 'rossa' : (g.lavora.some(v=>v) ? '' : 'pens');
     h += `<tr class="${cl}"><td class="anno">${g.anno}<u>${g.eta.join('/')}</u></td>
       <td>${c(g.daLavoro)}</td><td>${c(g.daPensioni)}</td><td>${c(g.daRendita)}</td>
       <td>${c(g.daFondo + g.daRata + g.daTfr)}</td>
+      ${conCasa ? `<td>${cc(g.daCasa || 0)}</td>` : ''}
       <td>−${fmt(g.spesa * k)}</td><td>${c(g.rendimento)}</td>
       <td><b>${fmt(g.patr * k)}</b></td></tr>`;
   }
@@ -2098,6 +2277,14 @@ function calc(){
     EL('quandoSmettete').innerHTML = s.indici.map(dice).filter(Boolean).join(' ');
   }
 
+  // L'ABITAZIONE, la parte che dipende SOLO DAL MODULO. Sta qui e non in `aggiornaDecisioni`
+  // per la regola che è già costata due volte: quello che dipende dalle caselle si applica
+  // prima delle uscite anticipate di `calc()`. Altrimenti chi sceglie «vado in affitto» senza
+  // aver ancora compilato la decorrenza non vedrebbe comparire le caselle dell'anno e del
+  // canone, e il modulo sembrerebbe non rispondere per la mancanza di un campo che con la casa
+  // non c'entra nulla.
+  casaModulo(s);
+
 
   // Pagina appena aperta: le caselle sono vuote e non c'è niente da dire. Dare un verdetto su
   // un piano di zero anni sarebbe peggio che non darlo — va chiesto quello che manca, e basta.
@@ -2412,11 +2599,15 @@ function calc(){
       : `<b>il fondo rende meno</b>, di ${fmt(-dif*100,1)} punti, coerentemente con il fatto
          che sconta l'imposta sostitutiva sui rendimenti anno per anno mentre sugli
          investimenti liberi l'imposta è dovuta al realizzo.`);
+  // «Coi rendimenti indicati» lo dice già la frase in pagina, subito prima di questo span:
+  // ripeterlo qui dentro produceva «Coi rendimenti indicati, coi rendimenti indicati fuori
+  // rendono di più». Difetto vecchio, visto in uno screenshot: i controlli leggono i pezzi
+  // separatamente e la giuntura fra HTML e template literal non la guarda nessuno.
   EL('doveRende').innerHTML = Math.abs(dif) < 0.0005
-    ? 'coi rendimenti indicati i due posti rendono uguale, quindi qui non cambia niente'
-    : dif > 0 ? `coi rendimenti indicati fuori rendono <b>di meno</b> (${fmt(s.rendNom*100,1)}%
+    ? 'i due posti rendono uguale, quindi qui non cambia niente'
+    : dif > 0 ? `fuori rendono <b>di meno</b> (${fmt(s.rendNom*100,1)}%
                  contro ${fmt(s.rendFondoNom*100,1)}%), quindi anticipare costa`
-              : `coi rendimenti indicati fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}%
+              : `fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}%
                  contro ${fmt(s.rendFondoNom*100,1)}%)`;
   EL('regola').innerHTML = r.incassi.length === 0
     // Senza esercizi di attività la ragione l'ha già data l'avviso accanto alla decorrenza:
@@ -2576,6 +2767,56 @@ function pareggioRendita(s, i, etaObiettivo){
   return {rend: lo};
 }
 
+// IL PAREGGIO DELLA SCELTA SULLA CASA, ed è l'unica risposta onesta a «conviene?».
+// Vendere l'abitazione e andare in affitto converte un bene che si usa in un capitale che
+// rende, e in cambio impegna a un canone che non finisce mai. Quale dei due pesi di più lo
+// decide il RENDIMENTO DEL PATRIMONIO, che in questa pagina non è un dato: è un'ipotesi scritta
+// da chi compila. Un verdetto «conviene» sarebbe quindi la restituzione di quel numero con
+// un'aria di autorevolezza che non ha.
+// Si dice invece dove la conclusione si rovescia, come già si fa per capitale contro rendita.
+// LA DIREZIONE È L'OPPOSTO di quella del fondo, e va tenuta a mente leggendo il codice: qui
+// rendimenti ALTI favoriscono la vendita (il ricavato rende più di quanto costa il canone),
+// mentre nel confronto con la rendita erano i rendimenti BASSI a favorire l'assegno.
+// Non si calcola per la casa più piccola: lì non c'è alcun impegno ricorrente da bilanciare,
+// si libera una somma e basta, e un pareggio sarebbe un numero senza domanda dietro.
+const PAREGGIO_MAX = 0.15;
+
+// Quali caselle della casa hanno senso, e cosa dice l'istruzione accanto alla scelta. Dipende
+// soltanto da com'è compilato il modulo, mai dal risultato: per questo si chiama presto.
+function casaModulo(s){
+  const c = s.casa, cambia = c.cosa !== 'resto';
+  EL('cellaCasaAnno').hidden    = !cambia;
+  EL('cellaCasaNuova').hidden   = c.cosa !== 'piccola';
+  EL('cellaCasaCanone').hidden  = c.cosa !== 'affitto';
+  EL('casaIstruzione').hidden   = !cambia;
+  // L'ISTRUZIONE PARLA DEL CASO IN CUI CI SI TROVA, non di tutti in anticipo. Tre situazioni
+  // diverse, e la regola imparata sul contributo del datore: un'istruzione che dice cosa
+  // scrivere in una casella va provata proprio sul caso che descrive.
+  EL('casaCosaNota').innerHTML =
+      !cambia               ? "se resta questa, l'abitazione non entra nel conto"
+    : c.anno === null       ? "indicare l'anno perché il conto ne tenga conto"
+    : c.valore <= 0 && c.cosa === 'affitto'
+                            ? 'senza il valore dell\'abitazione: solo il canone, nessun ricavato'
+    : c.valore <= 0         ? "manca il valore dell'abitazione, fra i dati"
+    :                         `dal ${c.anno}`;
+}
+
+function pareggioCasa(s){
+  if (!s.casa || !s.casa.attiva || !(s.casa.spesaAnnua > 0)) return null;
+  const con   = rend => simula({...s, rend}).finale;
+  const senza = rend => simula({...s, rend, casa: {...s.casa, attiva: false}}).finale;
+  const meglio = rend => con(rend) >= senza(rend);
+  const qui = meglio(s.rend);
+  // la ricerca si ferma agli estremi: oltre, la risposta è «in nessuno scenario plausibile»,
+  // che è più onesta di una cifra estratta da un intervallo in cui nessuno si trova
+  if (qui && !meglio(PAREGGIO_MIN))   { var lo = PAREGGIO_MIN, hi = s.rend; }
+  else if (!qui && meglio(PAREGGIO_MAX)) { var lo = s.rend, hi = PAREGGIO_MAX; }
+  else return {sempre: qui};
+  // dodici passi, come per la rendita: la cifra si mostra a due decimali di percentuale
+  for (let k = 0; k < 12; k++){ const m = (lo + hi) / 2; meglio(m) ? hi = m : lo = m; }
+  return {rend: hi, qui};
+}
+
 function costruisciDecisioni(){
   const barra = (id, min, max, step, extra = '') => `
     <div class="barra">
@@ -2677,9 +2918,41 @@ function aggiornaDecisioni(s, r){
     if (riga)   riga.hidden   = !scegli(i);
     if (blocco) blocco.hidden = !scegli(i);
   });
-  // Se non resta nessuna scelta, la sezione intera sparisce: un titolo «Le scelte da compiere»
-  // sopra il vuoto è peggio dell'assenza, e la premessa prometterebbe due cursori inesistenti.
-  EL('decisioni').hidden = !s.indici.some(scegli);
+  // I DUE RIQUADRI DEL FONDO SPARISCONO PER CHI È GIÀ IN PENSIONE, MA LA CASA NO, ed è il
+  // motivo per cui questa condizione non è più quella di prima. Contribuzione ed erogazione
+  // sono scelte sul futuro lavorativo, e chi ha la decorrenza alle spalle le ha già compiute;
+  // cambiare abitazione è invece una scelta che resta aperta, ed è proprio a chi è in decumulo
+  // che serve. Prima la sezione intera spariva e con lei si sarebbe portata via l'unica scelta
+  // che quelle persone possono ancora fare.
+  const conFondo = s.indici.some(scegli);
+  EL('decContrib').hidden = !conFondo;
+  EL('decErog').hidden    = !conFondo;
+  EL('decisioni').hidden  = false;
+  // I NUMERI DEI TITOLI SEGUONO I RIQUADRI VISIBILI. Con i primi due spenti, un elenco che
+  // comincia da «3.» dichiara due pezzi mancanti senza dire quali.
+  // E la premessa si scrive da qui, dallo stesso elenco: promessa e contenuto in due punti
+  // separati sono la causa che ha già prodotto la frase «bastano tre dati».
+  {
+    // LA PROMESSA SEGUE IL CONTENUTO, e non il contrario. La prima versione annunciava per
+    // l'abitazione «sotto quale rendimento la conclusione si rovescia» sempre: ma quella soglia
+    // esiste solo per l'affitto, e nel caso della casa più piccola il riquadro dichiara il
+    // contrario — «non c'è una soglia da dichiarare». Una premessa smentita dal riquadro che
+    // introduce è lo stesso difetto di «bastano tre dati», in forma più piccola.
+    const voci = [];
+    if (conFondo) voci.push('per la prima il calcolo individua un ottimo, indicato sotto il cursore');
+    if (conFondo) voci.push('per la seconda non è possibile, ed è spiegato il motivo');
+    voci.push(s.casa.attiva && s.casa.spesaAnnua > 0
+      ? "per l'abitazione è indicato sotto quale rendimento la conclusione si rovescia"
+      : "per l'abitazione è quantificato quanto libera il cambio, senza indicare se convenga");
+    let k = 0;
+    [['decContrib','nContrib'], ['decErog','nErog'], ['decCasa','nCasa']].forEach(([dec, n]) => {
+      EL(n).textContent = EL(dec).hidden ? '' : (++k) + '.';
+    });
+    const QUANTE = {1: 'Una scelta che incide', 2: 'Due scelte che incidono',
+                    3: 'Tre scelte che incidono'};
+    EL('premessaScelte').innerHTML =
+      `${QUANTE[k] || k + ' scelte che incidono'} sul risultato: ` + voci.join('; ') + '.';
+  }
   s.indici.forEach(i => {
     const x = s.p[i];
 
@@ -3015,6 +3288,71 @@ function aggiornaDecisioni(s, r){
     b.addEventListener('click', () => {
       EL('forma' + b.dataset.i).value = b.dataset.f; calc();
     }));
+
+  // --- L'ABITAZIONE: quanto libera, quanto cambia la spesa, e dove si rovescia -----------
+  // Tre informazioni, in quest'ordine, perché è l'ordine in cui la decisione si prende.
+  // I COSTI SI MOSTRANO SEPARATI dal ricavato, e non è una scelta di dettaglio: sono l'unica
+  // stima nostra di tutta la sezione, la provvigione non è fissata da nessuna legge, e chi ha
+  // spuntato condizioni diverse deve poter vedere quanto stiamo togliendo per correggerlo.
+  {
+    const c = s.casa;
+    const eco = EL('casaEsito'), esc = EL('casaScambio');
+    if (!c.attiva){ eco.innerHTML = ''; esc.innerHTML = ''; }
+    else {
+      const costi = c.costiVendita + c.costiAcquisto;
+      // il confronto è con lo stesso piano senza il cambio di casa: è la sola misura che
+      // risponde alla domanda «e se restassi dove sono»
+      const senza = simula({...s, casa: {...c, attiva: false}}).finale;
+      const d = r.finale - senza;
+      eco.innerHTML =
+        (c.ricavato !== 0 || costi > 0
+          ? `<b>${c.ricavato < 0 ? '−' : ''}${E0(Math.abs(c.ricavato))}</b> nel patrimonio
+             nel ${c.anno}
+             <i>${E0(c.valore)} dalla vendita`
+             + (c.cosa === 'piccola' ? `, meno ${E0(c.nuova)} per la nuova` : '')
+             + `, meno ${E0(costi)} di costi della compravendita (stima)</i>`
+          : `<b>Nessun ricavato</b><i>senza il valore dell'abitazione entra solo la
+             variazione di spesa</i>`)
+        + (c.spesaAnnua > 0
+            ? `<i>dal ${c.anno} la spesa comprende ${E0(c.canone)} al mese di canone,
+               ${E0(c.spesaAnnua)} l'anno</i>` : '')
+        + (Math.abs(d) < 1
+            ? `<i>alla fine del piano non cambia nulla</i>`
+            : `<i><b>${d > 0 ? '+' : '−'}${E0(Math.abs(d))}</b> alla fine del piano rispetto a
+               restare dove si è</i>`);
+
+      // IL PAREGGIO, solo per l'affitto: è l'unica delle due scelte che impegni a una spesa
+      // ricorrente, quindi l'unica il cui esito dipenda dal rendimento del patrimonio.
+      const p = pareggioCasa(s);
+      esc.innerHTML = !p ? (c.cosa === 'piccola'
+        ? `<b>Qui il calcolo non indica un ottimo, e non c'è una soglia da dichiarare</b>: la
+           scelta libera una somma una tantum e non impegna a nulla di ricorrente, quindi non
+           dipende dal rendimento del patrimonio. Quello che il conto non rappresenta è che una
+           casa più piccola costa meno di manutenzione e di utenze: la spesa resta quella
+           scritta, e il risultato è per questo prudenziale.` : '')
+        : p.sempre !== undefined
+        ? (p.sempre
+            ? `Con le ipotesi indicate la scelta migliora il piano, e continua a migliorarlo
+               <b>fino in fondo all'intervallo esaminato</b>: nessun rendimento plausibile
+               rovescia la conclusione.`
+            // SENZA RICAVATO NON C'È NULLA DA BILANCIARE, e dire «il canone pesa più di quanto
+            // il ricavato possa rendere» sarebbe un confronto con un ricavato che non esiste.
+            : c.valore > 0
+            ? `Con le ipotesi indicate la vendita peggiora il piano, e <b>nessun rendimento
+               plausibile</b> la rende preferibile: il canone pesa più di quanto il ricavato
+               possa rendere.`
+            : `Senza alcun ricavato la scelta <b>aggiunge una spesa e nulla che la compensi</b>:
+               non c'è un rendimento a cui possa convenire, e il conto ne misura solo il costo.`)
+        : `<b>La conclusione si rovescia a ${fmt(p.rend*100, 2)}%</b> di rendimento reale del
+           patrimonio: ${p.qui
+             ? `sopra quella soglia vendere e andare in affitto lascia più patrimonio, sotto
+                conviene restare`
+             : `sotto quella soglia conviene restare, sopra vendere lascia più patrimonio`}.
+           L'ipotesi in vigore è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.
+           Il canone si paga finché si abita, il rendimento non è garantito: la soglia dice a
+           quali ipotesi poggia la conclusione, non che vada seguita.`;
+    }
+  }
 }
 
 // quanti anni il piano non copre le spese con le entrate ricorrenti
@@ -3201,6 +3539,20 @@ function pianoInFoglio(s, r){
     ['Patrimonio investito', s.patrimonio],
     ['Spesa mensile', s.spesa],
     ['Spesa mensile in pensione', s.spesaPens === null ? 'come oggi' : s.spesaPens],
+    // L'ABITAZIONE compare solo se è stata scelta: una riga «nessun cambiamento» in un foglio
+    // che si riapre fra sei mesi è rumore, e il patrimonio qui sopra la esclude per definizione.
+    ...(s.casa.attiva ? [
+      [],
+      [G("L'ABITAZIONE")],
+      ['Che cosa si prevede di fare', s.casa.cosa === 'piccola'
+        ? 'venderla e comprarne una più piccola' : 'venderla e andare in affitto'],
+      ['In che anno', s.casa.anno],
+      ['Valore dell\'abitazione', s.casa.valore],
+      ...(s.casa.cosa === 'piccola' ? [['Prezzo della nuova', s.casa.nuova]] : []),
+      ...(s.casa.cosa === 'affitto' ? [['Canone mensile', s.casa.canone]] : []),
+      ['Costi della compravendita (stima)', s.casa.costiVendita + s.casa.costiAcquisto],
+      ['Ricavato netto, che affluisce al patrimonio', s.casa.ricavato]
+    ] : []),
     [],
     [G('LE IPOTESI')],
     ['Rendimento degli investimenti (%, nominale)', s.rendNom * 100],
@@ -3216,12 +3568,18 @@ function pianoInFoglio(s, r){
      + 'fiscale né consulenza in materia di investimenti. Metodo e limiti su decumulo.it.']
   ];
 
+  // La colonna della casa segue la stessa regola della tabella in pagina: c'è solo se serve, e
+  // NON si somma a quella del fondo. Il foglio esiste per essere rifatto a mano, e una riga in
+  // cui manca una voce di flusso non torna.
+  const conCasa = !!(r.casa && r.casa.ricavato !== 0);
   const tab = [['Anno', 'Età', 'Lavoro', 'Pensione INPS', 'Rendita del fondo',
-                'Fondo e TFR', 'Spesa', 'Rendimento', 'Patrimonio'].map(G)];
+                'Fondo e TFR', ...(conCasa ? ['Casa'] : []),
+                'Spesa', 'Rendimento', 'Patrimonio'].map(G)];
   for (const g of r.righe){
     const k = kOf(g.anno);
     tab.push([g.anno, g.eta.join('/'), g.daLavoro * k, g.daPensioni * k, g.daRendita * k,
-              (g.daFondo + g.daRata + g.daTfr) * k, -g.spesa * k, g.rendimento * k, g.patr * k]);
+              (g.daFondo + g.daRata + g.daTfr) * k, ...(conCasa ? [g.daCasa * k] : []),
+              -g.spesa * k, g.rendimento * k, g.patr * k]);
   }
   return fileXlsx([{nome: 'Il piano', righe: piano},
                    {nome: 'Anno per anno', righe: tab}]);
