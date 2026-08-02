@@ -300,6 +300,36 @@ for (const [nome, DATI] of Object.entries({
   }
 }
 
+// --- un ottimo non si indica su un piano che si esaurisce -------------------
+// IL DIFETTO CHE QUESTI CONTROLLI TENGONO CHIUSO, misurato il 02/08/2026: su un piano che si
+// esauriva nel 2028 la pagina scriveva «il punto più alto è il 50%, vale 32.082 € in più», col
+// pulsante che ci portava — e seguendolo il patrimonio si esauriva nel 2027, un anno PRIMA. Il
+// verdetto in cima diceva «non sostenibile» e il cursore, venti righe sotto, consigliava di
+// accelerare. La causa: sotto zero il patrimonio smette di rendere, quindi massimizzare il
+// finale su una traiettoria già negativa premia i versamenti più alti.
+// I tre rami hanno tre frasi diverse, e il terzo — il piano che REGGE grazie al versamento — è
+// il più prezioso: trasforma un «non sostenibile» in una cosa da fare. Costa cercarlo (serve un
+// fondo che renda molto più del patrimonio), ma esiste, e senza questo controllo la frase più
+// utile della sezione può sparire senza che nessuno se ne accorga.
+console.log('\n— nessun ottimo su un piano che si esaurisce —');
+for (const [nome, DATI, atteso] of [
+  ['il piano regge: si dicono gli euro', {...BASE}, /vale .* in più rispetto al versamento di oggi/],
+  ['non regge con nessun versamento: non si indica niente',
+   {...BASE, quanti:'1', spesa:4200, patrimonio:60000}, /nessun livello di versamento/],
+  ['regge alzando il versamento: è la frase che vale',
+   {...BASE, quanti:'1', spesa:2800, patrimonio:200000, rendFondo:7, rend:0, etaFine:75, fondo0:50000},
+   /e da lì .*il piano regge/]
+]){
+  const {scritte, elementi} = esegui(DATI);
+  const grezza = scritte.cVers0Piu || '';
+  const frase = grezza.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  c(`${nome}`, atteso.test(frase), frase.slice(0, 95));
+  // e il pulsante non deve MAI portare a un punto su un piano che non arriva in fondo
+  const nonRegge = /nessun livello di versamento/.test(grezza);
+  c(`${nome}: il pulsante tace quando non c'è un punto`,
+    !nonRegge || elementi.cVers0Vai.hidden, elementi.cVers0Vai.textContent);
+}
+
 // --- il punto più alto dell'erogazione, e la premessa che lo annuncia -------
 // LA PREMESSA E IL RIQUADRO SI SONO GIÀ CONTRADDETTI UNA VOLTA. Fino al 02/08/2026 la premessa
 // diceva «per la seconda non è possibile [individuare un ottimo]» mentre il passo 1 scriveva

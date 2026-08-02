@@ -743,8 +743,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <h3 id="contribuzione"><i class="np-dec" id="nContrib"></i>Entità della contribuzione</h3>
     <p class="spiega"><b>Il contributo del datore è dovuto solo a fronte di quello del lavoratore</b>, e oltre
     quella soglia non aumenta: la prima quota vale il contributo aziendale più la deduzione, la
-    parte eccedente vale la sola deduzione. Il cursore si arresta alla soglia di deducibilità o al limite dello stipendio netto, e indica
-    quale dei due. <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
+    parte eccedente vale la sola deduzione. <b>Un massimo di legge non esiste</b>: oltre la soglia
+    di deducibilità si versa lo stesso, senza sconto. Il cursore si arresta dove il versamento
+    assorbirebbe l'intera retribuzione netta, e l'estremo destro dichiara quale dei due vincoli
+    stia mordendo. <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
     <div id="decVersare"></div>
   </div>
 
@@ -1002,12 +1004,17 @@ function pcTetto(x){
   const dat = contributi(x, Math.max(x.pcVoi, 0.1)).dat;
   return Math.max(x.pcVoi, (TETTO_DEDUZIONE - dat) / x.ral * 100);
 }
-// Dove si ferma il cursore. Un massimo di legge non c'è: si può versare quanto si vuole.
-// Il 50% della RAL è il limite di quello che qualcuno fa davvero — ma su stipendi bassi il
-// tetto deducibile può stare oltre il 50%, e allora il cursore deve arrivarci lo stesso.
-// E comunque non oltre quello che si può permettere: il versamento esce dallo stipendio netto,
-// e se lo supera il piano finisce a raccontare cose che non possono succedere. `costoAnnuo`
-// cresce con la percentuale, quindi il punto si trova per bisezione.
+// Dove si ferma il cursore. Un massimo di legge non c'è: si può versare quanto si vuole, e
+// l'unico limite vero è la busta paga — il versamento esce dallo stipendio netto, e oltre quel
+// punto il piano racconterebbe cose che non possono succedere. `costoAnnuo` è misurato rispetto
+// a quello che si versa oggi, quindi il confronto è fra l'AUMENTO e l'intero netto attuale: chi
+// già versa vive su quello che gli resta, ed è quello che può ancora impegnare. Cresce con la
+// percentuale, quindi il punto si trova per bisezione.
+//
+// FINO AL 02/08/2026 IL CURSORE SI FERMAVA PRIMA, al 50% della RAL, per una convenzione nostra
+// («nessuno versa più del 50%»). Tolta: non era un fatto, era una stima di comportamento messa
+// dove sta un vincolo, e nascondeva metà del dominio a chi la stima non la rispetta. Il limite
+// che resta è misurato sui suoi numeri, non supposto sui suoi gusti.
 function pcSpendibile(x){
   const netto = Math.max(0, x.stip) * 12;
   if (!(x.ral > 0)) return x.pcVoi;
@@ -1018,8 +1025,7 @@ function pcSpendibile(x){
   return lo;
 }
 function pcMassimo(x){
-  const voluto = Math.min(100, Math.max(PC_CURSORE, pcTetto(x), x.pcVoi));
-  return Math.max(x.pcVoi, Math.min(voluto, pcSpendibile(x)));
+  return Math.max(x.pcVoi, Math.min(100, pcSpendibile(x)));
 }
 // Quanto esce DAVVERO dalla busta rispetto a quello che versa oggi.
 // La quota del datore CONSUMA il tetto ma non passa dalla vostra busta e non è vostro reddito:
@@ -2765,11 +2771,34 @@ function candidatiVersamento(x, pcMax, altri = []){
   return [...passo].sort((a, b) => a - b);
 }
 
+// UN CANDIDATO CHE MANDA IL PATRIMONIO SOTTO ZERO NON È UN OTTIMO, e per un pezzo lo è stato.
+// Il patrimonio negativo smette di rendere (`Math.max(inizio, 0)` in `simula`): da lì in poi il
+// finale peggiora soltanto della differenza fra spesa ed entrate, mentre l'incasso del fondo,
+// che arriva più tardi, lo risolleva di colpo. Massimizzare il finale su una traiettoria già
+// sotto zero premia quindi proprio i versamenti più alti. Misurato il 02/08/2026 su un piano che
+// si esaurisce nel 2028: la pagina indicava «il punto più alto è il 50%, vale 32.082 € in più»,
+// e seguendolo il patrimonio si esauriva nel 2027 — un anno PRIMA. Il verdetto in cima diceva
+// «non sostenibile» e il cursore, venti righe sotto, consigliava di accelerare.
+//
+// L'ordine giusto ha tre gradini, e il primo è di specie diversa dagli altri due:
+//   1. un piano che arriva in fondo batte SEMPRE uno che non ci arriva. Non è un peso maggiore,
+//      è un'altra categoria: finché il patrimonio si esaurisce, il finale non misura niente;
+//   2. fra i piani che reggono, vince il patrimonio finale, come prima;
+//   3. fra quelli che non reggono, vince l'anno di esaurimento più LONTANO — l'unica cosa che
+//      lì si possa ancora migliorare. Il finale resta come spareggio, ma non arriva a chi legge:
+//      quando nessun candidato regge, la vista non indica alcun punto più alto.
+const meglioDi = (a, b) =>
+  a.regge !== b.regge ? a.regge
+  : a.regge            ? a.f > b.f
+  : a.z !== b.z        ? a.z > b.z
+  :                      a.f > b.f;
+
 function migliore(s, i, campo, valori){
   let best = null;
   for (const v of valori){
-    const f = conAlt(s, i, campo, v).finale;
-    if (best === null || f > best.f) best = {v, f};
+    const r = conAlt(s, i, campo, v);
+    const c = {v, f: r.finale, z: r.annoZero, regge: r.annoZero === null};
+    if (best === null || meglioDi(c, best)) best = c;
   }
   return best;
 }
@@ -2893,7 +2922,9 @@ function costruisciDecisioni(){
       <div class="esito" id="${id}Esito"></div></div>`;
 
   EL('decVersare').innerHTML =
-    [0,1].map(i => riga(i, 'cVers'+i, 0, PC_CURSORE, 0.1)).join('');
+    // gli estremi qui sono solo quelli di partenza: `aggiornaDecisioni` li rifà sui numeri
+    // di ciascuno appena il modulo è compilato
+    [0,1].map(i => riga(i, 'cVers'+i, 0, 100, 0.1)).join('');
 
   // Una sezione sola per il fondo: tre passi in fila, perché sono in fila davvero. Prendere il
   // fondo a rate PRIMA cambia quello che c'è da dividere DOPO, e finché le due cose stavano in
@@ -3051,8 +3082,9 @@ function aggiornaDecisioni(s, r){
               : `dei ${E0(TETTO_DEDUZIONE)} che si deducono ne restano
                  ${E0(TETTO_DEDUZIONE - c.tot)}`}</i>`;
     EL('cVers'+i+'Sx').textContent = 'niente: 0 €';
-    // dire PERCHÉ il cursore si ferma lì: il 50% è una convenzione, lo stipendio è un vincolo
-    const fermaStipendio = pcSpendibile(x) < Math.min(100, Math.max(PC_CURSORE, pcTetto(x))) - 0.05;
+    // dire PERCHÉ il cursore si ferma lì. Ora i vincoli sono due soli e non si sovrappongono:
+    // o morde lo stipendio, o si è arrivati a versare l'intera retribuzione lorda.
+    const fermaStipendio = pcSpendibile(x) < 100 - 0.05;
     EL('cVers'+i+'Dx').innerHTML = !(x.ral > 0) ? ''
       : `${E0(x.ral * pcTop / 100)}: ` + (fermaStipendio
           ? `oltre, il versamento supererebbe lo stipendio`
@@ -3102,7 +3134,8 @@ function aggiornaDecisioni(s, r){
       // «il punto più alto», e se il punto più alto stesse più in basso lo direbbe lo stesso
       const b = migliore(s, i, 'pc',
         candidatiVersamento(x, pcMax, pcSoglia(s, i, pcMax)));
-      const base = conAlt(s, i, 'pc', x.pcVoi).finale;
+      const oggi = conAlt(s, i, 'pc', x.pcVoi);
+      const base = oggi.finale;
       // il perché del punto, quando ce n'è uno: altrimenti la percentuale finiva scritta due volte
       const dove = Math.abs(b.v - pcTetto(x)) < 0.06 ? ' — dove finisce la deduzione'
                  : b.v >= pcMax - 0.06 ? ' — il massimo che il cursore permette'
@@ -3110,12 +3143,24 @@ function aggiornaDecisioni(s, r){
                  : Math.abs(b.v - x.pcVoi) < 0.06 ? ' — quello che si versa oggi'
                  : '';
       const vale = b.f - base;
-      EL('cVers'+i+'Piu').innerHTML = Math.abs(vale) < 1 ? ''
+      // TRE CASI, E DUE SONO NUOVI. La differenza in euro fra due piani che si esauriscono non
+      // dice niente: sono due buche, e la più profonda non è la peggiore perché sotto zero il
+      // patrimonio smette di rendere. Quindi si parla di euro solo quando tutti e due i termini
+      // del confronto arrivano in fondo; altrimenti si dice la cosa che conta davvero, cioè se
+      // il piano regge — e quando non regge con nessun versamento, non si indica alcun punto.
+      const frase = !b.regge
+        ? `nessun livello di versamento porta il piano fino in fondo: qui non c'è un punto più
+           alto da indicare, e la leva è la spesa o la data di cessazione`
+        : oggi.annoZero !== null
+        ? `il punto più alto è <b>${perc(b.v,'il')}</b>${dove}, e da lì <b>il piano regge</b>:
+           col versamento di oggi il patrimonio si esaurisce nel ${oggi.annoZero}`
+        : Math.abs(vale) < 1 ? ''
         : `il punto più alto è <b>${perc(b.v,'il')}</b>${dove}: vale
            ${E0(Math.abs(vale))} ${vale > 0 ? 'in più' : 'in meno'} rispetto al versamento di oggi,
            a parità di come il fondo verrà riscosso`;
+      EL('cVers'+i+'Piu').innerHTML = frase;
       // il pulsante ci porta il cursore, ma solo se c'è davvero da spostarsi
-      const daSpostare = Math.abs(vale) >= 1 && Math.abs(b.v - pc) > 0.05;
+      const daSpostare = frase !== '' && b.regge && Math.abs(b.v - pc) > 0.05;
       bVai.hidden = !daSpostare;
       if (daSpostare){
         bVai.textContent = `al punto più alto: ${pcTesto(b.v)}`;
@@ -3186,8 +3231,8 @@ function aggiornaDecisioni(s, r){
     EL('cQuando'+i+'Sx').textContent = `il prima possibile: ${primo}`;
     EL('cQuando'+i+'Dx').textContent = `alla pensione, ${fine}`;
     // come nella sezione 1: la differenza, non il numero da sette cifre che è di famiglia
-    const finAttesa = conAlt(s, i, 'rita', fine).finale;
-    const dAspetta = alt.finale - finAttesa;
+    const attesa = conAlt(s, i, 'rita', fine);
+    const dAspetta = alt.finale - attesa.finale;
     const nSc = scoperti(alt);
     // un trattino accanto a «alla fine» si legge come «zero euro»: se non c'è differenza va
     // detto a parole, non con un segno
@@ -3215,14 +3260,24 @@ function aggiornaDecisioni(s, r){
       // decide. Detto l'anno e basta, però, non si sa se valga la pena spostarsi: si dice
       // quanto vale, come per la contribuzione, e si porta il cursore col pulsante.
       const b = migliore(s, i, 'rita', Array.from({length: fine-primo+1}, (_,k) => primo+k));
-      const vale = b.f - finAttesa;
-      EL('cQuando'+i+'Picco').textContent = b.v === fine || vale < 1
+      const vale = b.f - attesa.finale;
+      // gli stessi tre casi della contribuzione, per la stessa ragione: fra due piani che si
+      // esauriscono la differenza in euro non è un guadagno, e anticipare il fondo su un piano
+      // già sotto zero lo risolleva sulla carta senza cambiare nulla di vero
+      EL('cQuando'+i+'Picco').textContent = !b.regge
+        ? 'nessuna data di inizio porta il piano fino in fondo: qui non c\'è un punto più alto da '
+          + 'indicare, e la leva è la spesa o la data di cessazione'
+        : attesa.annoZero !== null
+        ? `il punto più alto è cominciare nel ${b.v}, e da lì il piano regge: aspettando la `
+          + `pensione il patrimonio si esaurisce nel ${attesa.annoZero}`
+        : b.v === fine || vale < 1
         ? 'il punto più alto è aspettare la pensione'
         : `il punto più alto è cominciare nel ${b.v}: vale ${E0(vale)} in più rispetto ad `
           + `aspettare la pensione`;
       // il pulsante compare solo se c'è da spostarsi e se lo spostamento vale qualcosa
       const bq = EL('cQuando'+i+'Vai');
-      const daSpostare = vale >= 1 && b.v !== anno;
+      const daSpostare = b.regge && b.v !== anno
+        && (attesa.annoZero !== null || vale >= 1);
       bq.hidden = !daSpostare;
       if (daSpostare){ bq.textContent = `al punto più alto: ${b.v}`; bq.dataset.anno = b.v; }
     }

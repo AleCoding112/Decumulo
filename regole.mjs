@@ -274,7 +274,6 @@ export const REGOLE = {
 
   // --- convenzioni nostre, non di legge -----------------------------------
   ANNO0:      { nome: 'Anno di partenza del conto', val: 2026, come: 'secco', fonte: 'l\'anno da cui parte il conto', verificata: true },
-  PC_CURSORE: { nome: "Limite del cursore dei versamenti", val: 50, come: 'percento', fonte: 'dove si ferma il cursore: nessuno versa più del 50% della RAL', verificata: true },
   // Il verdetto nasce da una traiettoria sola, e nel decumulo conta la SEQUENZA dei rendimenti,
   // non la loro media: gli stessi rendimenti in ordine diverso danno piani diversi. Invece di
   // una nuvola di scenari, che richiederebbe una distribuzione che non possiamo citare, si
@@ -384,7 +383,6 @@ export const TESTI = {
   irpef3:           pc(V('SCAGLIONI')[2][1]),
   scaglione1:       eur(V('SCAGLIONI')[0][0]),
   scaglione2:       eur(V('SCAGLIONI')[1][0]),
-  pcCursore:        pc(V('PC_CURSORE') / 100),
   provaAnni:        String(V('PROVA_ANNI')),
   reversibilita:    pc(V('REVERSIBILITA')),
   trattMinimo:      eur(V('TRATT_MINIMO')),
@@ -433,7 +431,6 @@ const IVS = ${V('IVS')};
 const TFR_SU_RAL = ${V('TFR_SU_RAL')};
 const TFR_RIV_FISSA = ${V('TFR_RIV_FISSA')}, TFR_RIV_QUOTA = ${V('TFR_RIV_QUOTA')}, TFR_IMPOSTA_RIV = ${V('TFR_IMPOSTA_RIV')};
 const SCAGLIONI = [${V('SCAGLIONI').map(([t, a]) => `[${t === Infinity ? 'Infinity' : t}, ${a}]`).join(', ')}];
-const PC_CURSORE = ${V('PC_CURSORE')};
 const PROVA_ANNI = ${V('PROVA_ANNI')};
 const REVERSIBILITA = ${V('REVERSIBILITA')};
 const TRATT_MINIMO_ANNO = ${(V('TRATT_MINIMO') * V('TRATT_MINIMO_MENS')).toFixed(2)};

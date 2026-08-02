@@ -69,7 +69,7 @@ globalThis.document = {
   querySelectorAll: () => []
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
-  quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
+  quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
   numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
@@ -641,12 +641,20 @@ t('SCENDERE A ZERO fa perdere più di quello che si risparmia in busta',
   `${eur(r.finale)} € → ${eur(M.conAlt(s, 0, 'pc', 0).finale)} €`);
 
 console.log('\n— sopra il tetto: quello che non si deduce non si ritassa (art. 11 c. 6) —');
-const alTetto = M.pcTetto(A), oltre = Math.min(50, alTetto + 10);
+const alTetto = M.pcTetto(A), oltre = Math.min(M.pcMassimo(A), alTetto + 10);
 const sTetto = M.conAlt(s, 0, 'pc', alTetto), sOltre = M.conAlt(s, 0, 'pc', oltre);
-t('il cursore arriva al 50% della RAL, non si ferma al tetto',
-  Math.abs(M.pcMassimo(A) - 50) < 1e-9, `massimo ${M.pcMassimo(A)}% (tetto a ${alTetto.toFixed(1)}%)`);
-t('con una RAL bassa il cursore va oltre il 50%, perché il tetto sta più in alto',
-  M.pcMassimo({...A, ral:6000}) > 50 && M.pcMassimo({...A, ral:6000}) <= 100,
+t('il cursore non si ferma al tetto: oltre si versa, solo senza sconto',
+  M.pcMassimo(A) > alTetto + 1, `massimo ${M.pcMassimo(A).toFixed(1)}% (tetto a ${alTetto.toFixed(1)}%)`);
+// L'UNICO LIMITE È LA BUSTA PAGA. Fino al 02/08/2026 ce n'era un secondo, il 50% della RAL, ed
+// era una convenzione nostra sul comportamento della gente messa dove sta un vincolo.
+t('si ferma dove il versamento mangerebbe tutto lo stipendio netto',
+  Math.abs(M.pcMassimo(A) - M.pcSpendibile(A)) < 1e-9 && M.pcMassimo(A) < 100,
+  `massimo ${M.pcMassimo(A).toFixed(1)}%`);
+t('e proprio lì il costo in busta è l\'intero netto attuale',
+  Math.abs(M.costoAnnuo(A, M.pcMassimo(A)) - A.stip * 12) < 1,
+  `${eur(M.costoAnnuo(A, M.pcMassimo(A)))} € contro ${eur(A.stip * 12)} € di netto`);
+t('con una RAL bassa lo stipendio non morde e si arriva al 100%',
+  M.pcMassimo({...A, ral:6000}) === 100,
   `RAL 6.000 → cursore fino al ${M.pcMassimo({...A, ral:6000}).toFixed(0)}%`);
 t('e non supera mai il 100% della RAL', M.pcMassimo({...A, ral:2000}) === 100);
 t('versando oltre il tetto il montante cresce ancora',
