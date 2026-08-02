@@ -1036,6 +1036,10 @@ function aliquotaTfr(totale, anni){
   return rif > 0 ? irpef(rif) / rif : 0;
 }
 
+// L'IMPOSTA LORDA, i soli scaglioni. RESTA PURA, e non è un dettaglio: la usa `aliquotaTfr` per
+// la tassazione separata dell'art. 19, che è un altro regime e ha detrazioni sue. Se la
+// detrazione entrasse qui, il TFR se la prenderebbe di nascosto. Chi ne ha diritto passa da
+// `irpefNetta`, e la porta è una sola.
 function irpef(imponibile){
   let t = 0, sotto = 0;
   for (const [tetto, al] of SCAGLIONI){
@@ -1044,6 +1048,35 @@ function irpef(imponibile){
     sotto = tetto;
   }
   return t;
+}
+
+// LE DETRAZIONI DELL'ART. 13 TUIR, e perché il conto senza di esse sbagliava parecchio.
+// Sono due, non cumulabili, e si calcolano sul REDDITO COMPLESSIVO: una per chi lavora (c. 1),
+// una per chi è in pensione (c. 3). Decrescono fino ad azzerarsi a 50.000 €.
+// Fino al 02/08/2026 non c'erano, e il conto tassava la pensione con i soli scaglioni: su
+// 1.500 € lordi al mese dava 1.155 € netti invece di 1.267, e su 1.000 € 770 invece di 914.
+// L'errore era prudente — il piano sembrava peggiore del vero — ma valeva fino al 19% del netto
+// proprio sulle pensioni basse, cioè per chi ha più bisogno di sapere se ce la fa.
+//
+// SUL LATO LAVORO ENTRA IN UNA DERIVATA, non in un livello: quello che conta è il beneficio
+// MARGINALE di dedurre. Poiché la detrazione decresce col reddito, dedurre un euro ne fa
+// risalire una parte, e l'aliquota effettiva sale — con una RAL di 38.000 dedurre 1.000 € vale
+// 417 € invece di 330. Vale perché i contributi trattenuti in busta non formano reddito di
+// lavoro dipendente (art. 51 c. 2 lett. h), quindi abbassano il reddito complessivo per davvero;
+// per un versamento fatto di tasca propria e dedotto come onere non sarebbe così.
+//
+// In ogni banda il numeratore è il limite superiore della banda stessa: bastano quattro numeri.
+const detrazione = (tab, R) => {
+  for (const [fino, base, quota, den] of tab)
+    if (R <= fino) return base + (den > 0 ? quota * (fino - R) / den : 0);
+  return 0;
+};
+// `pensione` sceglie la tabella. La detrazione non può superare l'imposta: quello che avanza
+// non diventa un credito — qui non c'è incapienza da rimborsare.
+function irpefNetta(reddito, pensione){
+  const R = Math.max(0, reddito);
+  const piu = pensione && R > 25000 && R <= 29000 ? DETRAZIONE_PENS_PIU : 0;
+  return Math.max(0, irpef(R) - detrazione(pensione ? DETRAZIONE_PENS : DETRAZIONE_LAV, R) - piu);
 }
 
 // QUANTO ENTRA NEL FONDO, data la percentuale che sceglie il lavoratore.
@@ -1135,8 +1168,8 @@ function pcMassimo(x){
 const dedLav = c => Math.min(c.lav, Math.max(0, TETTO_DEDUZIONE - c.dat));
 const scontoIrpef = (x, pc) => {
   const base = Math.max(0, x.ral * (1 - IVS));
-  return irpef(Math.max(0, base - dedLav(contributi(x, x.pcVoi))))
-       - irpef(Math.max(0, base - dedLav(contributi(x, pc))));
+  return irpefNetta(base - dedLav(contributi(x, x.pcVoi)), false)
+       - irpefNetta(base - dedLav(contributi(x, pc)), false);
 };
 function costoAnnuo(x, pc){
   return (contributi(x, pc).lav - contributi(x, x.pcVoi).lav) - scontoIrpef(x, pc);
@@ -1348,7 +1381,7 @@ function leggi(){
     // L'INPS dice il LORDO («La mia pensione futura»), quindi il lordo si scrive e il netto
     // lo fa la pagina: chiedere il netto vorrebbe dire chiedere un conto che non hanno fatto.
     x.pensLorda = x.pens;
-    x.pens = (x.pens * 12 - irpef(x.pens * 12)) / 12;
+    x.pens = (x.pens * 12 - irpefNetta(x.pens * 12, true)) / 12;
   });
   // i rendimenti si scrivono come si leggono (nominali); il reale è un rapporto, non una
   // sottrazione: (1+7%)/(1+2%) = 4,90%, non 5%
@@ -1769,7 +1802,7 @@ function simula(s, spesaMese){
       const propri = propria + (lavora[resta] ? Math.max(0, sup.ral) * kSup : 0);
       const rev = anno >= def.annoPens ? aiSuperstiti(def.pensLorda * 12, propri) : 0;
       const lorda = propria + rev;
-      if (lorda > 0) daPensioni += lorda - irpef(lorda);
+      if (lorda > 0) daPensioni += lorda - irpefNetta(lorda, true);
     }
 
     const rendimento = Math.max(inizio, 0) * rendDi(anno);

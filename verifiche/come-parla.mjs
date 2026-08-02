@@ -407,8 +407,11 @@ for (const [nome, DATI, atteso] of [
   ['il piano regge: si dicono gli euro', {...BASE}, /vale .* in più rispetto al versamento di oggi/],
   ['non regge con nessun versamento: non si indica niente',
    {...BASE, quanti:'1', spesa:4200, patrimonio:60000}, /nessun livello di versamento/],
+  // IL CASO SI SPOSTA QUANDO IL MODELLO MIGLIORA. Questo scenario stava sul filo, e con le
+  // detrazioni dell'art. 13 il piano ha cominciato a reggere da solo: il ramo non era rotto, era
+  // il fixture a non essere più al limite. Ritarato cercando di nuovo il bordo.
   ['regge alzando il versamento: è la frase che vale',
-   {...BASE, quanti:'1', spesa:2800, patrimonio:200000, rendFondo:7, rend:0, etaFine:75, fondo0:50000},
+   {...BASE, quanti:'1', spesa:2600, patrimonio:150000, rendFondo:7, rend:0, etaFine:78, fondo0:50000},
    /e da lì .*il piano regge/]
 ]){
   const {scritte, elementi} = esegui(DATI);

@@ -49,6 +49,28 @@ export const REGOLE = {
     fonte: 'aliquote 2026: la legge di bilancio 199/2025 ha ridotto la seconda dal 35% al 33% dal 1° gennaio 2026, confermato sul sito del MEF. La riduzione è sterilizzata sopra i 200.000 € di reddito, e il modello non lo rappresenta',
     verificata: true
   },
+  // LE DETRAZIONI DELL'ART. 13, e perché la forma delle bande è quella.
+  // Sono due, non cumulabili, e si calcolano sul REDDITO COMPLESSIVO: una per chi lavora
+  // (c. 1) e una per chi è in pensione (c. 3). Decrescono fino ad azzerarsi a 50.000 €, e
+  // l'azzeramento è per limite, non per salto: a 50.000 il fattore vale zero da sé.
+  // In OGNI banda il numeratore della frazione è il limite superiore della banda stessa, quindi
+  // bastano quattro numeri — [fino, base, quota, denominatore] — e una formula sola:
+  //     base + quota × (fino − reddito) / denominatore
+  // La prima banda è piatta (quota 0). I minimi garantiti (690/1.380 € per il lavoro, 713 € per
+  // la pensione) non sono rappresentati: valgono sul ragguaglio ai giorni, e qui gli esercizi
+  // sono sempre interi, quindi non morderebbero mai.
+  DETRAZIONE_LAV: { nome: "Detrazione per redditi di lavoro dipendente", come: 'detrazione',
+    val: [[15000, 1955, 0, 0], [28000, 1910, 1190, 13000], [50000, 0, 1910, 22000]],
+    fonte: 'art. 13 c. 1 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 15.000; 1.910 + 1.190 × (28.000 − reddito) / 13.000 fino a 28.000; 1.910 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre. NON è rappresentata la maggiorazione di 65 € del c. 1.1 (redditi fra 25.000 e 35.000), che entrerebbe nel beneficio MARGINALE della deduzione rendendolo discontinuo: il beneficio resta per quella parte sottostimato',
+    verificata: true },
+  DETRAZIONE_PENS: { nome: "Detrazione per redditi di pensione", come: 'detrazione',
+    val: [[8500, 1955, 0, 0], [28000, 700, 1255, 19500], [50000, 0, 700, 22000]],
+    fonte: 'art. 13 c. 3 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 8.500; 700 + 1.255 × (28.000 − reddito) / 19.500 fino a 28.000; 700 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre',
+    verificata: true },
+  DETRAZIONE_PENS_PIU: { nome: "Maggiorazione della detrazione da pensione", val: 50, come: 'secco',
+    fonte: 'art. 13 c. 3-bis TUIR: «aumentata di un importo pari a 50 euro, se il reddito complessivo è superiore a 25.000 euro ma non a 29.000 euro»',
+    verificata: true },
+
   // NON è tutta IVS, e il nome lo diceva male: 9,19 = 8,89 al Fondo pensioni + 0,30 alla CIG
   // straordinaria (tabelle INPS delle aliquote contributive). Chi lavora in un'azienda non
   // soggetta alla CIGS trattiene 8,89: la differenza vale 0,30 punti di RAL, e il conto la
@@ -319,6 +341,21 @@ const irpef = y => {
   }
   return t;
 };
+// LA STESSA IMPOSTA NETTA DEL CALCOLATORE, e deve restarlo: l'esempio delle pagine mostra lo
+// sconto della contribuzione, che dipende dalle detrazioni dell'art. 13 esattamente come nel
+// motore. Se qui restasse la sola imposta lorda, la pagina direbbe 330 € dove il conto ne dice
+// 417 — la prima regola del progetto, rotta nel punto in cui è più difficile accorgersene.
+const detrazione = (tab, R) => {
+  for (const [fino, base, quota, den] of tab)
+    if (R <= fino) return base + (den > 0 ? quota * (fino - R) / den : 0);
+  return 0;
+};
+const irpefNetta = (reddito, pensione) => {
+  const R = Math.max(0, reddito);
+  const piu = pensione && R > 25000 && R <= 29000 ? V('DETRAZIONE_PENS_PIU') : 0;
+  return Math.max(0, irpef(R)
+    - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu);
+};
 {
   const e = ESEMPIO;
   e.lav = e.ral * e.pcLav / 100;
@@ -327,12 +364,19 @@ const irpef = y => {
   e.tot = e.lav + e.dat + e.tfr;
   e.dentro = e.lav + e.dat;
   const base = e.ral * (1 - V('IVS'));
-  e.sconto = irpef(base) - irpef(base - Math.min(e.dentro, V('TETTO_DEDUZIONE')));
+  e.sconto = irpefNetta(base, false) - irpefNetta(base - Math.min(e.dentro, V('TETTO_DEDUZIONE')), false);
   // lo sconto vale sulla parte dedotta; qui si mostra quello sulla quota del lavoratore
-  e.scontoLav = irpef(base) - irpef(base - Math.min(e.lav, V('TETTO_DEDUZIONE')));
+  e.scontoLav = irpefNetta(base, false) - irpefNetta(base - Math.min(e.lav, V('TETTO_DEDUZIONE')), false);
   e.costa = e.lav - e.scontoLav;
   e.volte = e.dentro / e.costa;
   e.aliqMarg = V('SCAGLIONI').find(([t]) => base <= t)[1];
+  // L'ALIQUOTA MARGINALE EFFETTIVA. La detrazione decresce di quota/denominatore per ogni euro
+  // di reddito, quindi dedurne uno ne restituisce anche quella parte: la pendenza si somma
+  // all'aliquota di scaglione. Ricavata dalle bande, così se la legge cambia si muove da sé.
+  {
+    const b = V('DETRAZIONE_LAV').find(([fino]) => base <= fino);
+    e.aliqMargEff = e.aliqMarg + (b && b[3] > 0 ? b[2] / b[3] : 0);
+  }
 }
 
 export const TESTI = {
@@ -410,7 +454,8 @@ export const TESTI = {
   exSconto:   eur(ESEMPIO.scontoLav),
   exCosta:    eur(ESEMPIO.costa),
   exVolte:    ESEMPIO.volte.toLocaleString('it-IT', {minimumFractionDigits:1, maximumFractionDigits:1}) + '×',
-  exAliquota: pc(ESEMPIO.aliqMarg)
+  exAliquota: pc(ESEMPIO.aliqMarg),
+  exAliquotaEff: pc(ESEMPIO.aliqMargEff, 1)
 };
 
 // --- il blocco di costanti che finisce dentro il calcolatore ---------------
@@ -431,6 +476,9 @@ const IVS = ${V('IVS')};
 const TFR_SU_RAL = ${V('TFR_SU_RAL')};
 const TFR_RIV_FISSA = ${V('TFR_RIV_FISSA')}, TFR_RIV_QUOTA = ${V('TFR_RIV_QUOTA')}, TFR_IMPOSTA_RIV = ${V('TFR_IMPOSTA_RIV')};
 const SCAGLIONI = [${V('SCAGLIONI').map(([t, a]) => `[${t === Infinity ? 'Infinity' : t}, ${a}]`).join(', ')}];
+const DETRAZIONE_LAV = [${V('DETRAZIONE_LAV').map(b => `[${b.join(',')}]`).join(', ')}];
+const DETRAZIONE_PENS = [${V('DETRAZIONE_PENS').map(b => `[${b.join(',')}]`).join(', ')}];
+const DETRAZIONE_PENS_PIU = ${V('DETRAZIONE_PENS_PIU')};
 const PROVA_ANNI = ${V('PROVA_ANNI')};
 const REVERSIBILITA = ${V('REVERSIBILITA')};
 const TRATT_MINIMO_ANNO = ${(V('TRATT_MINIMO') * V('TRATT_MINIMO_MENS')).toFixed(2)};
@@ -461,6 +509,14 @@ const aEtà = (val, come) => PUNTI
 const mostra = r => Array.isArray(r.val)
   ? r.come === 'anni'  ? aEtà(r.val, a => a.toLocaleString('it-IT', {minimumFractionDigits: 1}))
   : r.come === 'curva' ? aEtà(r.val, c => pc(c, 1))
+  // LE BANDE DELLE DETRAZIONI hanno una forma sola — base + quota × (fino − reddito) / den — e
+  // senza un formato loro finivano nel ramo delle aliquote, che le rendeva «195.500% fino a
+  // 15.000 €». Il numero era giusto e la frase assurda: se ne accorge solo chi guarda la pagina.
+  : r.come === 'detrazione' ? r.val.map(([fino, base, quota, den]) =>
+      (base ? eur(base) : '')
+      + (quota ? (base ? ' + ' : '') + `${eur(quota)} × (${eur(fino)} − reddito) / `
+                 + den.toLocaleString('it-IT', {useGrouping: 'always'}) : '')
+      + ` fino a ${eur(fino)}`).join(' · ') + ' · nulla oltre'
   : r.val.map(([t, a]) => `${pc(a)} ${t === Infinity ? 'oltre' : 'fino a ' + eur(t)}`).join(' · ')
   : r.come === 'cumulo' ? r.val.map(([n, q]) => `${pc(q)} oltre ${n} volte`).join(' · ')
   : r.come === 'volte'    ? r.val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' volte'

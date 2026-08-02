@@ -25,6 +25,21 @@ const irpef = y => {
   }
   return t;
 };
+// LE DETRAZIONI DELL'ART. 13, riscritte dalle bande e non copiate dal motore. La forma è la
+// stessa perché la legge è una sola — base + quota × (fino − reddito) / denominatore — ma i
+// numeri arrivano da `regole.mjs`, quindi qui si sbaglia solo se si sbaglia là.
+// L'imposta LORDA resta senza detrazione, perché la usa anche il TFR (art. 19, altro regime).
+const detrazione = (tab, R) => {
+  for (const [fino, base, quota, den] of tab)
+    if (R <= fino) return base + (den > 0 ? quota * (fino - R) / den : 0);
+  return 0;
+};
+const irpefNetta = (reddito, pensione) => {
+  const R = Math.max(0, reddito);
+  const piu = pensione && R > 25000 && R <= 29000 ? V('DETRAZIONE_PENS_PIU') : 0;
+  return Math.max(0, irpef(R)
+    - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu);
+};
 const aliqFondo = anni => Math.min(V('ALIQ_FONDO_MAX'),
   Math.max(V('ALIQ_FONDO_MIN'), V('ALIQ_FONDO_MAX') - V('ALIQ_FONDO_PASSO') * (anni - 15)));
 const coeffEta = eta => {
@@ -144,11 +159,11 @@ function piano(D){
         // dalla busta esce solo la quota del lavoratore, dedotta entro lo spazio residuo
         const base = Math.max(0, ral * (1 - V('IVS')));
         const ded  = c => Math.min(c.lav, Math.max(0, V('TETTO_DEDUZIONE') - c.dat));
-        const sconto = irpef(Math.max(0, base - ded(qOggi))) - irpef(Math.max(0, base - ded(q)));
+        const sconto = irpefNetta(base - ded(qOggi), false) - irpefNetta(base - ded(q), false);
         E += x.stip * k * 12 - ((q.lav - qOggi.lav) - sconto);
       }
       if (inPens && !(manca !== null && a >= manca.anno && i === resta))
-        E += x.pens * 12 - irpef(x.pens * 12);
+        E += x.pens * 12 - irpefNetta(x.pens * 12, true);
 
       // TFR lasciato in azienda: rivalutazione propria, liquidazione all'ultimo anno
       if (!x.tfrAlFondo){
@@ -235,7 +250,7 @@ function piano(D){
       const propri = propria + (a <= ult[resta] ? Math.max(0, sup.ral) * kS : 0);
       const rev = a >= def.annoPens ? superstiti(def.pens * 12, propri) : 0;
       const lorda = propria + rev;
-      if (lorda > 0) E += lorda - irpef(lorda);
+      if (lorda > 0) E += lorda - irpefNetta(lorda, true);
     }
 
     // L'ABITAZIONE. La regola si riapplica qui da capo e NON si eredita dal calcolatore: il

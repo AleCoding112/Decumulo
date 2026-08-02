@@ -77,6 +77,7 @@ globalThis.document = {
   querySelectorAll: () => []
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
+  irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
   numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
@@ -256,8 +257,9 @@ t('l\'ultimo anno scritto a metà non cancella gli anni di lavoro',
 t(`nel ${s.p[0].ultimo} lavorano tutti e due`,
   Math.abs(anno(s.p[0].ultimo).daLavoro - (s.p[0].stip + s.p[1].stip) * 12) < 1e-9);
 t(`nel ${DATI.annoPens1} non lavora più nessuno`, anno(DATI.annoPens1).daLavoro === 0);
-// la pensione si scrive lorda e la pagina la porta a netta: qui i confronti vanno fatti col netto
-const netta = lordo => lordo*12 - M.irpef(lordo*12);
+// la pensione si scrive lorda e la pagina la porta a netta: qui i confronti vanno fatti col netto,
+// e il netto è al NETTO DELLA DETRAZIONE dell'art. 13 c. 3 — non dei soli scaglioni
+const netta = lordo => lordo*12 - M.irpefNetta(lordo*12, true);
 t(`dal ${DATI.annoPens0} c'è subito il trattamento del primo: nessun esercizio a tasche vuote`,
   Math.abs(anno(DATI.annoPens0).daPensioni - netta(DATI.pens0)) < 1e-9);
 // gli esercizi in mezzo alle due decorrenze: il secondo non lavora più e non percepisce ancora
@@ -266,6 +268,79 @@ t(`il secondo resta senza entrate proprie dal ${inMezzo[0]} al ${inMezzo.at(-1)}
   inMezzo.every(a => Math.abs(anno(a).daPensioni - netta(DATI.pens0)) < 1e-9));
 t(`dal ${DATI.annoPens1} ci sono tutti e due i trattamenti`,
   Math.abs(anno(DATI.annoPens1).daPensioni - (netta(DATI.pens0) + netta(DATI.pens1))) < 1e-9);
+
+// --- LE DETRAZIONI DELL'ART. 13 TUIR ----------------------------------------
+// Valori calcolati a mano dal testo di legge, non dal codice: un controllo che ricalcola con la
+// stessa formula del motore non prova niente. Fonte: art. 13 c. 1, c. 3 e c. 3-bis TUIR, testo
+// vigente 2026 (le bande e i denominatori stanno in regole.mjs con la citazione).
+console.log('\n— le detrazioni dell\'art. 13 TUIR, ai punti che la legge fissa —');
+{
+  const dL = R => M.detrazione(M.DETRAZIONE_LAV, R);
+  const dP = R => M.detrazione(M.DETRAZIONE_PENS, R);
+  const vale = (nome, avuto, atteso) =>
+    t(nome, Math.abs(avuto - atteso) < 0.005, `${avuto.toFixed(2)} contro ${atteso.toFixed(2)}`);
+  // lavoro dipendente, comma 1
+  vale('lavoro, 10.000 € → 1.955 (banda piatta)', dL(10000), 1955);
+  vale('lavoro, 15.000 € → 1.955 (estremo della banda piatta)', dL(15000), 1955);
+  vale('lavoro, 20.000 € → 1.910 + 1.190 × 8.000/13.000', dL(20000), 1910 + 1190*8000/13000);
+  vale('lavoro, 28.000 € → 1.910 (la frazione si annulla)', dL(28000), 1910);
+  vale('lavoro, 39.000 € → 1.910 × 11.000/22.000', dL(39000), 955);
+  vale('lavoro, 50.000 € → zero, per limite e non per salto', dL(50000), 0);
+  vale('lavoro, 60.000 € → zero', dL(60000), 0);
+  // pensione, comma 3
+  vale('pensione, 8.500 € → 1.955', dP(8500), 1955);
+  vale('pensione, 18.000 € → 700 + 1.255 × 10.000/19.500', dP(18000), 700 + 1255*10000/19500);
+  vale('pensione, 28.000 € → 700', dP(28000), 700);
+  vale('pensione, 39.000 € → 700 × 11.000/22.000', dP(39000), 350);
+  vale('pensione, 50.000 € → zero', dP(50000), 0);
+  // NIENTE SCOGLIO A 50.000: la detrazione ci arriva già a zero da sé. Un salto lì avrebbe reso
+  // conveniente guadagnare di meno, ed è il difetto che una soglia netta di solito porta con sé.
+  t('a 50.000 € non c\'è nessuno scoglio: un euro in più costa un euro di tasse',
+    Math.abs((M.irpefNetta(50001, false) - M.irpefNetta(50000, false)) - 0.43) < 0.01
+    && Math.abs((M.irpefNetta(50001, true) - M.irpefNetta(50000, true)) - 0.43) < 0.01);
+  // il comma 3-bis invece uno scoglio ce l'ha, ed è la legge: si fissa perché non sembri un bug
+  t('il comma 3-bis aggiunge 50 € fra 25.000 e 29.000, e a 29.000 finisce di colpo',
+    Math.abs(M.irpefNetta(29000, true) - (M.irpef(29000) - dP(29000) - M.DETRAZIONE_PENS_PIU)) < 1e-9
+    && Math.abs((M.irpefNetta(29001, true) - M.irpefNetta(29000, true)) - (0.33 + 50)) < 0.05,
+    'scoglio voluto: art. 13 c. 3-bis');
+  t('la detrazione non diventa mai un credito: l\'imposta non va sotto zero',
+    M.irpefNetta(6000, true) === 0 && M.irpefNetta(0, true) === 0 && M.irpefNetta(8000, false) === 0);
+  // LA SOGLIA DI ESENZIONE CADE DOVE LE DUE CURVE SI INCONTRANO, e viene fuori dai numeri di
+  // legge senza che nessuno la scriva: 1.955 / 0,23 = 8.500 € esatti, per tutti e due i tipi di
+  // reddito. Sotto quella cifra il conto non tratteneva niente e prima ne tratteneva 1.955.
+  t('e la soglia di esenzione è 8.500 € esatti, da lavoro come da pensione',
+    M.irpefNetta(8500, true) === 0 && M.irpefNetta(8500, false) === 0
+    && M.irpefNetta(8501, true) > 0 && M.irpefNetta(8501, false) > 0,
+    '1.955 € di detrazione su un\'aliquota del 23%');
+  // IL TFR NON DEVE EREDITARLA: l'art. 19 è tassazione separata, con detrazioni sue non
+  // rappresentate. È il motivo per cui `irpef()` è rimasta pura.
+  t('il TFR resta sull\'imposta lorda: l\'aliquota separata non prende la detrazione',
+    Math.abs(M.aliquotaTfr(30000, 10) - M.irpef(36000)/36000) < 1e-12,
+    'art. 19 è un altro regime');
+}
+
+console.log('\n— quanto valgono, sui due lati del conto —');
+{
+  // la pensione: il livello. 1.500 € lordi al mese davano 1.155 € netti coi soli scaglioni.
+  const netto = m => (m*12 - M.irpefNetta(m*12, true)) / 12;
+  t('1.500 € lordi al mese fanno 1.267 € netti, non 1.155',
+    Math.round(netto(1500)) === 1267 && Math.round((1500*12 - M.irpef(1500*12))/12) === 1155,
+    `${Math.round(netto(1500))} € contro i ${Math.round((1500*12 - M.irpef(1500*12))/12)} € di prima`);
+  t('e più lordo lascia sempre più netto, su tutto l\'arco delle pensioni', (() => {
+      for (let m = 300; m <= 5000; m += 10){
+        // il gradino del comma 3-bis è l'unica eccezione, ed è dichiarata sopra
+        if (m*12 > 28900 && m*12 <= 29100) continue;
+        if (netto(m + 10) <= netto(m)) return false;
+      }
+      return true; })());
+  // il lavoro: la derivata. Dedurre fa risalire la detrazione, quindi rende più dell'aliquota.
+  const beneficio = ral => { const base = ral * (1 - M.IVS);
+    return M.irpefNetta(base, false) - M.irpefNetta(base - 1000, false); };
+  t('dedurre 1.000 € con RAL 38.000 vale 417 € e non 330: la detrazione risale',
+    Math.round(beneficio(38000)) === 417, `${Math.round(beneficio(38000))} €`);
+  t('e il beneficio supera l\'aliquota di scaglione a ogni reddito in cui la detrazione c\'è',
+    [22000, 30000, 38000, 45000].every(r => beneficio(r) > 250));
+}
 
 console.log('\n— la pensione si scrive lorda, come la dà l\'INPS —');
 t('il netto è più basso del lordo, e di quanto lo dice l\'IRPEF',
