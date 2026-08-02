@@ -420,6 +420,34 @@ t('nessuna soglia cablata: senza minimo scritto il gradino segue quello che vers
   M.contributi({...A, pcVoi:0.4}, 0.4).scatta && M.contributi({...A, pcVoi:3}, 2.9).dat === 0,
   'con 0,4% scatta a 0,4%; con 3% a 2,9% ancora no');
 
+// --- L'ADESIONE, NON IL TIPO DI FONDO ---------------------------------------
+// Il menu chiedeva «di categoria» oppure «aperto o PIP» e su quello azzerava la quota del
+// datore. Ma su un fondo APERTO ad adesione collettiva il datore versa, se l'accordo lo prevede,
+// e quella quota consuma il tetto come le altre: art. 8 c. 4 D.Lgs. 252/2005 pone il limite PER
+// PERSONA sui contributi del lavoratore e del datore, senza guardare la forma pensionistica.
+// Chi dichiarava il vero si vedeva quindi allargare lo spazio deducibile di tutta la quota
+// aziendale — 760 € e due punti di RAL sul caso di prova — cioè in direzione ottimistica.
+// I due errori si mascheravano a vicenda: il fondo scendeva (prudente) e il tetto saliva.
+console.log('\n— l\'adesione decide la quota del datore, non il tipo di fondo —');
+{
+  const conAdesione = v => ({...A, adesione: v, fondoIndividuale: v === 'individuale'});
+  const dat = v => M.contributi(conAdesione(v), A.pcVoi).dat;
+  t('col fondo di categoria la quota del datore entra',
+    dat('collettiva') > 0, `${eur(dat('collettiva'))} €`);
+  t('su un fondo aperto ad adesione AZIENDALE entra allo stesso modo',
+    Math.abs(dat('aziendale') - dat('collettiva')) < 1e-9,
+    'il tipo di fondo non decide: decide cosa il contratto riconosce');
+  t('e solo su quello scelto per conto proprio non entra', dat('individuale') === 0);
+  // il pezzo che l'ha fatto scoprire: il tetto è per persona e comprende la quota del datore
+  t('e nel caso aziendale consuma il tetto come le altre',
+    Math.abs(M.pcTetto(conAdesione('aziendale')) - M.pcTetto(conAdesione('collettiva'))) < 1e-9
+    && M.pcTetto(conAdesione('individuale')) > M.pcTetto(conAdesione('aziendale')) + 1,
+    `aziendale ${M.pcTetto(conAdesione('aziendale')).toFixed(2)}% · `
+    + `per conto proprio ${M.pcTetto(conAdesione('individuale')).toFixed(2)}%`);
+  // un valore sconosciuto — un salvataggio vecchio, un fuzz — deve cadere sul ramo prudente
+  t('un valore sconosciuto non azzera la quota di nessuno', dat('boh') > 0);
+}
+
 // --- COME SI LEGGE UNA PERCENTUALE, che decide l'articolo -------------------
 // L'elisione dipende da come si LEGGE il numero scritto, non dal suo valore, e prima si
 // guardava il valore. Due casi veri lo rompevano: «0,55%» — un minimo contrattuale che

@@ -40,10 +40,11 @@ node verifiche/a-schermo.mjs     nove pagine × quattro larghezze in due assetti
                                 dettaglio anno per anno. E il CONSENSO provato cliccando davvero:
                                 è l'unico posto dove si può vedere che il tag non parte prima
 
-node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con gli occhi:
-                                il modulo dei contributi, il risultato, il cursore portato sotto
-                                quello che si versa, e i due pezzi a 390 px. Afferma una cosa
-                                sola, che la console sia pulita
+node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con gli occhi: il
+                                modulo dei contributi, il menu dell'adesione (il punto più
+                                stretto: 93 px di etichetta su 94 utili), il risultato, il
+                                cursore portato sotto quello che si versa, e i due pezzi a
+                                390 px. Afferma una cosa sola, che la console sia pulita
 ```
 
 **I due si dividono il lavoro, e la divisione va tenuta.** `a-schermo.mjs` **misura** e dà un

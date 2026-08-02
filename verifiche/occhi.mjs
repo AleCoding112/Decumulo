@@ -86,6 +86,17 @@ export async function apri({ larghezza = 1200, altezza = 1400 } = {}) {
         { width: px, height: altezza, deviceScaleFactor: 2, mobile: false });
       await new Promise(r => setTimeout(r, 250));
     },
+    // IL BANNER DEL CONSENSO ATTRAVERSA OGNI SCATTO. È `position:fixed`, quindi in un'immagine
+    // a pagina intera viene dipinto in mezzo al contenuto: si guarda il modulo e si vede il
+    // banner. Si risponde NO prima di caricare — la risposta più prudente, e quella che lascia
+    // il sito senza tag — così le immagini mostrano la pagina e non la sua prima domanda.
+    // La scelta si scrive nella memoria del sito, quindi va fatta DOPO un primo carico (prima
+    // l'origine non esiste) e prima di quello che si fotografa.
+    async senzaBanner(url) {
+      await b.vai(url);
+      await b.js(`try { localStorage.setItem('decumulo-it-consenso', 'no'); } catch(e){}`);
+      await b.vai(url);
+    },
     async vai(url) {
       await cmd('Page.navigate', { url });
       for (let k = 0; k < 100; k++) {
@@ -152,10 +163,14 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
   const b = await apri({ larghezza: 1200 });
   const fatti = [];
   try {
-    await b.vai('file://' + join(SITO, 'index.html'));
+    await b.senzaBanner('file://' + join(SITO, 'index.html'));
     await b.compila(DATI);
 
     fatti.push(await b.scatta('modulo-contributi', '.gruppo.largo.rigalav + .due'));
+    // il punto più stretto del modulo: un menu chiuso da 134 px con tre voci. Misurato, la voce
+    // più larga ne occupa 93 su 94 utili — un carattere in più e si tronca, e il troncamento è
+    // invisibile a ogni misura perché non sborda nulla.
+    fatti.push(await b.scatta('menu-adesione', '.due:has(#tipoFondo0)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
 
     // il cursore SOTTO quello che si versa: è lì che compare la domanda sul minimo, ed è il

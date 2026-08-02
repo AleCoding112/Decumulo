@@ -502,14 +502,21 @@ for (const [nome, DATI] of Object.entries({
 // nessuna frase continui a dire «basta versare la quota minima perché scattino X € dall'azienda»
 // a chi quei soldi non li prenderà. Il numero giusto sotto una frase sbagliata resta una
 // promessa falsa, e la sezione 1 esiste apposta per fare quella promessa.
+// COME SI RICONOSCE UNA PROMESSA, e perché non basta nominare l'azienda. Fino al 02/08/2026
+// questo controllo cercava anche la stringa «dall'azienda», e ha dato rosso su un codice giusto
+// appena quella è diventata il NOME DI UNA VOCE DEL MENU: la frase che dice «l'adesione va
+// segnata dall'azienda» nomina un'opzione, non promette un euro. Cercava un indizio invece del
+// fatto. Restano i quattro marcatori che una promessa la fanno davvero — «scattino», «fa
+// scattare», «andrebbe perso», «che oggi non arrivano» — e tutti portano una cifra con sé.
 console.log('\n— il tipo di fondo, in quello che la pagina scrive —');
 for (const [nome, DATI] of Object.entries({
-  'fondo di categoria':  BASE,
-  'fondo aperto':        {...BASE, tipoFondo0:'individuale', tipoFondo1:'individuale'}
+  'fondo di categoria':      BASE,
+  'aperto, accordo aziendale': {...BASE, tipoFondo0:'aziendale', tipoFondo1:'aziendale'},
+  'fondo scelto da sé':      {...BASE, tipoFondo0:'individuale', tipoFondo1:'individuale'}
 })){
   const {scritte} = esegui(DATI);
   const tutto = Object.values(scritte).join(' ').replace(/<[^>]+>/g, ' ');
-  const promette = /scattin\w+|dall'azienda|andrebbe perso|fa scattare/.test(tutto);
+  const promette = /scattin\w+|andrebbe perso|fa scattare|che oggi non arrivano/.test(tutto);
   const individuale = DATI.tipoFondo0 === 'individuale';
   c(`${nome}: la quota dell'azienda ${individuale ? 'non va promessa' : 'va promessa'}`,
     promette === !individuale, promette ? 'la promette' : 'non la promette');

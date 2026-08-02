@@ -591,17 +591,35 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <a href="come-prendere-il-fondo.html">Come funziona la soglia →</a></span>
     </div>
 
-    <!-- QUESTA CASELLA DECIDE SE LA QUOTA DELL'AZIENDA ESISTE, quindi sta prima di quella che
-         la chiede. Le etichette sono corte perché la colonna è stretta e un <select> tronca:
-         la spiegazione sta nella riga sotto, non dentro le opzioni. -->
-    <div class="voce rigalav">Tipo di fondo</div>
+    <!-- QUESTA CASELLA DECIDE SE LA QUOTA DEL DATORE ESISTE, quindi sta prima di quella che la
+         chiede. Chiedeva il TIPO DI FONDO — «di categoria» o «aperto o PIP» — e su quello
+         azzerava la quota: ma il tipo di fondo non è ciò che decide. Su un fondo APERTO ad
+         adesione collettiva il datore versa eccome, se l'accordo lo prevede, e quella quota
+         consuma il tetto come le altre (art. 8 c. 4: il limite è per persona e comprende i
+         contributi del lavoratore e del datore, non guarda la forma). Chi dichiarava il vero
+         si vedeva quindi allargare lo spazio deducibile di tutta la quota aziendale — errore in
+         direzione ottimistica — e l'unico rimedio che davamo era dichiarare un fondo diverso dal
+         proprio. La nostra pagina distingueva quattro casi mentre il menu ne offriva due.
+         PERCHÉ TRE VOCI SULL'ADESIONE E NON SUL FONDO. Misurato: il menu chiuso ha 94 px utili,
+         cioè dodici caratteri. «aperto collettivo» ne vuole 117 e verrebbe troncato, quindi sul
+         nome del fondo il terzo caso NON è scrivibile. Sull'adesione sì, ed è anche l'asse che
+         decide davvero. Le tre voci stanno tutte sullo stesso asse: un menu che mescola «tipo di
+         fondo» e «come ho aderito» lascerebbe senza casa chi ha un fondo aperto scelto da sé.
+         E IL CONFINE CHE CONTA È DOVE LA GENTE SA RISPONDERE: solo la terza voce cambia i
+         numeri, ed è quella di cui si è certi («l'ho aperto io»). Sbagliare fra le prime due non
+         sposta nulla, ed è deliberato: l'incertezza sta dove non pesa.
+         Le etichette sono corte perché il menu tronca; il significato sta nella riga sotto. -->
+    <div class="voce rigalav">Come si è aderito<br>
+      <span class="come">decide se la quota del datore spetta</span></div>
     <div class="cella"><select id="tipoFondo0">
-      <option value="collettiva">di categoria</option>
-      <option value="individuale">aperto o PIP</option></select>
+      <option value="collettiva">dal contratto</option>
+      <option value="aziendale">dall'azienda</option>
+      <option value="individuale">scelto da sé</option></select>
       <u class="hint" id="tipoNota0">&nbsp;</u></div>
     <div class="cella p2"><select id="tipoFondo1">
-      <option value="collettiva">di categoria</option>
-      <option value="individuale">aperto o PIP</option></select>
+      <option value="collettiva">dal contratto</option>
+      <option value="aziendale">dall'azienda</option>
+      <option value="individuale">scelto da sé</option></select>
       <u class="hint" id="tipoNota1">&nbsp;</u></div>
 
     <div class="voce rigalav">Consistenza attuale</div>
@@ -1270,6 +1288,12 @@ function leggi(){
     // Il valore che spegne la quota del datore è quello ESPLICITO: un campo che non esiste, o
     // che il salvataggio di una visita precedente ha lasciato vuoto, non deve togliere a nessuno
     // un contributo che gli spetta. Si spegne solo chi dichiara di aver sottoscritto da sé.
+    // COME SI È ADERITO, non che tipo di fondo è: la quota del datore non dipende dal contenitore
+    // ma da cosa il contratto riconosce. `adesione` porta il fatto grezzo, così le frasi possono
+    // distinguere i tre casi; `fondoIndividuale` resta la sola cosa che il conto guarda, ed è
+    // vera per una sola delle tre. Un valore sconosciuto — un salvataggio vecchio, un fuzz —
+    // cade quindi sul ramo prudente, quello in cui la quota si conta.
+    adesione: EL('tipoFondo'+i).value,
     fondoIndividuale: EL('tipoFondo'+i).value === 'individuale',
     pc:       fra(EL('pc'+i).value === '' ? num('pcVoi'+i) : num('pc'+i), 0, 100),
     tfrAlFondo: EL('tfrDove'+i).value !== 'azienda',
@@ -2316,8 +2340,14 @@ function calc(){
     H('pcDatEuro'+i, co.dat > 0.5 ? E0(co.dat) + " l'anno"
         : x.fondoIndividuale ? (x.pcDat > 0 ? 'non conteggiato' : '&nbsp;')
         : (x.pcDat > 0 ? 'subordinato al contributo indicato' : '&nbsp;'));
-    // la nota sotto il tipo di fondo parla solo quando c'è una conseguenza da dichiarare
-    H('tipoNota'+i, x.fondoIndividuale ? 'la quota del datore non spetta' : '&nbsp;');
+    // LA NOTA PORTA IL SIGNIFICATO CHE NELLE OPZIONI NON CI STA. Dodici caratteri non possono
+    // dire «fondo aperto ad adesione collettiva»: l'etichetta nomina il caso, la riga sotto dice
+    // cosa comporta. Parla per tutte e tre le voci, perché qui il silenzio della prima
+    // lascerebbe credere di aver scelto male.
+    H('tipoNota'+i,
+        x.adesione === 'individuale' ? 'la quota del datore di regola non spetta'
+      : x.adesione === 'aziendale'   ? 'fondo aperto: il datore versa se l’accordo lo prevede'
+      :                                'fondo di categoria previsto dal CCNL');
 
     // DUE TOTALI, e non uno. Contributi e TFR entrano tutti e due nel fondo, ma solo i primi
     // consumano il tetto deducibile: sommarli in un numero solo faceva credere di essere già
@@ -2365,16 +2395,20 @@ function calc(){
   (() => {
     const guai = s.p.map((x, i) => {
       if (!(x.ral > 0)) return null;
-      // Su un fondo sottoscritto per conto proprio gli altri tre avvisi non hanno senso: parlano
-      // tutti di una quota che lì non esiste. Questo li sostituisce, e porta con sé la via
-      // d'uscita — perché il caso dell'adesione collettiva a un fondo aperto esiste davvero.
+      // Su un fondo scelto per conto proprio gli altri avvisi non hanno senso: parlano tutti di
+      // una quota che lì non esiste. Questo li sostituisce, e porta con sé la via d'uscita.
+      // LA VIA D'USCITA ERA L'ISTRUZIONE PEGGIORE DEL CALCOLATORE: diceva «va indicato di
+      // categoria», cioè chiedeva di dichiarare un fondo diverso dal proprio per ottenere il
+      // conto giusto. Funzionava solo perché quel menu non aveva altre conseguenze — un
+      // accidente dell'implementazione, non una garanzia. Ora la voce che serve esiste, e si
+      // indica quella: si dichiara il vero e il conto viene giusto.
       if (x.fondoIndividuale)
         return x.pcDat > 0
           ? `<b>${x.nome}</b>: la quota indicata per il datore non viene conteggiata. Il
-             contributo dell'azienda discende dal contratto collettivo e segue il fondo che il
-             contratto individua, quindi su un fondo sottoscritto per conto proprio di regola non
-             spetta. Se il contratto lo riconosce anche su questo fondo, come avviene nelle
-             adesioni collettive, va indicato <b>di categoria</b>.`
+             contributo discende dal contratto collettivo e segue il fondo che il contratto
+             individua, quindi su un fondo scelto per conto proprio di regola non spetta. Se
+             invece il fondo è stato indicato da un accordo aziendale, l'adesione va segnata
+             <b>dall'azienda</b>.`
           : null;
       if (x.pcDat > 0 && x.pcVoiVuoto)
         return `<b>${x.nome}</b>: c'è la quota del datore ma non quella del lavoratore. Se
