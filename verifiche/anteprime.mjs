@@ -132,6 +132,52 @@ const attr = (h, re) => (h.match(re) || [, ''])[1];
   c('e dichiarano lo stesso percorso che mostrano', guai.length === 0, guai.slice(0, 3).join(' · '));
 }
 
+// --- 3-bis. IL CALCOLATORE SI DICHIARA PER QUELLO CHE È ---------------------
+// Stessa regola delle briciole, applicata all'unica pagina che non ne ha: quello che si dice a
+// una macchina dev'essere quello che la pagina mostra a una persona. Qui il rischio non è di
+// posizionamento ma di ONESTÀ, perché nessun umano legge questo blocco: sono i due campi in cui
+// si è tentati di scrivere quello che fa comodo — una valutazione che non esiste, un prezzo che
+// non è zero — e nessuno se ne accorgerebbe mai aprendo il sito.
+{
+  const dati = p => {
+    const m = [...testo[p].matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    for (const x of m){ try { const j = JSON.parse(x[1]);
+      if (j['@type'] === 'WebApplication') return j; } catch(e){} }
+    return null;
+  };
+  const dove = pagine.filter(p => dati(p));
+  c('solo il calcolatore si dichiara un applicativo', dove.length === 1 && dove[0] === 'index.html',
+    dove.join(', ') || 'nessuna pagina');
+
+  const j = dati('index.html');
+  if (!j){ c('la home dichiara l\'applicativo', false); }
+  else {
+    const h = testo['index.html'];
+    // identità: nessuno dei tre è riscritto a mano, quindi devono coincidere con la pagina
+    const h1   = attr(h, /<h1[^>]*>([\s\S]*?)<\/h1>/).replace(/<[^>]*>/g, '').trim();
+    const desc = attr(h, /<meta name="description" content="([^"]*)"/);
+    const can  = attr(h, /<link rel="canonical" href="([^"]*)"/);
+    const guai = [];
+    if (j.name !== h1)         guai.push(`nome «${j.name}» invece di «${h1}»`);
+    if (j.description !== desc) guai.push('descrizione diversa da quella della pagina');
+    if (j.url !== can)          guai.push(`indirizzo «${j.url}» invece di «${can}»`);
+    c('e dichiara la stessa identità che mostra', guai.length === 0, guai.join(' · '));
+
+    // QUESTA È LA GUARDIA CHE CONTA. Una valutazione inventata farebbe comparire le stelline nei
+    // risultati di ricerca: è il difetto più redditizio e più disonesto che questo file possa
+    // lasciar passare, ed è invisibile a chiunque non legga il sorgente.
+    const inventate = ['aggregateRating', 'review', 'ratingValue'].filter(k => k in j);
+    c('non inventa valutazioni per farsi mostrare meglio', inventate.length === 0,
+      inventate.join(', '));
+    c('e dichiara gratuito quello che è gratuito',
+      j.isAccessibleForFree === true && j.offers?.price === '0', JSON.stringify(j.offers));
+
+    const { REVISIONE_ISO } = await import('../regole.mjs');
+    c('la data è la revisione dei parametri, come nella sitemap',
+      j.dateModified === REVISIONE_ISO, String(j.dateModified));
+  }
+}
+
 // --- 4. LA SITEMAP DICE QUANDO IL CONTENUTO È STATO VERIFICATO --------------
 {
   const sm = fs.readFileSync(join(SITO, 'sitemap.xml'), 'utf8');

@@ -66,6 +66,46 @@ const briciole = (html, url) => {
   })}</script>\n`;
 };
 
+// IL CALCOLATORE, DICHIARATO PER QUELLO CHE È. Era l'unica pagina del sito senza dati
+// strutturati — le altre nove hanno le briciole — e proprio quella per cui il sito esiste: a
+// una macchina non diceva di essere un applicativo, tanto meno gratuito, in italiano e di
+// materia finanziaria. Chi legge il sito senza aprirlo — uno scraper, o un assistente che cerca
+// mentre risponde — se lo deve dedurre dalla prosa.
+//
+// QUELLO CHE NON C'È DENTRO CONTA QUANTO QUELLO CHE C'È.
+//  · niente `aggregateRating` né `review`: non esistono valutazioni, e inventarle per ottenere
+//    un risultato ricco sarebbe l'unica bugia del sito, messa dove nessun umano la controlla.
+//    Senza, Google non mostrerà la scheda arricchita — pazienza: qui si dichiara, non si recita;
+//  · niente `featureList` né `audience`: la descrizione della pagina già enumera cosa calcola e
+//    per chi. Ripeterlo qui vorrebbe dire tenere allineate due prose, e prima o poi divergono;
+//  · niente autore né editore: non sono dichiarati da nessuna parte, e non si inventano.
+// Identità (nome, indirizzo, descrizione) NON è riscritta: si prende da quello che la pagina
+// già dichiara, per la stessa ragione per cui le briciole si ricavano dalla riga che mostrano.
+// `dateModified` è la revisione dei PARAMETRI, la stessa che va nella sitemap e in fondo a ogni
+// pagina: su un sito che espone cifre di legge è l'unica data che significhi qualcosa. Se si
+// tocca il codice senza toccare le regole resta indietro, ed è il verso giusto in cui sbagliare.
+const applicazione = (html, url) => {
+  if (url !== ORIGINE) return '';           // il calcolatore sta solo sulla home
+  const nome = (html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [, ''])[1]
+    .replace(/<[^>]*>/g, '').trim();
+  const desc = (html.match(/<meta name="description" content="([^"]*)"/) || [, ''])[1].trim();
+  if (!nome || !desc) return '';
+  return `<script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: nome,
+    url,
+    description: desc,
+    inLanguage: 'it',
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Richiede JavaScript',
+    isAccessibleForFree: true,
+    offers: {'@type': 'Offer', price: '0', priceCurrency: 'EUR'},
+    dateModified: REVISIONE_ISO
+  })}</script>\n`;
+};
+
 let pagine = 0, avvisi = 0;
 // i file che cominciano con _ non sono pagine: sono pezzi da includere
 const pezzo = n => readFileSync(join(DA, n), 'utf8');
@@ -135,7 +175,7 @@ for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsW
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="${FAVICON}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${esc(new URL('icona-touch.png', ORIGINE).href)}">
-${briciole(html, url)}</head>`;
+${briciole(html, url)}${applicazione(html, url)}</head>`;
   });
 
   // 4. le cifre dentro al testo
