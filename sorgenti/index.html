@@ -886,6 +886,19 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 <p class="vuoto-avviso" id="vuoto" hidden>Il risultato si aggiorna a ogni dato inserito.</p>
 <p class="risposta" id="titolo">&nbsp;</p>
 <p class="sotto" id="sottotitolo">&nbsp;</p>
+<!-- SU COSA POGGIA IL NUMERO, e perché la riga sta qui e non fra le scelte.
+     Il verdetto è calcolato con una forma di erogazione del fondo già decisa: il modulo parte
+     da `quotaCap = 0` e `forma = vita`, cioè NIENTE in contanti e tutto in rendita vitalizia.
+     Non è un default neutro — è un estremo dell'intervallo, visto che la legge consente fino
+     alla metà in capitale — e la scelta si compie mille pixel più in basso, dove chi legge il
+     verdetto non è ancora arrivato. La pagina scriveva quindi una cifra precisa che dipendeva
+     da una decisione di cui il lettore non sapeva ancora l'esistenza.
+     RIORDINARE LE SEZIONI NON L'AVREBBE RISOLTO: un valore di partenza ci sarebbe comunque, e
+     il primo verdetto lo userebbe lo stesso. Non è un difetto d'ordine, è di dichiarazione.
+     La cura è quella già usata due volte in questa pagina: `#tenuta` dichiara la dipendenza
+     dalla sequenza dei rendimenti, e la riga del contributo del datore alza il FATTO lasciando
+     giù la decisione, con un rimando. Qui si fa lo stesso. -->
+<p class="nota" id="assunzioni"></p>
 <!-- Il verdetto nasce da una traiettoria sola. Questa riga dice quanto dipende dall'ORDINE in
      cui arrivano i rendimenti, che una traiettoria sola non può mostrare. Nessuna classe nuova:
      `.nota` esiste già, e un nome in più è un nome che può collidere. -->
@@ -2712,7 +2725,7 @@ function calc(){
     EL('vuoto').hidden = false;
     ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
-    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite'].forEach(k => EL(k).innerHTML = '');
+    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni'].forEach(k => EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
     aggiornaSommario('', '');
     return;
@@ -2726,7 +2739,7 @@ function calc(){
       + (frase.startsWith(',') ? '' : ' ') + frase + '.';
     ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
-    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite'].forEach(k =>
+    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni'].forEach(k =>
       EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
     aggiornaSommario('', '');   // senza verdetto non c'è niente da tenere sott'occhio
@@ -2921,6 +2934,41 @@ function calc(){
         lavoratore, qui indicato pari a zero.${basta} ${coda} in euro di oggi, senza contare
         quanto renderebbero. <a href="#contribuzione">Quanto costa attivarlo →</a>`;
     }
+  }
+
+  // COME IL CONTO STA PRENDENDO IL FONDO. Il verdetto qui sopra non è indipendente da questa
+  // scelta, e finché non la si dichiara la cifra sembra un fatto mentre è un fatto CONDIZIONATO.
+  // La riga si scrive sempre che ci sia un fondo da prendere, non solo quando la scelta è
+  // ancora quella di partenza: dopo che uno l'ha mossa serve ancora, perché il verdetto resta
+  // appeso a quella decisione e chi torna sulla pagina domani non ricorda cosa aveva scelto.
+  //
+  // SI PARLA SOLO DI CHI LA SCELTA CE L'HA DAVVERO: chi ha la decorrenza alle spalle l'ha già
+  // compiuta — `leggi()` gli azzera il fondo — e a chi non ha montante non si applica. È la
+  // stessa condizione con cui `aggiornaDecisioni` spegne i riquadri, e dev'essere la stessa:
+  // una riga che rimanda a una scelta che non c'è manderebbe su una sezione spenta.
+  {
+    const conScelta = s.indici.filter(i => !s.p[i].giaInPens && s.p[i].fondo > 0);
+    // «erogazione» regge tutti e cinque i nomi della tavola FORME senza storpiature —
+    // «vitalizia», «a durata definita», «frazionata» — ed è la parola che la pagina usa già
+    // nel titolo del riquadro. Comporre invece «in rendita» + nome avrebbe prodotto «in rendita
+    // a durata definita», che per giunta è falso: quelle due forme NON convertono in rendita,
+    // tengono il montante e lo consumano.
+    const come = i => {
+      const x = s.p[i], pc = Math.round(fra(x.quotaCap, 0, 1) * 100);
+      const f = FORME.find(f => f.k === x.forma) || FORME[0];
+      return pc >= 100 ? `<b>tutto in contanti</b>`
+        : pc <= 0      ? `<b>niente in contanti</b> e l'erogazione <b>${f.nome}</b>`
+        : `il <b>${fmt(pc)}%</b> in contanti e sul resto l'erogazione <b>${f.nome}</b>`;
+    };
+    const uguali = conScelta.length > 1
+      && conScelta.every(i => come(i) === come(conScelta[0]));
+    EL('assunzioni').innerHTML = !conScelta.length ? '' :
+      `<b>Come il conto sta prendendo il fondo</b>: ` + (
+        conScelta.length === 1 || uguali
+          ? come(conScelta[0]) + (uguali ? ', per entrambi' : '')
+          : conScelta.map(i => `per ${s.p[i].nome} ${come(i)}`).join('; ')
+      ) + `. È una scelta, e sposta il risultato qui sopra.
+      <a href="#decErog">Provare le altre forme →</a>`;
   }
 
   // LA PROVA DI TENUTA, e perché è una riga a parte invece che dentro il verdetto. Il titolo

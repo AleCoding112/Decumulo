@@ -578,6 +578,38 @@ console.log('\n— la prova di tenuta —');
     [comodo, rotto, anticipa, subito].every(t => t.split('Prova di tenuta').length === 2));
 }
 
+// --- su cosa poggia il verdetto --------------------------------------------
+// IL RISULTATO NON È INDIPENDENTE DA COME SI PRENDE IL FONDO, e fino al 02/08/2026 non lo
+// diceva. Il modulo parte da «niente in contanti, rendita vitalizia» — un estremo
+// dell'intervallo, visto che la legge consente fino alla metà in capitale — e la scelta si
+// compie in fondo alla pagina, dove chi legge il verdetto non è ancora arrivato: la cifra in
+// cima sembrava un fatto mentre era un fatto CONDIZIONATO.
+// Tre proprietà, e la seconda è quella che conta: una riga che dichiarasse sempre il valore di
+// partenza sarebbe peggio del silenzio, perché mentirebbe a chi la scelta l'ha già mossa.
+console.log('\n— su cosa poggia il verdetto —');
+{
+  const riga = o => ((esegui({...BASE, ...o}).scritte.assunzioni) || '')
+    .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+  const parte = riga({quotaCap0: 0, quotaCap1: 0, forma0: 'vita', forma1: 'vita'});
+  c('dichiara come il conto sta prendendo il fondo, e rimanda alla scelta',
+    /niente in contanti/.test(parte) && /vitalizia/.test(parte) && /per entrambi/.test(parte),
+    parte.slice(0, 95));
+
+  const mossa = riga({quotaCap0: 0.5, quotaCap1: 0.5, forma0: 'durata', forma1: 'durata'});
+  c('segue la scelta invece di restare sul valore di partenza',
+    /50% in contanti/.test(mossa) && /a durata definita/.test(mossa) && !/vitalizia/.test(mossa),
+    mossa.slice(0, 95));
+
+  // con scelte diverse non si può dire «per entrambi»: si nominano
+  const diverse = riga({quotaCap0: 0, quotaCap1: 1, forma0: 'vita', forma1: 'vita'});
+  c('con due scelte diverse le distingue per nome',
+    /Anna/.test(diverse) && /Bruno/.test(diverse) && !/per entrambi/.test(diverse),
+    diverse.slice(0, 95));
+
+  c('senza un fondo da prendere tace', riga({fondo0: '', fondo1: ''}) === '');
+}
+
 // --- il contributo dell'azienda che non arriva -----------------------------
 // La riga in alto porta il FATTO, la sezione in fondo la DECISIONE. Il rischio di una feature
 // così è che diventi un doppione: due volte lo stesso conto, e chi legge non sa quale vale.
