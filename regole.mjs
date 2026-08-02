@@ -105,6 +105,18 @@ export const REGOLE = {
     fonte: 'art. 11 c. 3 D.Lgs. 252/2005: la L. 199/2025 art. 1 c. 201 l\'aveva portato al 60%, l\'art. 16-ter del D.L. 62/2026 conv. L. 112/2026 l\'ha riportato al 50% con effetto dal 1° luglio 2026',
     verificata: true
   },
+  // LE MENSILITÀ DELLA PENSIONE, e perché è una costante e non un 13 sparso nel codice.
+  // Il trattamento INPS si paga tredici volte l'anno: la tredicesima spetta a tutti i titolari
+  // di pensione di vecchiaia, anticipata, di invalidità e all'assegno sociale. Il conto lo
+  // moltiplicava per dodici, e sottostimava ogni pensione del 7% netto.
+  // Il progetto lo sapeva già in un punto solo, ed è la spia che avrebbe dovuto vedersi:
+  // ASSEGNO_SOCIALE qui sotto è scritto come «546,24 × 13». Due convenzioni diverse per la
+  // stessa cosa, a otto righe di distanza.
+  // NON vale per la rendita del fondo pensione, che è un contratto privato di rendita e non un
+  // trattamento previdenziale: quella resta su dodici rate.
+  MENSILITA_PENSIONE: { nome: "Mensilità del trattamento INPS in un anno", val: 13, come: 'secco',
+    fonte: 'la tredicesima mensilità spetta ai titolari di pensione di vecchiaia, anzianità, anticipata e di invalidità, e all\'assegno sociale; è corrisposta con la rata di dicembre',
+    verificata: true },
   ASSEGNO_SOCIALE: { nome: "Assegno sociale annuo",
     val: 7101.12,
     fonte: '546,24 € × 13 mensilità — circolare INPS 153 del 19 dicembre 2025, rivalutazione 2026 dell\'1,4%',
@@ -428,6 +440,7 @@ export const TESTI = {
   scaglione1:       eur(V('SCAGLIONI')[0][0]),
   scaglione2:       eur(V('SCAGLIONI')[1][0]),
   provaAnni:        String(V('PROVA_ANNI')),
+  mensPensione:     String(V('MENSILITA_PENSIONE')),
   reversibilita:    pc(V('REVERSIBILITA')),
   trattMinimo:      eur(V('TRATT_MINIMO')),
   trattMinimoAnno:  eur(V('TRATT_MINIMO') * V('TRATT_MINIMO_MENS')),
@@ -479,6 +492,7 @@ const SCAGLIONI = [${V('SCAGLIONI').map(([t, a]) => `[${t === Infinity ? 'Infini
 const DETRAZIONE_LAV = [${V('DETRAZIONE_LAV').map(b => `[${b.join(',')}]`).join(', ')}];
 const DETRAZIONE_PENS = [${V('DETRAZIONE_PENS').map(b => `[${b.join(',')}]`).join(', ')}];
 const DETRAZIONE_PENS_PIU = ${V('DETRAZIONE_PENS_PIU')};
+const MENS_PENS = ${V('MENSILITA_PENSIONE')};
 const PROVA_ANNI = ${V('PROVA_ANNI')};
 const REVERSIBILITA = ${V('REVERSIBILITA')};
 const TRATT_MINIMO_ANNO = ${(V('TRATT_MINIMO') * V('TRATT_MINIMO_MENS')).toFixed(2)};

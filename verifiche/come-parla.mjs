@@ -821,9 +821,13 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
 {
   const pulito = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   // due persone già in pensione, spesa sopra le entrate ma patrimonio ampio: il rendimento
-  // copre il disavanzo, quindi il patrimonio cresce mentre il flusso è negativo
+  // copre il disavanzo, quindi il patrimonio cresce mentre il flusso è negativo.
+  // LA SPESA È SALITA DA 2.800 A 3.200 il 02/08/2026: contando la pensione su tredici rate le
+  // entrate sono cresciute e il disavanzo era sparito, cioè lo scenario non provava più il ramo
+  // che gli sta a cuore. Terza volta in due giorni che un fixture al limite smette di esserlo
+  // perché il modello migliora: quando un controllo cade, prima si guarda se è ancora al bordo.
   const copre = esegui({quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1955, nascita1:1958,
-    annoPens0:2015, annoPens1:2020, pens0:2100, pens1:1250, patrimonio:380000, spesa:2800,
+    annoPens0:2015, annoPens1:2020, pens0:2100, pens1:1250, patrimonio:380000, spesa:3200,
     etaFine:95, fondo0:'', fondo1:'', stip0:'', stip1:'', ral0:'', ral1:''});
   const dati = pulito(copre.scritte.calcolato), verdetto = pulito(copre.scritte.titolo);
   c('col disavanzo coperto dal rendimento la frase non annuncia una riduzione',

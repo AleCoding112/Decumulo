@@ -163,7 +163,8 @@ function piano(D){
         E += x.stip * k * 12 - ((q.lav - qOggi.lav) - sconto);
       }
       if (inPens && !(manca !== null && a >= manca.anno && i === resta))
-        E += x.pens * 12 - irpefNetta(x.pens * 12, true);
+        E += x.pens * V('MENSILITA_PENSIONE')
+             - irpefNetta(x.pens * V('MENSILITA_PENSIONE'), true);
 
       // TFR lasciato in azienda: rivalutazione propria, liquidazione all'ultimo anno
       if (!x.tfrAlFondo){
@@ -246,9 +247,9 @@ function piano(D){
     if (manca !== null && a >= manca.anno && resta >= 0){
       const sup = D.p[resta], def = D.p[manca.chi];
       const kS = Math.pow(1 + (sup.cresc || 0), a - V('ANNO0'));
-      const propria = a >= sup.annoPens ? sup.pens * 12 : 0;
+      const propria = a >= sup.annoPens ? sup.pens * V('MENSILITA_PENSIONE') : 0;
       const propri = propria + (a <= ult[resta] ? Math.max(0, sup.ral) * kS : 0);
-      const rev = a >= def.annoPens ? superstiti(def.pens * 12, propri) : 0;
+      const rev = a >= def.annoPens ? superstiti(def.pens * V('MENSILITA_PENSIONE'), propri) : 0;
       const lorda = propria + rev;
       if (lorda > 0) E += lorda - irpefNetta(lorda, true);
     }

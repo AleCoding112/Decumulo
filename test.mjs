@@ -77,7 +77,7 @@ globalThis.document = {
   querySelectorAll: () => []
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
-  irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU,
+  irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
   numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
@@ -258,8 +258,8 @@ t(`nel ${s.p[0].ultimo} lavorano tutti e due`,
   Math.abs(anno(s.p[0].ultimo).daLavoro - (s.p[0].stip + s.p[1].stip) * 12) < 1e-9);
 t(`nel ${DATI.annoPens1} non lavora più nessuno`, anno(DATI.annoPens1).daLavoro === 0);
 // la pensione si scrive lorda e la pagina la porta a netta: qui i confronti vanno fatti col netto,
-// e il netto è al NETTO DELLA DETRAZIONE dell'art. 13 c. 3 — non dei soli scaglioni
-const netta = lordo => lordo*12 - M.irpefNetta(lordo*12, true);
+// al netto della DETRAZIONE dell'art. 13 c. 3 e su TREDICI rate, non dodici
+const netta = lordo => lordo*M.MENS_PENS - M.irpefNetta(lordo*M.MENS_PENS, true);
 t(`dal ${DATI.annoPens0} c'è subito il trattamento del primo: nessun esercizio a tasche vuote`,
   Math.abs(anno(DATI.annoPens0).daPensioni - netta(DATI.pens0)) < 1e-9);
 // gli esercizi in mezzo alle due decorrenze: il secondo non lavora più e non percepisce ancora
@@ -342,12 +342,41 @@ console.log('\n— quanto valgono, sui due lati del conto —');
     [22000, 30000, 38000, 45000].every(r => beneficio(r) > 250));
 }
 
+// --- LE TREDICI RATE ---------------------------------------------------------
+// Il conto moltiplicava la pensione per dodici. La tredicesima spetta a tutti i titolari di
+// pensione di vecchiaia, anticipata e di invalidità, e all'assegno sociale: erano sette punti
+// di netto in meno, ogni anno, per tutti. La spia c'era ed è rimasta invisibile per mesi —
+// ASSEGNO_SOCIALE è sempre stato scritto come «546,24 × 13».
+console.log('\n— la pensione si paga tredici volte, non dodici —');
+{
+  t('la costante dice tredici, e il conto la usa', M.MENS_PENS === 13);
+  // il netto annuo non è dodici volte il netto di una rata: è tredici
+  const annuo = s.p[0].pens * M.MENS_PENS;
+  t('il netto annuo del trattamento è quello di tredici rate',
+    Math.abs(anno(DATI.annoPens0).daPensioni - annuo) < 1e-9,
+    `${eur(annuo)} € l'anno da ${eur(s.p[0].pens)} € per rata`);
+  t('e vale il 7% in più di quanto valeva con dodici', (() => {
+      const con12 = DATI.pens0*12 - M.irpefNetta(DATI.pens0*12, true);
+      return annuo / con12 > 1.06 && annuo / con12 < 1.08; })(),
+    'la tredicesima al netto pesa meno di 1/12, perché sposta il reddito in alto');
+  // L'ASSEGNO SOCIALE ERA GIÀ SU TREDICI: le due convenzioni ora coincidono, e questo controllo
+  // esiste perché non tornino a divergere in silenzio.
+  t('e l\'assegno sociale, che le tredici le contava già, ora concorda',
+    Math.abs(M.ASSEGNO_SOCIALE / M.MENS_PENS - 546.24) < 0.01,
+    `${(M.ASSEGNO_SOCIALE / M.MENS_PENS).toFixed(2)} € al mese`);
+  // LA RENDITA DEL FONDO NO: è un contratto privato di rendita, non un trattamento INPS.
+  t('la rendita del fondo resta su dodici rate: è un altro istituto',
+    (() => { const i = r.incassi[0];
+      return i && Math.abs(i.assegno * 12 - i.convertito * i.coeff) < 1e-6; })(),
+    'il coefficiente converte in rendita annua, divisa per dodici');
+}
+
 console.log('\n— la pensione si scrive lorda, come la dà l\'INPS —');
 t('il netto è più basso del lordo, e di quanto lo dice l\'IRPEF',
-  Math.abs(s.p[0].pens*12 - netta(DATI.pens0)) < 1e-9 && s.p[0].pensLorda === DATI.pens0,
+  Math.abs(s.p[0].pens*M.MENS_PENS - netta(DATI.pens0)) < 1e-9 && s.p[0].pensLorda === DATI.pens0,
   `${eur(DATI.pens0)} € lordi → ${eur(s.p[0].pens)} € netti al mese`);
 t('le due pensioni si tassano ognuna per conto suo, non sommate',
-  Math.abs(s.p[1].pens*12 - netta(DATI.pens1)) < 1e-9);
+  Math.abs(s.p[1].pens*M.MENS_PENS - netta(DATI.pens1)) < 1e-9);
 t('una pensione più alta lascia comunque più soldi, anche passando dal netto',
   M.simula({...s, p:s.p.map(x=>({...x, pens:x.pens*1.2}))}).finale > r.finale);
 

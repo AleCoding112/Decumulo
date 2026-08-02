@@ -1381,7 +1381,9 @@ function leggi(){
     // L'INPS dice il LORDO («La mia pensione futura»), quindi il lordo si scrive e il netto
     // lo fa la pagina: chiedere il netto vorrebbe dire chiedere un conto che non hanno fatto.
     x.pensLorda = x.pens;
-    x.pens = (x.pens * 12 - irpefNetta(x.pens * 12, true)) / 12;
+    // IL LORDO SCRITTO È QUELLO DI UNA RATA, e le rate sono tredici. Da qui in giù `x.pens` è il
+    // netto di UNA rata: chi lo rimoltiplica usa `MENS_PENS`, mai dodici.
+    x.pens = (x.pens * MENS_PENS - irpefNetta(x.pens * MENS_PENS, true)) / MENS_PENS;
   });
   // i rendimenti si scrivono come si leggono (nominali); il reale è un rapporto, non una
   // sottrazione: (1+7%)/(1+2%) = 4,90%, non 5%
@@ -1619,7 +1621,7 @@ function simula(s, spesaMese){
       // la pensione del superstite si tratta fuori dal ciclo: dall'anno in cui l'altro manca
       // fa capo allo stesso contribuente della reversibilità, e l'IRPEF si calcola sulla somma
       if (inPens[i] && !(manca !== null && anno >= manca.anno && i === resta))
-        daPensioni += x.pens * 12;
+        daPensioni += x.pens * MENS_PENS;
 
       // --- il TFR lasciato in azienda. Matura comunque: la scelta è solo dove va a finire.
       if (!x.tfrAlFondo){
@@ -1795,12 +1797,12 @@ function simula(s, spesaMese){
     if (manca !== null && anno >= manca.anno && resta >= 0){
       const sup = P[resta], def = P[manca.chi];
       const kSup = Math.pow(1 + (sup.cresc || 0), anno - ANNO0);
-      const propria = anno >= sup.annoPens ? sup.pensLorda * 12 : 0;
+      const propria = anno >= sup.annoPens ? sup.pensLorda * MENS_PENS : 0;
       // i redditi che fanno scattare la riduzione sono quelli assoggettabili a IRPEF: la
       // pensione propria e la retribuzione. Non la rendita del fondo, che sconta un'imposta
       // sostitutiva, né la pensione ai superstiti stessa.
       const propri = propria + (lavora[resta] ? Math.max(0, sup.ral) * kSup : 0);
-      const rev = anno >= def.annoPens ? aiSuperstiti(def.pensLorda * 12, propri) : 0;
+      const rev = anno >= def.annoPens ? aiSuperstiti(def.pensLorda * MENS_PENS, propri) : 0;
       const lorda = propria + rev;
       if (lorda > 0) daPensioni += lorda - irpefNetta(lorda, true);
     }
@@ -2367,7 +2369,10 @@ function calc(){
     const x = s.p[i];
     // ogni valore ricavato sta sotto la casella da cui esce, non in una riga a parte
     const H = (id, testo) => EL(id).innerHTML = testo;
-    H('pensNetta'+i, x.pensLorda > 0 ? E0(x.pens) + ' netti al mese' : '&nbsp;');
+    // «netti al mese» taceva su quante volte l'anno arriva quel mese. Ora la riga dice il
+    // divisore, perché il lordo scritto è quello di una rata e le rate sono tredici.
+    H('pensNetta'+i, x.pensLorda > 0
+        ? E0(x.pens) + ' netti per rata · ' + fmt(MENS_PENS) + ' rate l\'anno' : '&nbsp;');
     const co = contributi(x, x.pcVoi);
     H('pcVoiEuro'+i, co.lav > 0.5 ? E0(co.lav) + " l'anno" : '&nbsp;');
     H('pcDatEuro'+i, co.dat > 0.5 ? E0(co.dat) + " l'anno"
