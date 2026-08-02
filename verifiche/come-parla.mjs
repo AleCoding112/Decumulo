@@ -53,7 +53,7 @@ for (const m of PAGINA.matchAll(/<select\b[^>]*\bid="(\w+)"[\s\S]*?<\/select>/g)
 const BASE = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1977,
   ral0:38000, ral1:33000, pens0:1500, pens1:1300,
   annoPens0:2042, annoPens1:2044, pcVoi0:1.2, pcVoi1:1.5, pcDat0:2, pcDat1:2,
-  iscr0:2005, iscr1:2007, patrimonio:200000, spesa:2500, rend:4, infl:2, rendFondo:3,
+  iscr0:2005, iscr1:2007, cl3:200000, spesa:2500, rend:4, infl:2, rendFondo:3,
   cresc0:'', cresc1:'', spesaPens:'',
   tipoFondo0:'collettiva', tipoFondo1:'collettiva', ultimo0:'', ultimo1:'',
   etaFine:95, fondo0:60000, fondo1:120000, quotaCap0:0.5, quotaCap1:1,
@@ -63,7 +63,7 @@ const SCENARI = {
   'due persone, piano che regge':   BASE,
   'una persona sola':               {...BASE, quanti:'1', nome1:'', forma0:'certa'},
   'modulo vuoto':                   {},
-  'patrimonio che si esaurisce':    {...BASE, patrimonio:40000, spesa:4200, rend:1},
+  'patrimonio che si esaurisce':    {...BASE, cl3:40000, spesa:4200, rend:1},
   'fondo piccolo, tutto in contanti':{...BASE, fondo0:15000, fondo1:15000},
   'fondo grosso, tagliato al massimo di legge': {...BASE, fondo0:300000, fondo1:300000},
   'nessun contributo, solo TFR':    {...BASE, pcVoi0:'', pcVoi1:'', pcDat0:'', pcDat1:''},
@@ -271,7 +271,7 @@ console.log('\n— il sommario in alto —');
        .includes((testoCala.match(/[\d.]+ €/) || [''])[0]),
     testoCala);
 
-  const rotto = esegui({...BASE, patrimonio:40000, spesa:4200, rend:1});
+  const rotto = esegui({...BASE, cl3:40000, spesa:4200, rend:1});
   rotto.osservatori.cima([{isIntersecting: false}]);
   rotto.osservatori.titolo([{isIntersecting: false}]);
   const testoRotto = (rotto.elementi.sommarioRiga.innerHTML || '').replace(/<[^>]+>/g, '');
@@ -411,12 +411,12 @@ console.log('\n— nessun ottimo su un piano che si esaurisce —');
 for (const [nome, DATI, atteso] of [
   ['il piano regge: si dicono gli euro', {...BASE}, /vale .* in più rispetto al versamento di oggi/],
   ['non regge con nessun versamento: non si indica niente',
-   {...BASE, quanti:'1', spesa:4200, patrimonio:60000}, /nessun livello di versamento/],
+   {...BASE, quanti:'1', spesa:4200, cl3:60000}, /nessun livello di versamento/],
   // IL CASO SI SPOSTA QUANDO IL MODELLO MIGLIORA. Questo scenario stava sul filo, e con le
   // detrazioni dell'art. 13 il piano ha cominciato a reggere da solo: il ramo non era rotto, era
   // il fixture a non essere più al limite. Ritarato cercando di nuovo il bordo.
   ['regge alzando il versamento: è la frase che vale',
-   {...BASE, quanti:'1', spesa:2800, patrimonio:150000, rendFondo:7, rend:0, etaFine:75, fondo0:50000},
+   {...BASE, quanti:'1', spesa:2800, cl3:150000, rendFondo:7, rend:0, etaFine:75, fondo0:50000},
    /e da lì .*il piano regge/]
 ]){
   const {scritte, elementi} = esegui(DATI);
@@ -754,7 +754,7 @@ console.log('\n— le caselle che il verdetto richiede —');
 {
   const CASELLE = {
     spesa:      'la spesa mensile',
-    patrimonio: 'il patrimonio investito',
+    cl3: 'il patrimonio investito',
     nascita0:   "l'anno di nascita",
     annoPens0:  'la decorrenza del trattamento',
     ral0:       'la retribuzione annua lorda',
@@ -805,7 +805,7 @@ console.log('\n— le caselle che il verdetto richiede —');
     'erano i «tre dati» promessi dalla pagina');
 
   // ogni casella richiesta, tolta da sola, sospende il verdetto: nessuna vale zero in silenzio
-  const PIENO = {quanti:'1', spesa:2500, patrimonio:400000, nascita0:1958, annoPens0:2030,
+  const PIENO = {quanti:'1', spesa:2500, cl3:400000, nascita0:1958, annoPens0:2030,
                  ral0:42000, pens0:1800};
   c('col modulo completo il verdetto esce', !senzaVerdetto(esegui(PIENO)));
   for (const id of Object.keys(CASELLE))
@@ -816,7 +816,7 @@ console.log('\n— le caselle che il verdetto richiede —');
   // un trattamento, scrive 0 e il conto lo prende alla lettera. Senza questa distinzione la
   // guardia avrebbe chiuso fuori proprio chi ha più bisogno della risposta.
   c('uno zero scritto è una risposta, e il verdetto esce',
-    !senzaVerdetto(esegui({...PIENO, patrimonio:0, ral0:0, pens0:0})));
+    !senzaVerdetto(esegui({...PIENO, cl3:0, ral0:0, pens0:0})));
 
   // e non si chiede quello che il piano non usa: chi ha già smesso di lavorare non ha una
   // retribuzione da scrivere
@@ -840,7 +840,7 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
   // che gli sta a cuore. Terza volta in due giorni che un fixture al limite smette di esserlo
   // perché il modello migliora: quando un controllo cade, prima si guarda se è ancora al bordo.
   const copre = esegui({quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1955, nascita1:1958,
-    annoPens0:2015, annoPens1:2020, pens0:2100, pens1:1250, patrimonio:380000, spesa:3200,
+    annoPens0:2015, annoPens1:2020, pens0:2100, pens1:1250, cl3:380000, spesa:3200,
     etaFine:95, fondo0:'', fondo1:'', ral0:'', ral1:''});
   const dati = pulito(copre.scritte.calcolato), verdetto = pulito(copre.scritte.titolo);
   c('col disavanzo coperto dal rendimento la frase non annuncia una riduzione',
@@ -849,7 +849,7 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
     /non si riduce/.test(verdetto) && !/in riduzione/.test(dati), verdetto.trim().slice(0, 60));
   // e quando cala davvero lo deve dire: la prudenza non è tacere
   const cala = esegui({quanti:'1', nascita0:1955, annoPens0:2015, pens0:900,
-    patrimonio:60000, spesa:2600, etaFine:95, fondo0:'', ral0:''});
+    cl3:60000, spesa:2600, etaFine:95, fondo0:'', ral0:''});
   c('mentre quando il patrimonio cala davvero la frase lo dice',
     /in riduzione già dal primo esercizio/.test(pulito(cala.scritte.calcolato)),
     pulito(cala.scritte.calcolato).trim());
@@ -864,7 +864,7 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
 // queste guardano cosa la pagina DICE e cosa lascia toccare.
 console.log('\n— chi è già in pensione —');
 {
-  const UNO = {quanti:'1', spesa:2500, patrimonio:400000, nascita0:1955, pens0:1800,
+  const UNO = {quanti:'1', spesa:2500, cl3:400000, nascita0:1955, pens0:1800,
                fondo0:90000, iscr0:2005};
   const testo = r => ((r.scritte.titolo || '') + ' ' + (r.scritte.sottotitolo || ''))
     .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();

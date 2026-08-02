@@ -311,7 +311,7 @@ globalThis.document = {
 const M = new Function(src + '\nreturn {leggi, simula};')();
 
 // ------------------------------------------------------------------- i casi
-const base = {quanti:'2', patrimonio:100000, spesa:3300, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:4, etaFine:95,
+const base = {quanti:'2', cl3:100000, spesa:3300, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:4, etaFine:95,
   forma0:'vita', forma1:'vita', nome0:'A', nome1:'B', pc0:'', pc1:'',
   // Caso inventato, come quello di `test.mjs` e diverso da quello: due implementazioni
   // confrontate sempre sugli stessi numeri si accorderebbero anche su un caso particolare.
@@ -431,6 +431,9 @@ for (const [nome, over, prova, manca] of tutti){
   const s = {...s0, ...(prova ? {prova} : {}),
              ...(manca ? {manca: {chi: manca.chi, anno: manca.anno, equiv: manca.equiv}} : {})};
   const R = M.simula(s);
+  // `D` NON È UN MODULO DA COMPILARE, è l'ingresso dell'altra implementazione: qui la chiave si
+  // chiama `patrimonio` perché è la grandezza, non la casella. Le caselle stanno in `base`, e
+  // lì il patrimonio non esiste più — è la somma delle quattro classi.
   const D = {patrimonio:s.patrimonio, spesa:s.spesa, spesaPens:s.spesaPens, rend:s.rendNom, infl:s.infl,
     prova:s.prova, manca:s.manca,
     // SI PASSANO LE CIFRE SCRITTE, non `attiva`/`ricavato`/`spesaAnnua`: quelli sono già il

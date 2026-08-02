@@ -157,7 +157,10 @@ export async function apri({ larghezza = 1200, altezza = 1400 } = {}) {
 // Sono i punti in cui l'aspetto è già stato rotto almeno una volta, non una rassegna.
 const DATI = {quanti:'1', nome0:'Anna', nascita0:1975, ral0:38000,
   pens0:1500, annoPens0:2042, fondo0:60000, iscr0:2005, pcVoi0:3, pcDat0:2,
-  patrimonio:200000, spesa:2500, rend:4, infl:2, rendFondo:3, etaFine:95};
+  // il patrimonio non si scrive più intero: è la somma delle quattro classi. Qui la ripartizione
+  // è realistica e NON è indifferente come negli altri banchi — questo apre un browser vero,
+  // quindi gli ascoltatori scattano e da queste quattro cifre discende il rendimento mostrato.
+  cl0:60000, cl1:8000, cl2:40000, cl3:92000, spesa:2500, infl:2, etaFine:95};
 
 if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
   const b = await apri({ larghezza: 1200 });
@@ -177,7 +180,6 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // se la legenda va a capo in un punto stupido, se il gradino più chiaro sparisce sul bianco:
     // sono esattamente i difetti per cui questo file esiste. Gli importi sono squilibrati apposta
     // — un segmento largo, uno sottile — perché è lì che una barra si rompe, non su quattro quarti.
-    await b.compila({cl0: 60000, cl1: 8000, cl2: 40000, cl3: 92000});
     fatti.push(await b.scatta('composizione', 'fieldset:has(#composizione)'));
 
     // il cursore SOTTO quello che si versa: è lì che compare la domanda sul minimo, ed è il

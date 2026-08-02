@@ -26,7 +26,7 @@ const src = [...PAGINA.matchAll(/<script>([\s\S]*?)<\/script>/g)]
 const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1980,
   ral0:58000, ral1:36000, pens0:2600, pens1:1700,
   annoPens0:2042, annoPens1:2050, pcVoi0:1.5, pcVoi1:1.2, pcDat0:2, pcDat1:1.6,
-  iscr0:2018, iscr1:2012, patrimonio:120000, spesa:2600, rend:5, infl:2, rendFondo:5,
+  iscr0:2018, iscr1:2012, cl3:120000, spesa:2600, rend:5, infl:2, rendFondo:5,
   etaFine:95, fondo0:90000, fondo1:30000, tfrDove0:'fondo', tfrDove1:'fondo',
   tipoFondo0:'collettiva', tipoFondo1:'collettiva', ultimo0:'', ultimo1:'',
   rita0:2042, rita1:2050, quotaCap0:0.6, quotaCap1:1, forma0:'vita', forma1:'vita',
@@ -216,12 +216,16 @@ const dentro = leggiZip(bytes);
   c('col modulo compilato il pulsante è acceso', elementi.scarica.disabled === false);
 
   const salva = {...DATI};
-  for (const k of ['spesa', 'patrimonio', 'nascita0']){
+  // «cl3» è il patrimonio: da quando non si chiede più intero, il patrimonio è la somma delle
+  // quattro classi e il modulo di prova lo mette tutto in una. Toglierla è quindi togliere il
+  // patrimonio — che è la proprietà che questo controllo vuole davvero provare.
+  const COME_SI_CHIAMA = {spesa: 'la spesa', cl3: 'il patrimonio', nascita0: 'la nascita'};
+  for (const k of Object.keys(COME_SI_CHIAMA)){
     Object.assign(DATI, salva); delete DATI[k];
     for (const id of Object.keys(elementi))
       elementi[id].value = DATI[id] === undefined ? '' : String(DATI[id]);
     M.calc();
-    c(`senza ${k} il pulsante si spegne`, elementi.scarica.disabled === true);
+    c(`senza ${COME_SI_CHIAMA[k]} il pulsante si spegne`, elementi.scarica.disabled === true);
   }
   Object.assign(DATI, salva);
 }

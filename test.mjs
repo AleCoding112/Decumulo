@@ -30,7 +30,7 @@ const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/s
 // `spesaPens` vuota: in pensione si spende come adesso — vuoto e 0 qui vogliono dire cose diverse.
 // `rita` è messo alla propria decorrenza (niente erogazione anticipata) per avere un punto di
 // partenza pulito: la RITA si prova nel suo gruppo.
-const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
+const DATI = {cl3:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
   forma0:'vita', forma1:'vita', nome0:'Anna', nome1:'Bruno', pc0:'', pc1:'',
   nascita0:1975, ral0:58000, pens0:2600, annoPens0:2042,
   tipoFondo0:'collettiva', tipoFondo1:'collettiva',

@@ -230,11 +230,14 @@ export const REGOLE = {
   // la pagina direbbe una cosa e il listino un'altra: è esattamente il difetto che tutto il
   // build esiste per impedire.
   //
-  // IL 12,5% NON È UNO SCONTO QUALSIASI, ed è il motivo per cui il listino ha UNA voce
-  // «obbligazioni» e non due. Applicato ai titoli di Stato compensa quasi per intero il maggior
-  // rendimento delle societarie — 3,1% al 12,5% e 3,7% al 26% finiscono sullo stesso netto —
-  // quindi due caselle distinte darebbero al conto lo stesso numero due volte. Il fatto fiscale
-  // resta, ma sta scritto nella nota invece che in una distinzione che non distingue.
+  // PERCHÉ IL LISTINO HA UNA VOCE «OBBLIGAZIONI» E NON DUE. Le due specie stanno sotto regimi
+  // diversi — 12,5% i titoli di Stato, 26% le societarie — e separarle sarebbe stato più
+  // preciso. Ma i due effetti si mangiano a vicenda: i titoli di Stato pagano meno tasse e
+  // rendono meno, le societarie il contrario, e su un lordo intorno al 3% i due netti distano
+  // quattro decimi di punto. Su una classe che in un portafoglio pesa un quinto, quattro
+  // decimi valgono meno di un decimo sul totale: una casella in più per una differenza che il
+  // risultato non vede. Si applica quindi la media delle due aliquote, e la distinzione vera
+  // sta scritta nella nota, dove chi ha solo BTP la può leggere.
   IMPOSTA_RENDITE: { nome: "Imposta sulle rendite finanziarie", val: 0.26,
     fonte: 'art. 3 D.L. 66/2014: 26% su interessi, dividendi e plusvalenze. Sulle azioni si sconta al realizzo e non per competenza, quindi su orizzonti lunghi il prelievo effettivo annuo è più vicino al 20%',
     verificata: true },
@@ -388,22 +391,27 @@ export const REGOLE = {
   // Nessun decennio predice il successivo: una convenzione travestita da rilevazione è peggio
   // di una convenzione dichiarata, perché si porta dietro un'autorevolezza che non ha.
   //
-  // COME SI TENGONO INSIEME LE DUE LISTE. I comparti stanno sotto le classi libere sui gradini
-  // bassi (1 contro 1,5, 2 contro 2,5) e ALLA PARI in cima (5 e 5). Non è una svista: i costi
-  // di gestione e il prezzo della garanzia pesano tanto più quanto il rendimento è sottile,
-  // mentre un comparto azionario e un ETF globale tengono le stesse cose e costano quasi
-  // uguale. Mettere il fondo sotto anche in cima avrebbe infilato di nascosto un pregiudizio
-  // dentro il confronto più importante della pagina, che è proprio fondo contro non-fondo.
+  // COME SI TENGONO INSIEME LE DUE LISTE. Il comparto sta sotto la classe libera corrispondente
+  // di poco e a OGNI gradino — 1 contro 1,3, 2 contro 2,2, 5 contro 5,4 — e questo è il verso
+  // giusto: un fondo pensione ha costi di gestione che un ETF comprato da sé non ha, e sul
+  // garantito paga anche il prezzo della garanzia. Il distacco però resta piccolo e uniforme,
+  // e deve restarlo: il confronto più importante della pagina è fondo contro non-fondo, e il
+  // vantaggio del fondo sta nella deduzione dei versamenti, non nel rendimento. Un divario
+  // largo qui dentro deciderebbe di nascosto una domanda che il conto deve lasciare aperta.
   CLASSI: { nome: "Classi di attivo, rendimento nominale netto atteso",
     // I NOMI SONO CORTI PERCHÉ FANNO DUE MESTIERI: etichetta di una casella e voce della
     // legenda sotto la barra. «Conti deposito e liquidità vincolata» andava a capo in tutte e
     // due. I qualificatori non si perdono, stanno nella nota sotto le caselle e qui nel fonte.
     val: [['Conto corrente e contanti', 0],
-          ['Conti deposito', 0.015],
-          ['Obbligazioni', 0.025],
-          ['Azioni ed ETF', 0.05]],
+          ['Conti deposito', 0.013],
+          ['Obbligazioni', 0.022],
+          ['Azioni ed ETF', 0.054]],
     come: 'listino',
-    fonte: 'convenzione: rendimenti nominali attesi, già al netto dell\'imposta e del bollo. Il conto corrente non rende; i conti deposito da un lordo del 2,3% meno il 26% e lo 0,2%; le obbligazioni da un lordo del 3,1% al 12,5% se di Stato o del 3,7% al 26% se societarie, che danno lo stesso netto; le azioni da un lordo del 6,5% meno un prelievo effettivo del 20%, perché il 26% si sconta al realizzo. Le cifre sono arrotondate perché sono scelte, non misurate',
+    // I TONDI STANNO NEL LORDO, NON QUI. Le cifre scelte sono 2%, 3% e 7% — quelle si
+    // riconoscono e si discutono — e questi netti ne sono la CONSEGUENZA, calcolata con le
+    // aliquote di sopra. Arrotondarli a loro volta avrebbe rotto il legame fra la scelta e il
+    // suo effetto, cioè l'unica cosa che rende questo listino verificabile da fuori.
+    fonte: 'convenzione: si scelgono i rendimenti nominali LORDI — nessuno per il conto corrente, 2% per i conti deposito, 3% per le obbligazioni, 7% per le azioni ed ETF — e le cifre qui esposte ne discendono al netto dell\'imposta e del bollo. Ai conti deposito si applica il 26% e lo 0,2%; alle obbligazioni la media fra il 12,5% dei titoli di Stato e il 26% delle societarie, meno lo 0,2%; alle azioni un prelievo effettivo del 20% invece del 26%, perché l\'imposta si sconta al realizzo e non per competenza, meno lo 0,2%',
     verificata: true },
   // IL BILANCIATO NON È SCELTO, DISCENDE. Gli altri tre sono una decisione; questo è il conto
   // che ne segue, e la differenza va tenuta visibile perché è quella fra un'opinione e una sua

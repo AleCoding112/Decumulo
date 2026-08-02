@@ -39,7 +39,7 @@ const R=(a,b)=>a+Math.random()*(b-a), I=(a,b)=>Math.floor(R(a,b+1)), P=l=>l[I(0,
 
 for (let t=0; t<4000; t++){
   const n0=I(1950,1990), n1=I(1950,1990);
-  DATI={patrimonio:Math.round(R(0,900000)), spesa:Math.round(R(0,9000)),
+  DATI={cl3:Math.round(R(0,900000)), spesa:Math.round(R(0,9000)),
     spesaPens: P(['', Math.round(R(0,9000))]),
     rend:+R(-2,12).toFixed(1), infl:+R(0,8).toFixed(1), rendFondo:+R(-2,12).toFixed(1),
     etaFine:I(70,105),

@@ -782,10 +782,27 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
 <fieldset>
   <legend>Quello che c'è oggi</legend>
+  <!-- IL PATRIMONIO NON SI SCRIVE PIÙ: SI SCRIVE COM'È FATTO, e il totale è la somma.
+       Fino al 02/08/2026 c'era una casella «Patrimonio investito» e, più sotto, le quattro
+       classi: la stessa cifra chiesta due volte, una intera e una a pezzi. Due domande per un
+       dato solo sono anche due occasioni di non farle tornare — e non c'era modo di dire quale
+       delle due valesse, perché al conto servivano il totale dall'una e le proporzioni
+       dall'altra. Ora la domanda è una: quanto c'è, e dove. Il totale si mostra sotto la barra
+       e non si chiede; è sparita con esso la nota che spiegava che le due potevano non tornare,
+       che era una toppa su un difetto invece che una spiegazione. -->
+  <div class="gruppo largo">Il patrimonio investito, e com'è fatto</div>
+  <div class="caselle strette" id="composizione"></div>
+  <div class="quote">
+    <div class="barra" id="barra"></div>
+    <div class="legenda" id="legendaBarra"></div>
+  </div>
+  <p class="calcolato" id="totalePatrimonio"></p>
+  <p class="nota">Va quello che <b>rende ed è disponibile</b>, non l'abitazione. Nei
+  <b>conti deposito</b> rientra la liquidità vincolata; nelle <b>obbligazioni</b>, sia i titoli
+  di Stato sia quelle societarie. Da come è ripartito discende il rendimento, fra le ipotesi.</p>
+
+  <div class="gruppo largo">La spesa, e l'abitazione</div>
   <div class="caselle">
-    <div><label for="patrimonio">Patrimonio investito</label>
-      <input type="text" inputmode="decimal" id="patrimonio" value="">
-      <u class="hint">quello che rende ed è disponibile: non l'abitazione</u></div>
     <div><label for="spesa">Spesa mensile, oggi</label>
       <input type="text" inputmode="decimal" id="spesa" value="">
       <u class="hint">quanto esce ogni mese, tutto compreso</u></div>
@@ -809,33 +826,15 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 <fieldset>
   <legend>Le ipotesi</legend>
 
-  <!-- LA COMPOSIZIONE VIENE PRIMA DEL RENDIMENTO, ed è il senso di tutta la sezione.
-       Fino al 02/08/2026 qui c'era una casella sola, «Rendimento degli investimenti», che
-       chiedeva il PRODOTTO di due cose diverse: come si è messi (composizione) e quanto rende
-       ciascuna cosa, già al netto dell'imposta. Il primo fattore chi compila ce l'ha davanti,
-       il secondo no — e il risultato era che si scriveva il rendimento dell'ETF dimenticando
-       i sessantamila fermi sul conto. Non è distrazione: è che la domanda chiedeva un conto
-       che nessuno ha mai fatto.
-       Ora i due fattori sono separati secondo la regola di sempre: quello che l'utente ha
-       davanti è una casella, quello che è convenzione lo manteniamo noi (CLASSI, in
-       regole.mjs, con la sua fonte). E il netting lo fa la pagina, che è l'unica a saper
-       applicare il 12,5% a una metà e il 26% all'altra.
-
-       PERCHÉ OBBLIGATORIA E NON DIETRO UN «VUOI ESSERE PIÙ PRECISO?». Un pannello facoltativo
-       lo apre solo chi ha già dei dubbi: chi scrive 7% convinto non lo apre mai, ed è
-       esattamente la persona per cui esiste. Davanti a tutti costa quattro caselle con dentro
-       numeri che uno conosce, invece di una casella con dentro un numero da inventare. -->
-  <div class="gruppo largo">Come sono investiti i risparmi</div>
-  <div class="caselle strette" id="composizione"></div>
-  <div class="quote">
-    <div class="barra" id="barra"></div>
-    <div class="legenda" id="legendaBarra"></div>
-  </div>
-  <p class="nota">Contano solo le proporzioni, non il totale: se non torna col patrimonio
-  scritto sopra non cambia nulla. Nei <b>conti deposito</b> rientra la liquidità vincolata;
-  nelle <b>obbligazioni</b>, sia i titoli di Stato sia quelle societarie.</p>
-
-  <div class="gruppo largo">Quanto rende</div>
+  <!-- IL RENDIMENTO NON SI CHIEDE PIÙ, SI RICAVA — e la composizione da cui si ricava sta nel
+       riquadro di sopra, perché è un DATO e non un'ipotesi: uno ce l'ha davanti sull'estratto
+       conto. Qui resta soltanto quello che nessun documento dice.
+       Fino al 02/08/2026 c'era una casella sola, «Rendimento degli investimenti», che chiedeva
+       il PRODOTTO di due cose diverse: come si è messi, e quanto rende ciascuna cosa già al
+       netto dell'imposta. Il primo fattore si conosce, il secondo no — e il risultato era che
+       si scriveva il rendimento del proprio ETF dimenticando i sessantamila fermi sul conto.
+       Non è distrazione: la domanda chiedeva un conto che nessuno ha mai fatto.
+       La casella resta, e resta scrivibile, ma ora arriva già compilata. -->
   <div class="caselle">
     <div><label for="rend">Rendimento degli investimenti</label>
       <input type="text" inputmode="decimal" id="rend" value="3">
@@ -1600,8 +1599,14 @@ function leggi(){
   return {
     casa,
     N, indici, tuttoInPens,
-    patrimonio: numFra('patrimonio', 0, 1e10), spesa: numFra('spesa', 0, 1e7),
-    patrimonioVuoto: EL('patrimonio').value.trim() === '',
+    // IL PATRIMONIO È LA SOMMA DELLE QUATTRO CLASSI, non più una casella sua. Chiederlo anche
+    // intero sarebbe chiedere due volte lo stesso dato, e lasciare al conto il problema di
+    // quale dei due creda quando non tornano.
+    patrimonio: totaleClassi(), spesa: numFra('spesa', 0, 1e7),
+    // «vuoto» resta diverso da «zero», come dappertutto qui: quattro caselle non compilate
+    // vogliono dire che il dato manca — e la pagina lo chiede — mentre uno zero scritto è una
+    // risposta, e il conto la prende per buona.
+    patrimonioVuoto: CLASSI.every((_, i) => EL('cl' + i).value.trim() === ''),
     spesaPens: tuttoInPens || numOpt('spesaPens') === null
       ? null : fra(numOpt('spesaPens'), 0, 1e7),
     etaFine: numFra('etaFine', 0, 120), infl,
@@ -3297,15 +3302,21 @@ const TINTE = ['#8ab5a0', '#5f9a80', '#3d7f62', '#215a44'];
 const inCasella = x => (x * 100).toLocaleString('it-IT',
   {useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 2});
 
+// quanto c'è in ciascuna classe, in un posto solo: da qui escono sia il patrimonio sia i pesi
+const quotaClasse = i => Math.max(0, numFra('cl' + i, 0, 1e10));
+// IL PATRIMONIO INVESTITO. Non è più una casella: è la somma di quello che si è dichiarato di
+// avere. `leggi()` chiama questa, così la cifra che entra nel conto e quella scritta sotto la
+// barra sono per costruzione la stessa — non due conti che si somigliano.
+function totaleClassi(){
+  return CLASSI.reduce((t, _, i) => t + quotaClasse(i), 0);
+}
+
 // La media dei rendimenti di classe pesata sugli importi. `null` quando non c'è niente da
 // pesare, e null NON è zero: zero sarebbe una risposta, null è l'assenza della domanda.
 function rendDaComposizione(){
-  let tot = 0, somma = 0;
-  CLASSI.forEach(([, r], i) => {
-    const q = Math.max(0, numFra('cl' + i, 0, 1e10));
-    tot += q; somma += q * r;
-  });
-  return tot > 0 ? {rend: somma / tot, tot} : null;
+  const tot = totaleClassi();
+  if (!(tot > 0)) return null;
+  return {rend: CLASSI.reduce((s, [, r], i) => s + quotaClasse(i) * r, 0) / tot, tot};
 }
 
 function costruisciComposizione(){
@@ -3353,7 +3364,7 @@ function disegnaComposizione(){
   const d = rendDaComposizione();
   const barra = EL('barra'), leg = EL('legendaBarra');
   if (!d){
-    barra.innerHTML = ''; leg.innerHTML = '';
+    barra.innerHTML = ''; leg.innerHTML = ''; EL('totalePatrimonio').textContent = '';
     // NON DICE «ipotesi nostra», e la differenza conta: svuotando le caselle dopo averle
     // compilate, nella casella resta l'ultimo valore DERIVATO — non il nostro default — e
     // chiamarlo «ipotesi nostra» sarebbe falso. Questa frase è vera in tutti e due i casi.
@@ -3362,7 +3373,10 @@ function disegnaComposizione(){
   }
   // le classi a zero non si disegnano affatto: un segmento di due pixel non si legge, e
   // toglierle è anche ciò che tiene gli angoli tondi ai due capi VERI della barra
-  const quote = CLASSI.map((_, i) => Math.max(0, numFra('cl' + i, 0, 1e10)) / d.tot);
+  // il totale non è un riepilogo di cortesia: è ESATTAMENTE il patrimonio che entra nel conto,
+  // e mostrarlo è l'unico modo perché chi compila veda la cifra su cui gli si risponde
+  EL('totalePatrimonio').textContent = `Patrimonio investito: ${E0(d.tot)}.`;
+  const quote = CLASSI.map((_, i) => quotaClasse(i) / d.tot);
   const viste = CLASSI.map((c, i) => [c, i]).filter(([, i]) => quote[i] > 0);
   barra.innerHTML = viste.map(([, i]) =>
     `<i style="flex:${quote[i]};background:${TINTE[i]}"></i>`).join('');
@@ -4206,7 +4220,11 @@ function pianoInFoglio(s, r){
     perPersona('Anno di iscrizione al fondo', x => x.iscr),
     [],
     [G("QUELLO CHE C'È OGGI")],
+    // IL PATRIMONIO SI PORTA DIETRO COM'È FATTO. Da quando non si chiede più intero, la sola
+    // riga del totale sarebbe la SOMMA di quattro dati scritti, cioè meno di quello che si è
+    // scritto: chi riapre il foglio fra un anno non saprebbe da dove venga il rendimento.
     ['Patrimonio investito', s.patrimonio],
+    ...CLASSI.map(([nome], i) => ['    ' + nome, quotaClasse(i)]),
     ['Spesa mensile', s.spesa],
     ['Spesa mensile in pensione', s.spesaPens === null ? 'come oggi' : s.spesaPens],
     // L'ABITAZIONE compare solo se è stata scelta: una riga «nessun cambiamento» in un foglio
