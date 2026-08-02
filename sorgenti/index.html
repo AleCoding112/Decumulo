@@ -211,6 +211,11 @@
   legend{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
     color:var(--soft);padding:0 8px}
   .caselle{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 20px}
+  /* le quattro classi di attivo stanno su una riga sola: sono importi corti e vanno letti
+     insieme, perché è il loro CONFRONTO a dire com'è messo il portafoglio. A 200px il
+     riquadro ne teneva tre e mandava la quarta a capo da sola, che è il modo peggiore di
+     presentare una scala. Sotto i 600px si impilano come tutto il resto. */
+  .caselle.strette{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))}
   label{display:block;font-size:13px;color:var(--soft);margin:0 0 4px}
   /* IL COLORE DEI LINK, che qui mancava del tutto. Il foglio delle pagine ha `a{color:var(--acc)}`
      da sempre; il calcolatore aveva solo regole per singole classi (.spiega a, .nota a, …), e
@@ -311,6 +316,35 @@
      la detta il testo, non la griglia delle caselle */
   #lasciato{max-width:66ch;margin:14px 0 0;font-size:14px}
 
+  /* --- LA BARRA DELLA COMPOSIZIONE ------------------------------------
+     UNA TINTA SOLA A GRADINI, non quattro colori. Le quattro classi sono una SCALA — dalla
+     liquidità che non rende alle azioni — e scambiarne l'ordine cambierebbe il significato:
+     è una grandezza ordinata, non quattro identità, quindi si colora come tale. Quattro tinte
+     diverse avrebbero detto «queste sono quattro cose distinte» dove invece c'è un crescendo,
+     e avrebbero portato un circo di colori dentro una pagina che non ne ha nessuno.
+     I gradini sono verificati: luminosità monotòna, distacco di almeno 0,06 fra l'uno e
+     l'altro, e l'estremo chiaro che tiene 2,28:1 contro il bianco del riquadro — misurati,
+     non guardati a occhio.
+
+     I SEGMENTI SI SEPARANO CON UN VUOTO, NON CON UN BORDO: due pixel di sfondo fra l'uno e
+     l'altro. Un bordo aggiungerebbe inchiostro che non è un dato, e su segmenti sottili
+     sporcherebbe il colore che invece deve dire la classe. Gli angoli tondi stanno solo ai
+     due capi della barra, che sono i suoi estremi veri. */
+  .barra{display:flex;gap:2px;height:10px;margin:15px 0 9px}
+  .barra i{display:block;min-width:2px}
+  .barra i:first-child{border-radius:5px 0 0 5px}
+  .barra i:last-child{border-radius:0 5px 5px 0}
+  /* LA LEGENDA PORTA I VALORI IN CHIARO, e non è un ripiego: dentro un segmento sottile
+     un'etichetta non ci sta senza essere tagliata, e affidare i numeri al solo passaggio del
+     mouse li toglierebbe a chi usa il telefono e a chi legge con la tastiera. Scritti qui
+     stanno sempre, per tutti. Il testo resta del colore del testo — il quadratino colorato
+     accanto è quello che porta l'identità: un numero verde sarebbe inchiostro che finge. */
+  .legendaBarra{display:flex;flex-wrap:wrap;gap:5px 18px;font-size:12.5px;color:var(--soft);
+    font-variant-numeric:tabular-nums;margin:0}
+  .legendaBarra span{display:flex;align-items:center;gap:7px}
+  .legendaBarra u{width:9px;height:9px;border-radius:2px;text-decoration:none;flex:none}
+  .legendaBarra b{color:var(--ink);font-weight:600}
+  .legendaBarra:empty{display:none}
   .nota{color:var(--soft);font-size:13px;margin:14px 0 0;line-height:1.5}
   .nota a{color:var(--acc);font-weight:600}
   .salta{position:absolute;left:-9999px;top:0;background:var(--card);color:var(--ink);
@@ -768,10 +802,50 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
 <fieldset>
   <legend>Le ipotesi</legend>
+
+  <!-- LA COMPOSIZIONE VIENE PRIMA DEL RENDIMENTO, ed è il senso di tutta la sezione.
+       Fino al 02/08/2026 qui c'era una casella sola, «Rendimento degli investimenti», che
+       chiedeva il PRODOTTO di due cose diverse: come si è messi (composizione) e quanto rende
+       ciascuna cosa, già al netto dell'imposta. Il primo fattore chi compila ce l'ha davanti,
+       il secondo no — e il risultato era che si scriveva il rendimento dell'ETF dimenticando
+       i sessantamila fermi sul conto. Non è distrazione: è che la domanda chiedeva un conto
+       che nessuno ha mai fatto.
+       Ora i due fattori sono separati secondo la regola di sempre: quello che l'utente ha
+       davanti è una casella, quello che è convenzione lo manteniamo noi (CLASSI, in
+       regole.mjs, con la sua fonte). E il netting lo fa la pagina, che è l'unica a saper
+       applicare il 12,5% a una metà e il 26% all'altra.
+
+       PERCHÉ OBBLIGATORIA E NON DIETRO UN «VUOI ESSERE PIÙ PRECISO?». Un pannello facoltativo
+       lo apre solo chi ha già dei dubbi: chi scrive 7% convinto non lo apre mai, ed è
+       esattamente la persona per cui esiste. Davanti a tutti costa quattro caselle con dentro
+       numeri che uno conosce, invece di una casella con dentro un numero da inventare. -->
+  <div class="gruppo largo">Come sono investiti i risparmi</div>
+  <div class="caselle strette" id="composizione"></div>
+  <div class="barra" id="barra"></div>
+  <div class="legendaBarra" id="legendaBarra"></div>
+  <p class="nota">Contano solo le proporzioni, non il totale: se non torna col patrimonio
+  scritto sopra non cambia nulla. Nei <b>conti deposito</b> rientra la liquidità vincolata;
+  nelle <b>obbligazioni</b>, sia i titoli di Stato sia quelle societarie.</p>
+
+  <div class="gruppo largo">Quanto rende</div>
   <div class="caselle">
     <div><label for="rend">Rendimento degli investimenti</label>
-      <input type="text" inputmode="decimal" id="rend" value="4"></div>
-    <div><label for="rendFondo">Rendimento del comparto del fondo</label>
+      <input type="text" inputmode="decimal" id="rend" value="3">
+      <u class="hint" id="rendDa">&nbsp;</u></div>
+    <!-- IL COMPARTO SI SCEGLIE, IL SUO RENDIMENTO NO. Il nome del comparto sta sulla
+         comunicazione annuale del fondo: è un dato, e si chiede. Quanto renderà non sta da
+         nessuna parte, ed è una convenzione nostra (COMPARTI, in regole.mjs).
+         La prima voce è «scritto a mano» e non è un riempitivo: se uno corregge il numero
+         accanto, la tendina ci torna da sé, invece di restare a dire «Bilanciato» sopra una
+         cifra che bilanciata non è più. -->
+    <div><label for="comparto">Comparto del fondo pensione</label>
+      <select id="comparto"></select>
+      <u class="hint">sta sulla comunicazione annuale del fondo</u></div>
+    <!-- «del fondo» è caduto dall'etichetta e non è una limatura: andava a capo, e una riga in
+         più su UNA casella di tre disallineava tutta la fila — le altre due caselle finivano
+         più in alto. Il pezzo non si perde: la tendina accanto dice «Comparto del fondo
+         pensione», quindi di quale comparto si parla è già scritto una riga a sinistra. -->
+    <div><label for="rendFondo">Rendimento del comparto</label>
       <input type="text" inputmode="decimal" id="rendFondo" value="3"></div>
     <div><label for="infl">Inflazione</label>
       <input type="text" inputmode="decimal" id="infl" value="2"></div>
@@ -781,11 +855,17 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
            compie questa età. Con due date di nascita diverse non è indifferente, e va detto. -->
       <u class="hint">il piano si ferma quando il più giovane compie questa età</u></div>
   </div>
-  <!-- «Lordo» da solo non basta, e su questa casella cambia il risultato: sui rendimenti del
-       patrimonio il conto non applica alcuna imposta, quindi il numero va scritto già netto.
-       Chi scrive il lordo d'imposta sovrastima di più di un punto l'anno. -->
-  <p class="nota">Tutti e due i rendimenti si scrivono <b>al netto delle imposte</b> e <b>al
-  lordo dell'inflazione</b>: il conto toglie l'inflazione, <span id="reali"></span>.</p>
+  <!-- L'ISTRUZIONE HA CAMBIATO DESTINATARIO. Prima diceva a chiunque «scrivi il netto», ed era
+       l'unica difesa contro un errore che valeva più di un punto l'anno: il motore non tassa il
+       patrimonio, quindi il lordo passava intatto. Ora l'imposta la toglie il listino, classe
+       per classe — ed è l'unico modo perché venga tolta GIUSTA, visto che sui titoli di Stato
+       è il 12,5% e sul resto il 26%, distinzione che a mano non fa nessuno. La frase resta per
+       chi il numero lo riscrive a mano, che è l'unico caso in cui serve ancora. -->
+  <p class="nota">I due rendimenti sono <b>al netto delle imposte</b> e <b>al lordo
+  dell'inflazione</b>: il conto toglie l'inflazione, <span id="reali"></span>. Sugli
+  investimenti l'imposta l'ha già tolta il listino — {{impostaRendite}}, o {{impostaTitoli}} sui
+  titoli di Stato, meno {{bolloTitoli}} di bollo — e chi riscrive il numero a mano lo scriva
+  già netto.</p>
   <p class="nota" id="confrontoRend">&nbsp;</p>
   <p class="nota">Alla riscossione il fondo sconta un'imposta agevolata:
   <b>{{aliqFondoMax}}, che scende di {{aliqFondoPunti}} punti per ogni anno di iscrizione oltre
@@ -2264,6 +2344,11 @@ function componi(comuni, dei){
 let ultimo = null;
 
 function calc(){
+  // La barra si ridisegna da quello che c'è nelle caselle, non da uno stato suo: così un
+  // ripristino dal salvataggio la rimette a posto senza sapere che esiste. NON scrive in
+  // nessuna casella — scrivono solo gli ascoltatori, quando qualcosa è stato toccato — quindi
+  // girare qui a ogni tasto non può sovrascrivere un numero riscritto a mano.
+  disegnaComposizione();
   const s = leggi();
   const r = simula(s);
   // si spegne all'inizio e si riaccende solo se si arriva al verdetto: così nessuna uscita
@@ -2831,9 +2916,20 @@ function calc(){
   // non c'è più a rendere dopo, e un piano che regge sulla media può non reggere su una brutta
   // partenza. Misurato: sul caso di prova a 4.000 € di spesa il verdetto si rovescia davvero.
   if (s.rend <= 0 && s.rendFondo <= 0){
-    // con rendimenti reali già non positivi la prova non toglie niente: mostrarla direbbe
-    // «regge lo stesso» su un confronto fra un piano e sé stesso
-    EL('tenuta').innerHTML = '';
+    // CON RENDIMENTI REALI GIÀ NON POSITIVI LA PROVA NON TOGLIE NIENTE: la perturbazione è
+    // `Math.min(0, rendimento)`, che su un numero già negativo lo lascia dov'era — il piano
+    // provato e il piano sono lo stesso piano, e mostrare il confronto direbbe «regge lo
+    // stesso» su un piano paragonato a sé stesso.
+    //
+    // AL POSTO DEL SILENZIO ORA C'È UNA RIGA. Fino al 02/08/2026 questo ramo non toccava quasi
+    // nessuno: coi rendimenti proposti — 4% e 3% contro il 2% di inflazione — entrambi i reali
+    // erano positivi e la prova si vedeva sempre. Col listino delle classi ci finisce chi ha
+    // molta liquidità e chi sta in un comparto garantito, cioè le persone più prudenti, che
+    // sono il cuore di chi legge questo sito. Vedersi sparire una riga senza sapere perché è
+    // peggio che leggere che non serve: la prova non manca, è già dentro le ipotesi.
+    EL('tenuta').innerHTML = `<b>Prova di tenuta.</b> Non si applica: con rendimenti che non
+      superano l'inflazione il piano sta già nel suo scenario peggiore, e ${fmt(PROVA_ANNI)}
+      esercizi iniziali a rendimento reale nullo non gli toglierebbero niente.`;
   } else {
     const sotto = {...s, prova: PROVA_ANNI};
     const p = simula(sotto);
@@ -3157,6 +3253,124 @@ function pareggioCasa(s){
   // dodici passi, come per la rendita: la cifra si mostra a due decimali di percentuale
   for (let k = 0; k < 12; k++){ const m = (lo + hi) / 2; meglio(m) ? hi = m : lo = m; }
   return {rend: hi, qui};
+}
+
+// ============================================================================
+//  LA COMPOSIZIONE DEL PATRIMONIO, E IL RENDIMENTO CHE NE DISCENDE.
+//
+//  IL PANNELLO NON SOSTITUISCE LA CASELLA, LA RIEMPIE. È la scelta che tiene in piedi tutto
+//  il resto: nel motore entra un numero solo — `rend` — che resta visibile e resta scrivibile.
+//  Se la composizione avesse una via propria fino al conto, la pagina avrebbe due sorgenti per
+//  la stessa grandezza e uno stato nascosto fra le due; `leggi()` non è stata toccata.
+//
+//  E LA CASELLA DEVE RESTARE SCRIVIBILE, per due ragioni che non sono di comodità. La prima:
+//  questi rendimenti sono l'unica cosa in pagina che è opinione e non legge, e sarebbero stati
+//  l'unica non contestabile — mentre tutto il sito esiste per mostrare su cosa poggia, così
+//  che chi non è d'accordo lo veda. La seconda: la composizione non sa esprimere «e se i
+//  mercati andassero peggio del previsto», che in un conto di decumulo è la domanda che tiene
+//  svegli. Sono due domande diverse, e con la sola barra la seconda non si può nemmeno porre.
+//
+//  GLI IMPORTI SERVONO SOLO COME PESI. Si chiedono in euro perché è quello che uno ha davanti
+//  — le percentuali vorrebbero la divisione a mente che stiamo cercando di evitare — ma al
+//  conto arrivano solo i rapporti. Per questo non si confrontano col patrimonio dichiarato:
+//  un controllo di coerenza qui prometterebbe una precisione che non abbiamo e trasformerebbe
+//  una pagina che mostra in una che sgrida.
+// ============================================================================
+
+// I quattro gradini della barra. Stanno qui e non in regole.mjs perché non sono un parametro
+// del modello: nessun conto li usa, cambiarli non sposta un euro. Sono il disegno.
+const TINTE = ['#8ab5a0', '#5f9a80', '#3d7f62', '#215a44'];
+
+// NELLA CASELLA IL NUMERO CI VA COME LO SCRIVEREBBE UNA PERSONA: virgola decimale, nessun
+// separatore di migliaia. `fmt` qui NON va bene, e il motivo è una trappola vera: sostituisce
+// il meno con il segno tipografico «−», che `numero()` non sa rileggere. Un valore che la
+// pagina scrive da sé e poi non sa ricaricare è un difetto che compare solo dopo un
+// salvataggio, cioè nel posto in cui non lo si cerca.
+const inCasella = x => (x * 100).toLocaleString('it-IT',
+  {useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 2});
+
+// La media dei rendimenti di classe pesata sugli importi. `null` quando non c'è niente da
+// pesare, e null NON è zero: zero sarebbe una risposta, null è l'assenza della domanda.
+function rendDaComposizione(){
+  let tot = 0, somma = 0;
+  CLASSI.forEach(([, r], i) => {
+    const q = Math.max(0, numFra('cl' + i, 0, 1e10));
+    tot += q; somma += q * r;
+  });
+  return tot > 0 ? {rend: somma / tot, tot} : null;
+}
+
+function costruisciComposizione(){
+  EL('composizione').innerHTML = CLASSI.map(([nome], i) =>
+    `<div><label for="cl${i}">${nome}</label>` +
+    `<input type="text" inputmode="decimal" id="cl${i}" placeholder="0"></div>`).join('');
+  // «scritto a mano» sta in cima e non è un riempitivo: è lo stato in cui la tendina si mette
+  // da sé quando il numero accanto non corrisponde a nessun comparto. Senza, resterebbe a dire
+  // «Bilanciato» sopra una cifra che bilanciata non è più.
+  EL('comparto').innerHTML = '<option value="">scritto a mano</option>'
+    + COMPARTI.map(([nome], i) => `<option value="${i}">${nome}</option>`).join('');
+  // QUESTI CONTROLLI NON RICEVONO L'ASCOLTATORE GENERALE: quello passa sulla pagina una volta
+  // sola, prima che esistano. Se lo attaccano da sé, come già fanno le decisioni.
+  CLASSI.forEach((_, i) => EL('cl' + i).addEventListener('input', () => {
+    const d = rendDaComposizione();
+    if (d) EL('rend').value = inCasella(d.rend);
+    calc();
+  }));
+  EL('comparto').addEventListener('input', () => {
+    const i = EL('comparto').value;
+    if (i !== '') EL('rendFondo').value = inCasella(COMPARTI[+i][1]);
+    calc();
+  });
+  // E IL RIALLINEAMENTO STA QUI, NON DENTRO `calc()`. Ci era finito, e scegliere un comparto
+  // non faceva niente: la tendina sta nell'HTML fin dall'inizio, quindi aveva preso anche
+  // l'ascoltatore generale — che gira per primo, chiama `calc()`, e `allineaComparto()`
+  // rimetteva la tendina sul valore vecchio PRIMA che questo codice la leggesse. Ogni scelta
+  // si annullava da sé, in silenzio, e nessuna misura poteva accorgersene: la pagina era
+  // coerente, solo inerte. Legato al numero — che è la cosa di cui la tendina è una veduta —
+  // gira solo quando quel numero cambia per conto suo.
+  EL('rendFondo').addEventListener('input', allineaComparto);
+}
+
+// LA TENDINA NON HA UNO STATO SUO: è una veduta del numero accanto. Ripristino da un
+// salvataggio, azzeramento, correzione a mano — sarebbero stati tre casi da tenere allineati,
+// e invece è una funzione sola richiamata dal conto.
+function allineaComparto(){
+  // stessa regola di sopra, e per la stessa ragione: si confronta come si scrive
+  const v = inCasella(numFra('rendFondo', -50, 100) / 100);
+  const i = COMPARTI.findIndex(([, x]) => inCasella(x) === v);
+  EL('comparto').value = i < 0 ? '' : String(i);
+}
+
+function disegnaComposizione(){
+  const d = rendDaComposizione();
+  const barra = EL('barra'), leg = EL('legendaBarra');
+  if (!d){
+    barra.innerHTML = ''; leg.innerHTML = '';
+    // NON DICE «ipotesi nostra», e la differenza conta: svuotando le caselle dopo averle
+    // compilate, nella casella resta l'ultimo valore DERIVATO — non il nostro default — e
+    // chiamarlo «ipotesi nostra» sarebbe falso. Questa frase è vera in tutti e due i casi.
+    EL('rendDa').textContent = 'scrivi qui sopra come sono investiti e si ricalcola';
+    return;
+  }
+  // le classi a zero non si disegnano affatto: un segmento di due pixel non si legge, e
+  // toglierle è anche ciò che tiene gli angoli tondi ai due capi VERI della barra
+  const quote = CLASSI.map((_, i) => Math.max(0, numFra('cl' + i, 0, 1e10)) / d.tot);
+  const viste = CLASSI.map((c, i) => [c, i]).filter(([, i]) => quote[i] > 0);
+  barra.innerHTML = viste.map(([, i]) =>
+    `<i style="flex:${quote[i]};background:${TINTE[i]}"></i>`).join('');
+  leg.innerHTML = viste.map(([[nome], i]) =>
+    `<span><u style="background:${TINTE[i]}"></u>${nome} <b>${fmt(quote[i] * 100)}%</b></span>`)
+    .join('');
+  // SI CONFRONTANO LE DUE CIFRE COME LE SI SCRIVE, non con una tolleranza. Nella casella il
+  // valore ci va arrotondato a due decimali, quindi «derivato» e «riscritto a mano» distano al
+  // minimo mezzo passo di arrotondamento: qualunque soglia numerica cade prima o poi ESATTAMENTE
+  // sul limite, e la pagina direbbe «scritto a mano» di un numero che ha scritto lei. Passando
+  // dalla stessa formattazione la domanda torna quella vera — «è la cifra che ho messo io?» —
+  // e non ha più bisogno di una soglia.
+  const scritto = numFra('rend', -50, 100) / 100;
+  EL('rendDa').textContent = inCasella(scritto) === inCasella(d.rend)
+    ? 'da come sono investiti i risparmi'
+    : `scritto a mano: dalla composizione verrebbe ${inCasella(d.rend)}%`;
 }
 
 function costruisciDecisioni(){
@@ -4056,7 +4270,13 @@ EL('azzera').addEventListener('click', () => {
 });
 
 costruisciDecisioni();
+// PRIMA DEL RIPRISTINO, come le decisioni: `ripristina()` scorre le caselle che trova in
+// pagina, e quelle costruite dopo non le rivedrebbe mai più.
+costruisciComposizione();
 const avevaDati = ripristina();
+// la tendina non viene salvata insieme al resto perché non ha niente di suo da salvare: si
+// ricava dal rendimento appena ripristinato, che è l'unica cosa che il conto legge davvero
+allineaComparto();
 calc();
 
 // Il sommario si accorge da sé di quando serve: guarda due elementi, il titolo del sito (finché

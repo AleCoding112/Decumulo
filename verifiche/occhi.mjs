@@ -173,6 +173,13 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     fatti.push(await b.scatta('menu-adesione', '.due:has(#tipoFondo0)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
 
+    // LA COMPOSIZIONE E LA SUA BARRA. Nessuna misura sa dire se quattro segmenti si distinguono,
+    // se la legenda va a capo in un punto stupido, se il gradino più chiaro sparisce sul bianco:
+    // sono esattamente i difetti per cui questo file esiste. Gli importi sono squilibrati apposta
+    // — un segmento largo, uno sottile — perché è lì che una barra si rompe, non su quattro quarti.
+    await b.compila({cl0: 60000, cl1: 8000, cl2: 40000, cl3: 92000});
+    fatti.push(await b.scatta('composizione', 'fieldset:has(#composizione)'));
+
     // il cursore SOTTO quello che si versa: è lì che compare la domanda sul minimo, ed è il
     // pezzo che nessuna verifica sa giudicare
     await b.js(`document.getElementById('pc0').value = '2'; calc();`);
@@ -182,6 +189,9 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     await b.larga(390);
     fatti.push(await b.scatta('telefono-contributi', '.gruppo.largo.rigalav + .due'));
     fatti.push(await b.scatta('telefono-cursore', '#decVersare .cur'));
+    // in mano le quattro caselle si impilano e la legenda deve spezzarsi bene: è la larghezza
+    // in cui una legenda a quattro voci si sfascia, se si sfascia
+    fatti.push(await b.scatta('telefono-composizione', 'fieldset:has(#composizione)'));
 
     console.log('  ' + fatti.length + ' scatti in verifiche/scatti/');
     for (const f of fatti) console.log('      · ' + f.split('/').slice(-1)[0]);

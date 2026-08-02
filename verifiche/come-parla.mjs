@@ -40,8 +40,13 @@ for (const m of PAGINA.matchAll(/<input\b[^>]*\bid="(\w+)"[^>]*>/g))
 for (const m of PAGINA.matchAll(/<select\b[^>]*\bid="(\w+)"[\s\S]*?<\/select>/g)){
   // senza `selected` vale la prima opzione, come nel browser
   const s = m[0].match(/<option[^>]*\bselected\b[^>]*>/);
-  DEFAULT[m[1]] = ((s ? s[0] : m[0].match(/<option[^>]*>/)[0])
-                   .match(/\bvalue="([^"]*)"/) || [, ''])[1];
+  // UNA TENDINA COSTRUITA A RUNTIME QUI DENTRO NON HA OPZIONI, e prenderne «la prima» faceva
+  // morire l'armatura su un markup giusto. Il suo valore di partenza non è nessuna delle sue
+  // voci: la tendina del comparto è una veduta del rendimento scritto accanto, e finché la
+  // pagina non gira vale la stringa vuota — che è esattamente quello che riporta il browser
+  // per un select senza opzioni. Nessuna scorciatoia: è il valore vero.
+  const prima = s ? s[0] : (m[0].match(/<option[^>]*>/) || [''])[0];
+  DEFAULT[m[1]] = (prima.match(/\bvalue="([^"]*)"/) || [, ''])[1];
 }
 
 // --- gli scenari: coprono i rami che scrivono frasi diverse ------------------
@@ -559,11 +564,16 @@ console.log('\n— la prova di tenuta —');
     /anziché nel/.test(anticipa) && !/regge lo stesso/.test(anticipa), anticipa);
   c('quando la fine non si muove, non mette due volte lo stesso anno',
     /si esaurisce comunque nel/.test(subito) && !/anziché/.test(subito), subito);
-  // con rendimenti reali gia non positivi non c'è niente da spegnere: la riga tace invece di
-  // confrontare un piano con sé stesso
+  // CON RENDIMENTI REALI NON POSITIVI LA PROVA NON HA NIENTE DA TOGLIERE, e fino al 02/08/2026
+  // la riga taceva. Ora dice perché: col listino delle classi in quel ramo ci finiscono chi ha
+  // molta liquidità e chi sta in un comparto garantito — le persone più prudenti, cioè il cuore
+  // di chi legge — e vedersi sparire una riga senza spiegazione è peggio che leggere che non
+  // serve. Quello che NON deve fare resta quello di prima: confrontare un piano con sé stesso.
   const {scritte: piatto} = esegui({...BASE, rend: 2, rendFondo: 1, infl: 2});
-  c('con rendimenti reali non positivi la riga non compare',
-    !(piatto.tenuta || '').trim(), (piatto.tenuta || '').replace(/<[^>]+>/g,' ').slice(0, 80));
+  const testoPiatto = (piatto.tenuta || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  c('con rendimenti reali non positivi la riga dice perché non si applica',
+    /Non si applica/.test(testoPiatto)
+    && !/regge lo stesso|anziché|si esaurisce/.test(testoPiatto), testoPiatto.slice(0, 90));
   c('e i rami non si sovrappongono mai',
     [comodo, rotto, anticipa, subito].every(t => t.split('Prova di tenuta').length === 2));
 }

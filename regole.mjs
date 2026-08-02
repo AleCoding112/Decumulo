@@ -222,6 +222,34 @@ export const REGOLE = {
     fonte: 'art. 11 c. 3 D.Lgs. 47/2000: «l\'imposta sostitutiva delle imposte sui redditi nella misura del 17 per cento», aliquota elevata dalla L. 190/2014 per le rivalutazioni dal 1° gennaio 2015',
     verificata: true },
 
+  // --- imposte sugli investimenti liberi ----------------------------------
+  // NON ENTRANO NEL MOTORE, e stanno qui lo stesso. Il conto non tassa il patrimonio: i
+  // rendimenti per classe — più sotto, fra le convenzioni — si scrivono già netti, ed è da
+  // QUESTE aliquote che sono stati ricavati. Se restassero scritte a mano nella pagina che
+  // spiega il netto sarebbero l'unica cifra di legge fuori da questo file, e alla prima manovra
+  // la pagina direbbe una cosa e il listino un'altra: è esattamente il difetto che tutto il
+  // build esiste per impedire.
+  //
+  // IL 12,5% NON È UNO SCONTO QUALSIASI, ed è il motivo per cui il listino ha UNA voce
+  // «obbligazioni» e non due. Applicato ai titoli di Stato compensa quasi per intero il maggior
+  // rendimento delle societarie — 3,1% al 12,5% e 3,7% al 26% finiscono sullo stesso netto —
+  // quindi due caselle distinte darebbero al conto lo stesso numero due volte. Il fatto fiscale
+  // resta, ma sta scritto nella nota invece che in una distinzione che non distingue.
+  IMPOSTA_RENDITE: { nome: "Imposta sulle rendite finanziarie", val: 0.26,
+    fonte: 'art. 3 D.L. 66/2014: 26% su interessi, dividendi e plusvalenze. Sulle azioni si sconta al realizzo e non per competenza, quindi su orizzonti lunghi il prelievo effettivo annuo è più vicino al 20%',
+    verificata: true },
+  IMPOSTA_TITOLI_STATO: { nome: "Imposta sui titoli di Stato e white list", val: 0.125,
+    fonte: 'art. 3 c. 2 lett. a) D.L. 66/2014, che rinvia al D.Lgs. 239/1996: resta il 12,5% sui titoli di Stato italiani, su quelli dei Paesi white list e sui titoli di organismi sovranazionali',
+    verificata: true },
+  BOLLO_TITOLI: { nome: "Imposta di bollo sul dossier titoli", val: 0.002,
+    fonte: 'art. 13 c. 2-ter Tariffa parte I DPR 642/1972: 0,2% annuo del valore, senza franchigia per le persone fisiche. Il D.L. 38/2026 ha alzato il bollo per i soli soggetti diversi dalle persone fisiche, quindi qui non cambia nulla',
+    verificata: true },
+  // IL BOLLO FISSO DEL CONTO CORRENTE — 34,20 € sopra i 5.000 € di giacenza — NON sta qui, e
+  // per una ragione di metodo: nessuna cifra del listino lo deriva. Il conto corrente rende 0%
+  // per convenzione, e un prelievo in cifra fissa non si converte in punti di rendimento senza
+  // sapere il saldo. Tenerlo sarebbe stato un parametro che non sostiene nessuna frase, cioè
+  // decorazione con una fonte addosso. Se un giorno la pagina lo cita, allora entra.
+
   // --- coefficienti di conversione ---------------------------------------
   // NON sono legge, e nessun fondo pubblica «il» coefficiente: ogni convenzione
   // assicurativa ha la sua tavola, differenziata per età, sesso, forma della
@@ -343,6 +371,51 @@ export const REGOLE = {
   PROVA_ANNI: { nome: "Prova di tenuta, esercizi iniziali a rendimento nullo", val: 10,
     come: 'secco',
     fonte: 'convenzione: dieci esercizi iniziali a rendimento reale nullo, per misurare quanto il verdetto dipenda dalla sequenza dei rendimenti anziché dalla loro media',
+    verificata: true },
+
+  // --- il listino dei rendimenti attesi -----------------------------------
+  // QUESTE OTTO CIFRE SONO L'OPINIONE PIÙ PESANTE DEL SITO, e vanno lette per quello che sono.
+  // La loro rotondità è voluta, non pigrizia: un 4,8% si legge come una misura, un 5% si vede
+  // che è stato scelto da qualcuno. Dove il numero è un'opinione, la tipografia deve dirlo.
+  //
+  // PERCHÉ NON I RENDIMENTI PASSATI, che pure sarebbero stati citabili. La COVIP pubblica i
+  // rendimenti netti medi a dieci anni e la tentazione era trascriverli. Ma un rendimento
+  // realizzato risponde a «com'è andata», non a «come andrà» — e proprio quel decennio lo
+  // dimostra al contrario: sei anni di tassi negativi più il crollo obbligazionario del 2022
+  // danno ai comparti garantiti uno 0,7% che, partendo dai tassi di oggi, non si può ripetere.
+  // Pubblicarlo avrebbe detto a chi sta in garantito — cioè a chi è più vicino alla pensione,
+  // il cuore di chi legge questo sito — che perderà l'1,3% reale ogni anno per trent'anni.
+  // Nessun decennio predice il successivo: una convenzione travestita da rilevazione è peggio
+  // di una convenzione dichiarata, perché si porta dietro un'autorevolezza che non ha.
+  //
+  // COME SI TENGONO INSIEME LE DUE LISTE. I comparti stanno sotto le classi libere sui gradini
+  // bassi (1 contro 1,5, 2 contro 2,5) e ALLA PARI in cima (5 e 5). Non è una svista: i costi
+  // di gestione e il prezzo della garanzia pesano tanto più quanto il rendimento è sottile,
+  // mentre un comparto azionario e un ETF globale tengono le stesse cose e costano quasi
+  // uguale. Mettere il fondo sotto anche in cima avrebbe infilato di nascosto un pregiudizio
+  // dentro il confronto più importante della pagina, che è proprio fondo contro non-fondo.
+  CLASSI: { nome: "Classi di attivo, rendimento nominale netto atteso",
+    // I NOMI SONO CORTI PERCHÉ FANNO DUE MESTIERI: etichetta di una casella e voce della
+    // legenda sotto la barra. «Conti deposito e liquidità vincolata» andava a capo in tutte e
+    // due. I qualificatori non si perdono, stanno nella nota sotto le caselle e qui nel fonte.
+    val: [['Conto corrente e contanti', 0],
+          ['Conti deposito', 0.015],
+          ['Obbligazioni', 0.025],
+          ['Azioni ed ETF', 0.05]],
+    come: 'listino',
+    fonte: 'convenzione: rendimenti nominali attesi, già al netto dell\'imposta e del bollo. Il conto corrente non rende; i conti deposito da un lordo del 2,3% meno il 26% e lo 0,2%; le obbligazioni da un lordo del 3,1% al 12,5% se di Stato o del 3,7% al 26% se societarie, che danno lo stesso netto; le azioni da un lordo del 6,5% meno un prelievo effettivo del 20%, perché il 26% si sconta al realizzo. Le cifre sono arrotondate perché sono scelte, non misurate',
+    verificata: true },
+  // IL BILANCIATO NON È SCELTO, DISCENDE. Gli altri tre sono una decisione; questo è il conto
+  // che ne segue, e la differenza va tenuta visibile perché è quella fra un'opinione e una sua
+  // conseguenza. La COVIP rileva nei comparti bilanciati un'esposizione azionaria del 33,7%:
+  // 0,34 × 5% + 0,66 × 2% = 3,0%. Che sia anche il valore già proposto oggi dalla casella non
+  // è una coincidenza cercata, ma è la ragione per cui questa modifica non sposta di una virgola
+  // il piano di chi la tendina non la tocca.
+  COMPARTI: { nome: "Comparti del fondo pensione, rendimento nominale netto atteso",
+    val: [['Garantito', 0.01], ['Obbligazionario', 0.02],
+          ['Bilanciato', 0.03], ['Azionario', 0.05]],
+    come: 'listino',
+    fonte: 'convenzione: rendimenti nominali nella stessa forma in cui li pubblica la COVIP, cioè al netto dei costi di gestione e degli oneri fiscali — quindi anche del 20% che grava sul patrimonio del comparto. Garantito, obbligazionario e azionario sono scelti; il bilanciato ne discende applicando il 33,7% di esposizione azionaria rilevato dalla COVIP. Ordine di grandezza riscontrato sulla Tav. 4 di «La previdenza complementare, principali dati statistici, dicembre 2025», dove i dieci anni a fine 2025 danno 4,8-5,1% agli azionari e 2,7-2,9% ai bilanciati',
     verificata: true }
 };
 
@@ -471,6 +544,11 @@ export const TESTI = {
   scaglione1:       eur(V('SCAGLIONI')[0][0]),
   scaglione2:       eur(V('SCAGLIONI')[1][0]),
   provaAnni:        String(V('PROVA_ANNI')),
+  // le imposte sugli investimenti liberi: servono alla nota che spiega perché i rendimenti del
+  // listino sono già netti. Scritte qui, non a mano nella pagina.
+  impostaRendite:   pc(V('IMPOSTA_RENDITE')),
+  impostaTitoli:    pc(V('IMPOSTA_TITOLI_STATO'), 1),
+  bolloTitoli:      pc(V('BOLLO_TITOLI'), 1),
   riscontrate:      String(quanteRiscontrate().con),
   regoleTutte:      String(quanteRiscontrate().tutte),
   mensPensione:     String(V('MENSILITA_PENSIONE')),
@@ -549,7 +627,12 @@ const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};
 // I costi di una compravendita: due quote del prezzo e una cifra fissa, perché l'onorario del
 // notaio e l'imposta di registro sul valore catastale non scalano col prezzo di mercato.
 const COSTI_VENDITA = ${V('COSTI_VENDITA')}, COSTI_ACQUISTO = ${V('COSTI_ACQUISTO')},
-      COSTI_ATTO = ${V('COSTI_ATTO')};`;
+      COSTI_ATTO = ${V('COSTI_ATTO')};
+// IL LISTINO ARRIVA INTERO, nomi compresi, perché la pagina COSTRUISCE le caselle e la tendina
+// da qui invece di ripeterle in HTML. Aggiungere una classe o rinominare un comparto resta una
+// riga sola in regole.mjs: se i nomi stessero anche nel markup, il primo ritocco li sdoppierebbe.
+const CLASSI = ${JSON.stringify(V('CLASSI'))};
+const COMPARTI = ${JSON.stringify(V('COMPARTI'))};`;
 }
 
 // --- la tabella completa delle regole, per la pagina «il metodo». Generata, non scritta:
@@ -573,6 +656,10 @@ const mostra = r => Array.isArray(r.val)
       + (quota ? (base ? ' + ' : '') + `${eur(quota)} × (${eur(fino)} − reddito) / `
                  + den.toLocaleString('it-IT', {useGrouping: 'always'}) : '')
       + ` fino a ${eur(fino)}`).join(' · ') + ' · nulla oltre'
+  // IL LISTINO PORTA IL NOME INSIEME ALLA CIFRA, e i decimali solo dove servono: «5,0%» si
+  // legge come una misura al decimo, «5%» dice quello che è, cioè una cifra scelta tonda.
+  : r.come === 'listino' ? r.val.map(([n, x]) =>
+      `${n} ${pc(x, (x * 1000) % 10 ? 1 : 0)}`).join(' · ')
   : r.val.map(([t, a]) => `${pc(a)} ${t === Infinity ? 'oltre' : 'fino a ' + eur(t)}`).join(' · ')
   : r.come === 'cumulo' ? r.val.map(([n, q]) => `${pc(q)} oltre ${n} volte`).join(' · ')
   : r.come === 'volte'    ? r.val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' volte'
