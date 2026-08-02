@@ -36,6 +36,11 @@ const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'',
   tipoFondo0:'collettiva', tipoFondo1:'collettiva',
   // vuoto = fino alla propria pensione. Assente varrebbe '0', cioè «non lavora da sempre»
   ultimo0:'', ultimo1:'',
+  // LA QUOTA MINIMA DEL CONTRATTO: vuota vale «quello che verso è il minimo», ed è il caso base.
+  // Va scritta qui perché l'armatura, per un campo assente, restituisce '0' e non '': con lo
+  // ZERO il gradino scatterebbe a qualunque versamento positivo, che è il caso opposto. Quattro
+  // controlli sono caduti proprio così, e non era il codice a essersi mosso — era lo strumento.
+  pcMin0:'', pcMin1:'',
   // quotaCap0 è la quota massima ordinaria di oggi: il caso di prova chiede esattamente quello
   // che la legge concede, così il gruppo qui sotto può controllare che non venga tagliato.
   // Era 0,6, ed è stata la spia del cambio di legge: dal 1° luglio 2026 il massimo è 0,5.
@@ -408,9 +413,38 @@ t('CHI SCRIVE ZERO ha la soglia appena sopra lo zero, non a una percentuale inve
     return M.contributi(z, 0).dat === 0 && !M.contributi(z, 0).scatta
         && M.contributi(z, 0.1).dat === DATI.ral0*DATI.pcDat0/100 && M.contributi(z, 0.1).scatta; })(),
   'e il messaggio «versando la quota minima sblocchi X» resta vero con qualunque minimo CCNL');
-t('nessuna soglia cablata: il gradino segue solo quello che scrivono',
+t('nessuna soglia cablata: senza minimo scritto il gradino segue quello che versano',
   M.contributi({...A, pcVoi:0.4}, 0.4).scatta && M.contributi({...A, pcVoi:3}, 2.9).dat === 0,
   'con 0,4% scatta a 0,4%; con 3% a 2,9% ancora no');
+
+// --- LA QUOTA MINIMA DEL CONTRATTO, quando non coincide con quella versata ---
+// IL DIFETTO CHE CHIUDE, misurato il 02/08/2026: chi versa il 3% avendo un minimo contrattuale
+// dell'1,2% si sentiva dire «sotto il 3% versato oggi il datore non versa: 760 € l'anno di
+// contributo che andrebbe perso». Falso — fino all'1,2% il datore versa — e detto con una cifra.
+// Il gradino stava su `pcVoi` perché il minimo non lo sapevamo; ora è una casella facoltativa.
+console.log('\n— la quota minima del contratto, se si versa di più —');
+const B = {...A, pcVoi: 3, pcMin: 1.2};
+t('il datore versa sopra il MINIMO, non sopra quello che si versa',
+  M.contributi(B, 2).scatta && M.contributi(B, 1.2).scatta,
+  `al 2% e all'1,2% arrivano ${eur(M.contributi(B, 2).dat)} €`);
+t('e smette sotto il minimo, non sotto il versamento',
+  !M.contributi(B, 1.19).scatta && M.contributi(B, 1.19).dat === 0);
+t('la casella vuota si comporta ESATTAMENTE come prima', (() => {
+    const senza = {...A, pcVoi: 3, pcMin: null};
+    return !M.contributi(senza, 2).scatta && M.contributi(senza, 3).scatta; })(),
+  'vuota vale «quello che verso è il minimo», che è il caso di quasi tutti');
+t('lo zero SCRITTO non è la casella vuota: il datore versa comunque',
+  M.contributi({...A, pcVoi: 3, pcMin: 0}, 0.1).scatta,
+  'è l\'adesione in cui il contratto non chiede una quota a carico del lavoratore');
+t('un minimo più alto di quello versato dice che oggi il datore NON versa',
+  !M.contributi({...A, pcVoi: 1, pcMin: 2}, 1).scatta);
+t('il tetto conta la quota del datore com\'è, non passando per una percentuale di comodo',
+  Math.abs(M.pcTetto(B) - M.pcTetto({...B, pcMin: 0.1})) < 1e-9,
+  'la soglia sposta il gradino, non lo spazio deducibile');
+t('e il vertice del gradino resta fra i candidati del punto più alto', (() => {
+    const cand = M.candidatiVersamento(B, Math.max(M.pcMassimo(B), 0.1));
+    return cand.some(v => Math.abs(v - 1.2) < 1e-9); })(),
+  'senza il suo vertice il massimo di una spezzata si cerca dove non c\'è');
 t('il salto è una discontinuità: un millesimo di punto in più porta dentro TUTTA la quota del datore',
   quota(A.pcVoi).tot - quota(A.pcVoi - 0.001).tot > quota(A.pcVoi).dat * 0.99,
   `+0,001% fa entrare ${eur(quota(A.pcVoi).tot - quota(A.pcVoi-0.001).tot)} € invece di 0,62 €`);

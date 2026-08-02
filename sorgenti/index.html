@@ -585,7 +585,9 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
   <div class="gruppo largo rigalav">Quanto ci entra ogni anno
   <span>Sul CCNL o sull'estratto conto del fondo sono righe separate, e <b>chi non versa
-  scrive 0</b>: lasciare la casella vuota vuol dire «non l'ho ancora compilata». La quota del
+  scrive 0</b>: lasciare la casella vuota vuol dire «non l'ho ancora compilata». La quota minima
+  si compila <b>solo se si versa più di quella</b>: è la soglia sotto cui il datore smette, e
+  lasciata vuota vale quella indicata sopra. La quota del
   datore discende dal contratto collettivo e segue il fondo che il contratto individua: chi ha
   sottoscritto per conto proprio un fondo aperto o un PIP di norma non la percepisce.
   <a href="contributo-datore.html">Come funziona il contributo del datore →</a></span>
@@ -596,6 +598,21 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
       <u class="hint" id="pcVoiEuro0">&nbsp;</u></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="pcVoi1" value="" placeholder="es. 1,2">
       <u class="hint" id="pcVoiEuro1">&nbsp;</u></div>
+
+    <!-- IL MINIMO DEL CONTRATTO, FACOLTATIVO. Serve a una cosa sola: sapere dove sta il gradino.
+         Fino al 02/08/2026 il gradino era piazzato su quello che si versa oggi, e reggeva
+         sull'osservazione che nessuno versa MENO del minimo contrattuale — vera, ma che non dice
+         nulla di chi versa DI PIÙ. A quello la pagina diceva il falso: «sotto il 3% versato oggi
+         il datore non versa», mentre il datore versa fino al minimo del suo contratto.
+         Vuota vale «quello che verso è il minimo», che è il caso di quasi tutti: chi non la
+         compila non vede cambiare niente. -->
+    <div class="voce rigalav">Quota minima <b>chiesta dal contratto</b>,<br>se si versa di più</div>
+    <div class="cella"><input type="text" inputmode="decimal" id="pcMin0" value=""
+        placeholder="come sopra">
+      <u class="hint" id="pcMinNota0">&nbsp;</u></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="pcMin1" value=""
+        placeholder="come sopra">
+      <u class="hint" id="pcMinNota1">&nbsp;</u></div>
 
     <div class="voce rigalav">Contributo del <b>datore</b> che ne consegue,<br>in % della RAL</div>
     <div class="cella"><input type="text" inputmode="decimal" id="pcDat0" value="" placeholder="es. 2,0">
@@ -965,10 +982,14 @@ function irpef(imponibile){
 // lavoratore versa la sua quota, e una volta scattato NON cresce se lui versa di più. Il valore
 // del denaro versato non è quindi una retta: è un gradino.
 //
-// La soglia è `pcVoi`, cioè quello che dichiarano di versare oggi, non il minimo del CCNL —
-// che varia da contratto a contratto e che non possiamo inventare. Regge perché nessuno versa
-// MENO del minimo contrattuale: o si aderisce e si versa l'aliquota del contratto, o non si
-// aderisce. Chi scrive 0 ha la soglia appena sopra lo zero, ed è lì che serve il messaggio.
+// LA SOGLIA È `pcMin`, e per un pezzo è stata `pcVoi`. Il minimo del contratto varia da CCNL a
+// CCNL e non si può inventare, quindi si piazzava il gradino su quello che si dichiara di
+// versare oggi. Reggeva su un'osservazione vera — nessuno versa MENO del minimo contrattuale —
+// che però non dice niente di chi versa DI PIÙ: a quello la pagina affermava «sotto il 3%
+// versato oggi il datore non versa», mentre il datore versa fino all'1,2% del suo contratto.
+// Ora il minimo si può scrivere, in una casella facoltativa che vuota vale `pcVoi`: chi non la
+// compila si comporta esattamente come prima. Chi ha soglia 0 la fa scattare a qualunque
+// versamento positivo, ed è lì che serve il messaggio a chi oggi non versa niente.
 //
 // LA QUOTA STA IN UNA FUNZIONE SUA, e non dentro `contributi`, per due ragioni. La prima è che
 // la vista deve poterla nominare anche quando NON scatta: tutta la sezione 1 esiste per dire
@@ -981,10 +1002,17 @@ function irpef(imponibile){
 const quotaDatore = x => x.fondoIndividuale ? 0
   : Math.max(0, x.ral) * Math.max(0, x.pcDat) / 100;
 
+// La soglia sta in una funzione sua per la ragione di sempre: il modello e la frase che la
+// racconta devono leggerla dallo stesso posto, o il giorno che cambia una delle due resta
+// indietro. `null` è la casella lasciata vuota — «quello che verso è il minimo» — e qui, in un
+// punto solo, diventa `pcVoi`. Lo zero SCRITTO resta zero, e vuol dire un'altra cosa.
+const sogliaDatore = x => Math.max(0, x.pcMin == null ? x.pcVoi : x.pcMin);
+
 function contributi(x, pc){
   const ral = Math.max(0, x.ral);
   const lav = ral * Math.max(0, pc) / 100;
-  const scatta = x.pcVoi > 0 ? pc >= x.pcVoi - 1e-9 : pc > 0;
+  const soglia = sogliaDatore(x);
+  const scatta = soglia > 0 ? pc >= soglia - 1e-9 : pc > 0;
   const dat = scatta ? quotaDatore(x) : 0;
   return {lav, dat, tot: lav + dat, scatta};
 }
@@ -1001,8 +1029,10 @@ function spazioDeducibile(x){
 // pagina indicava «dove finisce la deduzione» un punto in cui era già finita.
 function pcTetto(x){
   if (!(x.ral > 0)) return Math.max(x.pcVoi, 0);
-  const dat = contributi(x, Math.max(x.pcVoi, 0.1)).dat;
-  return Math.max(x.pcVoi, (TETTO_DEDUZIONE - dat) / x.ral * 100);
+  // «come sarà» è esattamente la quota del datore: sopra la soglia `contributi` restituisce
+  // quella, e chiederla passando per una percentuale di comodo era un giro inutile che, con la
+  // soglia diventata una casella, avrebbe anche potuto sbagliare il valore di comodo.
+  return Math.max(x.pcVoi, (TETTO_DEDUZIONE - quotaDatore(x)) / x.ral * 100);
 }
 // Dove si ferma il cursore. Un massimo di legge non c'è: si può versare quanto si vuole, e
 // l'unico limite vero è la busta paga — il versamento esce dallo stipendio netto, e oltre quel
@@ -1170,6 +1200,14 @@ function leggi(){
     pcVoiVuoto: EL('pcVoi'+i).value.trim() === '',
     pcDatVuoto: EL('pcDat'+i).value.trim() === '',
     pcDat:    numFra('pcDat'+i, 0, 100),
+    // LA SOGLIA DEL GRADINO, che è un'altra cosa da quello che si versa. Vuota vale «quello che
+    // verso è il minimo», ma il ripiego NON si applica qui: il campo porta `null`, e la soglia
+    // la compone `sogliaDatore`. Scrivendoci dentro `pcVoi` si otterrebbe lo stesso numero e un
+    // difetto in più — ogni oggetto costruito con `{...x, pcVoi: 0}` si porterebbe dietro la
+    // soglia vecchia, e il gradino resterebbe dov'era. Due controlli sono caduti proprio così.
+    // E lo ZERO SCRITTO non è il vuoto nemmeno qui: dice «il contratto non chiede una quota
+    // mia», caso delle adesioni in cui il datore versa comunque.
+    pcMin: EL('pcMin'+i).value.trim() === '' ? null : numFra('pcMin'+i, 0, 100),
     // Il valore che spegne la quota del datore è quello ESPLICITO: un campo che non esiste, o
     // che il salvataggio di una visita precedente ha lasciato vuoto, non deve togliere a nessuno
     // un contributo che gli spetta. Si spegne solo chi dichiara di aver sottoscritto da sé.
@@ -2117,7 +2155,7 @@ function calc(){
   // Sta qui, prima delle uscite anticipate, perché dipende solo da come è compilato il modulo.
   {
     const SPENTE = ['stip', 'ral', 'cresc', 'ultimo',              // esercizi di attività
-                    'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];  // fondo
+                    'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcMin', 'pcDat', 'tfrDove'];  // fondo
     s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
 
     // la seconda spesa esiste solo se c'è un passaggio fra due fasi: senza esercizi di attività
@@ -2213,6 +2251,14 @@ function calc(){
     H('pensNetta'+i, x.pensLorda > 0 ? E0(x.pens) + ' netti al mese' : '&nbsp;');
     const co = contributi(x, x.pcVoi);
     H('pcVoiEuro'+i, co.lav > 0.5 ? E0(co.lav) + " l'anno" : '&nbsp;');
+    // LA CASELLA DEL MINIMO PARLA SOLO QUANDO HA UNA CONSEGUENZA. Vuota, dice che cosa sta
+    // valendo, così non sembra una casella dimenticata; scritta sopra quello che si versa, è
+    // l'unico caso in cui va segnalata, perché il gradino verrebbe a trovarsi oltre.
+    H('pcMinNota'+i, x.pcMin == null
+        ? (x.pcVoi > 0 ? 'vale ' + perc(x.pcVoi,'il') + ' qui sopra' : '&nbsp;')
+      : x.pcMin > x.pcVoi + 1e-9 && x.pcVoi > 0
+        ? 'è più di quello che si versa: il datore non sta versando'
+      : x.pcMin > 0 ? 'il gradino del datore sta qui' : 'nessuna quota minima a carico');
     H('pcDatEuro'+i, co.dat > 0.5 ? E0(co.dat) + " l'anno"
         : x.fondoIndividuale ? (x.pcDat > 0 ? 'non conteggiato' : '&nbsp;')
         : (x.pcDat > 0 ? 'subordinato al contributo indicato' : '&nbsp;'));
@@ -2545,7 +2591,10 @@ function calc(){
       const anni = x.ultimo - ANNO0 + 1;
       if (anni < 1) return null;              // ha già smesso: non c'è più niente da attivare
       const quota = quotaDatore(x);
-      return quota < 0.5 ? null : {nome: x.nome, quota, anni, tot: quota * anni};
+      return quota < 0.5 ? null
+        : {nome: x.nome, quota, anni, tot: quota * anni,
+           // il minimo si nomina solo se l'hanno scritto: è la cosa che qui mancava
+           minimo: x.pcMin > 0 ? x.pcMin : null};
     }).filter(Boolean);
     const el = EL('lasciato');
     el.hidden = persi.length === 0;
@@ -2565,9 +2614,16 @@ function calc(){
         ? `Da qui alla cessazione sono ${persi[0].anni}
            ${persi[0].anni === 1 ? 'esercizio' : 'esercizi'}: <b>${E0(tutto)}</b>`
         : `Fino alla cessazione sono <b>${E0(tutto)}</b>`;
+      // QUELLO CHE PRIMA NON SI POTEVA DIRE. Finché il minimo non lo sapevamo, «basta versare
+      // lo 0,1%» sarebbe stato esatto nel modello e falso nel mondo. Ora, se l'hanno scritto,
+      // la soglia si nomina in cifra — ma solo quando è una sola: con due persone e due minimi
+      // diversi una frase sola direbbe il numero di uno dei due a tutti e due.
+      const minimi = [...new Set(persi.map(v => v.minimo))];
+      const basta = minimi.length === 1 && minimi[0] !== null
+        ? ` Basta ${perc(minimi[0],'il')} chiesto dal contratto.` : '';
       el.innerHTML = `${capo} Il contributo del datore è dovuto solo a fronte di quello del
-        lavoratore, qui indicato pari a zero. ${coda} in euro di oggi, senza contare quanto
-        renderebbero. <a href="#contribuzione">Quanto costa attivarlo →</a>`;
+        lavoratore, qui indicato pari a zero.${basta} ${coda} in euro di oggi, senza contare
+        quanto renderebbero. <a href="#contribuzione">Quanto costa attivarlo →</a>`;
     }
   }
 
@@ -2757,7 +2813,10 @@ function pcSoglia(s, i, pcMax){
 
 function candidatiVersamento(x, pcMax, altri = []){
   const base = Math.max(0, x.ral * (1 - IVS));
-  const notevoli = [0, x.pcVoi, x.pcVoi + 0.1, pcTetto(x), pcMax, ...altri];
+  // il gradino sta sulla SOGLIA, che da quando è una casella può non coincidere con `pcVoi`:
+  // senza il suo vertice fra i candidati il massimo di una spezzata si cerca dove non c'è
+  const notevoli = [0, x.pcVoi, x.pcVoi + 0.1, sogliaDatore(x), sogliaDatore(x) + 0.1,
+                    pcTetto(x), pcMax, ...altri];
   if (x.ral > 0)
     for (const [soglia] of SCAGLIONI)
       if (soglia !== Infinity) notevoli.push((base - soglia) / x.ral * 100);
@@ -3102,18 +3161,29 @@ function aggiornaDecisioni(s, r){
           + 'il versamento rende la sola deduzione IRPEF'
         : 'senza quota del datore, il versamento rende solo la deduzione IRPEF';
     } else if (x.pcVoi > 0 && !c.scatta){
+      // LA SOGLIA, NON QUELLO CHE SI VERSA. Con la casella del minimo compilata le due cose sono
+      // diverse, e la frase deve nominare quella che decide davvero: chi versa il 3% con un
+      // minimo dell'1,2% perde la quota del datore sotto l'1,2%, non sotto il 3%. La condizione
+      // resta su `pcVoi` perché questi due rami parlano a chi già versa; chi non versa niente ha
+      // il suo, più sotto, che è quello che dice cosa fare.
       EL('cVers'+i+'Picco').innerHTML =
-        `<span class="giu-t">sotto ${perc(x.pcVoi,'il')} versato oggi il datore non
-         versa</span>: ${E0(perso)} l'anno di contributo che andrebbe perso`;
+        `<span class="giu-t">sotto ${perc(sogliaDatore(x),'il')} ${x.pcMin == null ? 'versato oggi'
+          : 'chiesto dal contratto'} il datore non versa</span>: ${E0(perso)} l'anno di
+         contributo che andrebbe perso`;
     } else if (x.pcVoi > 0 && perso > 0.5){
       EL('cVers'+i+'Picco').innerHTML =
         `la quota del lavoratore fa scattare ${E0(perso)} l'anno dal datore. Oltre non aumenta:
          quello che si versa in più rende solo la deduzione IRPEF.`;
     } else if (x.pcDat > 0){
+      // e qui il minimo, se è scritto, si può finalmente dire in cifra invece che nominare
       EL('cVers'+i+'Picco').innerHTML =
+        // «basta versare lo 0% chiesto dal contratto» non si dice: lo zero SCRITTO vuol dire che
+        // una quota minima non c'è, e allora la condizione è solo che si versi qualcosa.
         `<span class="giu-t">oggi non versano niente né il lavoratore né il datore</span>: basta
-         versare la quota minima prevista dal contratto perché scattino
-         ${E0(quotaDatore(x))} l'anno dall'azienda`;
+         ${x.pcMin == null ? 'versare la quota minima prevista dal contratto'
+           : x.pcMin > 0 ? 'versare ' + perc(x.pcMin,'il') + ' chiesto dal contratto'
+           : 'un versamento di qualunque entità, perché una quota minima il contratto non la chiede'}
+         perché scattino ${E0(quotaDatore(x))} l'anno dall'azienda`;
     } else {
       EL('cVers'+i+'Picco').textContent =
         'senza quota del datore, il versamento rende solo la deduzione IRPEF';

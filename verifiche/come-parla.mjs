@@ -300,6 +300,46 @@ for (const [nome, DATI] of Object.entries({
   }
 }
 
+// --- la quota minima del contratto, nelle frasi -----------------------------
+// LA FRASE CHE DICEVA IL FALSO, e che questi controlli tengono chiusa: chi versa il 3% avendo un
+// minimo contrattuale dell'1,2% leggeva «sotto il 3% versato oggi il datore non versa». Il
+// gradino stava su quello che si versa perché il minimo non lo sapevamo. Ora è una casella, e la
+// frase deve nominare la soglia — ma solo quando la soglia è stata scritta: a chi lascia vuoto
+// dev'essere identica a prima, o si sarebbe cambiato il testo di quasi tutti per servire pochi.
+console.log('\n— la quota minima del contratto, nelle frasi —');
+for (const [nome, DATI, atteso] of [
+  ['casella vuota: la frase resta quella di prima',
+   {...BASE, quanti:'1', pcVoi0:3, pc0:2}, /sotto il 3% versato oggi il datore non versa/],
+  // IL CASO CHE DÀ IL NOME A TUTTO IL BLOCCO: cursore FRA il minimo e quello che si versa. Prima
+  // qui usciva l'allarme in rosso, e la quota del datore spariva dai numeri; ora né l'uno né
+  // l'altra, perché all'1,2% il datore versa. È l'unico punto in cui il difetto si vedeva.
+  ['fra il minimo e quello versato: nessun allarme, la quota c\'è',
+   {...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2, pc0:2}, /fa scattare 760 € l.anno dal datore/],
+  ['e nei numeri il datore versa davvero, non solo nella frase',
+   {...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2, pc0:2}, /più .*del datore/],
+  ['sotto il minimo, invece, la frase nomina il contratto',
+   {...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2, pc0:1}, /sotto l.1,2% chiesto dal contratto/],
+  ['chi non versa niente si sente dire la cifra, non «la quota minima»',
+   {...BASE, quanti:'1', pcVoi0:0, pcMin0:1.2}, /basta versare l.1,2% chiesto dal contratto/],
+  ['e senza il minimo scritto la nomina soltanto',
+   {...BASE, quanti:'1', pcVoi0:0}, /basta versare la quota minima prevista dal contratto/],
+  // lo ZERO scritto è la terza informazione: non «non l'ho compilato» e non una percentuale
+  ['minimo zero scritto: non si chiede di versare lo 0%',
+   {...BASE, quanti:'1', pcVoi0:0, pcMin0:0}, /basta un versamento di qualunque entità/]
+]){
+  const {scritte} = esegui(DATI);
+  const dove = /del datore/.test(String(atteso)) ? 'cVers0Ora' : 'cVers0Picco';
+  const frase = (scritte[dove] || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  c(nome, atteso.test(frase), frase.slice(0, 95));
+}
+// e il numero che la frase promette dev'essere quello che il conto usa davvero
+{
+  const {scritte} = esegui({...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2, pc0:1.19});
+  const frase = (scritte.cVers0Ora || '').replace(/<[^>]+>/g, ' ');
+  c('un millesimo sotto il minimo la quota sparisce davvero, non solo a parole',
+    /niente dal datore/.test(frase), frase.replace(/\s+/g, ' ').slice(0, 80));
+}
+
 // --- un ottimo non si indica su un piano che si esaurisce -------------------
 // IL DIFETTO CHE QUESTI CONTROLLI TENGONO CHIUSO, misurato il 02/08/2026: su un piano che si
 // esauriva nel 2028 la pagina scriveva «il punto più alto è il 50%, vale 32.082 € in più», col
