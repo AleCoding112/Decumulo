@@ -836,7 +836,14 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
        Non è distrazione: la domanda chiedeva un conto che nessuno ha mai fatto.
        La casella resta, e resta scrivibile, ma ora arriva già compilata. -->
   <div class="caselle">
-    <div><label for="rend">Rendimento degli investimenti</label>
+    <!-- «NETTO» STA NELL'ETICHETTA, e non è una ripetizione della nota qui sotto: la nota la
+         legge chi legge le note, l'etichetta la legge chi compila. Ed è l'unico posto dove
+         serve a qualcosa, perché per chi riscrive il numero a mano è un'ISTRUZIONE — sbagliarla
+         vale più di un punto l'anno — mentre per chi lascia il numero derivato è la garanzia
+         che l'imposta è già stata tolta e non va tolta due volte.
+         Il grassetto dentro l'etichetta è l'idioma che la pagina usa già per «Retribuzione
+         annua lorda», dove lo stesso equivoco costava altrettanto. -->
+    <div><label for="rend">Rendimento del patrimonio, <b>netto</b></label>
       <input type="text" inputmode="decimal" id="rend" value="3">
       <u class="hint" id="rendDa">&nbsp;</u></div>
     <!-- IL COMPARTO SI SCEGLIE, IL SUO RENDIMENTO NO. Il nome del comparto sta sulla
@@ -852,7 +859,7 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
          più su UNA casella di tre disallineava tutta la fila — le altre due caselle finivano
          più in alto. Il pezzo non si perde: la tendina accanto dice «Comparto del fondo
          pensione», quindi di quale comparto si parla è già scritto una riga a sinistra. -->
-    <div><label for="rendFondo">Rendimento del comparto</label>
+    <div><label for="rendFondo">Rendimento del comparto, <b>netto</b></label>
       <input type="text" inputmode="decimal" id="rendFondo" value="3"></div>
     <div><label for="infl">Inflazione</label>
       <input type="text" inputmode="decimal" id="infl" value="2"></div>
@@ -868,11 +875,14 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
        per classe — ed è l'unico modo perché venga tolta GIUSTA, visto che sui titoli di Stato
        è il 12,5% e sul resto il 26%, distinzione che a mano non fa nessuno. La frase resta per
        chi il numero lo riscrive a mano, che è l'unico caso in cui serve ancora. -->
-  <p class="nota">I due rendimenti sono <b>al netto delle imposte</b> e <b>al lordo
-  dell'inflazione</b>: il conto toglie l'inflazione, <span id="reali"></span>. Sugli
-  investimenti l'imposta l'ha già tolta il listino — {{impostaRendite}}, o {{impostaTitoli}} sui
-  titoli di Stato, meno {{bolloTitoli}} di bollo — e chi riscrive il numero a mano lo scriva
-  già netto.</p>
+  <!-- LA NOTA NON RIPETE PIÙ «NETTO», che ora sta nelle due etichette: dice le due cose che
+       un'etichetta non può dire, cioè QUALI imposte sono già state tolte e che l'inflazione
+       invece no. Lasciarcelo avrebbe fatto leggere tre volte la stessa parola in dieci righe,
+       che è il modo più sicuro per non farla leggere nessuna. -->
+  <p class="nota">Sono invece <b>al lordo dell'inflazione</b>: quella la toglie il conto,
+  <span id="reali"></span>. L'imposta sugli investimenti l'ha già tolta il listino —
+  {{impostaRendite}}, o {{impostaTitoli}} sui titoli di Stato, meno {{bolloTitoli}} di bollo —
+  e chi riscrive il numero a mano lo scriva già netto.</p>
   <p class="nota" id="confrontoRend">&nbsp;</p>
   <p class="nota">Alla riscossione il fondo sconta un'imposta agevolata:
   <b>{{aliqFondoMax}}, che scende di {{aliqFondoPunti}} punti per ogni anno di iscrizione oltre
@@ -4291,8 +4301,8 @@ function pianoInFoglio(s, r){
     ] : []),
     [],
     [G('LE IPOTESI')],
-    ['Rendimento degli investimenti (%, nominale)', s.rendNom * 100],
-    ['Rendimento del comparto del fondo (%, nominale)', s.rendFondoNom * 100],
+    ['Rendimento del patrimonio (%, netto e nominale)', s.rendNom * 100],
+    ['Rendimento del comparto del fondo (%, netto e nominale)', s.rendFondoNom * 100],
     ['Inflazione (%)', s.infl * 100],
     ['Orizzonte del piano (anni di età)', s.etaFine],
     [],

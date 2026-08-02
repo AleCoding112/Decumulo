@@ -151,7 +151,7 @@ const dentro = leggiZip(bytes);
 
   // LE IPOTESI: senza, il file è un elenco di numeri di cui nessuno sa più la provenienza
   for (const [nome, re] of [
-    ['il rendimento degli investimenti', /Rendimento degli investimenti/],
+    ['il rendimento del patrimonio', /Rendimento del patrimonio/],
     ['il rendimento del comparto',       /Rendimento del comparto/],
     ['l\'inflazione',                    /Inflazione/],
     ['l\'orizzonte',                     /Orizzonte del piano/],
