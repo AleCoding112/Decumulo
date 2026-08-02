@@ -23,6 +23,7 @@ lancia da solo:
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
+| `node verifiche/casi-esterni.mjs` | i venti casi sulle discontinuità della legge, e il confronto col progetto esemplificativo COVIP di un fondo |
 | `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali + le funzioni di legge ai punti esatti |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
@@ -579,6 +580,55 @@ dice *cosa* vuole (il blocco che contiene `function simula(`) invece di fidarsi 
 il build monta i pezzi. Stessa cosa per i fogli di stile, che ora si leggono tutti.
 
 ---
+
+## I venti casi, e cosa ha trovato il confronto con l'esterno
+
+`verifiche/casi-esterni.mjs`, del 03/08/2026. Nasce da una domanda sua — quanto c'è da fidarsi
+della matematica — e da una risposta che vale come metodo: **l'aritmetica è la parte più
+verificata del progetto** (326 controlli, un secondo motore riscritto dalle regole, 4.000 piani
+casuali), quindi rifarla a mano sarebbe rifare peggio un lavoro già fatto meglio. **Quello che
+nessuna di quelle difese può vedere è l'omissione**, e l'omissione si vede solo da fuori.
+
+**IL DISEGNO, e il punto che lo determina: il nostro risultato finale non ha un gemello.** Nessuno
+calcola «quanto durano i risparmi di due persone per 47 anni». Quindi il confronto è **per
+componente**, e i casi non sono persone realistiche: sono costruiti per **isolare un pezzo alla
+volta**. Con una persona intera e il 3% di scarto non si saprebbe quale dei nove ingredienti
+l'ha prodotto. E stanno **sui gradini della legge** — gli scaglioni, i due tratti del cuneo, il
+quindicesimo anno, le soglie di cumulo — perché le combinazioni le coprono già i piani casuali,
+mentre è sulle discontinuità che un istituto dimenticato si vede.
+
+**Quattro differenze sono nostre scelte dichiarate e vanno neutralizzate prima**, o si insegue un
+fantasma: il perimetro fiscale (niente addizionali né carichi di famiglia), il reale contro il
+nominale, i costi del fondo già dentro i nostri rendimenti, e la convenzione sul rendimento che
+matura a inizio anno.
+
+**LA FONTE MIGLIORE NON È UN CALCOLATORE, È UN DOCUMENTO OBBLIGATORIO.** Il *progetto
+esemplificativo standardizzato* che la COVIP impone a ogni fondo dichiara le proprie ipotesi
+dentro di sé, è pubblicato, e per giunta espone i valori **in termini reali**, che è la nostra
+stessa convenzione. Un calcolatore interattivo vale il giorno in cui lo si interroga; questo vale
+a ogni build. **Un riscontro che non si può rieseguire decade.**
+
+**Cosa ne è uscito:**
+- **i versamenti cumulati tornano al centesimo** su 37, 27 e 17 anni di contribuzione crescente.
+  È il riscontro che vale di più, perché non dipende da rendimenti, costi o imposte: dipende solo
+  dal calendario dei contributi, ed è lì che si nasconde un errore di un anno — quello che sposta
+  poco e che nessuna invariante vede;
+- **il nostro coefficiente a 67 anni sta fra quello della donna e quello dell'uomo** di una terza
+  convenzione (UnipolSai RG48), a −1,9% dalla media unisex. E lo scarto uomo/donna misurato è
+  14,9%, cioè il «circa 15%» che `il-metodo.html` afferma: **anche un numero scritto in prosa va
+  riscontrato**;
+- **sul montante siamo sotto di 0,3-1,4%, e sempre sotto**: è il costo della convenzione
+  prudenziale, misurato invece che dichiarato. La banda è al 2% e **non si stringe per far
+  tornare il conto**: serve a vedere un errore di struttura, non a certificare il terzo decimale
+  di un'ipotesi che la fonte non dichiara;
+- **un limite che non avevamo dichiarato**: con figli minori, studenti o inabili nel nucleo la
+  riduzione per redditi propri della pensione ai superstiti **non si applica affatto**
+  (art. 1 c. 41 L. 335/1995). Noi la applicavamo comunque. Lo scarto è prudenziale, ma taceva.
+
+**Quello che resta scoperto, e perché.** Il netto in busta e il netto sul cedolino hanno solo
+calcolatori interattivi, che nessuno script può compilare. Le detrazioni che li determinano sono
+però già riscontrate una per una in `riscontri-esterni.mjs`, su due fonti indipendenti che si
+sovrappongono in un punto.
 
 ## Il registro dei dubbi
 
