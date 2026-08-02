@@ -525,7 +525,7 @@
      comprende gli esercizi di attività, che sono quelli su cui incidono le due decisioni. Per
      chi è già in pensione era per giunta una data che non esiste nel suo piano. -->
 <p class="occhiello">Proiezione del patrimonio di una o due persone dall'anno in corso fino
-all'età indicata: trattamento INPS, fondo pensione, TFR e risparmi, esercizio per esercizio, in
+all'età indicata: trattamento INPS, fondo pensione, TFR e risparmi, anno per anno, in
 euro di oggi. I dati inseriti restano nel browser.</p>
 
 <!-- IL PERIMETRO, RIDOTTO A QUELLO CHE FA PERDERE TEMPO SE SI SCOPRE DOPO.
@@ -631,7 +631,7 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
     <div class="gruppo rigalav">Il fondo pensione
     <span>Senza fondo pensione il piano si calcola lo stesso: questo riquadro si lascia vuoto.
-    Con più posizioni si sommano le consistenze e si scrive l'anno di iscrizione più
+    Con più fondi si somma quello che c'è in ciascuno e si scrive l'anno di iscrizione più
     remoto. La soglia del «tutto in contanti» si valuta però su ciascun fondo separatamente.
     <a href="come-prendere-il-fondo.html">Come funziona la soglia →</a></span>
     </div>
@@ -667,7 +667,7 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
       <option value="individuale">scelto da sé</option></select>
       <u class="hint" id="tipoNota1">&nbsp;</u></div>
 
-    <div class="voce rigalav">Consistenza attuale</div>
+    <div class="voce rigalav">Quanto c'è oggi</div>
     <div class="cella"><input type="text" inputmode="decimal" id="fondo0" value=""></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="fondo1" value=""></div>
 
@@ -755,7 +755,7 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
     <div class="somma-sep rigalav"></div>
 
-    <div class="voce totale rigalav">Totale affluito al fondo</div>
+    <div class="voce totale rigalav">Totale che entra nel fondo</div>
     <div class="cella"><b class="somma grande" id="totFondo0">—</b></div>
     <div class="cella p2"><b class="somma grande" id="totFondo1">—</b></div>
     </div>
@@ -942,29 +942,29 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
        «3.» sarebbe un elenco che ha perso i primi due pezzi senza dirlo. -->
   <div class="dec" id="decContrib">
     <h3 id="contribuzione"><i class="np-dec" id="nContrib"></i>Entità della contribuzione</h3>
-    <p class="spiega"><b>Il contributo del datore è dovuto solo a fronte di quello del lavoratore</b>, e oltre
-    quella soglia non aumenta: la prima quota vale il contributo aziendale più la deduzione, la
-    parte eccedente vale la sola deduzione. <b>Un massimo di legge non esiste</b>: oltre la soglia
-    di deducibilità si versa lo stesso, senza sconto. Il cursore si arresta dove il versamento
-    assorbirebbe l'intera retribuzione netta, e l'estremo destro dichiara quale dei due vincoli
-    stia mordendo. <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
+    <p class="spiega"><b>L'azienda versa la propria quota solo se la versa anche il lavoratore</b>,
+    e oltre quella soglia non aumenta: il primo tratto vale il contributo dell'azienda più lo
+    sconto IRPEF, quello che si versa in più vale il solo sconto. <b>Un massimo di legge non
+    esiste</b>: oltre la soglia di deducibilità si può versare lo stesso, semplicemente senza
+    sconto. Il cursore si ferma dove il versamento assorbirebbe l'intera retribuzione netta, e
+    all'estremo destro è scritto quale dei due limiti lo sta fermando.
+    <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
     <div id="decVersare"></div>
   </div>
 
   <div class="dec" id="decErog">
     <h3><i class="np-dec" id="nErog"></i>Modalità di erogazione del fondo</h3>
     <p class="spiega"><b>Tre decisioni consecutive, e la prima condiziona le altre due</b>: quando
-    la prestazione inizia a essere erogata, quanto ne viene liquidato in capitale, in che forma
-    è convertita la parte residua. L'erogazione anticipata riduce il montante disponibile alla
-    pensione: un residuo contenuto è conseguenza di quella scelta.
-    <b>Sul primo passo un punto più alto esiste, ed è indicato</b>: anticipare o attendere sposta
-    gli stessi importi fra il fondo e il patrimonio, e i due esiti si misurano con la stessa
-    unità. <b>Sul secondo e sul terzo no</b>, e il calcolo dice invece a quali ipotesi la
-    conclusione si rovescia: sotto quale rendimento del patrimonio la rendita torna a convenire,
-    e di quanto quella soglia si sposta se la vita è più lunga. Il metro è il patrimonio che
-    resta alla fine,
-    quindi misura il lascito e non la protezione: la rendita per costruzione non lascia nulla,
-    e quello che il capitale non compra è un assegno che arriva comunque. Quanto la forma
+    il fondo comincia a uscire, quanto se ne prende in contanti, in che forma diventa assegno la
+    parte che resta. L'erogazione anticipata riduce quello che arriva alla pensione: un residuo
+    piccolo è la conseguenza di quella scelta.
+    <b>Sul primo passo il punto più alto esiste, ed è indicato</b>: cominciare prima o attendere
+    sposta gli stessi soldi fra il fondo e il patrimonio, quindi i due esiti si confrontano con
+    la stessa misura. <b>Sul secondo e sul terzo no</b>: il conto dice invece a quali ipotesi la
+    conclusione si rovescia, cioè sotto quale rendimento del patrimonio la rendita torna a
+    convenire, e di quanto quella soglia si sposta se la vita è più lunga. La misura è il
+    patrimonio che resta alla fine, cioè quello che si lascia: la rendita per costruzione non
+    lascia nulla, e in cambio dà un assegno che arriva finché si vive. Quanto la forma
     dell'assegno protegga <b>chi resta</b> è quantificato accanto al risultato.
     <a href="come-prendere-il-fondo.html">Perché, e come si sceglie →</a></p>
     <div id="decFondo"></div>
@@ -2187,9 +2187,12 @@ function eventi(r, kOf = () => 1){
   const smette = idx.map(i => (r.righe.find(v => !v.lavora[i]) || {}).anno);
   const inizio = idx.map(i => (r.righe.find(v => v.inPens[i]) || {}).anno);
   if (smette[0] && smette[0] === smette[1])
-    push(smette[0], 'cessazione dell\'attività per entrambi', 'cessazione');
-  else idx.forEach(i => smette[i] &&
-    push(smette[i], `cessazione dell'attività ${(r.di||DI)[i]}`, `cessazione ${nomi[i]}`));
+    push(smette[0], 'smettono di lavorare tutti e due', 'smettono');
+  // con una persona sola il nome di ripiego è «la persona», e «smette la persona» non si dice:
+  // il soggetto sparisce, come già fa la frase sotto le caselle
+  else idx.forEach(i => smette[i] && (idx.length === 1
+    ? push(smette[i], 'si smette di lavorare', 'si smette')
+    : push(smette[i], `${nomi[i]} smette di lavorare`, `smette ${nomi[i]}`)));
   if (inizio[0] && inizio[0] === inizio[1])
     push(inizio[0], 'decorrenza di entrambi i trattamenti', 'trattamenti');
   else idx.forEach(i => inizio[i] &&
@@ -2470,8 +2473,8 @@ function calc(){
              `${s.p[i].nome} dal <b>${s.p[i].annoPens}</b>`).join(' e ')}.`;
       // la spiegazione una volta sola, i soggetti per ciascuno: con due riquadri per persona
       // sarebbe uscita due volte identica, ed è il quarto caso in questo progetto
-      const chi = tutti ? 'Il piano non comprende esercizi di attività'
-        : `Per ${gia.map(i => s.p[i].nome).join(' e ')} il piano non comprende esercizi di attività`;
+      const chi = tutti ? 'Il piano non comprende anni di lavoro'
+        : `Per ${gia.map(i => s.p[i].nome).join(' e ')} il piano non comprende anni di lavoro`;
       el.innerHTML = `${quando} ${chi}: retribuzione, TFR e
         contributi restano fuori dal conto. <b>Il fondo pensione non è rappresentato</b>: la
         prestazione già riscossa è parte del patrimonio investito, e indicarla qui la conterebbe
@@ -2588,7 +2591,7 @@ function calc(){
       H('ultimoNota'+i, x.annoPensVuoto ? '&nbsp;'
         // chi è già in pensione non ha esercizi di attività nel piano: la casella non decide
         // più niente, e dirle «alla decorrenza: 2014» sarebbe una data al contrario
-        : x.giaInPens ? 'nessun esercizio di attività nel piano'
+        : x.giaInPens ? 'nessun anno di lavoro nel piano'
         : x.ultimoScritto === null ? `alla decorrenza: ${x.ultimo}`
         : x.ultimoScritto > x.ultimo ? `ricondotto al ${x.ultimo}: la decorrenza è ${x.annoPens}`
         : buco > 0 ? `poi ${buco} ${buco === 1 ? 'anno' : 'anni'} senza reddito da lavoro`
@@ -2669,6 +2672,11 @@ function calc(){
     const dice = i => {
       const x = s.p[i], buco = x.annoPens - 1 - Math.max(x.ultimo, ANNO0 - 1);
       const chi = s.N === 1 ? '' : ' ' + (r.di || DI)[i];
+      // IL SOGGETTO NON SI COMPONE COL COMPLEMENTO. «Trattamento di Anna» regge il «di», «smette
+      // di lavorare» vuole il nome al nominativo: riusare la stessa stringa dà «si smette di
+      // lavorare di Anna». Due forme del nome, come già per NOMI e DI.
+      const smette = s.N === 1 ? 'Si smette di lavorare'
+                               : `${(r.nomi || NOMI)[i]} smette di lavorare`;
       // CHI È GIÀ IN PENSIONE non ha una cessazione da annunciare: il piano comincia con il
       // trattamento già in erogazione, e la frase deve dire da quando, non quando finirà una
       // attività finita anni fa.
@@ -2680,13 +2688,13 @@ function calc(){
       // inventate, non da un occhio: era lì da sempre, in cima al modulo vuoto.
       return x.annoPensVuoto ? ''
         : x.giaInPens
-        ? `Trattamento${chi} in erogazione dal <b>${x.annoPens}</b>, senza esercizi di attività
+        ? `Trattamento${chi} in erogazione dal <b>${x.annoPens}</b>, senza anni di lavoro
            nel piano.`
         : buco <= 0
-        ? `Cessazione dell'attività${chi} nel <b>${x.ultimo}</b>, l'esercizio precedente la
+        ? `${smette} nel <b>${x.ultimo}</b>, l'anno prima della
            decorrenza.`
-        : `Cessazione dell'attività${chi} nel <b>${x.ultimo}</b>, con decorrenza del trattamento
-           dal ${x.annoPens}: <b>${buco} ${buco === 1 ? 'esercizio' : 'esercizi'}</b> senza
+        : `${smette} nel <b>${x.ultimo}</b>, con decorrenza del trattamento
+           dal ${x.annoPens}: <b>${buco} ${buco === 1 ? 'anno' : 'anni'}</b> senza
            reddito da lavoro né trattamento, a carico del patrimonio.`;
     };
     EL('quandoSmettete').innerHTML = s.indici.map(dice).filter(Boolean).join(' ');
@@ -2730,7 +2738,7 @@ function calc(){
     t.className = 'risposta';
     t.innerHTML = 'Orizzonte già superato.';
     sub.innerHTML = `Con questi anni di nascita, un orizzonte di ${fmt(s.etaFine)} anni si
-      chiuderebbe nel ${finePiano}: prima dell'anno in corso. Il piano non ha esercizi da
+      chiuderebbe nel ${finePiano}: prima dell'anno in corso. Il piano non ha anni da
       calcolare.`;
     EL('vuoto').hidden = false;
     ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
@@ -2766,6 +2774,10 @@ function calc(){
   // e quando le due sono diverse va detto, o si legge un numero solo per due fasi diverse
   const inPens = s.spesaPens !== null && s.spesaPens !== undefined
                  && Math.abs(s.spesaPens - s.spesa) > 0.5;
+  // A CHI HA GIÀ SMESSO NON SI CONSIGLIA DI SMETTERE PIÙ TARDI. Il piano che non regge suggerisce
+  // di posticipare la cessazione: a chi ha la decorrenza alle spalle quella leva non esiste più,
+  // e leggersela proporre fa dubitare che il conto abbia capito i dati inseriti.
+  const puoRimandare = s.indici.some(i => !s.p[i].giaInPens);
   const margine = q === null || q < 1 ? '' :
     `A parità di date la spesa massima sostenibile è di circa <b>${E50(q)}</b> al mese` +
     (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '') +
@@ -2793,19 +2805,22 @@ function calc(){
       ${r.annoZero - giovane.nascita} anni ${DI[s.p.indexOf(giovane)]}.`;
     sommarioDelTitolo(`il patrimonio si esaurisce nel ${r.annoZero}`, 'Non sostenibile', 'giu');
     sub.innerHTML = q === null || q < 1
-      ? `Le entrate non coprono la spesa in nessuno scenario: è necessario posticipare la
-         cessazione dell'attività.`
+      ? (puoRimandare
+          ? `Nessun livello di spesa porta il piano fino in fondo: l'unica leva che resta è
+             smettere di lavorare più tardi.`
+          : `Nessun livello di spesa porta il piano fino in fondo.`)
       : `Per raggiungere il ${r.annoFine} la spesa dovrebbe ridursi a circa <b>${E50(q)}</b> al mese`
         + (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '')
-        + ` contro ${E0(s.spesa)} indicati, in alternativa a un posticipo della cessazione.`;
+        + ` contro ${E0(s.spesa)} indicati`
+        + (puoRimandare ? ', oppure si smette di lavorare più tardi.' : '.');
   } else if (cala.length === 0){
     // il caso più bello, e quello che il vecchio titolo non sapeva dire: non decumulano affatto
     t.className = 'risposta su';
     t.innerHTML = `<u>Decumulo sostenibile</u>
       <em>Il patrimonio non si riduce</em> in nessuno dei
-      ${r.annoFine - ANNO0 + 1} esercizi del piano.`;
+      ${r.annoFine - ANNO0 + 1} anni del piano.`;
     sub.innerHTML = `Le entrate coprono la spesa e l'eccedenza si accumula: al
-      ${r.annoFine} residuano <b>${E0(r.finale)}</b>. ` + margine;
+      ${r.annoFine} restano <b>${E0(r.finale)}</b>. ` + margine;
     sommarioDelTitolo(`non si riduce mai: al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
   } else {
     t.className = 'risposta su';
@@ -2817,7 +2832,7 @@ function calc(){
       <em>Il patrimonio arriva al ${r.annoFine}</em> con un residuo di ${E0(r.finale)}.`;
     sommarioDelTitolo(`al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
     sub.innerHTML = `Il patrimonio inizia a ridursi dal ${giu}. Consistenza minima nel
-      <b>${min.anno}</b>: ${E0(min.patr)}${min.anno < r.annoFine ? ', in ripresa negli esercizi successivi' : ''}. `
+      <b>${min.anno}</b>: ${E0(min.patr)}${min.anno < r.annoFine ? ', in ripresa negli anni successivi' : ''}. `
       + margine;
   }
 
@@ -2874,10 +2889,10 @@ function calc(){
             leva = ` Con la rendita <b>reversibile</b> il caso peggiore salirebbe da
               ${fmt(peggio*100)}% a <b>${fmt(dopo*100)}%</b>.`;
         }
-        el.innerHTML = `<b>Se uno dei due mancasse.</b> Alla speranza di vita ISTAT le entrate
-          ricorrenti di chi resta scenderebbero a ${dove.join(', ')}, contro una spesa che scende
-          fra il ${fmt(EQUIV_BASSA*100)}% e il ${fmt(EQUIV_ALTA*100)}% di quella di due
-          persone: ${verdetto}.${leva}
+        el.innerHTML = `<b>Se uno dei due mancasse.</b> Le entrate che continuano ad arrivare ogni
+          mese scenderebbero, rispetto a oggi, a ${dove.join(', ')}, mentre la spesa di chi resta
+          da solo scende fra il ${fmt(EQUIV_BASSA*100)}% e il ${fmt(EQUIV_ALTA*100)}% di quella
+          di due persone: ${verdetto}.${leva} Il decesso è collocato alla speranza di vita ISTAT.
           <a href="il-metodo.html">Come è stimato →</a>`;
       }
     }
@@ -2931,7 +2946,7 @@ function calc(){
           + persi.map(v => `${v.nome} ${E0(v.quota)}`).join(', ') + '.';
       const coda = uno
         ? `Da qui alla cessazione sono ${persi[0].anni}
-           ${persi[0].anni === 1 ? 'esercizio' : 'esercizi'}: <b>${E0(tutto)}</b>`
+           ${persi[0].anni === 1 ? 'anno' : 'anni'}: <b>${E0(tutto)}</b>`
         : `Fino alla cessazione sono <b>${E0(tutto)}</b>`;
       // QUELLO CHE PRIMA NON SI POTEVA DIRE. Finché il minimo non lo sapevamo, «basta versare
       // lo 0,1%» sarebbe stato esatto nel modello e falso nel mondo. Ora, se l'hanno scritto,
@@ -3000,11 +3015,11 @@ function calc(){
     // peggio che leggere che non serve: la prova non manca, è già dentro le ipotesi.
     EL('tenuta').innerHTML = `<b>Prova di tenuta.</b> Non si applica: con rendimenti che non
       superano l'inflazione il piano sta già nel suo scenario peggiore, e ${fmt(PROVA_ANNI)}
-      esercizi iniziali a rendimento reale nullo non gli toglierebbero niente.`;
+      anni iniziali a rendimento reale nullo non gli toglierebbero niente.`;
   } else {
     const sotto = {...s, prova: PROVA_ANNI};
     const p = simula(sotto);
-    const capo = `<b>Prova di tenuta.</b> Con i primi ${fmt(PROVA_ANNI)} esercizi a rendimento
+    const capo = `<b>Prova di tenuta.</b> Con i primi ${fmt(PROVA_ANNI)} anni a rendimento
       reale nullo `;
     const coda = ` <a href="il-metodo.html">Come è costruita →</a>`;
     if (r.annoZero === null && p.annoZero !== null){
@@ -3014,7 +3029,7 @@ function calc(){
     } else if (r.annoZero === null){
       const q2 = spesaSostenibile(sotto);
       EL('tenuta').innerHTML = capo + `il piano regge lo stesso` + (q === null || q2 === null
-        ? `, e al ${r.annoFine} residuano <b>${E0(p.finale)}</b>.`
+        ? `, e al ${r.annoFine} restano <b>${E0(p.finale)}</b>.`
         : `: la spesa massima sostenibile passa da ${E50(q)} a <b>${E50(q2)}</b> al mese.`) + coda;
     } else if (p.annoZero < r.annoZero){
       EL('tenuta').innerHTML = capo + `il patrimonio si esaurisce nel
@@ -3040,7 +3055,7 @@ function calc(){
     ? `Accantonamento corrente: <b>${E0(messiVia)}</b> al mese, differenza fra entrate e spesa.`
     : `<span class="giu-t">La spesa eccede le entrate di ${E0(-messiVia)} al mese</span>: `
       + (calaSubito
-         ? 'il patrimonio è in riduzione già dal primo esercizio.'
+         ? 'il patrimonio è in riduzione già dal primo anno.'
          : 'la differenza esce dal patrimonio, che il rendimento mantiene comunque in crescita.');
 
   // NON «al netto restano»: la stessa frase dice dodici parole prima «al netto delle imposte»,
@@ -3593,7 +3608,7 @@ function aggiornaDecisioni(s, r){
     // contrario — «non c'è una soglia da dichiarare». Una premessa smentita dal riquadro che
     // introduce è lo stesso difetto di «bastano tre dati», in forma più piccola.
     const voci = [];
-    if (conFondo) voci.push('per la prima il calcolo individua un ottimo, indicato sotto il cursore');
+    if (conFondo) voci.push('per la prima il conto indica il punto più alto, sotto il cursore');
     // E LA SECONDA NON È UNA SCELTA SOLA, ma tre passi con statuto diverso: sul primo — quando
     // il fondo comincia a uscire — un punto più alto ESISTE, perché anticipare o attendere
     // sposta gli stessi importi fra il fondo e il patrimonio e i due esiti si misurano con la
@@ -3602,8 +3617,8 @@ function aggiornaDecisioni(s, r){
     // «per la seconda non è possibile» mentre il passo 1 scriveva «il punto più alto è
     // cominciare nel …»: la premessa era smentita dal riquadro che introduce, come già successo
     // con l'abitazione.
-    if (conFondo) voci.push('per la seconda solo il primo dei tre passi ha un punto più alto, e '
-      + 'per gli altri due è spiegato il motivo');
+    if (conFondo) voci.push('per la seconda il punto più alto esiste solo sul primo dei tre passi, '
+      + 'e per gli altri due è detto perché');
     voci.push(s.casa.attiva && s.casa.spesaAnnua > 0
       ? "per l'abitazione è indicato sotto quale rendimento la conclusione si rovescia"
       : "per l'abitazione è quantificato quanto libera il cambio, senza indicare se convenga");
@@ -3904,11 +3919,11 @@ function aggiornaDecisioni(s, r){
       : maxPc >= 100
         // la soglia è la stessa rendita, quindi il fondo che PAGA di più la raggiunge con meno
         // montante: sono le tavole più generose ad abbassare la soglia, non le più avare
-        ? `si può prendere tutto, ma di misura: dove il fondo converte meglio la soglia scende a
-           ${E0(sChiunque)}. Va chiesto al fondo`
+        ? `si può prendere tutto, ma di poco: con un fondo che paga un assegno più alto la soglia
+           scende a ${E0(sChiunque)} e questo fondo la supererebbe. Va chiesto al proprio fondo`
       : inc.montante <= sNessuno
-        ? `a ${fmt(x.etaPens)} anni la soglia è ${E0(x.soglia)} e il fondo la supera, ma con le
-           tavole più prudenti arriva a ${E0(sNessuno)}. Va chiesto al fondo`
+        ? `a ${fmt(x.etaPens)} anni la soglia è ${E0(x.soglia)} e il fondo la supera, ma con un
+           fondo che paga un assegno più basso sale a ${E0(sNessuno)}. Va chiesto al proprio fondo`
         // simmetrico del primo ramo, e nella stessa forma: là «con qualunque fondo», qui «con
         // nessuno». Diceva «oltre il 50% la legge non lo permette» — un divieto su un cursore
         // che è già fermo lì — e poi girava la soglia al contrario, per negazioni
@@ -4273,7 +4288,7 @@ function pianoInFoglio(s, r){
     perPersona('Trattamento INPS, lordo mensile', x => x.pensLorda),
     perPersona('Retribuzione netta annua, stimata', x => nettoAnnuo(x, x.pc)),
     perPersona('Retribuzione annua lorda', x => x.ral),
-    perPersona('Ultimo esercizio di attività', x => x.ultimo),
+    perPersona('Ultimo anno di lavoro', x => x.ultimo),
     perPersona('Fondo pensione, consistenza iniziale', x => x.fondoScritto),
     perPersona('Anno di iscrizione al fondo', x => x.iscr),
     [],

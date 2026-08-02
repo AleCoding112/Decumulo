@@ -548,7 +548,7 @@ console.log('\n— la prova di tenuta —');
   c('su un piano comodo dice che regge lo stesso, e di quanto scende la spesa',
     /regge lo stesso/.test(comodo) && /spesa massima sostenibile passa da/.test(comodo), comodo);
   c('e dichiara che cosa ha fatto, senza lasciarlo indovinare',
-    /primi \d+ esercizi a rendimento reale nullo/.test(comodo));
+    /primi \d+ anni a rendimento reale nullo/.test(comodo));
   // il piano che regge sulla media ma non sulla sequenza. LA SOGLIA SI SPOSTA QUANDO IL MODELLO
   // MIGLIORA: 4.300 non bastava più a rompere il piano dopo che il netto da lavoro ha smesso di
   // perdere le mensilità aggiuntive. Quarta volta in due giorni, e sempre lo stesso errore di
@@ -692,7 +692,9 @@ console.log('\n— se uno dei due mancasse —');
   const due = riga({});
   c('con due persone la riga c\'è', /Se uno dei due mancasse/.test(due), due.slice(0, 130));
   c('e dichiara l\'ipotesi invece di darla per scontata', /speranza di vita ISTAT/.test(due));
-  c('e porta la soglia con cui confrontarsi', /spesa che scende fra il/.test(due));
+  // il metro, non la frase: le entrate scendono a una percentuale, e accanto dev'esserci la
+  // forbice della spesa con cui confrontarla. Come sia scritta è affare della prosa
+  c('e porta la soglia con cui confrontarsi', /spesa.{0,40}scende fra il \d+% e il \d+%/.test(due));
   c('CON UNA PERSONA SOLA TACE: non resta nessuno di cui dire qualcosa',
     !riga({quanti:'1', nome1:''}), riga({quanti:'1', nome1:''}).slice(0, 60));
   c('col modulo vuoto tace', !riga({...Object.fromEntries(Object.keys(BASE).map(k => [k, '']))}));
@@ -883,7 +885,7 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
   const cala = esegui({quanti:'1', nascita0:1955, annoPens0:2015, pens0:900,
     cl3:60000, spesa:2600, etaFine:95, fondo0:'', ral0:''});
   c('mentre quando il patrimonio cala davvero la frase lo dice',
-    /in riduzione già dal primo esercizio/.test(pulito(cala.scritte.calcolato)),
+    /in riduzione già dal primo anno/.test(pulito(cala.scritte.calcolato)),
     pulito(cala.scritte.calcolato).trim());
 }
 

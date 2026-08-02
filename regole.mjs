@@ -152,7 +152,10 @@ export const REGOLE = {
   },
   ALIQ_FONDO_MAX: { nome: "Imposta sulla prestazione, massimo", val: 0.15, fonte: 'art. 11 c. 6 D.Lgs. 252/2005', verificata: true },
   ALIQ_FONDO_MIN: { nome: "Imposta sulla prestazione, minimo", val: 0.09, fonte: 'art. 11 c. 6 D.Lgs. 252/2005', verificata: true },
-  ALIQ_FONDO_PASSO: { nome: "Riduzione per ogni anno oltre il quindicesimo", val: 0.003, fonte: '0,30 punti per ogni anno oltre il quindicesimo', verificata: true },
+  // PUNTI, NON PER CENTO. Scritta «0,3%» questa riga dice una cosa falsa e già sbagliata una
+  // volta: lo 0,3% di 15 è 0,045, mentre l'aliquota scende di 0,30 PUNTI l'anno. La distinzione
+  // vive nel formato, non nella fonte: `come: 'punti'` è l'unico modo perché non torni.
+  ALIQ_FONDO_PASSO: { nome: "Riduzione per ogni anno oltre il quindicesimo", val: 0.003, come: 'punti', fonte: '0,30 punti per ogni anno oltre il quindicesimo', verificata: true },
 
   // L'EROGAZIONE FRAZIONATA HA UNA TASSAZIONE PROPRIA, ed è peggiore: si parte dal 20% invece
   // che dal 15%, e la riduzione è di 0,25 punti invece di 0,30, per un massimo di 5 punti.
@@ -168,7 +171,7 @@ export const REGOLE = {
     fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005, introdotto dalla L. 199/2025 art. 1 c. 201 lett. b) n. 4: «una ritenuta a titolo d\'imposta con l\'aliquota del 20 per cento»', verificata: true },
   ALIQ_FRAZ_MIN: { nome: "Imposta sull'erogazione frazionata, minimo", val: 0.15,
     fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «con un limite massimo di riduzione di 5 punti percentuali», raggiunto a 35 anni di partecipazione', verificata: true },
-  ALIQ_FRAZ_PASSO: { nome: "Riduzione dell'imposta sull'erogazione frazionata", val: 0.0025,
+  ALIQ_FRAZ_PASSO: { nome: "Riduzione dell'imposta sull'erogazione frazionata", val: 0.0025, come: 'punti',
     fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «ridotta di una quota pari a 0,25 punti percentuali per ogni anno eccedente il quindicesimo anno di partecipazione»', verificata: true },
   FRAZ_ANNI_MIN: { nome: "Durata minima dell'erogazione frazionata", val: 5, come: 'anni',
     fonte: 'art. 11 c. 3-bis D.Lgs. 252/2005: «per un periodo non inferiore a cinque anni»', verificata: true },
@@ -668,8 +671,16 @@ const mostra = r => Array.isArray(r.val)
   // legge come una misura al decimo, «5%» dice quello che è, cioè una cifra scelta tonda.
   : r.come === 'listino' ? r.val.map(([n, x]) =>
       `${n} ${pc(x, (x * 1000) % 10 ? 1 : 0)}`).join(' · ')
+  // IL CUMULO STAVA DALLA PARTE SBAGLIATA DEL TERNARIO. Il suo valore È una lista, quindi non
+  // arrivava mai al proprio ramo e cadeva in quello delle aliquote: «25% fino a 3 €», dove il 3
+  // sono volte il trattamento minimo, non euro. Un formato che non viene raggiunto non è un
+  // formato mancante — è peggio, perché ne vince un altro e la riga sembra scritta apposta.
+  : r.come === 'cumulo' ? r.val.map(([n, q]) => `${pc(q)} oltre ${n} volte il minimo`).join(' · ')
   : r.val.map(([t, a]) => `${pc(a)} ${t === Infinity ? 'oltre' : 'fino a ' + eur(t)}`).join(' · ')
-  : r.come === 'cumulo' ? r.val.map(([n, q]) => `${pc(q)} oltre ${n} volte`).join(' · ')
+  // E `anni` esisteva solo per le curve: su un numero solo cadeva in fondo, dove tutto ciò che
+  // supera 1 diventa euro. «Durata minima dell'erogazione frazionata: 5 €».
+  : r.come === 'anni'     ? `${r.val.toLocaleString('it-IT')} anni`
+  : r.come === 'punti'    ? (r.val * 100).toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' punti'
   : r.come === 'volte'    ? r.val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' volte'
   : r.come === 'secco'    ? String(r.val)
   : r.come === 'percento' ? r.val + '%'

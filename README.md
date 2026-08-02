@@ -95,6 +95,16 @@ italiano). Anche i numeri degli esempi e le tabelle delle pagine sono generati
 (`ESEMPIO`, `<!--@@TABELLA_SOGLIE@@-->`, `<!--@@TABELLA_REGOLE@@-->`). Il build segnala le cifre
 scritte a mano che assomigliano a costanti.
 
+**Ogni costante porta anche il proprio formato (`come:`), e un formato che non viene raggiunto è
+peggio di uno mancante** — perché ne vince un altro e la riga sembra scritta apposta. `mostra()`
+si dirama prima su «il valore è una lista?»: `cumulo` stava sul ramo degli scalari pur avendo una
+lista, e finiva in quello delle aliquote (**«25% fino a 3 €»**, dove il 3 sono volte il
+trattamento minimo); `anni` esisteva solo per le curve, e su un numero solo cadeva in fondo, dove
+tutto ciò che supera 1 diventa euro (**«Durata minima dell'erogazione frazionata: 5 €»**). Due
+righe pubbliche e assurde con tutti i controlli verdi: **nessun controllo legge la tabella dei
+parametri**, e si guarda a occhio dopo averla toccata. C'è anche `punti`, perché «0,30 punti» e
+«0,3%» non sono la stessa cosa e l'errore era già stato fatto una volta.
+
 **2. Le fonti si dichiarano sempre, e sono tre.** Nelle pagine ogni affermazione porta la sua
 marca: `legge` (con l'articolo), `CCNL` (varia per settore), `stima` (nostra approssimazione).
 Mescolarle è il difetto più grave possibile qui.
@@ -335,6 +345,18 @@ titolo, niente valutazioni al posto dei fatti. È quello che distingue il sito d
 
 Si misura contando i termini gergali ogni 100 parole. `rita.html` era a 5,4 ed è a 1,1; le altre
 pagine divulgative stanno fra 1,2 e 2,7.
+
+**E il calcolatore sta con le pagine divulgative, non con `il-metodo`** (02/08/2026). Chi compila
+il modulo non è il lettore della documentazione: è la stessa persona che arriva da una ricerca,
+solo un minuto dopo. Quindi lì valgono le parole comuni dove esistono —
+**«anno», non «esercizio»** (l'esercizio è del bilancio d'impresa; qui gli anni sono di
+calendario, e «anno» è altrettanto esatto); **«Anna smette di lavorare nel 2041»**, non
+«cessazione dell'attività»; **«quanto c'è oggi»**, non «consistenza attuale». `il-metodo.html`
+tiene «esercizio» e il resto del suo lessico: è l'unica pagina che non parla a chi compila.
+
+**La regola per decidere, quando si esita**: la parola tecnica si tiene se chi legge la ritrova
+sui propri documenti (montante, aderente, decorrenza stanno sull'estratto conto del fondo), si
+sostituisce se è solo un modo più solenne di dire la stessa cosa.
 
 ## Il sito si legge anche su un telefono, e anche senza vederlo
 
