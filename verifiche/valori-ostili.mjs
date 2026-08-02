@@ -25,7 +25,7 @@ const src = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
   .match(/<script>([\s\S]*?)<\/script>/g)
   .map(t => t.replace(/<\/?script>/g, '')).find(t => /function simula\(/.test(t));
 
-const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','stip0','stip1','ral0','ral1',
+const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','ral0','ral1',
   'pens0','pens1','annoPens0','annoPens1','fondo0','fondo1','iscr0','iscr1','pcVoi0','pcVoi1',
   'pcDat0','pcDat1','cresc0','cresc1','tfrDove0','tfrDove1','tipoFondo0','tipoFondo1',
   'ultimo0','ultimo1',
@@ -101,7 +101,7 @@ const REGRESSIONI = {
   'tutto vuoto':                           {}
 };
 const SANO = {quanti:'1', nascita0:'1975', annoPens0:'2042', spesa:'2000', ral0:'35000',
-  stip0:'2000', pens0:'1500', fondo0:'50000', iscr0:'2010', pcVoi0:'1.2', pcDat0:'2',
+  pens0:'1500', fondo0:'50000', iscr0:'2010', pcVoi0:'1.2', pcDat0:'2',
   patrimonio:'100000', rend:'4', rendFondo:'3', infl:'2', etaFine:'95'};
 for (const [nome, over] of Object.entries(REGRESSIONI)){
   const t0 = Date.now();

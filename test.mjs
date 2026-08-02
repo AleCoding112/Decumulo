@@ -32,7 +32,7 @@ const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/s
 // partenza pulito: la RITA si prova nel suo gruppo.
 const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
   forma0:'vita', forma1:'vita', nome0:'Anna', nome1:'Bruno', pc0:'', pc1:'',
-  nascita0:1975, stip0:2600, ral0:58000, pens0:2600, annoPens0:2042,
+  nascita0:1975, ral0:58000, pens0:2600, annoPens0:2042,
   tipoFondo0:'collettiva', tipoFondo1:'collettiva',
   // vuoto = fino alla propria pensione. Assente varrebbe '0', cioè «non lavora da sempre»
   ultimo0:'', ultimo1:'',
@@ -45,7 +45,7 @@ const DATI = {patrimonio:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'',
   // che la legge concede, così il gruppo qui sotto può controllare che non venga tagliato.
   // Era 0,6, ed è stata la spia del cambio di legge: dal 1° luglio 2026 il massimo è 0,5.
   fondo0:90000, pcVoi0:1.5, pcDat0:2.0, tfrDove0:'fondo', iscr0:2018, rita0:2042, quotaCap0:0.5,
-  nascita1:1982, stip1:1900, ral1:36000, pens1:1700, annoPens1:2050,
+  nascita1:1982, ral1:36000, pens1:1700, annoPens1:2050,
   fondo1:30000, pcVoi1:1.2, pcDat1:1.6, tfrDove1:'fondo', iscr1:2012, rita1:2050, quotaCap1:1,
   // L'ABITAZIONE, scritta per esteso anche nel caso base che non la usa. Un campo assente vale
   // '0', e `casaCosa:'0'` non è nessuna delle tre opzioni: il caso di prova diventerebbe
@@ -78,7 +78,7 @@ globalThis.document = {
 };
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE,
-  quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
+  quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, nettoAnnuo, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
   numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
@@ -227,7 +227,7 @@ t('e i due anni sono diversi: la vecchia regola li faceva coincidere',
 // vecchia regola cancellava, e si trova invece di sceglierla a mano
 const soloSecondo = g.find(x => !x.lavora[0] && x.lavora[1]).anno;
 t('IL RECUPERO: chi ha accanto una persona più grande non perde più i suoi anni di lavoro',
-  Math.abs(anno(soloSecondo).daLavoro - s.p[1].stip * 12) < 1e-9,
+  Math.abs(anno(soloSecondo).daLavoro - M.nettoAnnuo(s.p[1], s.p[1].pc)) < 1e-9,
   `nel ${soloSecondo} lavora ancora il secondo: ${eur(anno(soloSecondo).daLavoro)} € contro 0 € prima`);
 t('chi scrive un anno, smette quando ha scritto',
   conUltimo({ultimo0: 2030}).p[0].ultimo === 2030);
@@ -255,7 +255,8 @@ t('l\'erogazione anticipata scritta a metà non fa partire il fondo a rate',
 t('l\'ultimo anno scritto a metà non cancella gli anni di lavoro',
   conUltimo({ultimo0: '203'}).p[0].ultimo === DATI.annoPens0 - 1);
 t(`nel ${s.p[0].ultimo} lavorano tutti e due`,
-  Math.abs(anno(s.p[0].ultimo).daLavoro - (s.p[0].stip + s.p[1].stip) * 12) < 1e-9);
+  Math.abs(anno(s.p[0].ultimo).daLavoro
+           - (M.nettoAnnuo(s.p[0], s.p[0].pc) + M.nettoAnnuo(s.p[1], s.p[1].pc))) < 1e-9);
 t(`nel ${DATI.annoPens1} non lavora più nessuno`, anno(DATI.annoPens1).daLavoro === 0);
 // la pensione si scrive lorda e la pagina la porta a netta: qui i confronti vanno fatti col netto,
 // al netto della DETRAZIONE dell'art. 13 c. 3 e su TREDICI rate, non dodici
@@ -558,6 +559,37 @@ console.log('\n— l\'adesione decide la quota del datore, non il tipo di fondo 
 // esiste — si legge «zero virgola cinquantacinque» e usciva come «il 0,55%»; e un valore
 // come 0,96 si SCRIVE «1,0%», si legge «uno virgola zero» e vuole «l'», mentre la sua parte
 // intera è 0.
+// --- LA BUSTA PAGA, RICAVATA INVECE CHE CHIESTA -----------------------------
+// La casella del netto è sparita il 02/08/2026: chiedeva il netto di un mese ordinario, la
+// pagina istruiva a escludere le mensilità aggiuntive e il conto moltiplicava per dodici, così
+// tredicesima e quattordicesima non entravano mai nel piano. La RAL le comprende tutte.
+console.log('\n— la retribuzione netta si ricava dalla lorda —');
+{
+  const netto = M.nettoAnnuo(A, A.pcVoi);
+  // L'IDENTITÀ CHE CHIUDE IL CONTO: niente si perde e niente si conta due volte.
+  const base = A.ral * (1 - M.IVS);
+  const ded  = Math.min(M.contributi(A, A.pcVoi).lav,
+                        Math.max(0, M.TETTO_DEDUZIONE - M.contributi(A, A.pcVoi).dat));
+  const pezzi = netto + A.ral * M.IVS + M.irpefNetta(base - ded, false)
+              + M.contributi(A, A.pcVoi).lav;
+  t('netto + contributi obbligatori + IRPEF + versamento = retribuzione lorda',
+    Math.abs(pezzi - A.ral) < 1e-6, `${eur(pezzi)} € contro ${eur(A.ral)} € di RAL`);
+  t('versare di più abbassa la busta, ma meno di quanto si versa',
+    (() => { const piu = M.nettoAnnuo(A, A.pcVoi + 1), d = netto - piu;
+      const versato = A.ral / 100;
+      return d > 0 && d < versato; })(),
+    'la differenza è il costo netto, cioè il versamento meno lo sconto IRPEF');
+  t('e cresce con la retribuzione, senza salti',
+    [20000, 35000, 50000, 80000].every((r, i, a) =>
+      i === 0 || M.nettoAnnuo({...A, ral:r}, 0) > M.nettoAnnuo({...A, ral:a[i-1]}, 0)));
+  // NON È IL NETTO DELLA BUSTA PAGA, ed è dichiarato in il-metodo.html: mancano le addizionali
+  // (lo alzano) e le detrazioni per carichi di famiglia (lo abbassano).
+  t('resta sotto la lorda e sopra zero a ogni retribuzione',
+    [0, 6000, 20000, 60000, 200000].every(r => {
+      const y = {...A, ral:r}, n = M.nettoAnnuo(y, 0);
+      return n >= 0 && n <= r; }));
+}
+
 console.log('\n— l\'articolo segue come si legge il numero, non quanto vale —');
 for (const [n, atteso] of [[0,'lo 0%'], [0.55,'lo 0,6%'], [0.8,'lo 0,8%'], [0.96,"l'1,0%"],
                            [1,"l'1%"], [1.2,"l'1,2%"], [3,'il 3%'], [8,"l'8%"], [11,"l'11%"],
@@ -833,13 +865,21 @@ t('il cursore non si ferma al tetto: oltre si versa, solo senza sconto',
 t('si ferma dove il versamento mangerebbe tutto lo stipendio netto',
   Math.abs(M.pcMassimo(A) - M.pcSpendibile(A)) < 1e-9 && M.pcMassimo(A) < 100,
   `massimo ${M.pcMassimo(A).toFixed(1)}%`);
-t('e proprio lì il costo in busta è l\'intero netto attuale',
-  Math.abs(M.costoAnnuo(A, M.pcMassimo(A)) - A.stip * 12) < 1,
-  `${eur(M.costoAnnuo(A, M.pcMassimo(A)))} € contro ${eur(A.stip * 12)} € di netto`);
-t('con una RAL bassa lo stipendio non morde e si arriva al 100%',
-  M.pcMassimo({...A, ral:6000}) === 100,
-  `RAL 6.000 → cursore fino al ${M.pcMassimo({...A, ral:6000}).toFixed(0)}%`);
-t('e non supera mai il 100% della RAL', M.pcMassimo({...A, ral:2000}) === 100);
+t('e proprio lì la busta arriva esattamente a zero',
+  Math.abs(M.nettoAnnuo(A, M.pcMassimo(A))) < 1,
+  `${eur(M.nettoAnnuo(A, M.pcMassimo(A)))} € di netto residuo`);
+// CON UNA RAL BASSA IL CURSORE NON ARRIVA AL 100%, e prima ci arrivava perché il netto era una
+// casella slegata dalla RAL: si poteva dichiarare 2.600 € al mese con 6.000 € di RAL, e il
+// modello ci credeva. Ora i contributi escono da quello che resta dopo l'IVS, quindi il massimo
+// versabile è la RAL meno la contribuzione obbligatoria — mai il 100%, per costruzione.
+t('con una RAL bassa il cursore si ferma dove finisce la busta, non al 100%',
+  M.pcMassimo({...A, ral:6000}) > 88 && M.pcMassimo({...A, ral:6000}) < 100
+  && Math.abs(M.nettoAnnuo({...A, ral:6000}, M.pcMassimo({...A, ral:6000}))) < 1,
+  `RAL 6.000 → cursore fino al ${M.pcMassimo({...A, ral:6000}).toFixed(1)}%`);
+t('e la coerenza vale a ogni RAL: oltre quel punto la busta andrebbe sotto zero',
+  [2000, 6000, 20000, 58000].every(ral => {
+    const y = {...A, ral}, max = M.pcMassimo(y);
+    return M.nettoAnnuo(y, max) >= -1 && (max >= 100 || M.nettoAnnuo(y, max + 0.5) < 0); }));
 t('versando oltre il tetto il montante cresce ancora',
   sOltre.incassi[0].montante > sTetto.incassi[0].montante);
 t('MA la base imponibile no: quello che non si deduce non si ritassa',
@@ -958,7 +998,7 @@ t('le righe-evento seguono la lingua della tabella',
 
 console.log('\n— le monotonie: il piano non deve dare risposte assurde —');
 t('spendere di più lascia meno soldi', M.simula({...s, spesa:4000}).finale < r.finale);
-t('uno stipendio più alto lascia più soldi', M.conAlt(s, 0, 'stip', 4000).finale > r.finale);
+t('una retribuzione più alta lascia più soldi', M.conAlt(s, 0, 'ral', 75000).finale > r.finale);
 t('una pensione più alta lascia più soldi', M.conAlt(s, 0, 'pens', 3500).finale > r.finale);
 t('un fondo più grosso oggi lascia più soldi', M.conAlt(s, 0, 'fondo', 150000).finale > r.finale);
 let maxSalto = 0;
@@ -1100,7 +1140,7 @@ t('ogni riga quadra anche con una persona sola',
   r1.righe.every(x => Math.abs(x.inizio + x.rendimento + x.daLavoro + x.daPensioni + x.daRendita
     + x.daFondo + x.daRata + x.daTfr - x.spesa - x.patr) < 1e-6));
 t('nel piano entra solo il suo stipendio e solo la sua pensione',
-  Math.abs(r1.righe[0].daLavoro - s1.p[0].stip*12) < 1e-9);
+  Math.abs(r1.righe[0].daLavoro - M.nettoAnnuo(s1.p[0], s1.p[0].pc)) < 1e-9);
 t('le fasi non parlano al plurale né nominano una seconda persona',
   M.fasi(r1).every(f => !/entrambi|tutti e due/.test(f.cosa) && !f.cosa.includes(DATI.nome1)),
   M.fasi(r1)[0].cosa);
@@ -1339,7 +1379,7 @@ console.log("\n— l'abitazione —");
 
 console.log('\n— casi limite —');
 const zero = M.simula({...s, patrimonio:0,
-  p:s.p.map(x=>({...x, fondo:0, vers:0, stip:0, pens:0}))});
+  p:s.p.map(x=>({...x, fondo:0, vers:0, ral:0, pens:0}))});
 t('senza niente i soldi finiscono subito, senza NaN',
   zero.annoZero === 2026 && zero.righe.every(x => Number.isFinite(x.patr)));
 const senzaFondo = M.simula({...s, p:s.p.map(x=>({...x, fondo:0, pcVoi:0, pcDat:0, pc:0, tfrAlFondo:false}))});

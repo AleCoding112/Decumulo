@@ -46,7 +46,7 @@ for (let t=0; t<4000; t++){
     quanti: P(['1','2']), nome0:'Anna', nome1:'Bruno', forma0:P(['vita','rev','certa','durata','frazionata']), forma1:P(['vita','rev','certa','durata','frazionata']),
     anniFraz0:P(['', I(1,40)]), anniFraz1:P(['', I(1,40)]),
     cresc0: P(['', +R(0,6).toFixed(1)]), cresc1: P(['', +R(0,6).toFixed(1)]),
-    nascita0:n0, stip0:Math.round(R(0,9000)), ral0:Math.round(R(0,200000)),
+    nascita0:n0, ral0:Math.round(R(0,200000)),
     // LA DECORRENZA PUÒ ESSERE GIÀ TRASCORSA: chi è in pensione da anni usa questa pagina come
     // chiunque altro, ed è il caso in cui il fondo non deve rientrare nel piano. Il confine
     // (l'anno in corso) va attraversato spesso, non sfiorato: si estrae da un intervallo che
@@ -56,7 +56,7 @@ for (let t=0; t<4000; t++){
     tipoFondo0:P(['collettiva','individuale']),
     tfrDove0:P(['fondo','azienda']), iscr0:I(1980,2030),
     quotaCap0:+R(0,1).toFixed(2),
-    nascita1:n1, stip1:Math.round(R(0,9000)), ral1:Math.round(R(0,200000)),
+    nascita1:n1, ral1:Math.round(R(0,200000)),
     pens1:Math.round(R(0,6000)), annoPens1:I(1995,2055),
     fondo1:Math.round(R(0,600000)), pcVoi1:+R(0,4).toFixed(1), pcDat1:+R(0,4).toFixed(1), pc1:'',
     tipoFondo1:P(['collettiva','individuale']),

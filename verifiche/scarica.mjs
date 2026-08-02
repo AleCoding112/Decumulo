@@ -24,7 +24,7 @@ const src = [...PAGINA.matchAll(/<script>([\s\S]*?)<\/script>/g)]
   .map(m => m[1]).find(t => /function simula\(/.test(t));
 
 const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1980,
-  ral0:58000, ral1:36000, stip0:2600, stip1:1900, pens0:2600, pens1:1700,
+  ral0:58000, ral1:36000, pens0:2600, pens1:1700,
   annoPens0:2042, annoPens1:2050, pcVoi0:1.5, pcVoi1:1.2, pcDat0:2, pcDat1:1.6,
   iscr0:2018, iscr1:2012, patrimonio:120000, spesa:2600, rend:5, infl:2, rendFondo:5,
   etaFine:95, fondo0:90000, fondo1:30000, tfrDove0:'fondo', tfrDove1:'fondo',

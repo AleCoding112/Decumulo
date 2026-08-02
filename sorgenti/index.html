@@ -532,13 +532,18 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <div class="cella"><input type="text" inputmode="numeric" id="nascita0" value=""></div>
     <div class="cella p2"><input type="text" inputmode="numeric" id="nascita1" value=""></div>
 
-    <div class="voce rigalav">Retribuzione netta mensile</div>
-    <div class="cella"><input type="text" inputmode="decimal" id="stip0" value=""></div>
-    <div class="cella p2"><input type="text" inputmode="decimal" id="stip1" value=""></div>
-
-    <div class="voce rigalav">Retribuzione annua <b>lorda</b></div>
-    <div class="cella"><input type="text" inputmode="decimal" id="ral0" value=""></div>
-    <div class="cella p2"><input type="text" inputmode="decimal" id="ral1" value=""></div>
+    <!-- LA RETRIBUZIONE NETTA NON SI CHIEDE PIÙ, si ricava. La casella chiedeva il netto di un
+         mese ordinario, la pagina istruiva a escludere le mensilità aggiuntive e il conto
+         moltiplicava per dodici: tredicesima e quattordicesima non entravano mai nel piano.
+         La RAL invece le comprende tutte, l'IRPEF è annua, e il netto se ne ricava esatto.
+         Una casella in meno da compilare, e il valore ricavato sta sotto quella che lo genera —
+         così si può confrontare con la busta paga, che è quello che la casella serviva a fare. -->
+    <div class="voce rigalav">Retribuzione annua <b>lorda</b><br>
+      <span class="come">tutte le mensilità comprese</span></div>
+    <div class="cella"><input type="text" inputmode="decimal" id="ral0" value="">
+      <u class="hint" id="nettoRal0">&nbsp;</u></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="ral1" value="">
+      <u class="hint" id="nettoRal1">&nbsp;</u></div>
 
     <div class="voce rigalav">Crescita annua della retribuzione</div>
     <div class="cella"><input type="text" inputmode="decimal" id="cresc0" value=""
@@ -1147,13 +1152,16 @@ function pcTetto(x){
 // («nessuno versa più del 50%»). Tolta: non era un fatto, era una stima di comportamento messa
 // dove sta un vincolo, e nascondeva metà del dominio a chi la stima non la rispetta. Il limite
 // che resta è misurato sui suoi numeri, non supposto sui suoi gusti.
+// LA CONDIZIONE È DIVENTATA QUELLA CHE HA SEMPRE VOLUTO DIRE. Prima confrontava l'AUMENTO del
+// versamento con il netto dichiarato nella casella; ora che il netto si deriva, la stessa cosa
+// si dice in un modo che non ha bisogno di essere spiegato: il cursore si ferma dove la busta
+// arriva a zero.
 function pcSpendibile(x){
-  const netto = Math.max(0, x.stip) * 12;
   if (!(x.ral > 0)) return x.pcVoi;
-  if (costoAnnuo(x, 100) <= netto) return 100;
+  if (nettoAnnuo(x, 100) >= 0) return 100;
   let lo = x.pcVoi, hi = 100;
-  if (costoAnnuo(x, lo) > netto) return lo;
-  for (let k = 0; k < 40; k++){ const m = (lo + hi) / 2; costoAnnuo(x, m) <= netto ? lo = m : hi = m; }
+  if (nettoAnnuo(x, lo) < 0) return lo;
+  for (let k = 0; k < 40; k++){ const m = (lo + hi) / 2; nettoAnnuo(x, m) >= 0 ? lo = m : hi = m; }
   return lo;
 }
 function pcMassimo(x){
@@ -1166,6 +1174,25 @@ function pcMassimo(x){
 // perfino a costo negativo — vero solo se quella quota fosse dentro la vostra RAL, e non lo
 // sappiamo.
 const dedLav = c => Math.min(c.lav, Math.max(0, TETTO_DEDUZIONE - c.dat));
+
+// QUELLO CHE RESTA IN BUSTA IN UN ANNO, ricavato invece che chiesto.
+// Fino al 02/08/2026 il netto era una casella, e il conto lo moltiplicava per dodici — mentre
+// la pagina istruiva a NON includere le mensilità aggiuntive. Tredicesima e quattordicesima
+// nette non entravano quindi mai nel piano: l'8-14% delle disponibilità di ogni esercizio
+// lavorativo, sparito senza che niente lo dichiarasse.
+// Chiedere «quante mensilità» avrebbe corretto il numero e sbagliato l'imposta, perché la
+// tredicesima NON si tassa come un mese ordinario: le detrazioni sono annue e già consumate sui
+// dodici. La RAL invece le mensilità le comprende già tutte — la pagina che dice dove trovarla
+// lo chiede esplicitamente — e l'IRPEF è annua per costruzione. Derivarlo è quindi l'unica via
+// esatta, e per giunta toglie una casella invece di aggiungerne una.
+//
+// NON È IL NETTO DELLA BUSTA PAGA, ed è dichiarato: mancano le addizionali regionale e comunale
+// e le detrazioni per carichi di famiglia. Le prime lo alzano, le seconde lo abbassano.
+function nettoAnnuo(x, pc){
+  const base = Math.max(0, x.ral) * (1 - IVS);
+  const c = contributi(x, pc);
+  return base - c.lav - irpefNetta(base - dedLav(c), false);
+}
 const scontoIrpef = (x, pc) => {
   const base = Math.max(0, x.ral * (1 - IVS));
   return irpefNetta(base - dedLav(contributi(x, x.pcVoi)), false)
@@ -1292,11 +1319,15 @@ function leggi(){
     // italiano, e chi scrive una frase non deve andarsela a prendere da una globale
     di:       DI[i],
     nascita:  numFra('nascita'+i, 1900, ANNO0),
-    stip:     numFra('stip'+i, 0, 1e7),
+
     // Vuoto e zero sono due informazioni diverse, come sui contributi: una casella non
     // compilata vale zero nel conto e sospende il verdetto, uno zero scritto è una risposta.
-    stipVuoto: EL('stip'+i).value.trim() === '',
     pensVuoto: EL('pens'+i).value.trim() === '',
+    // La RAL ha preso il posto del netto anche nell'elenco delle caselle che il verdetto
+    // pretende, e con lui la regola di sempre: uno ZERO SCRITTO è una risposta — «in questi
+    // esercizi non ho reddito da lavoro» — mentre la casella vuota sospende il verdetto.
+    // Scrivere `!(ral > 0)` avrebbe confuso le due, ed è l'errore che qui è già costato.
+    ralVuoto: EL('ral'+i).value.trim() === '',
     ral:      numFra('ral'+i, 0, 1e8),
     crescNom: numOpt('cresc'+i) === null ? null : fra(numOpt('cresc'+i), -50, 50),
     pens:     numFra('pens'+i, 0, 1e6),
@@ -1524,8 +1555,7 @@ function simula(s, spesaMese){
     // ricalcolano anno per anno. `stipBase` è la retribuzione netta scritta nella casella,
     // prima che il versamento in più se ne prenda un pezzo.
     return {...x, vers: c.tot, versLav: c.lav, versDat: c.dat, scattaDatore: c.scatta,
-            tfrAnno: Math.max(0, x.ral) * TFR_SU_RAL, stipBase: x.stip,
-            stip: x.stip - costoMensile(x, x.pc)};
+            tfrAnno: Math.max(0, x.ral) * TFR_SU_RAL};
   });
   const annoFine = Math.max(...P.map(x => x.nascita)) + s.etaFine;
   // IL PASSAGGIO FRA LE DUE SPESE è quando la casa è del tutto in pensione, cioè quando ha
@@ -1615,9 +1645,11 @@ function simula(s, spesaMese){
       const xA = k === 1 ? x : {...x, ral: x.ral * k};
       const cA = k === 1 ? {tot: x.vers, lav: x.versLav, dat: x.versDat} : contributi(xA, x.pc);
       const tfrA = k === 1 ? x.tfrAnno : Math.max(0, xA.ral) * TFR_SU_RAL;
-      const stipA = k === 1 ? x.stip : x.stipBase * k - costoMensile(xA, x.pc);
-
-      if (lavora[i]) daLavoro += stipA * 12;
+      // IL COMMENTO QUI SOPRA ORA È VERO. Prometteva che l'IRPEF si ricalcola sulla RAL
+      // dell'anno, ma il netto era la casella scalata per `k`: cambiava di scaglione solo il
+      // costo del versamento, non l'imposta sul resto. Derivandolo, l'intera busta segue la
+      // retribuzione di quell'esercizio.
+      if (lavora[i]) daLavoro += nettoAnnuo(xA, x.pc);
       // la pensione del superstite si tratta fuori dal ciclo: dall'anno in cui l'altro manca
       // fa capo allo stesso contribuente della reversibilità, e l'IRPEF si calcola sulla somma
       if (inPens[i] && !(manca !== null && anno >= manca.anno && i === resta))
@@ -2174,7 +2206,7 @@ function richieste(s){
     // frase sbagliata, in forma più lenta.
     if ((x.ultimoScritto === null || x.ultimoScritto >= ANNO0)
         && (x.annoPensVuoto || x.ultimo >= ANNO0))
-      voci.push({testo: 'la retribuzione netta mensile', manca: x.stipVuoto});
+      voci.push({testo: 'la retribuzione annua lorda', manca: x.ralVuoto});
     // L'ORIZZONTE SERVE PER SAPERE SE IL TRATTAMENTO CI ENTRA, ma senza anno di nascita non è
     // ancora un orizzonte: `max(nascita) + etaFine` vale 95, cioè l'anno 95, e ogni decorrenza
     // gli sta oltre. La casella del trattamento spariva così dall'elenco finché non si scriveva
@@ -2272,7 +2304,7 @@ function calc(){
   // piccola. E la disattivazione è reversibile: basta correggere l'anno perché tornino in gioco.
   // Sta qui, prima delle uscite anticipate, perché dipende solo da come è compilato il modulo.
   {
-    const SPENTE = ['stip', 'ral', 'cresc', 'ultimo',              // esercizi di attività
+    const SPENTE = ['ral', 'cresc', 'ultimo',              // esercizi di attività
                     'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];  // fondo
     s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
 
@@ -2371,6 +2403,10 @@ function calc(){
     const H = (id, testo) => EL(id).innerHTML = testo;
     // «netti al mese» taceva su quante volte l'anno arriva quel mese. Ora la riga dice il
     // divisore, perché il lordo scritto è quello di una rata e le rate sono tredici.
+    // IL NETTO RICAVATO, sotto la RAL da cui esce. Dichiara di essere una stima e perché:
+    // chi lo confronta con la busta paga trova uno scarto, e deve sapere di cosa è fatto.
+    H('nettoRal'+i, x.ral > 0
+        ? E0(nettoAnnuo(x, x.pc) / 12) + ' netti al mese, stimati senza addizionali' : '&nbsp;');
     H('pensNetta'+i, x.pensLorda > 0
         ? E0(x.pens) + ' netti per rata · ' + fmt(MENS_PENS) + ' rate l\'anno' : '&nbsp;');
     const co = contributi(x, x.pcVoi);
@@ -3919,7 +3955,7 @@ function pianoInFoglio(s, r){
     perPersona('Anno di nascita', x => x.nascita),
     perPersona('Decorrenza del trattamento', x => x.annoPens),
     perPersona('Trattamento INPS, lordo mensile', x => x.pensLorda),
-    perPersona('Retribuzione netta mensile', x => x.stip),
+    perPersona('Retribuzione netta annua, stimata', x => nettoAnnuo(x, x.pc)),
     perPersona('Retribuzione annua lorda', x => x.ral),
     perPersona('Ultimo esercizio di attività', x => x.ultimo),
     perPersona('Fondo pensione, consistenza iniziale', x => x.fondoScritto),

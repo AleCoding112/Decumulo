@@ -156,11 +156,14 @@ function piano(D){
       const vers = q.lav + q.dat;
 
       if (lavora){
-        // dalla busta esce solo la quota del lavoratore, dedotta entro lo spazio residuo
+        // QUELLO CHE RESTA IN BUSTA, ricavato dalla RAL come nel motore ma riscritto dalle
+        // regole: lorda meno i contributi obbligatori, meno la quota versata al fondo, meno
+        // l'IRPEF sull'imponibile che ne resta. Prima qui c'era `x.stip * k * 12`, cioè la
+        // casella del netto scalata: quando la casella è sparita questo file ha continuato a
+        // leggerla e ha prodotto NaN per sessanta casi su sessanta, dichiarandoli tutti uguali.
         const base = Math.max(0, ral * (1 - V('IVS')));
         const ded  = c => Math.min(c.lav, Math.max(0, V('TETTO_DEDUZIONE') - c.dat));
-        const sconto = irpefNetta(base - ded(qOggi), false) - irpefNetta(base - ded(q), false);
-        E += x.stip * k * 12 - ((q.lav - qOggi.lav) - sconto);
+        E += base - q.lav - irpefNetta(base - ded(q), false);
       }
       if (inPens && !(manca !== null && a >= manca.anno && i === resta))
         E += x.pens * V('MENSILITA_PENSIONE')
@@ -304,9 +307,9 @@ const base = {quanti:'2', patrimonio:100000, spesa:3300, spesaPens:'', cresc0:''
   forma0:'vita', forma1:'vita', nome0:'A', nome1:'B', pc0:'', pc1:'',
   // Caso inventato, come quello di `test.mjs` e diverso da quello: due implementazioni
   // confrontate sempre sugli stessi numeri si accorderebbero anche su un caso particolare.
-  nascita0:1974, stip0:2400, ral0:70000, pens0:3200, annoPens0:2041,
+  nascita0:1974, ral0:70000, pens0:3200, annoPens0:2041,
   fondo0:80000, pcVoi0:1.5, pcDat0:2, tfrDove0:'fondo', iscr0:2011, rita0:2041, quotaCap0:0.6,
-  nascita1:1984, stip1:1700, ral1:32000, pens1:1500, annoPens1:2052,
+  nascita1:1984, ral1:32000, pens1:1500, annoPens1:2052,
   fondo1:20000, pcVoi1:1, pcDat1:1.5, tfrDove1:'fondo', iscr1:2016, rita1:2052, quotaCap1:1,
   // scritto per esteso, non lasciato mancante: su una casella nuova un fixture muto fa passare
   // il confronto senza confrontare nulla
@@ -427,7 +430,7 @@ for (const [nome, over, prova, manca] of tutti){
     casa: {cosa:s.casa.cosa, anno:s.casa.anno, valore:s.casa.valore,
            nuova:s.casa.nuova, canone:s.casa.canone},
     rendFondo:s.rendFondoNom, etaFine:s.etaFine,
-    p: s.p.map(x => ({nascita:x.nascita, stip:x.stip, ral:x.ral, pens:x.pensLorda,
+    p: s.p.map(x => ({nascita:x.nascita, ral:x.ral, pens:x.pensLorda,
       // SI PASSA IL VALORE SCRITTO, NON QUELLO GIÀ AZZERATO. `leggi()` toglie il fondo a chi ha
       // la decorrenza alle spalle: prendendo `x.fondo` questa implementazione erediterebbe la
       // decisione dell'altra e non verificherebbe più niente. La regola la riapplica da sé,
@@ -440,7 +443,16 @@ for (const [nome, over, prova, manca] of tutti){
 
   const rel = Math.abs(P.finale - R.finale) / Math.max(Math.abs(R.finale), 1);
   const guai = [];
-  if (rel > 1e-9) guai.push(`finale ${Math.round(R.finale)} contro ${Math.round(P.finale)}`);
+  // UN CONFRONTO CIECO AI NaN NON È UN CONFRONTO. `NaN > 1e-9` è FALSO, quindi uno scarto
+  // indefinito passava come uguaglianza: il 02/08/2026 questa implementazione ha smesso di
+  // calcolare — leggeva una casella che non esisteva più — e per sessanta casi su sessanta ha
+  // dichiarato «0 divergenti» producendo NaN. È la seconda volta che tace invece di fallire:
+  // la prima dava «scarto 0.0e+0» mentre non produceva alcun incasso.
+  // La regola vale oltre questo file: una soglia interrogata con un valore non finito risponde
+  // sempre di sì, e va perciò sempre preceduta dal controllo che il valore esista.
+  if (!Number.isFinite(P.finale) || !Number.isFinite(R.finale))
+    guai.push(`valore non finito: ${P.finale} contro ${R.finale}`);
+  else if (rel > 1e-9) guai.push(`finale ${Math.round(R.finale)} contro ${Math.round(P.finale)}`);
   if (P.inc.length !== R.incassi.length)
     guai.push(`incassi ${R.incassi.length} contro ${P.inc.length}`);
   if (P.liq.length !== R.liquidazioni.length)
@@ -466,6 +478,21 @@ for (const [nome, over, prova, manca] of tutti){
   }
 }
 
+// LA GUARDIA SI PROVA DA SÉ. Una guardia contro i NaN che non venisse mai esercitata sarebbe
+// esattamente il difetto che vuole impedire: verde perché non guarda. Qui le si dà in pasto un
+// valore indefinito e si pretende che lo dichiari.
+{
+  const finto = (a, b) => {
+    const rel = Math.abs(a - b) / Math.max(Math.abs(b), 1);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return 'non finito';
+    return rel > 1e-9 ? 'diverso' : 'uguale';
+  };
+  const esiti = [finto(NaN, 100), finto(100, NaN), finto(100, 100), finto(100, 200)].join(' ');
+  if (esiti !== 'non finito non finito uguale diverso'){
+    console.log(`  ✗ la guardia sui valori non finiti non funziona: ${esiti}`);
+    rotti++;
+  } else console.log('\n  ok  la guardia sui valori non finiti scatta, provata su NaN da entrambi i lati');
+}
 console.log(`\n${tutti.length} casi, ${rotti} divergenti.`);
 console.log(`Scarto relativo massimo ${peggio.toExponential(1)}` +
   (nomePeggio ? ` (${nomePeggio})` : '') +

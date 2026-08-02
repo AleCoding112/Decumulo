@@ -155,7 +155,7 @@ export async function apri({ larghezza = 1200, altezza = 1400 } = {}) {
 
 // --- gli scatti che si guardano dopo ogni modifica di aspetto ----------------
 // Sono i punti in cui l'aspetto è già stato rotto almeno una volta, non una rassegna.
-const DATI = {quanti:'1', nome0:'Anna', nascita0:1975, stip0:2200, ral0:38000,
+const DATI = {quanti:'1', nome0:'Anna', nascita0:1975, ral0:38000,
   pens0:1500, annoPens0:2042, fondo0:60000, iscr0:2005, pcVoi0:3, pcDat0:2,
   patrimonio:200000, spesa:2500, rend:4, infl:2, rendFondo:3, etaFine:95};
 

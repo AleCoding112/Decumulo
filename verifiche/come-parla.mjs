@@ -46,7 +46,7 @@ for (const m of PAGINA.matchAll(/<select\b[^>]*\bid="(\w+)"[\s\S]*?<\/select>/g)
 
 // --- gli scenari: coprono i rami che scrivono frasi diverse ------------------
 const BASE = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1977,
-  ral0:38000, ral1:33000, stip0:2200, stip1:1900, pens0:1500, pens1:1300,
+  ral0:38000, ral1:33000, pens0:1500, pens1:1300,
   annoPens0:2042, annoPens1:2044, pcVoi0:1.2, pcVoi1:1.5, pcDat0:2, pcDat1:2,
   iscr0:2005, iscr1:2007, patrimonio:200000, spesa:2500, rend:4, infl:2, rendFondo:3,
   cresc0:'', cresc1:'', spesaPens:'',
@@ -88,14 +88,14 @@ const SCENARI = {
   // accanto alla casella, la riga sulla cessazione che non c'è, la seconda spesa che si spegne.
   // Vanno esercitati tutti e tre gli assetti, perché le frasi cambiano con quanti sono.
   'una persona, già in pensione':    {...BASE, quanti:'1', nome1:'', annoPens0:2015,
-                                      stip0:'', ral0:'', rita0:0},
-  'coppia, uno già in pensione':     {...BASE, annoPens0:2015, stip0:'', ral0:'', rita0:0},
+                                      ral0:'', rita0:0},
+  'coppia, uno già in pensione':     {...BASE, annoPens0:2015, ral0:'', rita0:0},
   'coppia, tutti e due già in pensione': {...BASE, annoPens0:2015, annoPens1:2022,
-                                      stip0:'', stip1:'', ral0:'', ral1:'', rita0:0, rita1:0},
+                                      ral0:'', ral1:'', rita0:0, rita1:0},
   'già in pensione col fondo scritto lo stesso': {...BASE, quanti:'1', nome1:'',
                                       annoPens0:2015, fondo0:250000, rita0:0},
   'decorrenza nell\'anno in corso':  {...BASE, quanti:'1', nome1:'', annoPens0:2026,
-                                      stip0:'', ral0:'', rita0:0},
+                                      ral0:'', rita0:0},
   // LE FORME CHE CONSUMANO IL MONTANTE. Scrivono frasi che nessun altro scenario produce: la
   // durata in anni interi, l'avvertenza sulla sopravvivenza, la casella degli anni che compare
   // solo per una delle due, e le rate che nelle fasi non sono «anticipate».
@@ -133,7 +133,7 @@ const SCENARI = {
   // e la scelta che resta aperta a chi ha la decorrenza alle spalle: è la ragione per cui la
   // sezione delle scelte non sparisce più del tutto
   'già in pensione, e cambia casa':   {...BASE, quanti:'1', nome1:'', annoPens0:2015,
-                                       stip0:'', ral0:'', rita0:0, casaCosa:'affitto',
+                                       ral0:'', rita0:0, casaCosa:'affitto',
                                        casaAnno:2030, casaValore:250000, casaCanone:800}
 };
 
@@ -411,7 +411,7 @@ for (const [nome, DATI, atteso] of [
   // detrazioni dell'art. 13 il piano ha cominciato a reggere da solo: il ramo non era rotto, era
   // il fixture a non essere più al limite. Ritarato cercando di nuovo il bordo.
   ['regge alzando il versamento: è la frase che vale',
-   {...BASE, quanti:'1', spesa:2600, patrimonio:150000, rendFondo:7, rend:0, etaFine:78, fondo0:50000},
+   {...BASE, quanti:'1', spesa:2800, patrimonio:150000, rendFondo:7, rend:0, etaFine:75, fondo0:50000},
    /e da lì .*il piano regge/]
 ]){
   const {scritte, elementi} = esegui(DATI);
@@ -544,8 +544,11 @@ console.log('\n— la prova di tenuta —');
     /regge lo stesso/.test(comodo) && /spesa massima sostenibile passa da/.test(comodo), comodo);
   c('e dichiara che cosa ha fatto, senza lasciarlo indovinare',
     /primi \d+ esercizi a rendimento reale nullo/.test(comodo));
-  // il piano che regge sulla media ma non sulla sequenza
-  const rotto = conSpesa(4300);
+  // il piano che regge sulla media ma non sulla sequenza. LA SOGLIA SI SPOSTA QUANDO IL MODELLO
+  // MIGLIORA: 4.300 non bastava più a rompere il piano dopo che il netto da lavoro ha smesso di
+  // perdere le mensilità aggiuntive. Quarta volta in due giorni, e sempre lo stesso errore di
+  // lettura: il rosso non diceva «il ramo è rotto», diceva «lo scenario non è più al confine».
+  const rotto = conSpesa(4400);
   c('dove il verdetto si rovescia lo dice, e non dice «regge lo stesso»',
     !/regge lo stesso/.test(rotto), rotto);
   // due sotto-rami: la prova anticipa la fine, oppure la fine cade nello stesso esercizio.
@@ -744,7 +747,7 @@ console.log('\n— le caselle che il verdetto richiede —');
     patrimonio: 'il patrimonio investito',
     nascita0:   "l'anno di nascita",
     annoPens0:  'la decorrenza del trattamento',
-    stip0:      'la retribuzione netta mensile',
+    ral0:       'la retribuzione annua lorda',
     pens0:      "l'importo del trattamento INPS"
   };
   const NUMERO = {quattro:4, cinque:5, sei:6, sette:7, otto:8, nove:9, dieci:10};
@@ -793,7 +796,7 @@ console.log('\n— le caselle che il verdetto richiede —');
 
   // ogni casella richiesta, tolta da sola, sospende il verdetto: nessuna vale zero in silenzio
   const PIENO = {quanti:'1', spesa:2500, patrimonio:400000, nascita0:1958, annoPens0:2030,
-                 stip0:2400, pens0:1800};
+                 ral0:42000, pens0:1800};
   c('col modulo completo il verdetto esce', !senzaVerdetto(esegui(PIENO)));
   for (const id of Object.keys(CASELLE))
     c(`senza ${CASELLE[id]} il verdetto resta sospeso`,
@@ -803,12 +806,12 @@ console.log('\n— le caselle che il verdetto richiede —');
   // un trattamento, scrive 0 e il conto lo prende alla lettera. Senza questa distinzione la
   // guardia avrebbe chiuso fuori proprio chi ha più bisogno della risposta.
   c('uno zero scritto è una risposta, e il verdetto esce',
-    !senzaVerdetto(esegui({...PIENO, patrimonio:0, stip0:0, pens0:0})));
+    !senzaVerdetto(esegui({...PIENO, patrimonio:0, ral0:0, pens0:0})));
 
   // e non si chiede quello che il piano non usa: chi ha già smesso di lavorare non ha una
   // retribuzione da scrivere
   c('a chi ha già smesso di lavorare la retribuzione non viene chiesta',
-    !senzaVerdetto(esegui({...PIENO, stip0:'', ultimo0:2024})));
+    !senzaVerdetto(esegui({...PIENO, ral0:'', ultimo0:2024})));
 }
 
 // --- due frasi che parlano dello stesso patrimonio non possono dire il contrario ---
@@ -828,7 +831,7 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
   // perché il modello migliora: quando un controllo cade, prima si guarda se è ancora al bordo.
   const copre = esegui({quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1955, nascita1:1958,
     annoPens0:2015, annoPens1:2020, pens0:2100, pens1:1250, patrimonio:380000, spesa:3200,
-    etaFine:95, fondo0:'', fondo1:'', stip0:'', stip1:'', ral0:'', ral1:''});
+    etaFine:95, fondo0:'', fondo1:'', ral0:'', ral1:''});
   const dati = pulito(copre.scritte.calcolato), verdetto = pulito(copre.scritte.titolo);
   c('col disavanzo coperto dal rendimento la frase non annuncia una riduzione',
     /eccede le entrate/.test(dati) && !/patrimonio è in riduzione/.test(dati), dati.trim());
@@ -836,7 +839,7 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
     /non si riduce/.test(verdetto) && !/in riduzione/.test(dati), verdetto.trim().slice(0, 60));
   // e quando cala davvero lo deve dire: la prudenza non è tacere
   const cala = esegui({quanti:'1', nascita0:1955, annoPens0:2015, pens0:900,
-    patrimonio:60000, spesa:2600, etaFine:95, fondo0:'', stip0:'', ral0:''});
+    patrimonio:60000, spesa:2600, etaFine:95, fondo0:'', ral0:''});
   c('mentre quando il patrimonio cala davvero la frase lo dice',
     /in riduzione già dal primo esercizio/.test(pulito(cala.scritte.calcolato)),
     pulito(cala.scritte.calcolato).trim());
@@ -857,7 +860,7 @@ console.log('\n— chi è già in pensione —');
     .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const spente = (r, ids) => ids.every(k => r.elementi[k] && r.elementi[k].disabled === true);
   const attive = (r, ids) => ids.every(k => r.elementi[k] && r.elementi[k].disabled === false);
-  const ATTIVITA = ['stip0','ral0','cresc0','ultimo0'];
+  const ATTIVITA = ['ral0','cresc0','ultimo0'];
   const FONDO    = ['tipoFondo0','fondo0','iscr0','pcVoi0','pcDat0','tfrDove0'];
 
   const gia = esegui({...UNO, annoPens0:2015});
@@ -903,14 +906,14 @@ console.log('\n— chi è già in pensione —');
 
   // REVERSIBILITÀ: correggere l'anno rimette tutto in gioco. Una disattivazione che non si
   // disfa sarebbe peggio di nessuna, perché chi sbaglia a digitare resta chiuso fuori.
-  const futuro = esegui({...UNO, annoPens0:2035, stip0:2400});
+  const futuro = esegui({...UNO, annoPens0:2035, ral0:42000});
   c('correggendo l\'anno le caselle tornano in gioco',
     attive(futuro, [...ATTIVITA, ...FONDO]) && futuro.elementi.avvisoPensione.hidden === true
     && futuro.elementi.decisioni.hidden === false);
 
   // LA COPPIA MISTA: le scelte restano per chi lavora ancora, e l'avviso nomina solo l'altro.
   const DUE = {...UNO, quanti:'2', nome0:'Anna', nome1:'Bruno', nascita1:1968, pens1:1500,
-               annoPens1:2035, stip1:2200, ral1:36000, fondo1:70000, iscr1:2008};
+               annoPens1:2035, ral1:36000, fondo1:70000, iscr1:2008};
   const mista = esegui({...DUE, annoPens0:2015});
   const av = (mista.scritte.avvisoPensione || '').replace(/<[^>]+>/g, '');
   c('nella coppia mista l\'avviso nomina solo chi ci è dentro',

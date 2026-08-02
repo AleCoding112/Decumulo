@@ -37,7 +37,7 @@ const LARGHEZZE = [320, 390, 600, 900];
 // dati di prova: il modulo vuoto non mostra né risultato né decisioni, e quelli sono
 // esattamente i pezzi che possono sbordare
 const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1965, nascita1:1968,
-  ral0:42000, ral1:28000, stip0:2400, stip1:1700, pens0:2100, pens1:1250,
+  ral0:42000, ral1:28000, pens0:2100, pens1:1250,
   annoPens0:2032, annoPens1:2035, pcVoi0:1.2, pcVoi1:1.2, pcDat0:2, pcDat1:2,
   iscr0:2000, iscr1:2004, patrimonio:180000, spesa:2800, rend:4, infl:2, rendFondo:3,
   etaFine:95, fondo0:90000, fondo1:55000, tfrDove0:'fondo', tfrDove1:'fondo',
@@ -51,7 +51,7 @@ const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1965, nascita1:1
 const ASSETTI = {
   attivi: DATI,
   'già in pensione': {...DATI, annoPens0:2015, annoPens1:2020,
-                      stip0:'', stip1:'', ral0:'', ral1:''},
+                      ral0:'', ral1:''},
   // UNA PERSONA SOLA, e non è un assetto in più per scrupolo: è il caso in cui si spegne la
   // seconda di ogni coppia di righe, ed è lì che si è nascosto per mesi il difetto di `.cur`
   // (spenta con `hidden` mentre un `display:grid` la teneva in pagina). Un ramo di interfaccia
