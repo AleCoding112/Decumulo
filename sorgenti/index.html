@@ -14,7 +14,12 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
-  .pagina{max-width:900px;margin:0 auto;padding:32px 20px 80px}
+  /* 760 px, la stessa larghezza delle pagine di contenuto. Erano 900, e la differenza si
+     notava passando dal calcolatore alle pagine: due metà dello stesso sito con due misure.
+     Il modulo non ne soffre — le griglie fisse più larghe (`.fase`, `.cur`, `.passo`) occupano
+     440 px, e il resto è elastico — e le righe di testo, che qui arrivavano a 90 caratteri,
+     rientrano in una misura leggibile. */
+  .pagina{max-width:760px;margin:0 auto;padding:32px 20px 80px}
   h1{font-size:22px;font-weight:700;margin:0 0 8px;color:var(--ink);letter-spacing:.14em;
     text-transform:uppercase}
 
@@ -189,8 +194,22 @@
     color:var(--soft);padding:0 8px}
   .caselle{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 20px}
   label{display:block;font-size:13px;color:var(--soft);margin:0 0 4px}
+  /* IL COLORE DEI LINK, che qui mancava del tutto. Il foglio delle pagine ha `a{color:var(--acc)}`
+     da sempre; il calcolatore aveva solo regole per singole classi (.spiega a, .nota a, …), e
+     SETTE link restavano col colore di default del browser: blu, e viola dopo la visita. Due
+     erano i primi due della pagina, cioè quello che vede chi arriva. Una regola generale, e le
+     regole per classe restano perché aggiungono il grassetto. */
+  a{color:var(--acc)}
   input,select{width:100%;font:inherit;font-variant-numeric:tabular-nums;
     padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink)}
+  /* IL MENÙ A TENDINA SI VESTIVA DA SOLO. Senza `appearance:none` il sistema operativo disegna
+     il proprio widget — su macOS sfondo grigio e doppia freccia — e il bordo, il raggio e lo
+     sfondo scritti qui sopra valgono solo per le caselle di testo. Nella stessa riga finivano
+     così due controlli di aspetto diverso. La freccia è disegnata qui, in linea: una richiesta
+     a un file sarebbe una promessa rotta della pagina sulla privacy. */
+  select{appearance:none;-webkit-appearance:none;padding-right:30px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23726c60' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 11px center}
   input:focus,select:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:transparent}
 
   /* --- le due colonne, una per persona ---------------------------------
@@ -203,7 +222,7 @@
   .due .voce.totale{padding-top:2px;font-weight:600;color:var(--ink)}
   .cella{display:flex;flex-direction:column;gap:2px;min-width:0}
   .cella input,.cella select{width:100%;text-align:right}
-  .cella select{text-align:left;padding-right:4px}
+  .cella select{text-align:left;padding-right:24px;background-position:right 7px center}
   .cella input:not([inputmode]){text-align:left}
   .cella .hint,.caselle .hint{display:block;text-decoration:none;font-style:normal;font-size:11px;
     color:var(--tenue);text-align:right;font-variant-numeric:tabular-nums;line-height:1.3;
@@ -221,9 +240,15 @@
   .gruppo.largo{max-width:none;margin:22px 0 6px}
   /* una persona sola: la seconda colonna non si nasconde con un display:none sparso,
      si spegne in un punto solo e la griglia si ristringe di conseguenza */
-  .solo-uno .due{grid-template-columns:minmax(0,1fr) 134px;max-width:432px}
+  /* CON UNA PERSONA SOLA LA COLONNA SI ALLARGA, e il riquadro smette di essere mezzo vuoto.
+     I 134 px nascono dal caso a DUE persone, dove due colonne devono stare accanto
+     all'etichetta; con una sola quella costrizione non esiste più, e portarsela dietro lasciava
+     il 48% del riquadro vuoto — proprio nell'assetto di partenza, cioè quello che vede
+     chiunque arrivi. Il `max-width` resta, ed è quello che tiene la casella vicina alla propria
+     etichetta: senza, l'una finirebbe a un capo del riquadro e l'altra all'altro. */
+  .solo-uno .due{grid-template-columns:minmax(0,1fr) 170px;max-width:620px}
   .solo-uno .p2{display:none}
-  .solo-uno .gruppo.largo{max-width:432px}
+  .solo-uno .gruppo.largo{max-width:620px}
   .solo-uno .somma-sep,.solo-uno .riga-sep{grid-column:1/3}
   /* il titoletto porta con sé dove trovare le cifre e il rimando alla pagina */
   .gruppo span{display:block;font-size:12px;font-weight:400;text-transform:none;
