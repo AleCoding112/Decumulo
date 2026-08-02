@@ -226,6 +226,22 @@ writeFileSync(join(A, 'robots.txt'),
 // lo nomina. È un file dell'ospite, non del sito: sta qui e non fra i sorgenti, come sitemap e
 // robots, perché `sito/` non si modifica a mano.
 writeFileSync(join(A, 'CNAME'), dominio + '\n');
+// LA VERIFICA DI BING, e sta qui per la stessa ragione del CNAME: è un file del SERVIZIO, non
+// del sito. Bing chiede un file alla radice per accertare che chi rivendica il dominio nel suo
+// strumento per i gestori sia chi lo controlla davvero.
+//
+// MESSO A MANO IN `sito/` SAREBBE DURATO FINO AL PRIMO BUILD, che riscrive quella cartella da
+// zero e non copia niente: Bing sarebbe tornato a non verificare, e il sito a non comparire fra
+// i suoi risultati, senza che nessuno se ne accorgesse. È il motivo per cui non esiste un solo
+// file in `sito/` che il build non sappia rifare.
+//
+// SERVE PER GLI ASSISTENTI PIÙ CHE PER BING: la ricerca di ChatGPT passa dall'indice di Bing,
+// quindi finché il dominio non è verificato lì non c'è modo che un assistente ci arrivi
+// cercando. Il codice non è un segreto — identifica il sito, non autorizza nulla, e viene
+// servito a un indirizzo pubblico che chiunque può leggere.
+const BING = '8C21779985E6DE2E37773FDC7B4CFC43';
+writeFileSync(join(A, 'BingSiteAuth.xml'),
+  `<?xml version="1.0"?>\n<users>\n\t<user>${BING}</user>\n</users>\n`);
 // L'ANTEPRIMA DELLA CONDIVISIONE e l'icona per la schermata home di iOS. Sono gli unici due
 // file binari del sito, e sono DISEGNATI, non copiati: un'immagine messa lì a mano sarebbe
 // l'unica cosa in `sito/` che il build non sa rifare, e al primo cambio di colore resterebbe

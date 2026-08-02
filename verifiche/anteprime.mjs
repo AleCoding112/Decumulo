@@ -178,6 +178,24 @@ const attr = (h, re) => (h.match(re) || [, ''])[1];
   }
 }
 
+// --- 3-ter. IL SITO RESTA VERIFICATO PRESSO CHI LO INDICIZZA ----------------
+// Il file di Bing è l'unica cosa del sito che, sparendo, non si vede sparire: la pagina si apre
+// uguale, nessun controllo si accorge di niente, e intanto il dominio smette di essere
+// verificato — quindi il sito esce dall'indice da cui passa la ricerca degli assistenti. È
+// esattamente la classe di guasti per cui questo file esiste. Il CNAME invece non ha bisogno di
+// guardia: se manca, il sito non risponde più sul dominio, e si vede da sé.
+{
+  const p = join(SITO, 'BingSiteAuth.xml');
+  const c1 = fs.existsSync(p);
+  c('il sito resta verificato presso Bing', c1, c1 ? '' : 'BingSiteAuth.xml non c\'è');
+  if (c1){
+    const x = fs.readFileSync(p, 'utf8');
+    c('e il file porta un codice, non un segnaposto',
+      /<users>\s*<user>[0-9A-F]{32}<\/user>\s*<\/users>/.test(x),
+      x.replace(/\s+/g, ' ').trim());
+  }
+}
+
 // --- 4. LA SITEMAP DICE QUANDO IL CONTENUTO È STATO VERIFICATO --------------
 {
   const sm = fs.readFileSync(join(SITO, 'sitemap.xml'), 'utf8');
