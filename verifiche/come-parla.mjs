@@ -185,6 +185,16 @@ const c = (nome, cond, extra = '') => {
 const PERSONA = /\b(vostr\w+|voi|avete|siete|potete|dovete|scrivete|versate|muovete|percepite|prevedete|indicatela|lasciate|smettiate|perdereste|tuo|tua|tuoi|tue|puoi|devi|hai)\b/gi;
 const SPORCO  = /\b(undefined|NaN|\[object|Infinity)\b/;
 
+// LA RISCRITTURA LASCIATA A METÀ. Il 02/08/2026 il ramo dell'erogazione a rate scriveva, in
+// pagina e in produzione, «il residuo è di 32.092 €, cioè la solo la rivalutazione maturata nel
+// frattempo»: un pezzo di frase vecchia rimasto sotto quella nuova. Nessun controllo la vedeva —
+// non ci sono `undefined`, i numeri sono giusti, il registro è impersonale — e nel sorgente la
+// frase è spezzata su tre righe dentro un template literal, dove l'occhio non la ricompone.
+// Quello che resta sempre falso, in italiano, è un articolo seguito da un altro articolo o da un
+// avverbio che non concorda: sono i due detriti che una sostituzione a metà lascia dietro.
+// Poche coppie, scelte perché non hanno un uso legittimo: «il solo» esiste, «la solo» no.
+const ROTTA = /\b(?:(?:il|lo|un|dei|degli)\s+(?:sola|sole|le|gli|la)|(?:la|le|una|i|gli)\s+(?:solo|il|lo|gli|le)|(?:il|la|lo|i|gli|le|un|una|uno)\s+(?:anche|però|quindi|invece|infatti|comunque))\b|\b(\w{3,})\s+\1\b/i;
+
 console.log('\n— quello che il calcolatore scrive, scenario per scenario —');
 for (const [nome, DATI] of Object.entries(SCENARI)){
   const {scritte, avvisi} = esegui(DATI);
@@ -194,6 +204,16 @@ for (const [nome, DATI] of Object.entries(SCENARI)){
   c(`${nome}: nessun elemento mancante`, avvisi.length === 0, avvisi.join(' · '));
   c(`${nome}: registro impersonale`, !persona, persona ? persona.join(', ') : '');
   c(`${nome}: nessun valore rotto in pagina`, !sporco, sporco ? sporco[0] : '');
+  // ELEMENTO PER ELEMENTO, E I TAG FANNO DA MURO. Due riquadri accanto portano tutti e due il
+  // nome della persona: unendoli nasce un «Anna Anna» che nessuno ha scritto, e due celle di
+  // tabella danno «Rendita del fondo | Fondo e TFR». Non sono frasi, sono accostamenti. Una
+  // frase vive dentro un elemento e non attraversa un tag, quindi i tag si sostituiscono con un
+  // separatore che la ricerca non può scavalcare, non con uno spazio.
+  const rotta = Object.entries(scritte)
+    .map(([k, v]) => [k, String(v).replace(/<[^>]+>/g, ' | ').match(ROTTA)])
+    .find(([, m]) => m);
+  c(`${nome}: nessuna frase lasciata a metà`, !rotta,
+    rotta ? `«${rotta[1][0]}» in #${rotta[0]}` : '');
   // 1900 è il valore a cui il taglio riconduce un anno troppo piccolo: se compare in pagina,
   // un numero che nessuno ha scritto è diventato una risposta. Non è un formato sbagliato —
   // `SPORCO` non lo vedrebbe — è una data inventata, ed è peggio.
@@ -277,6 +297,44 @@ for (const [nome, DATI] of Object.entries({
     c(`${nome}: il pulsante dice la stessa cifra della frase`,
       frase.includes(String(dove).replace('.', ',')) ||
       frase.includes(String(Math.round(dove))), b.textContent);
+  }
+}
+
+// --- il punto più alto dell'erogazione, e la premessa che lo annuncia -------
+// LA PREMESSA E IL RIQUADRO SI SONO GIÀ CONTRADDETTI UNA VOLTA. Fino al 02/08/2026 la premessa
+// diceva «per la seconda non è possibile [individuare un ottimo]» mentre il passo 1 scriveva
+// «il punto più alto è cominciare nel …». Ed è una distinzione di sostanza, non di parole: sul
+// passo 1 i due rami finiscono tutti e due in patrimonio, quindi il metro non favorisce nessuno;
+// sui passi 2 e 3 si confronta un lascito con un assegno, ed è lì che il metro non decide.
+// Il controllo tiene insieme le tre cose: la frase, la promessa e il pulsante.
+console.log('\n— il punto più alto dell\'erogazione anticipata —');
+for (const [nome, DATI] of Object.entries({
+  'finestra aperta':          {...BASE, quanti:'1', ultimo0:2032, rita0:0},
+  'già sul punto più alto':   {...BASE, quanti:'1', ultimo0:2032, rita0:2033},
+  'senza finestra':           {...BASE, quanti:'1'},
+  'fondo che rende più':      {...BASE, quanti:'1', ultimo0:2032, rita0:0, rendFondo:7, rend:2}
+})){
+  const {scritte, elementi} = esegui(DATI);
+  const frase = (scritte.cQuando0Picco || '').replace(/<[^>]+>/g, '');
+  const promessa = (scritte.premessaScelte || '').replace(/<[^>]+>/g, '');
+  const b = elementi.cQuando0Vai;
+  // se un punto più alto viene indicato, la premessa non deve dire che non ce n'è uno
+  const indica = /punto più alto è cominciare/.test(frase);
+  c(`${nome}: la premessa non smentisce quello che il passo 1 scrive`,
+    !indica || !/per la seconda non è possibile/.test(promessa), frase.slice(0, 80));
+  // e quando lo indica, dice anche quanto vale: un anno senza cifra non fa decidere nessuno
+  c(`${nome}: il punto indicato porta con sé quanto vale`,
+    !indica || /€ in più/.test(frase), frase.slice(0, 90));
+  if (!b.hidden){
+    const dove = +b.dataset.anno;
+    c(`${nome}: il pulsante porta a un anno che il cursore può raggiungere`,
+      dove >= +elementi.cQuando0.min && dove <= +elementi.cQuando0.max,
+      `${dove} su un cursore ${elementi.cQuando0.min}–${elementi.cQuando0.max}`);
+    c(`${nome}: il pulsante dice lo stesso anno della frase`,
+      frase.includes(String(dove)), b.textContent);
+  } else {
+    c(`${nome}: senza pulsante non c'è un punto da raggiungere`,
+      !indica || /già/.test(nome), frase.slice(0, 60));
   }
 }
 

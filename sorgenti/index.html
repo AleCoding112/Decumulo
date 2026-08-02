@@ -754,9 +754,12 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     la prestazione inizia a essere erogata, quanto ne viene liquidato in capitale, in che forma
     è convertita la parte residua. L'erogazione anticipata riduce il montante disponibile alla
     pensione: un residuo contenuto è conseguenza di quella scelta.
-    <b>Il calcolo non indica un ottimo, ma dice a quali ipotesi la conclusione si rovescia</b>:
-    sotto quale rendimento del patrimonio la rendita torna a convenire, e di quanto quella
-    soglia si sposta se la vita è più lunga. Il metro è il patrimonio che resta alla fine,
+    <b>Sul primo passo un punto più alto esiste, ed è indicato</b>: anticipare o attendere sposta
+    gli stessi importi fra il fondo e il patrimonio, e i due esiti si misurano con la stessa
+    unità. <b>Sul secondo e sul terzo no</b>, e il calcolo dice invece a quali ipotesi la
+    conclusione si rovescia: sotto quale rendimento del patrimonio la rendita torna a convenire,
+    e di quanto quella soglia si sposta se la vita è più lunga. Il metro è il patrimonio che
+    resta alla fine,
     quindi misura il lascito e non la protezione: la rendita per costruzione non lascia nulla,
     e quello che il capitale non compra è un assegno che arriva comunque. Quanto la forma
     dell'assegno protegga <b>chi resta</b> è quantificato accanto al risultato.
@@ -829,8 +832,8 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
 <p class="avvertenza"><b>Proiezione a fini informativi.</b> Non costituisce consulenza
 previdenziale, fiscale o in materia di investimenti. Il risultato dipende da ipotesi indicate da
-chi compila e da semplificazioni dichiarate, e alcuni parametri normativi non sono ancora
-verificati. <a href="il-metodo.html">Metodo di calcolo, ipotesi e limiti →</a></p>
+chi compila, da semplificazioni dichiarate e da parametri stimati dove non esiste una fonte
+pubblica. <a href="il-metodo.html">Metodo di calcolo, ipotesi e limiti →</a></p>
 
 <!--@@INCLUDI _pie.html@@-->
 
@@ -2093,9 +2096,13 @@ function calc(){
     : req.dei.map(g => `${g.di} ${elenco(voci(g))}`).join('; ');
   EL('bastano').innerHTML = `Per il verdetto bastano
     <b>${PAROLA[req.quante] || req.quante} dati</b>: ${elenco(req.comuni.map(v => v.testo))}${
-    uguali || s.N === 1 ? ', ' : '; '}${parte}. Il resto affina il conto e apre le decisioni sul
-    fondo pensione, e si può compilare dopo. Una casella lasciata vuota sospende il verdetto;
-    lo <b>zero</b> è una risposta, e il conto lo prende alla lettera.`;
+    uguali || s.N === 1 ? ', ' : '; '}${parte}. Finché uno <i>di questi</i> manca il verdetto resta
+    sospeso; lo <b>zero</b> è invece una risposta, e il conto lo prende alla lettera. Il resto
+    affina il conto e apre le decisioni sul fondo pensione, e si può compilare dopo.`;
+    // L'ORDINE È LA CORREZIONE, non le parole: la regola sul vuoto veniva DOPO «il resto si può
+    // compilare dopo», e senza un referente vicino si leggeva come «qualunque casella vuota
+    // sospende il verdetto» — cioè l'opposto della frase che la precedeva. Ora sta attaccata
+    // all'elenco a cui si riferisce, e la parte facoltativa chiude.
 
   // CHI HA UNA DECORRENZA GIÀ TRASCORSA: da lì in giù una parte del modulo non ha più oggetto.
   // Le caselle si DISATTIVANO invece di essere ignorate in silenzio: un valore che il conto
@@ -2609,33 +2616,39 @@ function calc(){
          ? 'il patrimonio è in riduzione già dal primo esercizio.'
          : 'la differenza esce dal patrimonio, che il rendimento mantiene comunque in crescita.');
 
+  // NON «al netto restano»: la stessa frase dice dodici parole prima «al netto delle imposte»,
+  // e il secondo «al netto» è invece netto d'inflazione. Due referenti per la stessa formula
+  // nella stessa riga. Il verbo basta: che si tolga l'inflazione l'ha già detto la frase.
   EL('reali').innerHTML =
-    `al netto restano <b>${fmt(s.rend*100, 2)}%</b> per gli investimenti e
+    `restano <b>${fmt(s.rend*100, 2)}%</b> per gli investimenti e
      <b>${fmt(s.rendFondo*100, 2)}%</b> per i fondi pensione`;
 
 
   // Questa frase descrive il rapporto fra due caselle, quindi si deriva. Scritta a mano diceva
   // «il fondo rende meno», e appena i rendimenti sono cambiati è diventata falsa: una pagina
   // non può affermare una cosa che le sue stesse caselle smentiscono.
+  //
+  // E NON DIAGNOSTICA PIÙ UN ERRORE DI CHI COMPILA. Fino al 02/08/2026, con il fondo davanti,
+  // la frase avvertiva che il confronto era «distorto a favore del fondo» se il numero era
+  // lordo. Ma il segno di questa differenza NON È UNA PROVA: le due caselle non descrivono lo
+  // stesso comparto, e un fondo in azionario contro risparmi in un bilanciato prudente dà quel
+  // divario in modo perfettamente corretto — l'allocazione pesa più del cuneo fiscale (20% per
+  // competenza contro 26% al realizzo quasi si compensano su orizzonti lunghi). Il rischio del
+  // lordo esiste per TUTTE E DUE le caselle e da qui non si vede: chi scrive il lordo in
+  // entrambe non riceveva alcun avviso. Sta quindi dove sta l'istruzione, nella riga sopra.
+  // Simmetricamente è caduto il ramo opposto, che diceva «rende meno, COERENTEMENTE con…»:
+  // se il segno non prova un errore in un verso, non prova la correttezza nell'altro.
+  // Resta il fatto sul modello, che vale in tutti i rami: da questa differenza dipendono due
+  // esiti veri. La spiegazione fiscale è dominio, e sta in pagina.
   const dif = s.rendFondoNom - s.rendNom;
   const nomi = `Per i fondi pensione è indicato <b>${fmt(s.rendFondoNom*100,1)}%</b>, per gli
     investimenti liberi <b>${fmt(s.rendNom*100,1)}%</b>: `;
   EL('confrontoRend').innerHTML = nomi + (
     Math.abs(dif) < 0.0005
-      ? `rendimento identico. Il fondo sconta l'imposta sostitutiva sui rendimenti anno per
-         anno, mentre sugli investimenti liberi l'imposta è dovuta al realizzo: a parità di
-         comparto il fondo dovrebbe rendere meno. Se il ${fmt(s.rendFondoNom*100,1)}% è un
-         rendimento lordo, va rettificato.`
-      : dif > 0
-      ? `<b>il fondo rende di più</b>, di ${fmt(dif*100,1)} punti. Il fondo sconta però
-         l'imposta sostitutiva sui rendimenti anno per anno, mentre sugli investimenti liberi
-         l'imposta è dovuta al realizzo. Se il ${fmt(s.rendFondoNom*100,1)}% è il rendimento
-         <i>lordo</i> del comparto il confronto è distorto a favore del fondo, e da esso
-         dipendono due esiti: la convenienza dell'erogazione anticipata e il valore della
-         contribuzione aggiuntiva.`
-      : `<b>il fondo rende meno</b>, di ${fmt(-dif*100,1)} punti, coerentemente con il fatto
-         che sconta l'imposta sostitutiva sui rendimenti anno per anno mentre sugli
-         investimenti liberi l'imposta è dovuta al realizzo.`);
+      ? `rendimento identico, quindi dove il denaro resta investito non sposta il risultato.`
+      : `<b>il fondo rende ${dif > 0 ? 'di più' : 'di meno'}</b>, di
+         ${fmt(Math.abs(dif)*100,1)} punti. Da questa differenza dipendono la convenienza
+         dell'erogazione anticipata e il valore della contribuzione aggiuntiva.`);
   // «Coi rendimenti indicati» lo dice già la frase in pagina, subito prima di questo span:
   // ripeterlo qui dentro produceva «Coi rendimenti indicati, coi rendimenti indicati fuori
   // rendono di più». Difetto vecchio, visto in uno screenshot: i controlli leggono i pezzi
@@ -2661,8 +2674,7 @@ function calc(){
         const rita = t
           ? `<b>Il fondo ${i.di} esce a rate</b>: ${E0(t.rata)} lordi l'anno dal ${t.da} al
              ${t.a}, ${E0(t.totale)} complessivi (${E0(t.netto)} netti). Alla pensione, nel
-             ${i.anno}, il residuo è di <b>${E0(i.montante)}</b>, cioè la
-         solo la rivalutazione
+             ${i.anno}, il residuo è di <b>${E0(i.montante)}</b>, cioè la sola rivalutazione
              maturata nel frattempo: `
           : `Il fondo ${i.di} arriva a ${E0(i.montante)}: `;
         const consentito = `${fmt(i.max*100)}%`;
@@ -2870,9 +2882,11 @@ function costruisciDecisioni(){
         <button type="button" class="torna" id="${id}Torna" hidden></button>${extra}
       </p>
     </div>`;
-  // Il pulsante che porta il cursore al punto più alto sta SOLO qui: gli altri due cursori non
-  // hanno un massimo da raggiungere — il momento in cui prendere il fondo e la quota in contanti
-  // sono scelte fra rischi diversi, e la pagina dichiara di non indicare un ottimo.
+  // Il pulsante che porta il cursore al punto più alto sta qui e sul PRIMO passo dell'erogazione:
+  // sono i due cursori che un massimo ce l'hanno davvero. Non sta invece sulla quota in contanti
+  // né sulla forma dell'assegno, dove il confronto è fra un lascito e un assegno e la pagina
+  // dichiara di non indicare un ottimo — lì un pulsante «vai al più alto» sarebbe la sentenza
+  // che il riquadro dice di non dare.
   const riga = (i, id, min, max, step) =>
     `<div class="cur"><div class="chi" id="chiVers${i}">${NOMI[i]}</div>${
       barra(id, min, max, step, `<button type="button" class="torna vai" id="${id}Vai" hidden></button>`)}
@@ -2890,7 +2904,9 @@ function costruisciDecisioni(){
     `<div class="fondoP">
        <div class="capo"><b id="chiFondo${i}">${NOMI[i]}</b><span id="fCapo${i}"></span></div>
        ${passo(i, 1, 'Quando comincia a uscire',
-         barra('cQuando'+i, ANNO0, ANNO0+60, 1) + `<div class="esito" id="cQuando${i}Esito"></div>`)}
+         barra('cQuando'+i, ANNO0, ANNO0+60, 1,
+           `<button type="button" class="torna vai" id="cQuando${i}Vai" hidden></button>`)
+         + `<div class="esito" id="cQuando${i}Esito"></div>`)}
        ${passo(i, 2, 'Quanto in contanti',
          barra('cCap'+i, 0, 100, 1) + `<div class="esito" id="cCap${i}Esito"></div>`)}
        ${passo(i, 3, 'Che forma ha l\'assegno che resta',
@@ -2917,6 +2933,9 @@ function costruisciDecisioni(){
     });
     EL('cQuando'+i).addEventListener('input', e => {
       EL('rita'+i).value = e.target.value; calc();
+    });
+    EL('cQuando'+i+'Vai').addEventListener('click', e => {
+      EL('rita'+i).value = e.currentTarget.dataset.anno; calc();
     });
     EL('cCap'+i).addEventListener('input', e => {
       EL('quotaCap'+i).value = +e.target.value / 100; calc();
@@ -2981,7 +3000,16 @@ function aggiornaDecisioni(s, r){
     // introduce è lo stesso difetto di «bastano tre dati», in forma più piccola.
     const voci = [];
     if (conFondo) voci.push('per la prima il calcolo individua un ottimo, indicato sotto il cursore');
-    if (conFondo) voci.push('per la seconda non è possibile, ed è spiegato il motivo');
+    // E LA SECONDA NON È UNA SCELTA SOLA, ma tre passi con statuto diverso: sul primo — quando
+    // il fondo comincia a uscire — un punto più alto ESISTE, perché anticipare o attendere
+    // sposta gli stessi importi fra il fondo e il patrimonio e i due esiti si misurano con la
+    // stessa unità. Sul secondo e sul terzo no, e il motivo è il metro (il patrimonio finale è
+    // una grandezza di lascito, che la rendita per costruzione non produce). La promessa diceva
+    // «per la seconda non è possibile» mentre il passo 1 scriveva «il punto più alto è
+    // cominciare nel …»: la premessa era smentita dal riquadro che introduce, come già successo
+    // con l'abitazione.
+    if (conFondo) voci.push('per la seconda solo il primo dei tre passi ha un punto più alto, e '
+      + 'per gli altri due è spiegato il motivo');
     voci.push(s.casa.attiva && s.casa.spesaAnnua > 0
       ? "per l'abitazione è indicato sotto quale rendimento la conclusione si rovescia"
       : "per l'abitazione è quantificato quanto libera il cambio, senza indicare se convenga");
@@ -3011,7 +3039,7 @@ function aggiornaDecisioni(s, r){
     const c = contributi(x, pc), oggi = contributi(x, x.pcVoi);
 
     EL('cVers'+i+'Ora').innerHTML = !(x.ral > 0)
-      ? `<b>—</b><i>senza la RAL non si può calcolare niente di tutto questo</i>`
+      ? `<b>—</b><i>senza la retribuzione annua lorda questa sezione non si calcola</i>`
       : `<b>${E0(c.tot)}</b> l'anno nel fondo
          <i>${E0(c.lav)} dal lavoratore` + (c.dat > 0.5
             ? ` più <b>${E0(c.dat)}</b> del datore` : `, e <b>niente dal datore</b>`) + `</i>`
@@ -3158,7 +3186,8 @@ function aggiornaDecisioni(s, r){
     EL('cQuando'+i+'Sx').textContent = `il prima possibile: ${primo}`;
     EL('cQuando'+i+'Dx').textContent = `alla pensione, ${fine}`;
     // come nella sezione 1: la differenza, non il numero da sette cifre che è di famiglia
-    const dAspetta = alt.finale - conAlt(s, i, 'rita', fine).finale;
+    const finAttesa = conAlt(s, i, 'rita', fine).finale;
+    const dAspetta = alt.finale - finAttesa;
     const nSc = scoperti(alt);
     // un trattino accanto a «alla fine» si legge come «zero euro»: se non c'è differenza va
     // detto a parole, non con un segno
@@ -3177,11 +3206,25 @@ function aggiornaDecisioni(s, r){
       EL('cQuando'+i+'Picco').textContent =
         `la RITA serve a chi smette molto prima della pensione: ${x.nome} smette nel ${x.ultimo}`
         + ` e la pensione arriva l'anno dopo, quindi non c'è nessun buco da coprire`;
+      EL('cQuando'+i+'Vai').hidden = true;   // senza finestra non c'è nessun punto a cui andare
     } else {
+      // IL PUNTO PIÙ ALTO QUI ESISTE DAVVERO, ed è l'unico dei tre passi per cui valga.
+      // Anticipare o attendere sposta gli stessi importi fra il fondo e il patrimonio: tutti e
+      // due i rami finiscono in patrimonio, quindi il metro non favorisce nessuno dei due. Nei
+      // passi 2 e 3 il confronto è invece fra un lascito e un assegno, ed è lì che il metro non
+      // decide. Detto l'anno e basta, però, non si sa se valga la pena spostarsi: si dice
+      // quanto vale, come per la contribuzione, e si porta il cursore col pulsante.
       const b = migliore(s, i, 'rita', Array.from({length: fine-primo+1}, (_,k) => primo+k));
-      EL('cQuando'+i+'Picco').textContent = b.v === fine
+      const vale = b.f - finAttesa;
+      EL('cQuando'+i+'Picco').textContent = b.v === fine || vale < 1
         ? 'il punto più alto è aspettare la pensione'
-        : `il punto più alto è cominciare nel ${b.v}`;
+        : `il punto più alto è cominciare nel ${b.v}: vale ${E0(vale)} in più rispetto ad `
+          + `aspettare la pensione`;
+      // il pulsante compare solo se c'è da spostarsi e se lo spostamento vale qualcosa
+      const bq = EL('cQuando'+i+'Vai');
+      const daSpostare = vale >= 1 && b.v !== anno;
+      bq.hidden = !daSpostare;
+      if (daSpostare){ bq.textContent = `al punto più alto: ${b.v}`; bq.dataset.anno = b.v; }
     }
 
     // --- passo 2: quanto in contanti. Da ZERO al massimo che la legge concede a QUESTO fondo:
@@ -3400,7 +3443,7 @@ function aggiornaDecisioni(s, r){
                 conviene restare`
              : `sotto quella soglia conviene restare, sopra vendere lascia più patrimonio`}.
            L'ipotesi in vigore è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.
-           Il canone si paga finché si abita, il rendimento non è garantito: la soglia dice a
+           Il canone si paga finché si abita, il rendimento non è garantito: la soglia dice su
            quali ipotesi poggia la conclusione, non che vada seguita.`;
     }
   }
