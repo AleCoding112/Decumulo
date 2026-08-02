@@ -22,6 +22,7 @@ lancia da solo:
 | `node verifiche/come-parla.mjs` | esegue il calcolatore su ventiquattro scenari e legge le frasi che scrive |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
+| `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
 | `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali + le funzioni di legge ai punti esatti |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
@@ -555,6 +556,24 @@ dice *cosa* vuole (il blocco che contiene `function simula(`) invece di fidarsi 
 il build monta i pezzi. Stessa cosa per i fogli di stile, che ora si leggono tutti.
 
 ---
+
+## Il registro dei dubbi
+
+**Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
+Non sono difetti aperti — se lo fossero si chiuderebbero — sono *domande a cui non abbiamo
+ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderla.
+
+| dubbio | cosa servirebbe | perché non è urgente |
+|---|---|---|
+| L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: la voce «dall'azienda» parla di *accordo*, non di liberalità |
+| Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
+| **37 regole su 41 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti e le detrazioni | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica |
+| L'oggetto finto delle armature è **copiato in sei file** | un modulo solo, importato da tutti | ogni volta che manca un metodo costano sei modifiche invece di una: è successo con `setAttribute` |
+| Chi ha usato il sito prima del 2 agosto ha in memoria un **tipo di fondo** che non esiste più | niente: si autorisolve alla prima riapertura del menu | il valore vecchio cade sul ramo prudente, e l'avviso dice cosa scegliere |
+| La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
+
+**Come si usa.** Quando una riga si chiude, si toglie. Quando ne nasce una, si scrive qui invece
+che in un messaggio: **un dubbio che vive solo in una conversazione è un dubbio perso.**
 
 ## Prima di pubblicare
 

@@ -61,10 +61,12 @@ export const REGOLE = {
   // sono sempre interi, quindi non morderebbero mai.
   DETRAZIONE_LAV: { nome: "Detrazione per redditi di lavoro dipendente", come: 'detrazione',
     val: [[15000, 1955, 0, 0], [28000, 1910, 1190, 13000], [50000, 0, 1910, 22000]],
+    riscontro: 'verifiche/riscontri-esterni.mjs',
     fonte: 'art. 13 c. 1 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 15.000; 1.910 + 1.190 × (28.000 − reddito) / 13.000 fino a 28.000; 1.910 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre. NON è rappresentata la maggiorazione di 65 € del c. 1.1 (redditi fra 25.000 e 35.000), che entrerebbe nel beneficio MARGINALE della deduzione rendendolo discontinuo: il beneficio resta per quella parte sottostimato',
     verificata: true },
   DETRAZIONE_PENS: { nome: "Detrazione per redditi di pensione", come: 'detrazione',
     val: [[8500, 1955, 0, 0], [28000, 700, 1255, 19500], [50000, 0, 700, 22000]],
+    riscontro: 'verifiche/riscontri-esterni.mjs',
     fonte: 'art. 13 c. 3 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 8.500; 700 + 1.255 × (28.000 − reddito) / 19.500 fino a 28.000; 700 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre',
     verificata: true },
   DETRAZIONE_PENS_PIU: { nome: "Maggiorazione della detrazione da pensione", val: 50, come: 'secco',
@@ -215,7 +217,7 @@ export const REGOLE = {
     fonte: 'Eurostat demo_mlexpec, Italia 2023, sessi congiunti: valori riscontrati uno per uno. La tavola nazionale ISTAT per lo stesso anno dà circa 0,2 anni in meno a ogni età, e il margine qui sotto è calibrato su questa',
     verificata: true
   },
-  MARGINE_RENDITA: { nome: "Anni che la compagnia conta in più dell'ISTAT",
+  MARGINE_RENDITA: { riscontro: 'verifiche/tavole-dei-fondi.mjs', nome: "Anni che la compagnia conta in più dell'ISTAT",
     val: MARGINE,
     come: 'volte',
     fonte: 'misurato sulle tavole pubblicate: a 67 anni l\'ISTAT ne dà 19,4, le convenzioni ne contano fra 20 e 26',
@@ -234,7 +236,7 @@ export const REGOLE = {
 
   // Il motore riceve la curva già fatta: una tabella [età, coefficiente] come
   // prima, ma nessuno dei suoi numeri è scritto a mano.
-  COEFF_ETA: { nome: "Coefficienti di conversione in rendita, per età",
+  COEFF_ETA: { riscontro: 'verifiche/tavole-dei-fondi.mjs', nome: "Coefficienti di conversione in rendita, per età",
     val: ANNI_ISTAT.map(([eta, anni]) => [eta, 1 / (anni * MARGINE)]),
     come: 'curva',
     fonte: 'derivato: 1 diviso la speranza di vita per il margine. Non è la tavola di un fondo',
@@ -440,6 +442,8 @@ export const TESTI = {
   scaglione1:       eur(V('SCAGLIONI')[0][0]),
   scaglione2:       eur(V('SCAGLIONI')[1][0]),
   provaAnni:        String(V('PROVA_ANNI')),
+  riscontrate:      String(quanteRiscontrate().con),
+  regoleTutte:      String(quanteRiscontrate().tutte),
   mensPensione:     String(V('MENSILITA_PENSIONE')),
   reversibilita:    pc(V('REVERSIBILITA')),
   trattMinimo:      eur(V('TRATT_MINIMO')),
@@ -539,10 +543,23 @@ const mostra = r => Array.isArray(r.val)
   : r.val > 1 ? eur(r.val)
   : pc(r.val, 2).replace(',00', '').replace(/,(\d)0%/, ',$1%');
 
+// LO STATO DICE DUE COSE DIVERSE, e prima ne diceva una sola. «Verificata» vuol dire che
+// qualcuno ha letto la fonte una volta; non vuol dire che qualcosa se ne accorgerebbe se domani
+// fosse sbagliata. Il RISCONTRO è quella seconda cosa: una cifra pubblicata da altri, tenuta
+// fuori dal conto, che ogni build confronta con la nostra. Distinguerle è onesto verso chi legge
+// e utile a noi, perché rende visibile quante regole non ne hanno ancora uno.
 export function tabellaRegole(){
+  const stato = r => !r.verificata ? '<span class="ko">da confermare</span>'
+    : r.riscontro ? '<span class="ok">verificata</span> · <span class="ok">riscontrata</span>'
+    : '<span class="ok">verificata</span>';
   const riga = ([k, r]) => `<tr><td>${r.nome}</td><td>${mostra(r)}</td><td>${r.fonte}</td>
-    <td class="${r.verificata ? 'ok' : 'ko'}">${r.verificata ? 'verificata' : 'da confermare'}</td></tr>`;
+    <td>${stato(r)}</td></tr>`;
   return Object.entries(REGOLE).map(riga).join('\n');
+}
+// quante regole hanno un riscontro esterno: la frase si genera, così non può invecchiare
+export function quanteRiscontrate(){
+  const tutte = Object.entries(REGOLE).filter(([, r]) => r && typeof r === 'object' && 'fonte' in r);
+  return {con: tutte.filter(([, r]) => r.riscontro).length, tutte: tutte.length};
 }
 // le due tabelle della pagina sulla prestazione: soglie e pareggi per età, calcolati
 const coeffEta = eta => {

@@ -19,6 +19,7 @@ const passi = [
   ['verifiche/come-parla.mjs',             'le frasi che il calcolatore scrive, scenario per scenario'],
   ['verifiche/valori-ostili.mjs',          'duemila moduli riempiti con valori impossibili'],
   ['verifiche/tavole-dei-fondi.mjs',       'la curva dei coefficienti contro le tavole vere'],
+  ['verifiche/riscontri-esterni.mjs',      'le nostre cifre contro numeri pubblicati da altri'],
   ['verifiche/seconda-implementazione.mjs','confronto con un motore riscritto dalle regole'],
   ['verifiche/invarianti.mjs',             'invarianti su piani casuali'],
   ['verifiche/schermi.mjs',                'che niente esca dallo schermo di un telefono'],
