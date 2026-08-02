@@ -302,6 +302,33 @@ for (const [nome, DATI] of Object.entries({
   }
 }
 
+// --- l'avviso sul contributo del datore: nessuna combinazione muta ----------
+// TRE CASI SU OTTO NON DICEVANO NIENTE, e nessun controllo se n'era accorto perché tutti i rami
+// reagivano alla casella VUOTA. Chi scriveva 0 nella quota del datore — cioè chi ha aderito col
+// solo TFR, la persona che questa sezione esiste per servire — non incontrava alcun messaggio,
+// e nemmeno il riquadro «quanto stai lasciando lì», che pretende una quota positiva.
+// Il controllo prende la tabella per intero: ogni combinazione di vuoto / zero / valore, e per
+// ciascuna se l'avviso parla e con quale frase. Un ramo muto qui si vede subito.
+console.log('\n— l\'avviso sul contributo del datore, combinazione per combinazione —');
+for (const [nome, DATI, atteso] of [
+  ['solo TFR: 0 e 0',            {...BASE, quanti:'1', pcVoi0:0, pcDat0:0},  /dal datore non entra niente/],
+  ['0 e datore vuoto',           {...BASE, quanti:'1', pcVoi0:0, pcDat0:''}, /dal datore non entra niente/],
+  ['versa, ma datore a zero',    {...BASE, quanti:'1', pcVoi0:3, pcDat0:0},  /dal datore non entra niente/],
+  ['versa, datore vuoto',        {...BASE, quanti:'1', pcVoi0:3, pcDat0:''}, /dal datore non entra niente/],
+  ['datore sì, propria vuota',   {...BASE, quanti:'1', pcVoi0:'', pcDat0:2}, /va scritto .*0/],
+  ['tutte e due vuote',          {...BASE, quanti:'1', pcVoi0:'', pcDat0:''},/non affluisce alcun contributo/],
+  ['fondo sottoscritto da sé',   {...BASE, quanti:'1', pcVoi0:3, pcDat0:2, tipoFondo0:'individuale'},
+                                                                            /non viene conteggiata/],
+  ['tutto a posto: nessun avviso', {...BASE, quanti:'1', pcVoi0:1.2, pcDat0:2}, null]
+]){
+  const {scritte, elementi} = esegui(DATI);
+  const frase = (scritte.avvisoDatore || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (atteso === null)
+    c(`${nome}`, elementi.avvisoDatore.hidden === true, frase.slice(0, 60));
+  else
+    c(`${nome}`, elementi.avvisoDatore.hidden === false && atteso.test(frase), frase.slice(0, 78));
+}
+
 // --- la quota minima del contratto, nelle frasi -----------------------------
 // LA FRASE CHE DICEVA IL FALSO, e che questi controlli tengono chiusa: chi versa il 3% avendo un
 // minimo contrattuale dell'1,2% leggeva «sotto il 3% versato oggi il datore non versa». Il

@@ -649,8 +649,20 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
          diventa viva in un momento preciso: quando si porta il cursore SOTTO quello che si
          versa. È lì che ora viene fatta, come reazione — la stessa regola di `avvisoDatore` e
          delle caselle dell'abitazione, che compaiono solo a chi prevede di cambiarla. -->
-    <div class="voce rigalav">Quanto ci metterebbe l'azienda<br>
-      <span class="come">in % della RAL — anche se oggi <b>non arriva</b></span></div>
+    <!-- «DA CONTRATTO» FA IL LAVORO CHE FACEVA UNA CLAUSOLA. L'etichetta ha detto per un giorno
+         «anche se oggi non arriva»: una negazione su un fatto che non accade, che chiede di
+         scrivere un numero per soldi che non si ricevono senza dire in base a cosa — e che
+         suonava come «inventalo». Dicendo invece da DOVE viene il numero, l'eccezione non va più
+         segnalata: una quota fissata dal contratto ovviamente non è quella che arriva in busta.
+         E LA CONDIZIONE NON STA QUI. Il contributo non dipende dal tipo di fondo ma da cosa il
+         contratto riconosce — nelle adesioni collettive spetta anche su un fondo aperto — quindi
+         nessuna clausola corta sarebbe esatta, e «solo per i fondi chiusi» smentirebbe
+         `avvisoDatore`, che quella via d'uscita la nomina. La condizione è già una casella
+         (`tipoFondo`), e a quella rispondono tre reazioni che sanno la risposta: `tipoNota`,
+         `pcDatEuro` e l'avviso. Dove si legge il numero lo dice la riga in testa al riquadro,
+         una volta sola per tutte e due le caselle. -->
+    <div class="voce rigalav">Quanto aggiunge il datore, da contratto<br>
+      <span class="come">in % della RAL</span></div>
     <div class="cella"><input type="text" inputmode="decimal" id="pcDat0" value="" placeholder="es. 2,0">
       <u class="hint" id="pcDatEuro0">&nbsp;</u></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="pcDat1" value="" placeholder="es. 2,0">
@@ -2367,15 +2379,32 @@ function calc(){
       if (x.pcDat > 0 && x.pcVoiVuoto)
         return `<b>${x.nome}</b>: c'è la quota del datore ma non quella del lavoratore. Se
           oggi non si versa niente va scritto <b>0</b>: il conto dirà quanto vale attivarla.`;
-      if (x.pcVoi > 0 && x.pcDatVuoto)
-        return `<b>${x.nome}</b>: manca la quota del datore. Se il contratto la prevede va
-          indicata anche se oggi non si percepisce: serve a quantificare quello a cui si sta
-          rinunciando.`;
       if (x.pcVoiVuoto && x.pcDatVuoto && x.fondo > 0)
         return `<b>${x.nome}</b>: nel fondo non affluisce alcun contributo. Se l'adesione è
           avvenuta col solo TFR, va lasciato <b>0</b> nella quota del lavoratore e indicata quella
           che il contratto <i>prevede</i> per il datore: il conto quantificherà cosa si sta
           perdendo.`;
+      // DAL DATORE NON ENTRA NIENTE: un ramo solo per il vuoto e per lo zero.
+      // Prima ce n'erano due e uno taceva. Quello che parlava reagiva alla casella VUOTA
+      // («manca la quota del datore»); chi ci scriveva 0 — o la lasciava vuota avendo già
+      // scritto 0 nella propria — non incontrava alcun messaggio, e nemmeno il riquadro «quanto
+      // stai lasciando lì», che pretende una quota positiva per poterla quantificare. Cioè
+      // taceva proprio con chi ha aderito col solo TFR, la persona che questa sezione esiste
+      // per servire.
+      // I DUE CASI SI SONO FUSI perché il consiglio è identico — cerca sul contratto e scrivi
+      // quella cifra — e la regola del progetto dice di distinguere vuoto e zero *solo quando
+      // cambiano un messaggio*. Qui non lo cambiano: cambiano la causa, non la cura, e due
+      // frasi gemelle da tenere allineate a mano sono un difetto che qui è già costato.
+      // Non serve la guardia `fondo > 0` del ramo qui sopra: là tutte e due le caselle sono
+      // vuote, cioè il modulo è appena stato aperto; qui la propria quota è SCRITTA, e chi
+      // scrive uno zero si è già occupato di questo riquadro.
+      // Qui vive anche la frase che per un giorno è stata in etichetta: non è una regola per
+      // tutti, è un'istruzione per un caso — e qui può portarsi dietro il perché, che in
+      // un'etichetta non ci stava.
+      if (!(x.pcDat > 0) && !x.pcVoiVuoto)
+        return `<b>${x.nome}</b>: dal datore non entra niente. <b>Se il contratto prevede una
+          quota a suo carico va indicata anche se oggi non viene percepita</b>: serve a
+          quantificare l'importo cui si sta rinunciando.`;
       return null;
     }).filter(Boolean);
     const el = EL('avvisoDatore');
