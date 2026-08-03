@@ -284,8 +284,18 @@ function ricavoVendita(prezzo, nuova){
 //  esemplificativo standardizzato» non è un calcolatore commerciale: è un
 //  documento che la COVIP OBBLIGA ogni fondo a pubblicare, con le ipotesi
 //  dettate da lei — le stesse per tutte le forme, e dichiarate dentro il
-//  documento. Quello di Fon.Te. le enuncia una per una, e sono compatibili con
-//  le nostre senza bisogno di conversioni:
+//  documento.
+//
+//  E SE NE PRENDONO TRE, NON UNO. Non per avere la stessa conferma ripetuta:
+//  perché ciascuno copre un tratto che gli altri non toccano. Fon.Te. e
+//  Credemprevidenza ipotizzano il pensionamento a 67 anni, Cooperlavoro a 65
+//  per l'uomo e a 60 per la donna, e porta quindi sei durate in più. Le basi
+//  tecniche sono di tre famiglie diverse — RG48 distinta per sesso, IPS55U
+//  unisex delle basi COVIP, e quella di Cooperlavoro — così il nostro
+//  coefficiente non viene confrontato con una convenzione sola. Un fondo solo
+//  avrebbe detto se andiamo d'accordo con LUI; tre dicono se stiamo nel mondo.
+//
+//  Le ipotesi sono compatibili con le nostre senza bisogno di conversioni:
 //    - i valori sono IN TERMINI REALI, «già al netto degli effetti
 //      dell'inflazione»: è la nostra stessa convenzione, quindi cade la trappola
 //      del nominale contro il reale;
@@ -304,8 +314,8 @@ function ricavoVendita(prezzo, nuova){
 //  banda. I VERSAMENTI CUMULATI invece non dipendono da nulla di tutto ciò —
 //  sono solo il calendario dei contributi — e infatti tornano ESATTI.
 // ============================================================================
-const FONTE_FONTE = 'Fon.Te., fondo pensione negoziale, «Stima della pensione '
-  + 'complementare (progetto esemplificativo standardizzato)», ipotesi COVIP';
+const FONTE_FONTE = 'progetti esemplificativi standardizzati di Fon.Te. (negoziale, Albo 123), '
+  + 'Cooperlavoro (negoziale, Albo 96) e Credemprevidenza (aperto, Albo 18) — ipotesi COVIP';
 
 let ko = 0;
 const c = (nome, cond, extra = '') => {
@@ -322,13 +332,39 @@ function riscontri(){
   // quanti versamenti ci sono e da come cresce ciascuno. È il posto in cui si
   // nasconde un errore di un anno — il più banale e il più invisibile, perché
   // sposta il totale di poco e nessuna invariante lo vede.
-  console.log('\n  I versamenti cumulati: 1.500 € l\'anno che crescono dell\'1% reale');
-  const VERSAMENTI = [[37, 66761.47], [27, 46231.33], [17, 27645.66]];
-  for (const [anni, atteso] of VERSAMENTI){
+  // TRE FONDI, NOVE DURATE, TRE LIVELLI DI CONTRIBUTO. E i tre fondi non sono
+  // interscambiabili: Fon.Te. e Credemprevidenza ipotizzano il pensionamento a
+  // 67 anni (37, 27, 17 anni di versamento), Cooperlavoro a 65 per l'uomo e a
+  // 60 per la donna, e produce quindi SEI durate che gli altri due non toccano.
+  // È il motivo per cui vale prenderne più di uno: non per avere conferme
+  // ripetute della stessa cosa, ma perché ciascuno copre un tratto diverso.
+  console.log('\n  I versamenti cumulati, su tre fondi e nove durate');
+  const VERSAMENTI = [
+    // Fon.Te. (negoziale, Albo 123) e Credemprevidenza (aperto, Albo 18): identici al centesimo
+    [37, [66761.47, 111269.12, 222538.24]], [27, [46231.33, 77052.22, 154104.44]],
+    [17, [27645.66,  46076.11,  92152.22]],
+    // Cooperlavoro (negoziale, Albo 96): pensionamento a 65 e a 60, durate solo sue
+    [35, [62490.41, 104150.69, 208301.38]], [25, [42364.80, 70608.00, 141216.00]],
+    [15, [24145.34,  40242.24,  80484.48]], [30, [52177.34, 86962.23, 173924.46]],
+    [20, [33028.51,  55047.51, 110095.02]], [10, [15693.32, 26155.53,  52311.06]]
+  ];
+  const CONTRIBUTI = [1500, 2500, 5000];
+  let peggio = 0, quanti = 0;
+  for (const [anni, attesi] of VERSAMENTI)
+    CONTRIBUTI.forEach((C, k) => {
+      let somma = 0;
+      for (let j = 0; j < anni; j++) somma += C * Math.pow(1.01, j);
+      peggio = Math.max(peggio, Math.abs(somma - attesi[k])); quanti++;
+    });
+  c(`${quanti} confronti sui versamenti cumulati`, peggio < 0.01,
+    `scarto massimo ${peggio.toFixed(4)} € · ${FONTE_FONTE}`);
+  // e il dettaglio di una riga per ciascuna durata, perché un numero solo
+  // nasconde quale confronto ha lavorato davvero
+  for (const [anni, attesi] of VERSAMENTI){
     let somma = 0;
-    for (let k = 0; k < anni; k++) somma += 1500 * Math.pow(1.01, k);
-    c(`${anni} anni di versamento`, Math.abs(somma - atteso) < 0.01,
-      `nostro ${eur(somma)} · loro ${eur(atteso)} · ${FONTE_FONTE}`);
+    for (let j = 0; j < anni; j++) somma += 1500 * Math.pow(1.01, j);
+    c(`  ${String(anni).padStart(2)} anni × 1.500 €`, Math.abs(somma - attesi[0]) < 0.01,
+      `nostro ${eur(somma)} · loro ${eur(attesi[0])}`);
   }
 
   // --- 2. il coefficiente di conversione -----------------------------------
@@ -340,14 +376,31 @@ function riscontri(){
   // starebbe descrivendo un mondo che non esiste.
   const COEFF_UOMO = 3858.43 / 85824.25, COEFF_DONNA = 3357.45 / 85824.25;
   const nostro67 = M.coeffEta(67);
-  console.log('\n  Il coefficiente a 67 anni, contro una convenzione pubblicata');
-  c('il nostro sta fra quello della donna e quello dell\'uomo',
+  console.log('\n  Il coefficiente, contro tre convenzioni pubblicate');
+  c('a 67 anni il nostro sta fra quello della donna e quello dell\'uomo (RG48)',
     nostro67 > COEFF_DONNA && nostro67 < COEFF_UOMO,
     `donna ${pc(COEFF_DONNA)} · nostro ${pc(nostro67)} · uomo ${pc(COEFF_UOMO)}`);
   const media = (COEFF_UOMO + COEFF_DONNA) / 2;
   c('e non si discosta dalla media unisex più del 5%',
     Math.abs(nostro67 / media - 1) < 0.05,
     `scarto ${pc(nostro67/media - 1, 1)} dalla media ${pc(media)}`);
+  // IL RIFERIMENTO PIÙ PULITO CHE ESISTA, e l'ha portato il terzo fondo: le basi
+  // tecniche COVIP — IPS55U, UNISEX, tasso tecnico 0% — sono quelle che la
+  // vigilanza detta a tutti, senza distinzione di sesso e senza il tasso tecnico
+  // che gonfia la prima rata. Non è una media che ci facciamo noi fra un uomo e
+  // una donna: è un numero solo, pubblicato.
+  const COEFF_COVIP = 3363.48 / 78884.94;   // Credemprevidenza, rendita ÷ posizione
+  c('e contro le basi COVIP unisex (IPS55U, tasso tecnico 0%) sta entro il 5%',
+    Math.abs(nostro67 / COEFF_COVIP - 1) < 0.05,
+    `nostro ${pc(nostro67)} · COVIP ${pc(COEFF_COVIP)} · scarto ${pc(nostro67/COEFF_COVIP - 1, 1)}`);
+  // e a un'altra età, su un altro fondo ancora: la donna a 60 anni di Cooperlavoro.
+  // Serve perché tutto il resto guarda i 67 anni, e la CURVA potrebbe essere
+  // giusta in un punto e sbagliata nella pendenza.
+  const COEFF_60_DONNA = 2044.57 / 65838.72;
+  c('a 60 anni la curva regge contro un terzo fondo (donna)',
+    Math.abs(M.coeffEta(60) / COEFF_60_DONNA - 1) < 0.08,
+    `nostro ${pc(M.coeffEta(60))} · loro ${pc(COEFF_60_DONNA)}`
+    + ` · scarto ${pc(M.coeffEta(60)/COEFF_60_DONNA - 1, 1)}`);
   // LA PROSA DICE UN NUMERO, E ANCHE QUELLO VA RISCONTRATO. `il-metodo.html`
   // afferma che fra uomo e donna lo scarto è «di circa il 15%»: è una nostra
   // affermazione su un fatto altrui, e questa è la fonte che la misura.

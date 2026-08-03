@@ -608,15 +608,25 @@ dentro di sé, è pubblicato, e per giunta espone i valori **in termini reali**,
 stessa convenzione. Un calcolatore interattivo vale il giorno in cui lo si interroga; questo vale
 a ogni build. **Un riscontro che non si può rieseguire decade.**
 
+**E SE NE PRENDONO TRE, NON UNO.** Non per avere la stessa conferma ripetuta: perché ciascuno
+copre un tratto che gli altri non toccano. Fon.Te. e Credemprevidenza ipotizzano il pensionamento
+a 67 anni; **Cooperlavoro a 65 per l'uomo e a 60 per la donna, e porta sei durate in più**. Le basi
+tecniche sono di tre famiglie diverse — RG48 distinta per sesso, **IPS55U unisex delle basi COVIP**
+(il riferimento più pulito che esista: nessuna media da fare fra un uomo e una donna, e tasso
+tecnico 0%), e quella di Cooperlavoro. **Un fondo solo avrebbe detto se andiamo d'accordo con lui;
+tre dicono se stiamo nel mondo.**
+
 **Cosa ne è uscito:**
-- **i versamenti cumulati tornano al centesimo** su 37, 27 e 17 anni di contribuzione crescente.
+- **i versamenti cumulati tornano al centesimo: 27 confronti, scarto massimo mezzo centesimo**,
+  su tre fondi, tre livelli di contributo e nove durate (10, 15, 17, 20, 25, 27, 30, 35, 37 anni).
   È il riscontro che vale di più, perché non dipende da rendimenti, costi o imposte: dipende solo
   dal calendario dei contributi, ed è lì che si nasconde un errore di un anno — quello che sposta
   poco e che nessuna invariante vede;
-- **il nostro coefficiente a 67 anni sta fra quello della donna e quello dell'uomo** di una terza
-  convenzione (UnipolSai RG48), a −1,9% dalla media unisex. E lo scarto uomo/donna misurato è
-  14,9%, cioè il «circa 15%» che `il-metodo.html` afferma: **anche un numero scritto in prosa va
-  riscontrato**;
+- **il coefficiente regge contro tre convenzioni**: a 67 anni sta fra donna e uomo della RG48
+  (−1,9% dalla media), è a −3,3% dalle basi COVIP unisex, e a 60 anni è a +1,4% dal terzo fondo —
+  quest'ultimo serve perché la curva potrebbe essere giusta in un punto e sbagliata nella
+  pendenza. E lo scarto uomo/donna misurato è 14,9%, cioè il «circa 15%» che `il-metodo.html`
+  afferma: **anche un numero scritto in prosa va riscontrato**;
 - **sul montante siamo sotto di 0,3-1,4%, e sempre sotto**: è il costo della convenzione
   prudenziale, misurato invece che dichiarato. La banda è al 2% e **non si stringe per far
   tornare il conto**: serve a vedere un errore di struttura, non a certificare il terzo decimale
