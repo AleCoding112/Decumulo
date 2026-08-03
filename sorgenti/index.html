@@ -3673,9 +3673,20 @@ function aggiornaDecisioni(s, r){
     const pc = +cv.value;
     const c = contributi(x, pc), oggi = contributi(x, x.pcVoi);
 
+    // DOVE STA IL CURSORE, DETTO NELLA SUA UNITÀ. Il riquadro parlava solo in euro, mentre
+    // tutti i bersagli intorno al cursore sono percentuali: la casella («Quanto si versa oggi,
+    // in % della RAL»), il pulsante «torna al …», il gradino «sotto il … chiesto dal contratto»
+    // e soprattutto «il punto più alto è il …». La pagina indicava un traguardo in percentuale
+    // e non dava alcuna lettura in percentuale con cui centrarlo: restava trascinare a occhio.
+    // LA BASE VA DETTA, e non è pignoleria: la percentuale è quella A CARICO DEL LAVORATORE,
+    // mentre gli euro della riga sopra comprendono il datore. Senza «della RAL» il numero si
+    // leggerebbe come la percentuale di quel totale, che è un'altra grandezza.
+    // Lo zero non è un caso a parte: `perc` scrive «lo 0%» con l'articolo giusto, e all'estremo
+    // sinistro del cursore la posizione va letta come in ogni altro punto.
     EL('cVers'+i+'Ora').innerHTML = !(x.ral > 0)
       ? `<b>—</b><i>senza la retribuzione annua lorda questa sezione non si calcola</i>`
       : `<b>${E0(c.tot)}</b> l'anno nel fondo
+         <i>versando ${perc(pc, 'il')} della RAL</i>
          <i>${E0(c.lav)} dal lavoratore` + (c.dat > 0.5
             ? ` più <b>${E0(c.dat)}</b> del datore` : `, e <b>niente dal datore</b>`) + `</i>`
          + `<i>${c.tot > TETTO_DEDUZIONE + 0.5
@@ -3686,13 +3697,20 @@ function aggiornaDecisioni(s, r){
               : `dei ${E0(TETTO_DEDUZIONE)} che si deducono ne restano
                  ${E0(TETTO_DEDUZIONE - c.tot)}`}</i>`;
     EL('cVers'+i+'Sx').textContent = 'niente: 0 €';
-    // dire PERCHÉ il cursore si ferma lì. Ora i vincoli sono due soli e non si sovrappongono:
-    // o morde lo stipendio, o si è arrivati a versare l'intera retribuzione lorda.
-    const fermaStipendio = pcSpendibile(x) < 100 - 0.05;
+    // dire PERCHÉ il cursore si ferma lì. IL VINCOLO È UNO SOLO, ed è dimostrato: qui c'erano
+    // due frasi, «oltre, il versamento supererebbe lo stipendio» e «il tot% della RAL», per il
+    // caso in cui il cursore fosse arrivato a fondo scala. Quel caso non esiste. Versando il
+    // 100% della retribuzione il netto vale −RAL×IVS − irpefNetta(R) + sommaCuneo(R), dove
+    // l'imposta netta non è mai negativa e la somma del cuneo vale al più la sua aliquota più
+    // alta su un imponibile minore della RAL: con IVS al 9,19% contro il 7,1% la busta resta
+    // sotto zero per qualunque retribuzione, con un margine di due punti.
+    // La seconda frase non è quindi mai comparsa in tre giorni di sito pubblicato, e teneva in
+    // piedi un vincolo che chi legge il codice credeva vivo. Due invarianti la sostituiscono
+    // (`verifiche/invarianti.mjs`): la disuguaglianza fra le due cifre di legge, e la prova sui
+    // 4.000 piani che `pcSpendibile` resta sotto 100. Se una legge di bilancio le incrociasse,
+    // fallirebbero prima che la pagina possa scrivere una frase sbagliata.
     EL('cVers'+i+'Dx').innerHTML = !(x.ral > 0) ? ''
-      : `${E0(x.ral * pcTop / 100)}: ` + (fermaStipendio
-          ? `oltre, il versamento supererebbe lo stipendio`
-          : `${perc(pcTop, 'il')} della RAL`);
+      : `${E0(x.ral * pcTop / 100)}: oltre, il versamento supererebbe lo stipendio`;
 
     // il gradino, detto per esteso: è la cosa che questa pagina esiste per far vedere
     const perso = oggi.dat > 0.5 ? oggi.dat : quotaDatore(x);

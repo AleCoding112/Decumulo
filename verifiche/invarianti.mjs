@@ -31,7 +31,8 @@ globalThis.document={body:{classList:{toggle(){}}},
   getElementById:id=>Object.assign(finto(),{value:String(DATI[id]??0)}),querySelectorAll:()=>[]};
 const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quotaMax,SOGLIA_TUTTO,soglia,coeffEta,
   COEFF_RENDITA,QUOTA_ORDINARIA,ASSEGNO_SOCIALE,TETTO_DEDUZIONE,TFR_SU_RAL,spazioDeducibile,contributi,costoAnnuo,pcTetto,
-  aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz};`)();
+  aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz,
+  pcSpendibile,nettoAnnuo,IVS,SOMMA_CUNEO};`)();
 
 let n=0; const rotte={};
 const ko=(k,d)=>{ (rotte[k]??=[]).push(d); };
@@ -107,6 +108,18 @@ for (let t=0; t<4000; t++){
     const q = g.inizio+g.rendimento+g.daLavoro+g.daPensioni+g.daRendita+g.daFondo+g.daRata+g.daTfr+g.daCasa-g.spesa-g.patr;
     if (Math.abs(q) > 1e-6*Math.max(1,Math.abs(g.patr))) ko('una riga non quadra', q);
   }
+  // --- IL CURSORE DEI VERSAMENTI NON ARRIVA MAI AL 100% -------------------------------
+  // Serve a tenere ferma una SEMPLIFICAZIONE, non a scoprire un errore: l'estremo destro del
+  // cursore diceva «oltre, il versamento supererebbe lo stipendio» oppure «il tot% della RAL»,
+  // e la seconda frase non è mai comparsa perché versando l'intera retribuzione lorda la busta
+  // va sempre sotto zero. Tolta la frase morta, questa invariante è ciò che autorizza a non
+  // riscriverla: se un giorno il netto al 100% tornasse positivo, fallisce qui e non in pagina.
+  for (const i of s.indici){
+    const x = s.p[i];
+    if (x.ral > 0 && M.pcSpendibile(x) >= 100)
+      ko('il cursore dei versamenti arriva al 100% della RAL', `RAL ${Math.round(x.ral)} €`);
+  }
+
   // --- L'ABITAZIONE ------------------------------------------------------------------
   {
     const c = s.casa;
@@ -389,6 +402,17 @@ c('IRPEF: continua e crescente', (()=>{let p=-1;for(let y=0;y<=300000;y+=137){co
 c('IRPEF: marginale mai sopra il 43%',
   (()=>{ for(let y=0;y<300000;y+=311) if((M.irpef(y+1)-M.irpef(y)) > 0.43+1e-9) return false;
          return true; })());
+// LA RAGIONE PER CUI IL CURSORE NON ARRIVA MAI AL 100%, detta sui parametri invece che sui
+// piani. Al 100% il netto vale −RAL×IVS − irpefNetta(R) + sommaCuneo(R): l'imposta netta ha un
+// `Math.max(0, …)` e non è mai negativa, la somma del cuneo vale al più la sua aliquota più alta
+// applicata a un imponibile minore della RAL. Basta quindi che i contributi previdenziali pesino
+// più di quell'aliquota perché il netto resti negativo per QUALUNQUE retribuzione.
+// Sono due cifre di legge indipendenti — 9,19% contro 7,1% — e una legge di bilancio può
+// muoverle: se si incrociassero, l'invariante sui 4.000 piani e questa cadrebbero insieme, e la
+// frase tolta dall'estremo destro del cursore andrebbe rimessa.
+c('il netto al 100% della RAL è sempre negativo: IVS oltre la somma del cuneo',
+  M.IVS > Math.max(...M.SOMMA_CUNEO.map(([, q]) => q)),
+  `IVS ${(M.IVS*100).toFixed(2)}% contro ${(Math.max(...M.SOMMA_CUNEO.map(([, q]) => q))*100).toFixed(1)}%`);
 c('fondo: 15% fino a 15 anni, poi −0,30/anno, pavimento 9%',
   M.aliquota(0)===0.15 && M.aliquota(15)===0.15 && Math.abs(M.aliquota(20)-0.135)<1e-12
   && M.aliquota(35)===0.09 && M.aliquota(99)===0.09);
