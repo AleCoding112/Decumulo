@@ -22,6 +22,7 @@ const passi = [
   ['verifiche/riscontri-esterni.mjs',      'le nostre cifre contro numeri pubblicati da altri'],
   ['verifiche/casi-esterni.mjs',           'i venti casi, contro un progetto esemplificativo COVIP'],
   ['verifiche/seconda-implementazione.mjs','confronto con un motore riscritto dalle regole'],
+  ['verifiche/coppie.mjs',                 'due piani che cambiano per una cosa sola, col verso dichiarato prima'],
   ['verifiche/invarianti.mjs',             'invarianti su piani casuali'],
   ['verifiche/schermi.mjs',                'che niente esca dallo schermo di un telefono'],
   ['verifiche/coerenza.mjs',               'che le pagine dicano quello che il conto fa'],
