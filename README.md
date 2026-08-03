@@ -25,7 +25,7 @@ lancia da solo:
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
 | `node verifiche/casi-esterni.mjs` | i venti casi sulle discontinuità della legge, e il confronto col progetto esemplificativo COVIP di un fondo |
 | `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
-| `node verifiche/invarianti.mjs` | 4.000 piani casuali + le funzioni di legge ai punti esatti |
+| `node verifiche/invarianti.mjs` | 4.000 piani casuali **seminati** + le funzioni di legge ai punti esatti. `SEME=<n>` per cambiare popolazione |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
 | `node verifiche/consenso.mjs` | che il tag di misurazione non parta senza consenso |
@@ -640,6 +640,44 @@ calcolatori interattivi, che nessuno script può compilare. Le detrazioni che li
 però già riscontrate una per una in `riscontri-esterni.mjs`, su due fonti indipendenti che si
 sovrappongono in un punto.
 
+## La rete che non pescava (03/08/2026)
+
+Trovato rispondendo a una domanda sua sugli scenari, non cercandolo. **`invarianti.mjs` stampava
+`VIOLATA (2849x)` e usciva con codice ZERO.** `verifica.mjs` giudica un passo solo dal codice di
+uscita, quindi la catena dichiarava «tutto verde» mentre l'allarme suonava — e il riepilogo, che
+mostra le ultime otto righe, lo spingeva fuori dallo schermo con le dieci `ok` che seguono.
+Era **l'unico dei sedici controlli senza un'uscita**: non un difetto sistematico, un file.
+
+**Le tre violazioni nascoste erano tutte della prova, non del motore** — ed è la ragione per cui
+erano rimaste lì: chi le avesse guardate avrebbe visto che il conto era giusto e sarebbe passato
+oltre. Ma il costo non era zero.
+
+- **«il datore versa anche sotto il minimo», 2.900 volte su 4.000.** Provava un centesimo sotto
+  *quello che si versa*, mentre il gradino sta al *minimo del contratto*: chi versa più del minimo
+  non lo attraversa affatto. **Un'invariante che spara su tre quarti dei casi non è un allarme, è
+  rumore**, ed era il rumore che rendeva invisibile l'unica riga che diceva qualcosa.
+- **«il canone si riduce con la scala di equivalenza», 28 volte.** L'anno del cambio casa si
+  estrae fino al 2075 e molti piani finiscono prima: la prova misurava un canone che in
+  quell'anno non c'era ancora. **Un'invariante che non controlla di essere applicabile misura il
+  proprio fixture.**
+- **«con la prova il patrimonio dura di più», una volta.** L'unica sostanziale, e resta aperta:
+  vedi il registro dei dubbi.
+
+**E il generatore non era seminato.** Con `Math.random()` i 4.000 piani cambiavano a ogni
+esecuzione, e la violazione da uno su quattromila compariva e spariva. **Una catena che fallisce a
+intermittenza e passa al secondo tentativo è peggio di una che non fallisce mai: insegna a
+rilanciare finché è verde.** Ora c'è `SEME`, stampato a ogni esecuzione e ripetuto nel messaggio
+di errore, così una violazione si riproduce.
+
+**IL SEME HA SUBITO PAGATO, per una ragione inattesa.** Il generatore non riempiva la casella del
+minimo contrattuale: l'armatura la sostituiva con `0`, quindi **il ramo «casella vuota» non era
+mai stato eseguito da nessuno dei 4.000 piani**. Aggiungendola, una *seconda* invariante scaduta
+ha cominciato a violare 393 volte — confrontava un punto sotto il gradino con uno sopra e chiamava
+crescita quello che era il gradino. Passava solo perché quel campo era sempre zero.
+
+**Regola: un'armatura che riempie i buchi con un valore di comodo non sta provando il caso
+normale, sta provando il valore di comodo.**
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -656,6 +694,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
 | Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | somma e ulteriore detrazione del cuneo sono ora modellate (circolare AdE 4/E del 16/05/2025); resta fuori solo questo, e sotto i 15.000 € di reddito complessivo il destinatario tipo di questo conto non c'è |
 | La **perequazione a fasce** delle pensioni non è modellata | le tre percentuali e le soglie lette sulla norma, non sul commento: il DM 19/11/2025 le applica *per scaglioni* | l'errore è nullo sotto 4 volte il minimo (2.447 €/mese) e piccolo sopra: 2,8% su trent'anni a 3.500 €/mese. Ora è dichiarato con la sua misura |
+| L'invariante «la prova di tenuta non fa durare di più il patrimonio» ha violato **una volta su 4.000** il 03/08/2026, e non è stato possibile riprodurla | ritrovare il piano che la viola, e vedere se è l'effetto di confine già documentato | l'eccezione di legge (sotto la soglia dei montanti contenuti esce più capitale) è applicata al controllo sul **patrimonio finale** e non a quello sull'**anno di esaurimento**: è la spiegazione probabile. Ma dopo aver seminato il generatore e corretto la copertura su `pcMin` non ricompare in **80.000 piani**, e non è stata messa a tacere: se torna, adesso ferma la catena e dice con quale seme riprodurla |
 | Gli **scaglioni IRPEF sono nominali** e il conto lavora in reale: il modello assume che vengano adeguati all'inflazione | niente da verificare: è un'ipotesi sul legislatore | rappresentare l'alternativa vorrebbe dire prevedere una legge di bilancio. Dichiarata, non sostituita da una previsione |
 
 **Come si usa.** Quando una riga si chiude, si toglie. Quando ne nasce una, si scrive qui invece

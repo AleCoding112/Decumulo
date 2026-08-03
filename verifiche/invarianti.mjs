@@ -35,7 +35,23 @@ const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quot
 
 let n=0; const rotte={};
 const ko=(k,d)=>{ (rotte[k]??=[]).push(d); };
-const R=(a,b)=>a+Math.random()*(b-a), I=(a,b)=>Math.floor(R(a,b+1)), P=l=>l[I(0,l.length-1)];
+
+// IL GENERATORE È SEMINATO, e non è un dettaglio: con `Math.random()` i 4.000 piani erano
+// diversi a ogni esecuzione, e un'invariante violata da UN piano su quattromila compariva e
+// spariva fra un lancio e l'altro. Una catena che fallisce a intermittenza e passa al secondo
+// tentativo è PEGGIO di una che non fallisce mai: insegna a rilanciare finché è verde.
+// Con il seme, i quattromila piani sono sempre gli stessi e una violazione è riproducibile —
+// e chi vuole cercarne altri cambia il seme a mano, di proposito, non per caso.
+const SEME = Number(process.env.SEME ?? 20260803);
+let stato = SEME >>> 0;
+const casuale = () => {           // mulberry32: piccolo, senza dipendenze, sempre uguale
+  stato = (stato + 0x6D2B79F5) >>> 0;
+  let x = stato;
+  x = Math.imul(x ^ (x >>> 15), x | 1);
+  x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
+  return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+};
+const R=(a,b)=>a+casuale()*(b-a), I=(a,b)=>Math.floor(R(a,b+1)), P=l=>l[I(0,l.length-1)];
 
 for (let t=0; t<4000; t++){
   const n0=I(1950,1990), n1=I(1950,1990);
@@ -53,12 +69,14 @@ for (let t=0; t<4000; t++){
     // lo contiene, così una regola scritta con `<=` invece di `<` non passa inosservata.
     pens0:Math.round(R(0,6000)), annoPens0:I(1995,2055),
     fondo0:Math.round(R(0,600000)), pcVoi0:+R(0,4).toFixed(1), pcDat0:+R(0,4).toFixed(1), pc0:'',
+    pcMin0: P(['', 0, +R(0,4).toFixed(1)]),
     tipoFondo0:P(['collettiva','individuale']),
     tfrDove0:P(['fondo','azienda']), iscr0:I(1980,2030),
     quotaCap0:+R(0,1).toFixed(2),
     nascita1:n1, ral1:Math.round(R(0,200000)),
     pens1:Math.round(R(0,6000)), annoPens1:I(1995,2055),
     fondo1:Math.round(R(0,600000)), pcVoi1:+R(0,4).toFixed(1), pcDat1:+R(0,4).toFixed(1), pc1:'',
+    pcMin1: P(['', 0, +R(0,4).toFixed(1)]),
     tipoFondo1:P(['collettiva','individuale']),
     tfrDove1:P(['fondo','azienda']), iscr1:I(1980,2030),
     quotaCap1:+R(0,1).toFixed(2)};
@@ -125,7 +143,12 @@ for (let t=0; t<4000; t++){
       // a parte: la prima versione di questa invariante guardava solo la bisezione, e spostando
       // il canone dentro `equiv` restava verde su tutti e 4.000 i piani.
       // Un appartamento già affittato costa uguale in uno o in due; la scala vale sui consumi.
-      if (s.N === 2){
+      // MA SOLO SE IL CANONE C'È DAVVERO IN QUELL'ANNO. L'anno del cambio si estrae fino al
+      // 2075, e molti piani finiscono prima: lì `quando` cade PRIMA della locazione, in nessuno
+      // dei due rami si paga un canone, e la differenza è giustamente zero mentre l'invariante
+      // ne pretendeva uno. Ventotto violazioni su 4.000, tutte artefatto della prova.
+      // Un'invariante che non controlla di essere applicabile misura il proprio fixture.
+      if (s.N === 2 && c.anno <= r.annoFine){
         const quando = Math.min(c.anno + 3, r.annoFine);
         const m = {chi: 0, anno: quando, equiv: 0.60};
         const conM   = M.simula({...s, manca: m});
@@ -172,10 +195,35 @@ for (let t=0; t<4000; t++){
   // --- LEGGE: il tetto di deducibilità non lo tocca il TFR
   if (s.p.length !== s.N) ko('p e N non concordano','');
   for (const x of s.p){
-    const c0 = M.contributi(x, x.pcVoi), cSotto = M.contributi(x, Math.max(0,x.pcVoi-0.01));
-    if (x.pcVoi > 0 && cSotto.dat !== 0) ko('il datore versa anche sotto il minimo','');
-    if (x.pcVoi > 0 && x.pcDat > 0 && x.ral > 0 && !(M.contributi(x, x.pcVoi*5).dat === c0.dat))
-      ko('il contributo del datore cresce col versamento (non deve)','');
+    const c0 = M.contributi(x, x.pcVoi);
+    // LA SOGLIA NON È `pcVoi`, È `pcMin`, e questa invariante lo ignorava: provava un centesimo
+    // sotto QUELLO CHE SI VERSA e pretendeva lì il gradino. Ma il gradino sta al minimo del
+    // contratto, e chi versa più del minimo non lo attraversa affatto scendendo di un centesimo.
+    // Risultato: violata su 2.900 piani su 4.000 — cioè sempre — mentre il motore era giusto.
+    // UN'INVARIANTE CHE SPARA SU TRE QUARTI DEI CASI NON È UN ALLARME, È RUMORE: aveva reso
+    // invisibile l'unica riga che segnalava qualcosa di vero.
+    // La soglia si RICALCOLA qui dalla regola, non si importa da `sogliaDatore`: un controllo
+    // che chiama la funzione che deve controllare non controlla niente.
+    const sogliaVera = Math.max(0, x.pcMin == null ? x.pcVoi : x.pcMin);
+    if (sogliaVera > 0){
+      if (M.contributi(x, sogliaVera - 0.01).dat !== 0)
+        ko('il datore versa sotto la quota minima del contratto', `soglia ${sogliaVera}`);
+      if (x.pcDat > 0 && x.ral > 0 && !x.fondoIndividuale && M.contributi(x, sogliaVera).dat === 0)
+        ko('il datore non versa nemmeno alla soglia', `soglia ${sogliaVera}`);
+    } else if (M.contributi(x, 0).dat !== 0)
+      // soglia zero: la quota scatta a QUALUNQUE versamento positivo, ma non a zero
+      ko('il datore versa anche a versamento nullo','');
+    // «NON CRESCE» VA MISURATO FRA DUE PUNTI CHE STANNO TUTTI E DUE SOPRA IL GRADINO.
+    // Questa confrontava `pcVoi` con `pcVoi × 5`: finché il minimo era sempre zero i due punti
+    // erano entrambi sopra, e reggeva. Appena la casella del minimo è entrata nei piani casuali
+    // ha cominciato a violare 393 volte — perché con un minimo più alto di quello che si versa
+    // il primo punto sta SOTTO il gradino, dove il datore giustamente non versa, e il secondo
+    // sopra. Stava misurando il gradino e chiamandolo crescita.
+    if (x.pcDat > 0 && x.ral > 0 && !x.fondoIndividuale){
+      const sopra = Math.max(sogliaVera, 0.01);
+      if (M.contributi(x, sopra).dat !== M.contributi(x, sopra * 5 + 1).dat)
+        ko('il contributo del datore cresce col versamento (non deve)', `soglia ${sogliaVera}`);
+    }
     // Su un fondo sottoscritto per conto proprio il datore non versa a NESSUNA percentuale.
     // Basta una combinazione che lo faccia comparire perché il conto prometta denaro che non
     // arriverà, ed è l'errore in direzione ottimistica: quello che fa versare di più.
@@ -321,14 +369,18 @@ for (let t=0; t<4000; t++){
       ko('prova a zero esercizi non coincide col piano di partenza','');
   }
 }
-console.log(`${n} piani casuali simulati.\n`);
+console.log(`${n} piani casuali simulati (seme ${SEME}).\n`);
 const rotti = Object.entries(rotte);
 if (!rotti.length) console.log('nessuna invariante violata.');
 else for (const [k,v] of rotti) console.log(`VIOLATA (${v.length}x)  ${k}   es: ${v[0]}`);
 
 // --- controlli chiusi sulle funzioni di legge
 console.log('\n— le funzioni di legge, ai punti esatti —');
-const c=(nome,cond,extra='')=>console.log((cond?'  ok  ':'  KO  ')+nome+(extra?'   '+extra:''));
+let koChiusi = 0;
+const c=(nome,cond,extra='')=>{
+  if (!cond) koChiusi++;
+  console.log((cond?'  ok  ':'  KO  ')+nome+(extra?'   '+extra:''));
+};
 c('IRPEF: scaglioni esatti ai confini',
   Math.abs(M.irpef(28000)-6440)<1e-9 && Math.abs(M.irpef(50000)-6440-7260)<1e-9);
 c('IRPEF: continua e crescente', (()=>{let p=-1;for(let y=0;y<=300000;y+=137){const v=M.irpef(y);if(v<p-1e-9)return false;p=v;}return true;})());
@@ -354,3 +406,25 @@ c('aliquota TFR: media, non marginale, e sempre ≤ marginale',
   `100.000 € in 10 anni → ${(M.aliquotaTfr(100000,10)*100).toFixed(1)}%`);
 c('aliquota TFR: non dipende dal totale ma dalla retribuzione annua',
   Math.abs(M.aliquotaTfr(50000,10) - M.aliquotaTfr(100000,20)) < 1e-12);
+
+// ============================================================================
+//  E ADESSO SI FALLISCE DAVVERO.
+//
+//  Fino al 03/08/2026 questo file stampava «VIOLATA (2849x)» e usciva con
+//  codice ZERO. `verifica.mjs` giudica un passo solo dal codice di uscita,
+//  quindi la catena dichiarava «tutto verde» mentre l'allarme suonava — e per
+//  giunta il riepilogo mostra le ultime otto righe, che le dieci `ok` qui sotto
+//  spingevano fuori dallo schermo. La rete c'era, il pesce passava.
+//
+//  Le tre violazioni che nascondeva erano: due invarianti scadute (misuravano
+//  una regola che il modello non ha più) e un artefatto della prova (l'anno del
+//  cambio casa oltre la fine del piano). Il motore era giusto tutte e tre le
+//  volte. Ma il costo non è stato zero: erano 2.900 righe di rumore che
+//  rendevano invisibile qualunque riga vera.
+// ============================================================================
+if (rotti.length || koChiusi){
+  console.log(`\n✗ ${rotti.length} invarianti violate, ${koChiusi} controlli falliti`
+    + `\n  si riproduce con: SEME=${SEME} node verifiche/invarianti.mjs`);
+  process.exit(1);
+}
+console.log('\n✓ nessuna invariante violata, nessun controllo fallito');
