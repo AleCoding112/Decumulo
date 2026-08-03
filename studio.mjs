@@ -73,6 +73,7 @@ const titolo = t => console.log(`\n\n╔══ ${t} ` + '═'.repeat(Math.max(4,
 const COMUNE = {rend:4, infl:2, rendFondo:3, etaFine:95, nome0:'A', nome1:'B'};
 const uno = (o={}) => ({...COMUNE, quanti:'1', nascita0:1975, annoPens0:2042, pcVoi0:1.5,
   pcDat0:2, iscr0:2005, tfrDove0:'fondo', quotaCap0:0.5,
+  tfrGia0:'', annoLav0:'', tfrGia1:'', annoLav1:'',
   forma0:'vita', ...o});
 const due = (o={}) => ({...COMUNE, quanti:'2', nascita0:1975, nascita1:1977, annoPens0:2042,
   annoPens1:2044, pcVoi0:1.5, pcVoi1:1.5, pcDat0:2, pcDat1:2, iscr0:2005, iscr1:2007,

@@ -45,6 +45,11 @@ const DATI = {cl3:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5
   fondo0:90000, pcVoi0:1.5, pcDat0:2.0, tfrDove0:'fondo', iscr0:2018, rita0:2042, quotaCap0:0.5,
   nascita1:1982, ral1:36000, pens1:1700, annoPens1:2050,
   fondo1:30000, pcVoi1:1.2, pcDat1:1.6, tfrDove1:'fondo', iscr1:2012, rita1:2050, quotaCap1:1,
+  // IL TFR GIÀ ACCANTONATO, scritto VUOTO per esteso e non lasciato mancante: l'armatura, per un
+  // campo assente, restituisce '0', e '0' in `tfrGia` non è la casella vuota — direbbe «zero
+  // scritto», che è un'altra cosa. Il caso base è senza pregresso, ed è così che si dichiara.
+  // Ottava volta che questa regola serve.
+  tfrGia0:'', annoLav0:'', tfrGia1:'', annoLav1:'',
   // L'ABITAZIONE, scritta per esteso anche nel caso base che non la usa. Un campo assente vale
   // '0', e `casaCosa:'0'` non è nessuna delle tre opzioni: il caso di prova diventerebbe
   // illeggibile senza che nulla fallisca. Settima volta che questa regola serve.
@@ -1102,6 +1107,103 @@ t('la liquidazione è una una-tantum: sta nel riquadro della fase, non nel fluss
 t('ogni riga quadra anche col TFR dentro',
   inAzienda.righe.every(x => Math.abs(x.inizio + x.rendimento + x.daLavoro + x.daPensioni
     + x.daRendita + x.daFondo + x.daRata + x.daTfr - x.spesa - x.patr) < 1e-6));
+
+// --- IL TFR GIÀ ACCANTONATO ------------------------------------------------
+// Fino al 03/08/2026 il motore faceva partire il TFR da zero oggi: chi aveva vent'anni di
+// accantonamenti fermi in azienda o al Fondo di Tesoreria INPS se li vedeva ignorare — per un
+// cinquantenne ~70.000 € in euro di oggi, spesso più del fondo pensione, che invece il conto
+// chiede. Il patrimonio non li copriva: è «quanto è investito e disponibile», e un credito verso
+// il datore non lo è.
+console.log('\n— il TFR già accantonato —');
+{
+  // il pregresso di chi CONFERISCE il TFR al fondo: è il caso che prima spariva del tutto
+  const conPregresso = leggiCon({tfrGia0: 52000, annoLav0: 2001});
+  const R = M.simula(conPregresso);
+  const mio = R.liquidazioni.filter(l => l.chi === DATI.nome0);
+
+  t('le caselle vuote non cambiano niente: il caso base resta quello di prima',
+    Math.abs(M.simula(M.leggi()).finale - r.finale) < 1e-9,
+    'è la prova che la feature non tocca chi non la usa');
+
+  // IL CUORE DELLA MODIFICA. Prima tutto il ramo del TFR stava sotto `if (!tfrAlFondo)`, quindi
+  // chi aveva conferito al fondo perdeva anche quello accantonato PRIMA di conferire — che
+  // invece resta in azienda, come dice `tfr-fondo-o-azienda.html`.
+  t('si liquida ANCHE a chi manda il TFR nuovo al fondo',
+    mio.length === 1 && conPregresso.p[0].tfrAlFondo,
+    mio.length ? `${eur(mio[0].netto)} € netti nel ${mio[0].anno}` : 'nessuna liquidazione');
+  t('e nell\'ultimo anno di lavoro, come ogni altra liquidazione',
+    mio[0].anno === conPregresso.p[0].ultimo);
+
+  // LA PROVA CHE GLI ANNI SONO CONTATI, ed è la ragione per cui la casella dell'anno esiste.
+  // L'art. 19 porta il TFR a «reddito di riferimento» = imponibile / anni × 12: gli anni della
+  // liquidazione devono essere quelli DICHIARATI più quelli SIMULATI, o il riferimento si gonfia
+  // e con lui l'aliquota.
+  t('gli anni della liquidazione sono i pregressi dichiarati',
+    mio[0].anni === 2026 - 2001,
+    `${mio[0].anni} anni: dal 2001, e nessuno simulato perché il TFR nuovo va al fondo`);
+  {
+    // col TFR nuovo IN AZIENDA i due tronconi si sommano, ed è lì che si vede la somma
+    const misto = leggiCon({tfrGia0: 52000, annoLav0: 2001, tfrDove0: 'azienda'});
+    const l = M.simula(misto).liquidazioni.find(v => v.chi === DATI.nome0);
+    t('e col TFR nuovo in azienda si sommano ai simulati',
+      l.anni === (2026 - 2001) + eserPrimo,
+      `${2026-2001} dichiarati + ${eserPrimo} simulati = ${l.anni}`);
+    // IL CONTROFATTUALE, che è la misura del difetto evitato: stesso imponibile, ma contando i
+    // soli esercizi simulati — cioè quello che sarebbe successo aggiungendo l'importo senza
+    // l'anno. Il montante è lo stesso, l'imposta no.
+    const imponibile = l.tasse / l.al;
+    const alCieco = M.aliquotaTfr(imponibile, eserPrimo);
+    t('senza gli anni pregressi l\'imposta sarebbe migliaia di euro più alta',
+      alCieco > l.al + 0.08 && imponibile * (alCieco - l.al) > 8000,
+      `${(l.al*100).toFixed(1)}% invece di ${(alCieco*100).toFixed(1)}%: `
+      + `${eur(imponibile*(alCieco-l.al))} € d'imposta che non esistono`);
+  }
+
+  // l'imponibile è meno del montante: la rivalutazione ha già pagato il 17% e all'uscita è esente
+  t('l\'imposta non colpisce tutto il montante: la rivalutazione l\'ha già pagata',
+    mio[0].tasse < mio[0].lordo * mio[0].al - 1e-6 && mio[0].tasse > 0,
+    `imposta ${eur(mio[0].tasse)} € invece di ${eur(mio[0].lordo * mio[0].al)} €`);
+  t('e il netto sta fra zero e il lordo, sempre',
+    mio[0].netto > 0 && mio[0].netto < mio[0].lordo);
+
+  t('il piano migliora, ed esattamente del netto che arriva',
+    R.finale > r.finale, `${eur(R.finale - r.finale)} € alla fine del piano`);
+  t('ogni riga quadra anche col pregresso dentro',
+    R.righe.every(x => Math.abs(x.inizio + x.rendimento + x.daLavoro + x.daPensioni
+      + x.daRendita + x.daFondo + x.daRata + x.daTfr - x.spesa - x.patr) < 1e-6));
+  t('e arriva una volta sola',
+    R.righe.filter(g => g.daTfr > 0).length === 1);
+
+  // SENZA L'ANNO NON SI CONTA, e non si indovina: questa correzione sposta il piano verso
+  // l'ottimismo, quindi il ripiego è non contarlo e dirlo.
+  t('l\'importo senza l\'anno non viene contato',
+    M.simula(leggiCon({tfrGia0: 52000})).liquidazioni.filter(l => l.chi === DATI.nome0).length === 0,
+    'e `avvisoTfr` dice perché');
+  t('né l\'anno senza l\'importo',
+    M.simula(leggiCon({annoLav0: 2001})).liquidazioni.filter(l => l.chi === DATI.nome0).length === 0);
+
+  // CHI HA GIÀ SMESSO DI LAVORARE il TFR l'ha in tasca: sta nel patrimonio, e riscriverlo qui
+  // sarebbe contarlo due volte. Senza questa regola il capitale resterebbe per giunta
+  // intrappolato — il ciclo parte da ANNO0 e `anno === ultimo` non scatterebbe mai.
+  t('chi ha smesso prima di oggi non lo conta, e niente resta intrappolato', (() => {
+      const via = leggiCon({tfrGia0: 52000, annoLav0: 2001, ultimo0: 2024, annoPens0: 2030});
+      const V = M.simula(via);
+      const senza = M.simula(leggiCon({ultimo0: 2024, annoPens0: 2030}));
+      return V.liquidazioni.filter(l => l.chi === DATI.nome0).length === 0
+          && Math.abs(V.finale - senza.finale) < 1e-9; })(),
+    'il piano è identico a quello di chi non ha scritto niente');
+  t('e nemmeno chi è già in pensione', (() => {
+      const gia = M.simula(leggiCon({tfrGia0: 52000, annoLav0: 2001, annoPens0: 2020}));
+      return gia.liquidazioni.filter(l => l.chi === DATI.nome0).length === 0; })());
+
+  // il pregresso si rivaluta con la SUA regola anche mentre il TFR nuovo va al fondo
+  t('il pregresso si rivaluta fino alla cessazione, non resta fermo',
+    mio[0].lordo > 52000, `52.000 € diventano ${eur(mio[0].lordo)} € in euro di oggi`);
+  t('e col mercato non c\'entra niente: si muove solo con l\'inflazione', (() => {
+      const alto = M.simula({...conPregresso, rend:0.30, rendFondo:0.30});
+      const l = alto.liquidazioni.find(v => v.chi === DATI.nome0);
+      return Math.abs(l.lordo - mio[0].lordo) < 1e-6; })());
+}
 
 console.log('\n— in che forma esce: le rendite —');
 const conForma = (i, k) => M.simula({...s, p:s.p.map((x,j) => j===i

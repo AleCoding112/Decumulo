@@ -40,7 +40,7 @@ const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1965, nascita1:1
   ral0:42000, ral1:28000, pens0:2100, pens1:1250,
   annoPens0:2032, annoPens1:2035, pcVoi0:1.2, pcVoi1:1.2, pcDat0:2, pcDat1:2,
   iscr0:2000, iscr1:2004, cl3:180000, spesa:2800, rend:4, infl:2, rendFondo:3,
-  etaFine:95, fondo0:90000, fondo1:55000, tfrDove0:'fondo', tfrDove1:'fondo',
+  etaFine:95, fondo0:90000, fondo1:55000, tfrDove0:'fondo', tfrDove1:'fondo', tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:'',
   ultimo0:'', ultimo1:''};
 
 // DUE ASSETTI DEL CALCOLATORE, non uno. Col solo modulo «tutti al lavoro» l'avviso di chi è già

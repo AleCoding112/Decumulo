@@ -160,7 +160,10 @@ const DATI = {quanti:'1', nome0:'Anna', nascita0:1975, ral0:38000,
   // il patrimonio non si scrive più intero: è la somma delle quattro classi. Qui la ripartizione
   // è realistica e NON è indifferente come negli altri banchi — questo apre un browser vero,
   // quindi gli ascoltatori scattano e da queste quattro cifre discende il rendimento mostrato.
-  cl0:60000, cl1:8000, cl2:40000, cl3:92000, spesa:2500, infl:2, etaFine:95};
+  cl0:60000, cl1:8000, cl2:40000, cl3:92000, spesa:2500, infl:2, etaFine:95,
+  // il TFR già accantonato è SCRITTO, non vuoto: le caselle vanno fotografate piene, o si
+  // guarderebbe un riquadro che non mostra il contenuto più lungo che può portare
+  tfrGia0:52000, annoLav0:2001};
 
 if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
   const b = await apri({ larghezza: 1200 });
@@ -175,6 +178,12 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // riga dentro una griglia i cui contenuti vanno a gruppi di tre, e nessuna misura sa dire se
     // sfalsa le celle sotto o se va a capo in un punto stupido.
     fatti.push(await b.scatta('nota-datore', '.due:has(#notaDatore)'));
+    // IL RIQUADRO DEL TFR, che è nuovo di oggi e porta due caselle e una tendina sullo stesso
+    // asse. Si guarda che le tre righe siano allineate come quelle del fondo qui sopra — è la
+    // ragione per cui è un riquadro a sé — e che la nota sull'imposta sotto la prima casella non
+    // vada a capo in un punto stupido: è larga 134 px come tutte, ma porta una cifra E una
+    // percentuale, che è il contenuto più lungo di ogni suggerimento del modulo.
+    fatti.push(await b.scatta('riquadro-tfr', '.due:has(#tfrGia0)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
 
     // LA COMPOSIZIONE E LA SUA BARRA. Nessuna misura sa dire se quattro segmenti si distinguono,

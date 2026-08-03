@@ -137,7 +137,18 @@ function piano(D){
   const dentro = D.p.map(x => x.annoPens < V('ANNO0') ? 0 : x.fondo);
   const F = dentro.map(m => ({m, v: m, rend: 0, da: null, rata: null,
                               rate: 0, alCons: null, daCons: null}));
-  const T = D.p.map(() => ({pot: 0, messo: 0, anni: 0}));
+  // IL TFR GIÀ ACCANTONATO, riscritto da capo. `tfrConta` NON si importa dall'altra
+  // implementazione: si riapplica la regola qui, o questo file erediterebbe la decisione che
+  // dovrebbe controllare. Vale se ci sono l'importo E l'anno, e se resta almeno un esercizio di
+  // lavoro nel piano (chi ha smesso prima il TFR l'ha già in tasca).
+  const T = D.p.map((x, i) => {
+    const conta = x.tfrGia > 0 && x.annoLav != null && ult[i] >= V('ANNO0');
+    const anni  = conta ? Math.max(0, Math.min(V('ANNO0') - x.annoLav, 60)) : 0;
+    // montante = a·((1+r)^n − 1)/r, imponibile = a·n: la frazione scompone l'uno nell'altro
+    const q = anni > 0 && rTfr > 1e-9
+      ? anni * rTfr / (Math.pow(1 + rTfr, anni) - 1) : 1;
+    return conta ? {pot: x.tfrGia, messo: x.tfrGia * q, anni} : {pot: 0, messo: 0, anni: 0};
+  });
   const righe = [], inc = [], liq = [];
 
   for (let a = V('ANNO0'); a <= fine; a++){
@@ -176,12 +187,22 @@ function piano(D){
         E += x.pens * V('MENSILITA_PENSIONE')
              - irpefNetta(x.pens * V('MENSILITA_PENSIONE'), true);
 
-      // TFR lasciato in azienda: rivalutazione propria, liquidazione all'ultimo anno
-      if (!x.tfrAlFondo){
-        if (lavora){ T[i].pot = T[i].pot * (1 + rTfr) + tfrA; T[i].messo += tfrA; T[i].anni++; }
+      // TFR: rivalutazione propria, liquidazione all'ultimo anno. Solo l'ACCUMULO del flusso
+      // nuovo dipende dalla destinazione — quello già accantonato resta in azienda e si liquida
+      // comunque, anche per chi da un certo anno ha conferito al fondo.
+      {
+        if (lavora){
+          if (!x.tfrAlFondo){ T[i].pot = T[i].pot * (1 + rTfr) + tfrA;
+                              T[i].messo += tfrA; T[i].anni++; }
+          else T[i].pot *= (1 + rTfr);
+        }
         if (a === ult[i] && T[i].pot > 0){
-          const rif = (T[i].messo / T[i].anni) * 12;
-          const al  = irpef(rif) / rif;
+          // LE GUARDIE CI VOGLIONO ANCHE QUI. Prima `rif` e `al` erano scritte inline senza
+          // difese: con un pregresso e zero esercizi residui `T.anni` è 0, e questa
+          // implementazione avrebbe dato NaN dove il motore dà un numero — un confronto fra un
+          // NaN e un numero è falso, quindi sarebbe fallita su codice giusto.
+          const rif = T[i].anni > 0 ? (T[i].messo / T[i].anni) * 12 : T[i].messo;
+          const al  = rif > 0 ? irpef(rif) / rif : 0;
           E += T[i].pot - T[i].messo * al;
           liq.push({chi: i, a, lordo: T[i].pot, al, netto: T[i].pot - T[i].messo * al});
           T[i].pot = 0;
@@ -320,6 +341,9 @@ const base = {quanti:'2', cl3:100000, spesa:3300, spesaPens:'', cresc0:'', cresc
   fondo1:20000, pcVoi1:1, pcDat1:1.5, tfrDove1:'fondo', iscr1:2016, rita1:2052, quotaCap1:1,
   // vuoto, non assente: assente varrebbe '0' e vorrebbe dire «smesso nel 1900»
   ultimo0:'', ultimo1:'',
+  // il TFR già accantonato, scritto vuoto per esteso: su una casella nuova un fixture muto fa
+  // passare il confronto senza confrontare nulla, ed è il modo in cui questo file tace
+  tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:'',
   // L'ABITAZIONE, scritta per esteso anche quando non si usa. È la settima volta che questa
   // regola serve: un campo assente vale '0', e per `casaAnno` zero non è «nessuna scelta» —
   // sotto le quattro cifre vale come non compilato, quindi passerebbe lo stesso, ma `casaCosa`
@@ -330,6 +354,14 @@ const casi = {
   'i due, come stanno':       {},
   'una persona sola':         {quanti:'1'},
   'TFR in azienda':           {tfrDove0:'azienda', tfrDove1:'azienda'},
+  // I TRE CASI DEL PREGRESSO, e vanno tenuti distinti: col TFR nuovo al fondo si prova lo sgancio
+  // (il pregresso si liquida comunque), in azienda si prova che i due tronconi si sommano — anni
+  // compresi — e l'anno mancante prova il ramo che NON conta.
+  'pregresso, TFR nuovo al fondo':   {tfrGia0:52000, annoLav0:2001},
+  'pregresso, TFR nuovo in azienda': {tfrGia0:52000, annoLav0:2001, tfrDove0:'azienda'},
+  'pregresso in due, e uno smette prima': {tfrGia0:52000, annoLav0:2001,
+                                           tfrGia1:31000, annoLav1:2009, ultimo0:2035},
+  'pregresso senza l\'anno: non si conta': {tfrGia0:52000},
   'contribuzione al tetto':   {pc0:8, pc1:14},
   'oltre il tetto':           {pc0:30, pc1:35},
   'nessuno versa':            {pcVoi0:0, pcVoi1:0},
@@ -446,6 +478,10 @@ for (const [nome, over, prova, manca] of tutti){
       annoPens:x.annoPens, fondo:x.fondoScritto, pcVoi:x.pcVoi, pcDat:x.pcDat, pc:x.pc, cresc:x.cresc,
       anniFraz:x.anniFraz,
       ultimo:x.ultimo,
+      // I DUE DATI GREZZI DEL TFR PREGRESSO, non `tfrConta` né `tfrAnniPrima`: quelli sono già
+      // il risultato della regola che questa implementazione deve rifare da sé. Passarli
+      // significherebbe far verificare a questo file una decisione presa dall'altro.
+      tfrGia:x.tfrGia, annoLav:x.annoLav,
       tfrAlFondo:x.tfrAlFondo, iscr:x.iscr, rita:x.rita, quotaCap:x.quotaCap, forma:x.forma}))};
   const P = piano(D);
 

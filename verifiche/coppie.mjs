@@ -64,14 +64,24 @@ const M = new Function(src + `\nreturn {leggi, simula, spesaSostenibile, contrib
 // Diverse per struttura, non per cifre: una persona e due, chi lavora e chi è già in
 // pensione, il piano che regge e quello che si esaurisce, con e senza fondo, con e senza
 // casa da cambiare. Se una monotonia vale solo sul caso comodo, qui si vede.
-const COMUNE = {rend:4, infl:2, rendFondo:3, etaFine:95, nome0:'Anna', nome1:'Bruno'};
+const COMUNE = {rend:4, infl:2, rendFondo:3, etaFine:95, nome0:'Anna', nome1:'Bruno',
+  // il TFR già accantonato: nessuna base lo usa, e si scrive vuoto per dirlo invece di lasciarlo
+  // dedurre dal silenzio. Le coppie qui sotto lo accendono dove serve.
+  tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:''};
 const BASI = {
+  // UNA DELLE DUE BASI COL TFR GIÀ ACCANTONATO. Ne servono almeno due — una monotonia su una base
+  // sola è un esempio, non una monotonia — e servono su chi LAVORA ANCORA, perché chi ha smesso
+  // il TFR l'ha già in tasca. Vanno scelte fra quelle CAPIENTI o fra quelle che si esauriscono
+  // presto, mai fra quelle al limite: mettendone 45.000 su «solo TFR, niente contributi» il piano
+  // passava da esaurirsi a reggere, e la coppia sull'orizzonte perdeva il suo presupposto —
+  // rompendosi su codice giusto. Una base non è un contenitore neutro: cambiarla sposta tutte le
+  // coppie che ci girano sopra.
   'coppia che regge': {...COMUNE, quanti:'2', nascita0:1975, nascita1:1977,
     ral0:38000, ral1:33000, pens0:1500, pens1:1300, annoPens0:2042, annoPens1:2044,
     pcVoi0:1.2, pcVoi1:1.5, pcDat0:2, pcDat1:2, iscr0:2005, iscr1:2007,
     fondo0:60000, fondo1:120000, cl3:200000, spesa:2500,
     quotaCap0:0.5, quotaCap1:0.5, forma0:'vita', forma1:'vita',
-    tfrDove0:'fondo', tfrDove1:'fondo'},
+    tfrDove0:'fondo', tfrDove1:'fondo', tfrGia0:45000, annoLav0:2004},
   'coppia che si esaurisce': {...COMUNE, quanti:'2', nascita0:1975, nascita1:1977,
     ral0:28000, ral1:0, pens0:1100, pens1:700, annoPens0:2042, annoPens1:2044,
     pcVoi0:1, pcVoi1:0, pcDat0:1.5, pcDat1:0, iscr0:2010, iscr1:2012,
@@ -101,7 +111,7 @@ const BASI = {
   'smette molto prima della pensione': {...COMUNE, quanti:'1', nascita0:1972, ral0:42000,
     pens0:1500, annoPens0:2039, ultimo0:2032, pcVoi0:2, pcDat0:2, iscr0:2002,
     fondo0:150000, cl3:250000, spesa:2400, quotaCap0:0.5, forma0:'vita',
-    tfrDove0:'fondo'},
+    tfrDove0:'azienda', tfrGia0:70000, annoLav0:1996},
   'vende casa e va in affitto': {...COMUNE, quanti:'2', nascita0:1970, nascita1:1972,
     ral0:36000, ral1:30000, pens0:1450, pens1:1200, annoPens0:2037, annoPens1:2039,
     pcVoi0:1.5, pcVoi1:1.5, pcDat0:2, pcDat1:2, iscr0:2004, iscr1:2006,
@@ -175,6 +185,23 @@ const COPPIE = [
    metrica:'finale', verso:'giu',
    perché:'due anni di stipendio in meno, e due anni a carico del patrimonio',
    soloSe: d => d.ral0 && +d.annoPens0 > 2030},
+
+  // --- il TFR già accantonato ----------------------------------------------
+  // Il verso è ovvio, ed è per questo che vale scriverlo: un capitale che esiste e arriva alla
+  // cessazione non può lasciare il piano più povero. Se questa coppia si rompe, vuol dire che
+  // l'imposta della tassazione separata ha superato il lordo da qualche parte.
+  {nome:'20.000 € di TFR già accantonato in più', cambia:{tfrGia0:+20000},
+   metrica:'finale', verso:'su',
+   perché:'un capitale che arriva alla cessazione non può lasciarne meno alla fine',
+   soloSe: d => d.tfrGia0},
+  // A PARITÀ DI IMPORTO, PIÙ ANNI DI SERVIZIO. L'art. 19 divide per gli anni: più anni, reddito
+  // di riferimento più basso, aliquota più bassa. È la coppia che dimostra a cosa serve la
+  // casella dell'anno — se questo verso non tenesse, quella casella non starebbe facendo il suo
+  // lavoro, e i 10.483 € d'imposta evitata sarebbero un caso fortunato invece di una regola.
+  {nome:'stesso TFR, dieci anni di servizio in più', cambia:{annoLav0:-10},
+   metrica:'finale', verso:'su',
+   perché:'l\'aliquota media dell\'art. 19 scende col crescere degli anni: mai un\'imposta maggiore',
+   soloSe: d => d.tfrGia0},
 
   // --- il fondo pensione ---------------------------------------------------
   {nome:'20.000 € nel fondo in più', cambia:{fondo0:+20000}, metrica:'finale', verso:'su',

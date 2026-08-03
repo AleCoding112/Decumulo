@@ -72,12 +72,18 @@ for (let t=0; t<4000; t++){
     fondo0:Math.round(R(0,600000)), pcVoi0:+R(0,4).toFixed(1), pcDat0:+R(0,4).toFixed(1), pc0:'',
     pcMin0: P(['', 0, +R(0,4).toFixed(1)]),
     tfrDove0:P(['fondo','azienda']), iscr0:I(1980,2030),
+    // IL TFR GIÀ ACCANTONATO, e le sue tre combinazioni che contano: niente, importo senza anno
+    // (non si conta), importo con anno (si conta). Senza il caso vuoto fra i tiri, il ramo che
+    // NON conta non verrebbe mai percorso; senza l'anno sciolto dall'importo, la coppia
+    // incompleta resterebbe fuori dai 4.000 piani proprio dove può inventare un'aliquota.
+    tfrGia0: P(['', '', Math.round(R(0,300000))]), annoLav0: P(['', I(1970,2030)]),
     quotaCap0:+R(0,1).toFixed(2),
     nascita1:n1, ral1:Math.round(R(0,200000)),
     pens1:Math.round(R(0,6000)), annoPens1:I(1995,2055),
     fondo1:Math.round(R(0,600000)), pcVoi1:+R(0,4).toFixed(1), pcDat1:+R(0,4).toFixed(1), pc1:'',
     pcMin1: P(['', 0, +R(0,4).toFixed(1)]),
     tfrDove1:P(['fondo','azienda']), iscr1:I(1980,2030),
+    tfrGia1: P(['', '', Math.round(R(0,300000))]), annoLav1: P(['', I(1970,2030)]),
     quotaCap1:+R(0,1).toFixed(2)};
   DATI.rita0=I(2026,DATI.annoPens0); DATI.rita1=I(2026,DATI.annoPens1);
   // l'ultimo anno di lavoro: vuoto (fino alla propria pensione), prima, o anche dopo —
@@ -377,7 +383,15 @@ for (let t=0; t<4000; t++){
     if (!Number.isFinite(pv.finale)) ko('la prova di tenuta produce un finale non finito','');
     else if (pv.finale > r.finale + 1e-6 && !confine)
       ko('la prova di tenuta MIGLIORA il piano', `${Math.round(r.finale)} → ${Math.round(pv.finale)}`);
-    if (r.annoZero !== null && (pv.annoZero === null || pv.annoZero > r.annoZero))
+    // LA STESSA ECCEZIONE VALE QUI, e per mesi non c'era. Questa invariante ha violato una volta
+    // su 4.000 il 03/08/2026 senza che si riuscisse a riprodurla; il seme è saltato fuori
+    // cambiando il generatore, e il piano colpevole dice tutto: `confine` è vero, il patrimonio
+    // finale PEGGIORA (−1.556.098 → −1.584.933) e solo l'anno di esaurimento slitta di uno.
+    // È l'effetto di confine già dichiarato dieci righe più su — la prova porta il montante sotto
+    // la soglia dei montanti contenuti, esce il 100% in capitale invece del 60%, e più denaro
+    // subito sposta in là l'anno in cui si arriva a zero pur lasciandone meno alla fine.
+    // Applicarla al solo `finale` e non all'`annoZero` era una svista: la causa è una sola.
+    if (r.annoZero !== null && (pv.annoZero === null || pv.annoZero > r.annoZero) && !confine)
       ko('con la prova il patrimonio dura di più', `${r.annoZero} → ${pv.annoZero}`);
     if (M.simula({...s, prova: 0}).finale !== r.finale)
       ko('prova a zero esercizi non coincide col piano di partenza','');

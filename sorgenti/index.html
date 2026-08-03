@@ -652,6 +652,57 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
   </div>
 
+  <!-- UN RIQUADRO SUO, e non due righe infilate fra i contributi. Il TFR già accantonato è uno
+       STOCK, e il riquadro dei contributi si intitola «Quanto ci entra ogni anno»: mettercelo
+       dentro avrebbe lasciato due somme ferme sotto un titolo che promette un flusso.
+       Qui le tre righe stanno sullo stesso asse e ripetono la forma del riquadro del fondo qui
+       sopra — quanto c'è, da quando, e poi dove va — così le due posizioni si leggono uguali.
+       La destinazione viene DOPO le due caselle: prima si dice cosa c'è, poi che fine fa quello
+       che matura da qui in avanti. Nell'ordine inverso la tendina sembrerebbe governare anche il
+       pregresso, che invece non segue quella scelta. -->
+  <div class="gruppo rigalav">Il TFR
+  <span>Il trattamento di fine rapporto matura comunque: queste righe dicono quanto ce n'è già da
+  parte e dove va quello nuovo. Senza, il piano si calcola lo stesso e viene per difetto.
+  <a href="tfr-fondo-o-azienda.html">Nel fondo o in azienda →</a></span>
+  </div>
+  <div class="due">
+    <!-- LO STOCK, che fino al 03/08/2026 il conto ignorava: partiva da zero oggi, e per un
+         cinquantenne sono ~70.000 € in euro di oggi — spesso più del fondo pensione, che invece
+         la casella qui sopra chiede. Non lo copriva nemmeno il patrimonio, che è «quanto è
+         investito e disponibile»: un credito verso il datore non lo è.
+         L'etichetta nomina TUTTI E DUE i posti in cui può stare, perché chi lavora in un'azienda
+         sopra i cinquanta dipendenti ce l'ha all'INPS e non si riconoscerebbe in «in azienda». -->
+    <div class="voce rigalav">Quanto è già accantonato<br>
+      <span class="come">in azienda o al Fondo di Tesoreria INPS</span></div>
+    <div class="cella"><input type="text" inputmode="decimal" id="tfrGia0" value="" placeholder="es. 52.000">
+      <u class="hint" id="tfrGiaNota0">&nbsp;</u></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="tfrGia1" value="" placeholder="es. 52.000">
+      <u class="hint" id="tfrGiaNota1">&nbsp;</u></div>
+
+    <!-- L'ANNO NON È UNA RIFINITURA. L'art. 19 TUIR porta il TFR a «reddito di riferimento»
+         dividendolo per gli anni di servizio: con l'importo ma senza gli anni il riferimento
+         passerebbe da 31.498 a 188.986 € e l'aliquota dal 24,1% al 38,9%, cioè 11.624 €
+         d'imposta inventata. Ricavarli dall'importo sbaglia meno ma sempre in eccesso, perché la
+         carriera cresce e il ricavo li sottostima: si chiedono.
+         La riga sotto dice A COSA SERVE, o una casella che chiede un anno di trent'anni fa senza
+         spiegarsi sembra una curiosità. -->
+    <div class="voce rigalav">Da che anno si lavora<br>
+      <span class="come">decide l'aliquota della liquidazione</span></div>
+    <div class="cella"><input type="text" inputmode="numeric" id="annoLav0" value="" placeholder="es. 2001"></div>
+    <div class="cella p2"><input type="text" inputmode="numeric" id="annoLav1" value="" placeholder="es. 2001"></div>
+
+    <div class="voce rigalav">Dove va da qui in avanti<br>
+      <span class="come">il pregresso resta dov'è in ogni caso</span></div>
+    <div class="cella"><select id="tfrDove0"><option value="fondo">nel fondo</option>
+      <option value="azienda">in azienda</option></select>
+      <u class="hint" id="tfrAnno0">&nbsp;</u></div>
+    <div class="cella p2"><select id="tfrDove1"><option value="fondo">nel fondo</option>
+      <option value="azienda">in azienda</option></select>
+      <u class="hint" id="tfrAnno1">&nbsp;</u></div>
+  </div>
+
+  <p class="avviso" id="avvisoTfr" hidden></p>
+
   <div class="gruppo largo rigalav">Quanto ci entra ogni anno
   <!-- UNA RIGA SOLA, e va tenuta tale: tutto il resto è coperto da messaggi che compaiono a chi
        riguardano — la condizione della quota del datore da `notaDatore`, i casi da correggere da
@@ -722,17 +773,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
     <div class="somma-sep rigalav"></div>
 
-    <div class="voce rigalav">Destinazione del <b>TFR</b><br>
-      <a class="mini" href="tfr-fondo-o-azienda.html">fondo o azienda →</a></div>
-    <div class="cella"><select id="tfrDove0"><option value="fondo">nel fondo</option>
-      <option value="azienda">in azienda</option></select>
-      <u class="hint" id="tfrAnno0">&nbsp;</u></div>
-    <div class="cella p2"><select id="tfrDove1"><option value="fondo">nel fondo</option>
-      <option value="azienda">in azienda</option></select>
-      <u class="hint" id="tfrAnno1">&nbsp;</u></div>
-
-    <div class="somma-sep rigalav"></div>
-
+    <!-- IL TOTALE COMPRENDE IL TFR anche se la sua tendina ora sta nel riquadro qui sopra: legge
+         `x.tfrAlFondo` dallo stato, non dalla casella accanto, quindi non ha bisogno di esserle
+         adiacente. Separare il comando dal suo totale è un costo che si paga volentieri per
+         tenere gli stock fuori da un riquadro che si intitola «ogni anno». -->
     <div class="voce totale rigalav">Totale che entra nel fondo</div>
     <div class="cella"><b class="somma grande" id="totFondo0">—</b></div>
     <div class="cella p2"><b class="somma grande" id="totFondo1">—</b></div>
@@ -1396,6 +1440,17 @@ function leggi(){
     pcMin: EL('pcMin'+i).value.trim() === '' ? null : numFra('pcMin'+i, 0, 100),
     pc:       fra(EL('pc'+i).value === '' ? num('pcVoi'+i) : num('pc'+i), 0, 100),
     tfrAlFondo: EL('tfrDove'+i).value !== 'azienda',
+    // IL TFR GIÀ ACCANTONATO, che è uno stock e non un flusso: quello fermo in azienda o presso
+    // il Fondo di Tesoreria INPS. Fino al 03/08/2026 il conto lo ignorava — partiva da zero oggi —
+    // e per un cinquantenne sono ~70.000 € in euro di oggi, spesso più del fondo pensione.
+    // L'ANNO SERVE, e non è una rifinitura: l'art. 19 TUIR porta il TFR a «reddito di riferimento»
+    // dividendolo per gli anni di servizio. Sommare il pregresso all'imponibile senza i suoi anni
+    // manderebbe il riferimento da 31.498 a 188.986 € e l'aliquota dal 24,1% al 38,9%: 11.624 €
+    // d'imposta inventata. Ricavarli dall'importo sbaglia meno ma sempre in eccesso, perché la
+    // carriera cresce e il ricavo li sottostima. Si chiedono.
+    tfrGia:      numFra('tfrGia'+i, 0, 1e9),
+    tfrGiaVuoto: EL('tfrGia'+i).value.trim() === '',
+    annoLav:     annoOpt('annoLav'+i),
     iscr:     numFra('iscr'+i, 1900, ANNO0 + 80),
     rita:     annoScritto('rita'+i) ? numFra('rita'+i, 0, ANNO0 + 80) : 0,
     quotaCap: numFra('quotaCap'+i, 0, 1),
@@ -1429,8 +1484,21 @@ function leggi(){
     x.giaInPens = !x.annoPensVuoto && x.annoPens < ANNO0;
     x.fondoScritto = x.fondo;
     if (x.giaInPens) x.fondo = 0;
-    // il TFR non è una casella: matura comunque, ed è una quota fissa della RAL
+    // il TFR che MATURA non è una casella: viene comunque, ed è una quota fissa della RAL
     x.tfrAnno = x.ral * TFR_SU_RAL;
+    // QUANDO IL PREGRESSO SI CONTA. Una condizione sola, letta qui e usata in tutti e tre i posti
+    // che la guardano — il seme del motore, le caselle da spegnere, l'avviso — perché tre copie
+    // della stessa regola divergono.
+    // · SERVONO TUTTI E DUE I DATI: senza l'anno l'aliquota sarebbe inventata, e questa correzione
+    //   sposta il piano verso l'OTTIMISMO, che è la direzione da cui questo conto si guarda. Si
+    //   preferisce non contarlo e dirlo (`avvisoTfr`) piuttosto che indovinare.
+    // · CHI HA SMESSO DI LAVORARE PRIMA DI OGGI NON LO SCRIVE: il suo TFR è già stato incassato e
+    //   sta nel patrimonio. Contarlo sarebbe contarlo due volte, e per giunta il ciclo parte da
+    //   ANNO0 — `anno === x.ultimo` non scatterebbe mai e il capitale resterebbe intrappolato,
+    //   né rivalutato né liquidato. Comprende chi è già in pensione, che è il caso più comune.
+    x.tfrConta = !x.tfrGiaVuoto && x.annoLav !== null && x.ultimo >= ANNO0 && x.tfrGia > 0;
+    // gli anni PREGRESSI dell'art. 19: quelli di servizio che il piano non simula
+    x.tfrAnniPrima = x.tfrConta ? Math.max(0, Math.min(ANNO0 - x.annoLav, 60)) : 0;
     // il coefficiente dipende dall'età a cui converte, la forma lo riduce ancora
     x.etaPens = x.annoPens - x.nascita;
     x.coeffEta = coeffEta(x.etaPens);
@@ -1613,14 +1681,32 @@ function simula(s, spesaMese){
                           // le forme che consumano: quante rate mancano, con quale legge di
                           // aliquota, e da che anno. A zero finché non si sceglie una di quelle.
                           rate: 0, aliqCons: null, daCons: null, nCons: 0 }));
+  const incassi = [], rite = [], righe = [], liquidazioni = [];
+  // rivalutazione reale del TFR in azienda, al netto del 17% di imposta sostitutiva.
+  // STA PRIMA DEL SALVADANAIO perché il seme la usa: scomporre il montante già accantonato negli
+  // accantonamenti che l'hanno formato richiede il tasso, ed è lo stesso che il piano userà in
+  // avanti — la scomposizione all'indietro e l'accumulo in avanti parlano così la stessa lingua.
+  const rivTfr = (1 + (TFR_RIV_FISSA + TFR_RIV_QUOTA * s.infl) * (1 - TFR_IMPOSTA_RIV))
+                 / (1 + s.infl) - 1;
   // Il TFR lasciato in azienda: un salvadanaio a parte, che si rivaluta con la sua regola e
   // arriva tutto insieme nell'ultimo anno di lavoro. `messo` tiene la somma degli accantonamenti
   // (è quella che paga l'imposta), `pot` il montante rivalutato.
-  const tfr = P.map(() => ({ pot: 0, messo: 0, anni: 0 }));
-  const incassi = [], rite = [], righe = [], liquidazioni = [];
-  // rivalutazione reale del TFR in azienda, al netto del 17% di imposta sostitutiva
-  const rivTfr = (1 + (TFR_RIV_FISSA + TFR_RIV_QUOTA * s.infl) * (1 - TFR_IMPOSTA_RIV))
-                 / (1 + s.infl) - 1;
+  // NON PARTE PIÙ DA ZERO. Chi ha vent'anni di TFR fermo in azienda o al Fondo di Tesoreria INPS
+  // li aveva visti sparire dal conto: `tfrGia` è il montante di oggi, `tfrAnniPrima` gli anni di
+  // servizio che il piano non simula e che l'art. 19 pretende per l'aliquota.
+  const tfr = P.map(x => {
+    const anni = x.tfrAnniPrima;
+    // L'IMPONIBILE È MENO DEL MONTANTE: la rivalutazione ha già pagato il 17% anno per anno e
+    // all'erogazione è esente, quindi tassare l'intero stock sarebbe tassarla due volte.
+    // Con accantonamenti costanti e tasso r, montante = a·((1+r)^n − 1)/r e imponibile = a·n,
+    // da cui la frazione qui sotto. A tasso nullo o senza anni vale 1, cioè tutto imponibile:
+    // il ripiego cade dal lato prudente, che è quello giusto quando si aggiunge denaro al piano.
+    const quotaMessa = anni > 0 && rivTfr > 1e-9
+      ? anni * rivTfr / (Math.pow(1 + rivTfr, anni) - 1) : 1;
+    return x.tfrConta
+      ? { pot: x.tfrGia, messo: x.tfrGia * quotaMessa, anni }
+      : { pot: 0, messo: 0, anni: 0 };
+  });
 
   // L'ABITAZIONE. Un evento solo, in un anno solo: entra il ricavato e da lì in poi cambia la
   // spesa. `casa.attiva` è falso finché la scelta è «resto» o manca l'anno, e allora tutto
@@ -1672,9 +1758,19 @@ function simula(s, spesaMese){
         daPensioni += x.pens * MENS_PENS;
 
       // --- il TFR lasciato in azienda. Matura comunque: la scelta è solo dove va a finire.
-      if (!x.tfrAlFondo){
-        if (lavora[i]){ tfr[i].pot = tfr[i].pot * (1 + rivTfr) + tfrA;
-                        tfr[i].messo += tfrA; tfr[i].anni++; }
+      // LO SGANCIO DA `tfrAlFondo`, ed è la ragione per cui questa feature esiste. Prima tutto il
+      // blocco stava sotto `if (!x.tfrAlFondo)`, e chi aveva conferito il TFR al fondo si vedeva
+      // sparire anche quello accantonato PRIMA di conferire — che invece resta in azienda, come
+      // dice `tfr-fondo-o-azienda.html`: «le quote già accantonate non seguono la scelta
+      // successiva, e restano dove sono». La pagina era più precisa del conto.
+      // Ora solo l'ACCUMULO del flusso nuovo dipende dalla destinazione; la rivalutazione di
+      // quello che c'è già e la sua liquidazione avvengono comunque.
+      {
+        if (lavora[i]){
+          if (!x.tfrAlFondo){ tfr[i].pot = tfr[i].pot * (1 + rivTfr) + tfrA;
+                              tfr[i].messo += tfrA; tfr[i].anni++; }
+          else tfr[i].pot *= (1 + rivTfr);
+        }
         if (anno === x.ultimo && tfr[i].pot > 0){
           // l'imposta si paga sugli accantonamenti, non sulla rivalutazione: quella il 17%
           // l'ha già pagato anno per anno
@@ -2323,6 +2419,15 @@ function calc(){
                     'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];               // fondo
     s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
 
+    // LE DUE CASELLE DEL TFR GIÀ ACCANTONATO seguono una condizione PIÙ LARGA di `giaInPens`, e
+    // per questo non stanno nell'elenco qui sopra: chi ha smesso di lavorare nel 2024 e va in
+    // pensione nel 2030 non è ancora in pensione, ma il TFR l'ha già incassato — sta nel suo
+    // patrimonio, e riscriverlo qui sarebbe contarlo due volte. La condizione è `ultimo < ANNO0`,
+    // la stessa che il motore guarda in `tfrConta`, così le caselle si spengono esattamente dove
+    // il conto smette di ascoltarle.
+    s.indici.forEach(i => ['tfrGia', 'annoLav'].forEach(k => {
+      EL(k + i).disabled = s.p[i].ultimo < ANNO0; }));
+
     // la seconda spesa esiste solo se c'è un passaggio fra due fasi: senza esercizi di attività
     // le due coincidono, e tenerla attiva farebbe scrivere un numero che il conto scarta
     EL('spesaPens').disabled = s.tuttoInPens;
@@ -2457,6 +2562,16 @@ function calc(){
         : "l'esercizio precedente la decorrenza");
     }
 
+    // IL PREGRESSO: quanto se ne perde in imposta, che è la sola cosa che non si legge dalla
+    // busta paga. Dice l'aliquota accanto alla cifra perché è quella che sorprende — su una
+    // carriera lunga la tassazione separata sta molto sotto la marginale, e vederlo qui evita
+    // che il numero grande a sinistra venga letto come se arrivasse tutto.
+    // Tace su chi ha già smesso: la sua casella è spenta e il TFR è nel patrimonio.
+    H('tfrGiaNota'+i, x.ultimo < ANNO0 ? 'già liquidato: sta nel patrimonio'
+      : !x.tfrConta ? '&nbsp;'
+      : (() => { const al = aliquotaTfr(x.tfrGia, x.tfrAnniPrima);
+          return `alla cessazione, meno ~${E0(x.tfrGia * al)} di imposta (${fmt(al*100,1)}%)`; })());
+
     // il TFR: quanto è, e che nel tetto non conta — accanto alla sua casella, non nel totale
     H('tfrAnno'+i, x.tfrAnno < 0.5 ? '&nbsp;'
       : E0(x.tfrAnno) + " l'anno" + (x.tfrAlFondo
@@ -2501,6 +2616,35 @@ function calc(){
       return null;
     }).filter(Boolean);
     const el = EL('avvisoDatore');
+    el.hidden = guai.length === 0;
+    el.innerHTML = guai.join('<br>');
+  })();
+
+  // L'AVVISO SUL TFR GIÀ ACCANTONATO, con la stessa regola dell'altro: non è un'istruzione
+  // preventiva, compare a chi ci è dentro e dice cosa fare adesso.
+  // I DUE CASI SONO DI NATURA DIVERSA, ed è voluto che stiano nello stesso posto: il primo è un
+  // dato incompleto che sospende il conteggio, il secondo è un dato completo che però si presta a
+  // essere scritto due volte. Il secondo è il rischio vero di questa casella — il doppio
+  // conteggio è l'unico modo in cui può far uscire un piano MIGLIORE del vero.
+  (() => {
+    const guai = s.p.map(x => {
+      if (x.ultimo < ANNO0 || x.tfrGiaVuoto || !(x.tfrGia > 0)) return null;
+      // manca l'anno: non si indovina, si chiede. Senza, l'art. 19 darebbe un'aliquota molto più
+      // alta del vero, e su questa casella l'errore andrebbe verso l'ottimismo.
+      if (x.annoLav === null)
+        return `<b>${x.nome}</b>: il TFR già accantonato <b>non viene conteggiato</b> finché non si
+          indica da che anno si lavora. Serve a calcolare l'aliquota della liquidazione, che si
+          ottiene dividendo il TFR per gli anni di servizio: senza, risulterebbe molto più alta
+          del vero.`;
+      // c'è tutto, ma il TFR nuovo va al fondo: non è un errore — è il caso di chi ha conferito
+      // dopo qualche anno — e proprio per questo va detto dove finisce ciascuna delle due parti.
+      if (x.tfrAlFondo)
+        return `<b>${x.nome}</b>: qui va <b>solo il TFR rimasto in azienda o all'INPS</b>. Quello
+          confluito nel fondo dopo l'adesione è già compreso in <i>quanto c'è oggi</i> nel fondo
+          pensione: scriverlo anche qui lo conterebbe due volte.`;
+      return null;
+    }).filter(Boolean);
+    const el = EL('avvisoTfr');
     el.hidden = guai.length === 0;
     el.innerHTML = guai.join('<br>');
   })();
@@ -4116,6 +4260,11 @@ function pianoInFoglio(s, r){
     perPersona('Ultimo anno di lavoro', x => x.ultimo),
     perPersona('Fondo pensione, quanto c\'è oggi', x => x.fondoScritto),
     perPersona('Anno di iscrizione al fondo', x => x.iscr),
+    // IL VALORE SCRITTO, non quello già filtrato da `tfrConta`: il foglio esiste per essere
+    // rifatto a mano, e chi lo rifà deve vedere cosa ha dichiarato — anche quando il conto non
+    // l'ha usato. Se mancasse l'anno, la riga sotto direbbe da sé perché la cifra non torna.
+    perPersona('TFR già accantonato, in azienda o all\'INPS', x => x.tfrGia),
+    perPersona('Da che anno si lavora', x => x.annoLav === null ? '' : x.annoLav),
     [],
     [G("QUELLO CHE C'È OGGI")],
     // IL PATRIMONIO SI PORTA DIETRO COM'È FATTO. Da quando non si chiede più intero, la sola

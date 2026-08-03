@@ -57,7 +57,8 @@ node verifiche/a-schermo.mjs     nove pagine × quattro larghezze in due assetti
 node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con gli occhi: il
                                 modulo dei contributi, la nota sulla quota del datore (una frase
                                 a tutta riga in una griglia a gruppi di tre: si guarda che non
-                                sfalsi le celle sotto), il risultato, il
+                                sfalsi le celle sotto), il riquadro del TFR con le sue due
+                                caselle nuove, il risultato, il
                                 cursore portato sotto quello che si versa, e i due pezzi a
                                 390 px. Afferma una cosa sola, che la console sia pulita
 ```
@@ -754,7 +755,8 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
 | Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | **ora è misurato, non solo dichiarato**: il riscontro sulla tabella da RAL a netto dà scarto nullo fra 18.000 e 50.000 € e **esattamente −1.200 €** a 15.000. Sotto quella soglia il destinatario tipo di questo conto non c'è, e lo scostamento è noto al centesimo |
 | La **perequazione a fasce** delle pensioni non è modellata | le tre percentuali e le soglie lette sulla norma, non sul commento: il DM 19/11/2025 le applica *per scaglioni* | l'errore è nullo sotto 4 volte il minimo (2.447 €/mese) e piccolo sopra: 2,8% su trent'anni a 3.500 €/mese. Ora è dichiarato con la sua misura |
-| L'invariante «la prova di tenuta non fa durare di più il patrimonio» ha violato **una volta su 4.000** il 03/08/2026, e non è stato possibile riprodurla | ritrovare il piano che la viola, e vedere se è l'effetto di confine già documentato | l'eccezione di legge (sotto la soglia dei montanti contenuti esce più capitale) è applicata al controllo sul **patrimonio finale** e non a quello sull'**anno di esaurimento**: è la spiegazione probabile. Ma dopo aver seminato il generatore e corretto la copertura su `pcMin` non ricompare in **80.000 piani**, e non è stata messa a tacere: se torna, adesso ferma la catena e dice con quale seme riprodurla |
+| Il TFR già accantonato è un **montante**, e l'imponibile va separato dalle rivalutazioni: la scomposizione usa il tasso del modello, non quelli storici | i tassi ISTAT degli anni trascorsi, per persona | opera su una frazione contenuta del montante (~6% su venticinque anni), e il ripiego cade dal lato prudente: senza anni vale 1, cioè tutto imponibile. È dichiarato in `il-metodo.html` e in `tfr-fondo-o-azienda.html` |
+| Nessuno può impedire di scrivere nel TFR già accantonato **anche quello confluito nel fondo** | niente che il conto possa vedere: le due cifre stanno in due posti che non si parlano | è l'unico errore di compilazione che rende il piano **migliore** del vero, e per questo ha una frase sua (`avvisoTfr`) che compare esattamente a chi può commetterlo — chi scrive un importo e manda il TFR nuovo al fondo |
 | Gli **scaglioni IRPEF sono nominali** e il conto lavora in reale: il modello assume che vengano adeguati all'inflazione | niente da verificare: è un'ipotesi sul legislatore | rappresentare l'alternativa vorrebbe dire prevedere una legge di bilancio. Dichiarata, non sostituita da una previsione |
 
 **Come si usa.** Quando una riga si chiude, si toglie. Quando ne nasce una, si scrive qui invece

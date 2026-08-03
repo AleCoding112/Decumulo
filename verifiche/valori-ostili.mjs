@@ -27,7 +27,8 @@ const src = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
 
 const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','ral0','ral1',
   'pens0','pens1','annoPens0','annoPens1','fondo0','fondo1','iscr0','iscr1','pcVoi0','pcVoi1',
-  'pcDat0','pcDat1','cresc0','cresc1','tfrDove0','tfrDove1',
+  'pcDat0','pcDat1','cresc0','cresc1','tfrDove0','tfrDove1','tfrGia0','tfrGia1',
+  'annoLav0','annoLav1',
   'ultimo0','ultimo1',
   'patrimonio','spesa','spesaPens',
   'rend','rendFondo','infl','etaFine','quotaCap0','quotaCap1','forma0','forma1','rita0','rita1',

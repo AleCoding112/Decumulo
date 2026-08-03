@@ -57,7 +57,7 @@ const BASE = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1
   cresc0:'', cresc1:'', spesaPens:'',
   tipoFondo0:'collettiva', tipoFondo1:'collettiva', ultimo0:'', ultimo1:'',
   etaFine:95, fondo0:60000, fondo1:120000, quotaCap0:0.5, quotaCap1:1,
-  forma0:'vita', forma1:'rev', tfrDove0:'fondo', tfrDove1:'azienda', rita0:2042, rita1:2044};
+  forma0:'vita', forma1:'rev', tfrDove0:'fondo', tfrDove1:'azienda', tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:'', rita0:2042, rita1:2044};
 
 const SCENARI = {
   'due persone, piano che regge':   BASE,
@@ -586,6 +586,52 @@ for (const [nome, DATI, attesa] of [
     /discende dal contratto collettivo/.test(pagina));
 }
 
+// --- IL TFR GIÀ ACCANTONATO: l'avviso, e la nota sull'imposta ---------------
+// Le due caselle nuove possono sbagliarsi in due modi, e nessuno dei due è un errore di calcolo:
+// scrivere l'importo senza l'anno (l'aliquota sarebbe inventata) e scriverlo due volte, qui e nel
+// fondo. Il secondo è il rischio VERO di questa feature — è l'unico modo in cui può far uscire un
+// piano migliore del vero — e ha una frase sua.
+console.log('\n— il TFR già accantonato: quello che la pagina dice —');
+for (const [nome, DATI, atteso] of [
+  ['casella vuota: nessun avviso',   {...BASE, quanti:'1'}, null],
+  ['importo senza l\'anno',          {...BASE, quanti:'1', tfrGia0:52000},
+                                     /non viene conteggiato/],
+  ['importo e anno, TFR nuovo al fondo: il rischio del doppio conteggio',
+                                     {...BASE, quanti:'1', tfrGia0:52000, annoLav0:2001},
+                                     /conterebbe due volte/],
+  ['importo e anno, TFR nuovo in azienda: niente da segnalare',
+                                     {...BASE, quanti:'1', tfrGia0:52000, annoLav0:2001,
+                                      tfrDove0:'azienda'}, null],
+  // chi ha smesso prima di oggi ha la casella spenta: l'avviso sarebbe una domanda a chi non può
+  // rispondere, e il conto quel numero non lo guarda comunque
+  ['chi ha già smesso: la casella è spenta, e la pagina tace',
+                                     {...BASE, quanti:'1', annoPens0:2020, tfrGia0:52000},
+                                     null]
+]){
+  const {scritte, elementi} = esegui(DATI);
+  const frase = (scritte.avvisoTfr || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (atteso === null)
+    c(nome, elementi.avvisoTfr.hidden === true, frase.slice(0, 80) || '(tace)');
+  else
+    c(nome, elementi.avvisoTfr.hidden === false && atteso.test(frase), frase.slice(0, 100));
+}
+{
+  // LA NOTA SOTTO LA CASELLA dice l'imposta, che è la sola cosa che dalla busta paga non si legge.
+  const {scritte, elementi} = esegui({...BASE, quanti:'1', tfrGia0:52000, annoLav0:2001});
+  const nota = (scritte.tfrGiaNota0 || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  c('la nota porta l\'imposta e la sua aliquota', /di imposta/.test(nota) && /%/.test(nota),
+    nota.slice(0, 80));
+  c('e l\'aliquota è quella bassa dell\'art. 19, non la marginale',
+    (+(nota.match(/\((\d+[,.]\d+)%\)/) || [,'99'])[1].replace(',', '.')) < 30, nota);
+  // le caselle si spengono dove il conto smette di ascoltarle: una casella viva che non decide
+  // niente è peggio di una spenta, perché fa scrivere un numero e non lo usa
+  const gia = esegui({...BASE, quanti:'1', annoPens0:2020});
+  c('a chi ha già smesso le due caselle sono spente, non ignorate',
+    gia.elementi.tfrGia0.disabled === true && gia.elementi.annoLav0.disabled === true);
+  c('e a chi lavora ancora sono attive',
+    elementi.tfrGia0.disabled === false && elementi.annoLav0.disabled === false);
+}
+
 // --- la prova di tenuta, nei suoi tre rami ---------------------------------
 // I tre rami dicono cose opposte. Quello che conta è che «regge lo stesso» non compaia mai su un
 // piano che alla prova non regge: sarebbe la peggiore delle rassicurazioni. Gli scenari sono
@@ -1014,6 +1060,11 @@ console.log('\n— chi è già in pensione —');
   const attive = (r, ids) => ids.every(k => r.elementi[k] && r.elementi[k].disabled === false);
   const ATTIVITA = ['ral0','cresc0','ultimo0'];
   const FONDO    = ['fondo0','iscr0','pcVoi0','pcDat0','tfrDove0'];
+  // LE DUE CASELLE DEL TFR PREGRESSO SEGUONO UNA CONDIZIONE PIÙ LARGA, e tenerle in `FONDO`
+  // faceva fallire un controllo giusto: chi ha la decorrenza NELL'ANNO IN CORSO non è «già in
+  // pensione» — il fondo lo riscuote dentro il piano — ma ha smesso di lavorare l'anno scorso,
+  // quindi il TFR l'ha già in tasca. `giaInPens` non lo coglie, `ultimo < ANNO0` sì.
+  const TFRGIA   = ['tfrGia0','annoLav0'];
 
   const gia = esegui({...UNO, annoPens0:2015});
   c('il verdetto esce, invece di chiedere una casella già compilata',
@@ -1054,6 +1105,14 @@ console.log('\n— chi è già in pensione —');
   const ora = esegui({...UNO, annoPens0:2026});
   c('la decorrenza nell\'anno in corso non è «già in pensione»',
     ora.elementi.avvisoPensione.hidden === true && attive(ora, FONDO));
+  // IL CONFINE DENTRO IL CONFINE. Stessa persona, stesso anno: il fondo è ancora in gioco, il TFR
+  // no. Chi decorre nel 2026 ha smesso di lavorare nel 2025, e quella liquidazione l'ha già
+  // ricevuta: sta nel patrimonio, e riscriverla sarebbe contarla due volte.
+  c('ma il TFR già accantonato sì: quello l\'ha incassato l\'anno scorso',
+    spente(ora, TFRGIA) && attive(ora, ['fondo0']),
+    'due condizioni diverse sulla stessa persona, ed è giusto così');
+  c('e a chi lavora ancora restano attive',
+    attive(esegui({...UNO, annoPens0:2035, ral0:42000}), TFRGIA));
   c('e il fondo entra davvero nel conto', testo(ora) !== testo(gia), testo(ora).slice(0, 70));
 
   // REVERSIBILITÀ: correggere l'anno rimette tutto in gioco. Una disattivazione che non si
