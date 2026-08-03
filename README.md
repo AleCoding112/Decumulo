@@ -34,6 +34,17 @@ lancia da solo:
 | `node verifiche/scarica.mjs` | il piano portato via: che il foglio di calcolo sia un file valido e dica quello che si vede |
 | `node verifiche/scadenze.mjs` | se i parametri sono ancora quelli correnti |
 
+Fuori dalla catena perché **non afferma niente**: stampa un rapporto da leggere.
+
+```
+node studio.mjs     le domande di sostanza fatte al motore — coppia o soli, fondo o
+                    investimenti, quanto pesa davvero il comparto, quando morde il tetto.
+                    Da rilanciare a ogni cambio dei parametri: se una risposta si sposta,
+                    o è cambiata la legge o è cambiato qualcosa che non doveva.
+                    In testa al file ci sono le DUE TRAPPOLE DI LETTURA in cui sono
+                    caduto scrivendolo, ed è la parte che vale più dei numeri
+```
+
 Fuori dalla catena, perché apre Chrome e va lanciato quando si tocca il layout o si aggiunge
 una casella:
 
