@@ -1,7 +1,7 @@
 // ============================================================================
 //  IL CONSENSO PRIMA DELLA MISURAZIONE.
 //
-//  Dal 01/08/2026 il sito misura le visite con Google Analytics. È l'unica
+//  Il sito misura le visite con Google Analytics. È l'unica
 //  cosa che manda dati fuori dal browser, e in Italia richiede un consenso
 //  PREVENTIVO: il tag non può stare nel documento, deve nascere da un sì.
 //

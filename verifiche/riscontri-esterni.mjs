@@ -93,8 +93,8 @@ console.log('\n  — gli ancoraggi enunciati dalla norma (circolare AdE 4/E del 
 }
 
 // --- e che quelle cifre entrino DAVVERO nel conto ----------------------------
-// Un riscontro sulla formula non basta: la formula potrebbe essere giusta e non essere chiamata
-// da nessuno. È esattamente com'era fino al 02/08/2026 — la legge esisteva, il conto no.
+// Un riscontro sulla formula non basta: la formula può essere giusta e non essere chiamata da
+// nessuno, cioè la legge rappresentata e il conto che non la usa.
 // Qui si guarda il numero che la pagina produce, e si pretende che la detrazione ci sia dentro.
 console.log('\n  — e che la detrazione arrivi fino al netto, non solo alla formula —');
 {

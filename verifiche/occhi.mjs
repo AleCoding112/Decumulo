@@ -170,10 +170,11 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     await b.compila(DATI);
 
     fatti.push(await b.scatta('modulo-contributi', '.gruppo.largo.rigalav + .due'));
-    // il punto più stretto del modulo: un menu chiuso da 134 px con tre voci. Misurato, la voce
-    // più larga ne occupa 93 su 94 utili — un carattere in più e si tronca, e il troncamento è
-    // invisibile a ogni misura perché non sborda nulla.
-    fatti.push(await b.scatta('menu-adesione', '.due:has(#tipoFondo0)'));
+    // QUI SI FOTOGRAFAVA IL MENU DELL'ADESIONE, che era il punto più stretto del modulo. Al suo
+    // posto c'è la nota sulla quota del datore, che ha il problema opposto: è una frase a tutta
+    // riga dentro una griglia i cui contenuti vanno a gruppi di tre, e nessuna misura sa dire se
+    // sfalsa le celle sotto o se va a capo in un punto stupido.
+    fatti.push(await b.scatta('nota-datore', '.due:has(#notaDatore)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
 
     // LA COMPOSIZIONE E LA SUA BARRA. Nessuna misura sa dire se quattro segmenti si distinguono,

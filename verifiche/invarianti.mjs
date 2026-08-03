@@ -71,14 +71,12 @@ for (let t=0; t<4000; t++){
     pens0:Math.round(R(0,6000)), annoPens0:I(1995,2055),
     fondo0:Math.round(R(0,600000)), pcVoi0:+R(0,4).toFixed(1), pcDat0:+R(0,4).toFixed(1), pc0:'',
     pcMin0: P(['', 0, +R(0,4).toFixed(1)]),
-    tipoFondo0:P(['collettiva','individuale']),
     tfrDove0:P(['fondo','azienda']), iscr0:I(1980,2030),
     quotaCap0:+R(0,1).toFixed(2),
     nascita1:n1, ral1:Math.round(R(0,200000)),
     pens1:Math.round(R(0,6000)), annoPens1:I(1995,2055),
     fondo1:Math.round(R(0,600000)), pcVoi1:+R(0,4).toFixed(1), pcDat1:+R(0,4).toFixed(1), pc1:'',
     pcMin1: P(['', 0, +R(0,4).toFixed(1)]),
-    tipoFondo1:P(['collettiva','individuale']),
     tfrDove1:P(['fondo','azienda']), iscr1:I(1980,2030),
     quotaCap1:+R(0,1).toFixed(2)};
   DATI.rita0=I(2026,DATI.annoPens0); DATI.rita1=I(2026,DATI.annoPens1);
@@ -221,7 +219,7 @@ for (let t=0; t<4000; t++){
     if (sogliaVera > 0){
       if (M.contributi(x, sogliaVera - 0.01).dat !== 0)
         ko('il datore versa sotto la quota minima del contratto', `soglia ${sogliaVera}`);
-      if (x.pcDat > 0 && x.ral > 0 && !x.fondoIndividuale && M.contributi(x, sogliaVera).dat === 0)
+      if (x.pcDat > 0 && x.ral > 0 && M.contributi(x, sogliaVera).dat === 0)
         ko('il datore non versa nemmeno alla soglia', `soglia ${sogliaVera}`);
     } else if (M.contributi(x, 0).dat !== 0)
       // soglia zero: la quota scatta a QUALUNQUE versamento positivo, ma non a zero
@@ -232,18 +230,21 @@ for (let t=0; t<4000; t++){
     // ha cominciato a violare 393 volte — perché con un minimo più alto di quello che si versa
     // il primo punto sta SOTTO il gradino, dove il datore giustamente non versa, e il secondo
     // sopra. Stava misurando il gradino e chiamandolo crescita.
-    if (x.pcDat > 0 && x.ral > 0 && !x.fondoIndividuale){
+    if (x.pcDat > 0 && x.ral > 0){
       const sopra = Math.max(sogliaVera, 0.01);
       if (M.contributi(x, sopra).dat !== M.contributi(x, sopra * 5 + 1).dat)
         ko('il contributo del datore cresce col versamento (non deve)', `soglia ${sogliaVera}`);
     }
-    // Su un fondo sottoscritto per conto proprio il datore non versa a NESSUNA percentuale.
-    // Basta una combinazione che lo faccia comparire perché il conto prometta denaro che non
-    // arriverà, ed è l'errore in direzione ottimistica: quello che fa versare di più.
-    if (x.fondoIndividuale)
-      for (const pc of [0, 0.1, x.pcVoi, x.pcVoi + 1, 50])
-        if (M.contributi(x, pc).dat !== 0)
-          ko('fondo individuale con contributo del datore', `al ${pc}%`);
+    // LA QUOTA SCRITTA NON PUÒ SPARIRE. Qui c'era l'invariante opposta — su un fondo individuale
+    // il datore non versa a nessuna percentuale — ed è stata tolta col campo che la reggeva: un
+    // `if` mai vero è un controllo verde che non controlla. Questa è la sua sostituta e guarda
+    // dall'altra parte: sopra il gradino la quota dichiarata entra per intero, sempre.
+    if (x.pcDat > 0 && x.ral > 0){
+      const atteso = x.ral * x.pcDat / 100;
+      for (const pc of [Math.max(sogliaVera, 0.01), sogliaVera + 1, 50])
+        if (Math.abs(M.contributi(x, pc).dat - atteso) > 1e-9)
+          ko('la quota del datore dichiarata non entra per intero', `al ${pc}%`);
+    }
     if (M.spazioDeducibile(x) > M.TETTO_DEDUZIONE + 1e-9 || M.spazioDeducibile(x) < 0)
       ko('spazio deducibile fuori scala', M.spazioDeducibile(x));
     if (!Number.isFinite(M.costoAnnuo(x, x.pcVoi + 1))) ko('costo annuo NaN','');
@@ -434,11 +435,11 @@ c('aliquota TFR: non dipende dal totale ma dalla retribuzione annua',
 // ============================================================================
 //  E ADESSO SI FALLISCE DAVVERO.
 //
-//  Fino al 03/08/2026 questo file stampava «VIOLATA (2849x)» e usciva con
-//  codice ZERO. `verifica.mjs` giudica un passo solo dal codice di uscita,
-//  quindi la catena dichiarava «tutto verde» mentre l'allarme suonava — e per
-//  giunta il riepilogo mostra le ultime otto righe, che le dieci `ok` qui sotto
-//  spingevano fuori dallo schermo. La rete c'era, il pesce passava.
+//  Stampare «VIOLATA (2849x)» e uscire con codice ZERO non serve a niente:
+//  `verifica.mjs` giudica un passo solo dal codice di uscita, quindi la catena
+//  direbbe «tutto verde» mentre l'allarme suona — e per giunta il riepilogo
+//  mostra le ultime otto righe, che le dieci `ok` qui sotto spingono fuori
+//  dallo schermo. La rete ci sarebbe, il pesce passerebbe.
 //
 //  Le tre violazioni che nascondeva erano: due invarianti scadute (misuravano
 //  una regola che il modello non ha più) e un artefatto della prova (l'anno del

@@ -12,9 +12,8 @@ const PAGINA = new URL('./sito/index.html', import.meta.url).pathname;
 const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
   .map(m => m[1]).find(t => /function simula\(/.test(t));
 
-// UN CASO DI PROVA INVENTATO. Fino al 01/08/2026 qui c'erano i dati veri di due persone,
-// ereditati dal progetto da cui questo è stato staccato, e il commento diceva il contrario.
-// Sostituiti con cifre costruite, tonde e riconoscibili come tali.
+// UN CASO DI PROVA INVENTATO: cifre costruite, tonde e riconoscibili come tali. Nessun dato di
+// persone vere, nemmeno ereditato dal progetto da cui questo è stato staccato.
 //
 // LE PROPRIETÀ CHE IL CASO DEVE AVERE, perché è su queste che poggiano i controlli, non sui
 // numeri: due persone con decorrenze e iscrizioni diverse (due incassi in due esercizi diversi
@@ -33,7 +32,6 @@ const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/s
 const DATI = {cl3:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
   forma0:'vita', forma1:'vita', nome0:'Anna', nome1:'Bruno', pc0:'', pc1:'',
   nascita0:1975, ral0:58000, pens0:2600, annoPens0:2042,
-  tipoFondo0:'collettiva', tipoFondo1:'collettiva',
   // vuoto = fino alla propria pensione. Assente varrebbe '0', cioè «non lavora da sempre»
   ultimo0:'', ultimo1:'',
   // LA QUOTA MINIMA DEL CONTRATTO: vuota vale «quello che verso è il minimo», ed è il caso base.
@@ -209,11 +207,10 @@ t('il TFR conferito finisce anche nella base imponibile: è reddito mai tassato'
 t('la base imponibile non può mai superare il montante',
   r.incassi.every(i => i.base <= i.montante + 1e-9));
 
-// L'ULTIMO ANNO DI LAVORO È DI CIASCUNO (31/07/2026). Prima era uno solo per tutti e due,
-// ricavato dalla PRIMA delle due decorrenze: chi aveva accanto una persona più grande smetteva
-// di lavorare quando andava in pensione l'altra, e perdeva stipendio, contributi, quota del
-// datore e TFR di tutti gli anni in mezzo. Qui la coppia ha nove anni di distanza fra le due
-// decorrenze, che è esattamente il caso che prima veniva sbagliato.
+// L'ULTIMO ANNO DI LAVORO È DI CIASCUNO. Ricavarne uno solo dalla PRIMA delle due decorrenze
+// farebbe smettere di lavorare chi ha accanto una persona più grande quando va in pensione
+// l'altra, togliendogli stipendio, contributi, quota del datore e TFR di tutti gli anni in mezzo.
+// Qui la coppia ha nove anni di distanza fra le due decorrenze, cioè il caso che lo mostra.
 console.log('\n— l\'ultimo anno di lavoro è di ciascuno —');
 const conUltimo = (o) => { const salva = {...DATI}; Object.assign(DATI, o);
                            const q = M.leggi(); Object.assign(DATI, salva); return q; };
@@ -530,32 +527,38 @@ t('nessuna soglia cablata: senza minimo scritto il gradino segue quello che vers
   M.contributi({...A, pcVoi:0.4}, 0.4).scatta && M.contributi({...A, pcVoi:3}, 2.9).dat === 0,
   'con 0,4% scatta a 0,4%; con 3% a 2,9% ancora no');
 
-// --- L'ADESIONE, NON IL TIPO DI FONDO ---------------------------------------
-// Il menu chiedeva «di categoria» oppure «aperto o PIP» e su quello azzerava la quota del
-// datore. Ma su un fondo APERTO ad adesione collettiva il datore versa, se l'accordo lo prevede,
-// e quella quota consuma il tetto come le altre: art. 8 c. 4 D.Lgs. 252/2005 pone il limite PER
-// PERSONA sui contributi del lavoratore e del datore, senza guardare la forma pensionistica.
-// Chi dichiarava il vero si vedeva quindi allargare lo spazio deducibile di tutta la quota
-// aziendale — 760 € e due punti di RAL sul caso di prova — cioè in direzione ottimistica.
-// I due errori si mascheravano a vicenda: il fondo scendeva (prudente) e il tetto saliva.
-console.log('\n— l\'adesione decide la quota del datore, non il tipo di fondo —');
+// --- UNA FONTE SOLA PER LA QUOTA DEL DATORE ---------------------------------
+// Prima c'era un menu che, su una delle sue voci, azzerava la percentuale scritta qui accanto:
+// «il datore versa» risultava dichiarato in due posti, che potevano dissentire. È da lì che era
+// nato il difetto dei 760 €, quando la prima versione del menu azzerava sul TIPO di fondo: il
+// tetto è PER PERSONA e comprende i contributi del lavoratore e del datore (art. 8 c. 4
+// D.Lgs. 252/2005), quindi non guarda la forma pensionistica. I due errori si mascheravano a
+// vicenda — il fondo scendeva (prudente) e il tetto saliva (ottimistico).
+// La cura è stata togliere la seconda fonte, non spostarne il confine. Questi test tengono ferma
+// quella scelta: la percentuale scritta si conta, e fondo e tetto si muovono INSIEME.
+console.log('\n— la quota del datore ha una fonte sola: la percentuale scritta —');
 {
-  const conAdesione = v => ({...A, adesione: v, fondoIndividuale: v === 'individuale'});
-  const dat = v => M.contributi(conAdesione(v), A.pcVoi).dat;
-  t('col fondo di categoria la quota del datore entra',
-    dat('collettiva') > 0, `${eur(dat('collettiva'))} €`);
-  t('su un fondo aperto ad adesione AZIENDALE entra allo stesso modo',
-    Math.abs(dat('aziendale') - dat('collettiva')) < 1e-9,
-    'il tipo di fondo non decide: decide cosa il contratto riconosce');
-  t('e solo su quello scelto per conto proprio non entra', dat('individuale') === 0);
-  // il pezzo che l'ha fatto scoprire: il tetto è per persona e comprende la quota del datore
-  t('e nel caso aziendale consuma il tetto come le altre',
-    Math.abs(M.pcTetto(conAdesione('aziendale')) - M.pcTetto(conAdesione('collettiva'))) < 1e-9
-    && M.pcTetto(conAdesione('individuale')) > M.pcTetto(conAdesione('aziendale')) + 1,
-    `aziendale ${M.pcTetto(conAdesione('aziendale')).toFixed(2)}% · `
-    + `per conto proprio ${M.pcTetto(conAdesione('individuale')).toFixed(2)}%`);
-  // un valore sconosciuto — un salvataggio vecchio, un fuzz — deve cadere sul ramo prudente
-  t('un valore sconosciuto non azzera la quota di nessuno', dat('boh') > 0);
+  t('la percentuale scritta entra per intero, sopra il gradino',
+    Math.abs(quota(A.pcVoi).dat - A.ral * A.pcDat / 100) < 1e-9,
+    `${eur(quota(A.pcVoi).dat)} € = ${fmt(A.pcDat)}% di ${eur(A.ral)} €`);
+  t('e non c\'è più nessun campo che possa toglierla',
+    [{...A, adesione:'individuale'}, {...A, fondoIndividuale:true}, {...A, tipoFondo:'boh'}]
+      .every(x => Math.abs(M.contributi(x, A.pcVoi).dat - quota(A.pcVoi).dat) < 1e-9),
+    'un salvataggio vecchio porta ancora quei campi: devono restare muti');
+  // IL TEST CHE IL DIFETTO DEI 760 € AVREBBE FATTO FALLIRE. Le due grandezze leggono la stessa
+  // quota: se una la conta e l'altra no, qui si vede. Con due fonti non era esprimibile.
+  t('fondo e tetto si muovono insieme: azzerare la quota li sposta tutti e due',
+    (() => {
+      const senza = {...A, pcDat: 0};
+      return M.contributi(senza, A.pcVoi).dat === 0
+        && M.spazioDeducibile(senza) > M.spazioDeducibile(A) + 1
+        && M.pcTetto(senza) > M.pcTetto(A) + 1; })(),
+    `tetto ${M.pcTetto(A).toFixed(2)}% con la quota · `
+    + `${M.pcTetto({...A, pcDat:0}).toFixed(2)}% senza`);
+  t('e la quota consuma il tetto esattamente per quello che vale',
+    Math.abs((M.spazioDeducibile({...A, pcDat:0}) - M.spazioDeducibile(A)) - quota(A.pcVoi).dat)
+      < 1e-9,
+    'né più né meno: è la somma che il difetto dei 760 € contava due volte');
 }
 
 // --- COME SI LEGGE UNA PERCENTUALE, che decide l'articolo -------------------
@@ -565,9 +568,8 @@ console.log('\n— l\'adesione decide la quota del datore, non il tipo di fondo 
 // come 0,96 si SCRIVE «1,0%», si legge «uno virgola zero» e vuole «l'», mentre la sua parte
 // intera è 0.
 // --- LA BUSTA PAGA, RICAVATA INVECE CHE CHIESTA -----------------------------
-// La casella del netto è sparita il 02/08/2026: chiedeva il netto di un mese ordinario, la
-// pagina istruiva a escludere le mensilità aggiuntive e il conto moltiplicava per dodici, così
-// tredicesima e quattordicesima non entravano mai nel piano. La RAL le comprende tutte.
+// Il netto non è una casella: chiedere quello di un mese ordinario e moltiplicarlo per dodici
+// lascerebbe tredicesima e quattordicesima fuori dal piano. La RAL le comprende tutte.
 // --- IL TAGLIO DEL CUNEO: due istituti, un tratto solo -----------------------
 // Somma sotto i 20.000, ulteriore detrazione sopra. Verificati sulla circolare AdE 4/E del
 // 16 maggio 2025, che cita la legge alla lettera. Modellarne uno solo avrebbe fabbricato uno
@@ -640,10 +642,10 @@ t('e la preposizione articolata segue la stessa regola',
   M.perc(3,'sul') === 'sul 3%' && M.perc(1.2,'sul') === "sull'1,2%" && M.perc(0,'sul') === 'sullo 0%');
 
 // --- LA QUOTA MINIMA DEL CONTRATTO, quando non coincide con quella versata ---
-// IL DIFETTO CHE CHIUDE, misurato il 02/08/2026: chi versa il 3% avendo un minimo contrattuale
-// dell'1,2% si sentiva dire «sotto il 3% versato oggi il datore non versa: 760 € l'anno di
-// contributo che andrebbe perso». Falso — fino all'1,2% il datore versa — e detto con una cifra.
-// Il gradino stava su `pcVoi` perché il minimo non lo sapevamo; ora è una casella facoltativa.
+// IL DIFETTO CHE CHIUDE: col gradino piazzato su `pcVoi`, chi versa il 3% avendo un minimo
+// contrattuale dell'1,2% si sente dire «sotto il 3% versato oggi il datore non versa: 760 €
+// l'anno di contributo che andrebbe perso». Falso — fino all'1,2% il datore versa — e detto con
+// una cifra. Il minimo è quindi una casella facoltativa.
 console.log('\n— la quota minima del contratto, se si versa di più —');
 const B = {...A, pcVoi: 3, pcMin: 1.2};
 t('il datore versa sopra il MINIMO, non sopra quello che si versa',
@@ -684,25 +686,23 @@ t('la prima fetta rende molto più della seconda', (() => {
     const d = (quota(A.pcVoi+1).tot - quota(A.pcVoi).tot) / M.costoAnnuo(A, A.pcVoi+1);
     return `prima fetta ${p.toFixed(1)}× · seconda ${d.toFixed(1)}×`; })());
 
-// Il gradino esiste perché esiste il contratto collettivo che lo prevede, e quel contratto
-// individua il fondo. Chi ha sottoscritto per conto proprio un fondo aperto o un PIP non ha
-// né il gradino né la quota: contargliela sarebbe l'errore in direzione ottimistica, quello
-// che porta a versare di più contando su denaro che non arriverà.
-console.log('\n— il tipo di fondo: la quota del datore segue il contratto, non il versamento —');
+// LA CASELLA VUOTA È LA VIA D'USCITA, ed è l'unica. Chi non riceve una quota dal datore — un PIP,
+// un fondo aperto sottoscritto per conto proprio — quella percentuale nei propri documenti non ce
+// l'ha: lascia la casella vuota e il conto è giusto senza che nessuno debba dichiarare la forma
+// del proprio fondo. Qui c'era il blocco opposto, che provava l'azzeramento sul menu.
+console.log('\n— senza quota del datore: la casella vuota basta da sola —');
 {
-  const ind = {...A, fondoIndividuale: true};
-  t('sul fondo sottoscritto per conto proprio il datore non versa a nessuna percentuale',
-    [0, 0.1, A.pcVoi, A.pcVoi + 5, 50].every(pc => M.contributi(ind, pc).dat === 0),
-    `sul fondo di categoria all'${fmt(A.pcVoi)}% arrivano ${eur(quota(A.pcVoi).dat)} €`);
+  const senza = {...A, pcDat: 0};
+  t('a casella vuota il datore non versa a nessuna percentuale',
+    [0, 0.1, A.pcVoi, A.pcVoi + 5, 50].every(pc => M.contributi(senza, pc).dat === 0),
+    `con la quota scritta all'${fmt(A.pcVoi)}% arrivano ${eur(quota(A.pcVoi).dat)} €`);
   t('quello che versa il lavoratore invece resta, identico',
-    Math.abs(M.contributi(ind, 3).lav - M.contributi(A, 3).lav) < 1e-9);
+    Math.abs(M.contributi(senza, 3).lav - M.contributi(A, 3).lav) < 1e-9);
   t('e lo spazio deducibile si allarga, perché non lo consuma più la quota del datore',
-    M.spazioDeducibile(ind) > M.spazioDeducibile(A) + 1,
-    `${eur(M.spazioDeducibile(ind))} € contro ${eur(M.spazioDeducibile(A))} €`);
+    M.spazioDeducibile(senza) > M.spazioDeducibile(A) + 1,
+    `${eur(M.spazioDeducibile(senza))} € contro ${eur(M.spazioDeducibile(A))} €`);
   t('il piano peggiora: nel fondo entra meno',
-    M.simula({...s, p: s.p.map((x,i) => i === 0 ? ind : x)}).finale < M.simula(s).finale - 1);
-  t('«collettiva» e un valore non riconosciuto si comportano uguale: non si toglie a chi non ha detto niente',
-    M.contributi({...A, fondoIndividuale: false}, A.pcVoi).dat === quota(A.pcVoi).dat);
+    M.simula({...s, p: s.p.map((x,i) => i === 0 ? senza : x)}).finale < M.simula(s).finale - 1);
 }
 
 // LA PROVA DI TENUTA. Il verdetto nasce da una traiettoria sola; questa misura quanto dipenda
@@ -826,9 +826,9 @@ t(`il primo sta al ${fmt((marginale*100).toFixed(0))}%: 100 € in più ne fanno
 t('sopra il tetto lo sconto si ferma',
   Math.abs(M.scontoIrpef(A, 99) - M.scontoIrpef(A, M.pcTetto(A))) < 1e-9);
 // LA QUOTA DEL DATORE CONSUMA IL TETTO ANCHE PER CHI OGGI VERSA ZERO: scatta appena si versa.
-// Calcolandola su quello che si versa oggi, per quelli il tetto risultava più in là del vero di
-// tanti punti quanti ne mette l'azienda, e la pagina indicava «dove finisce la deduzione» un
-// punto in cui era già finita (31/07/2026).
+// Calcolandola su quello che si versa oggi, per quelli il tetto finirebbe più in là del vero di
+// tanti punti quanti ne mette l'azienda, e la pagina indicherebbe «dove finisce la deduzione» un
+// punto in cui è già finita.
 t('la fine della deduzione conta la quota del datore come sarà, non com\'è oggi', (() => {
   const zero = {...A, pcVoi: 0, pcDat: 2, ral: 38000};
   const atteso = (M.TETTO_DEDUZIONE - 38000 * 2 / 100) / 38000 * 100;
@@ -901,8 +901,8 @@ const alTetto = M.pcTetto(A), oltre = Math.min(M.pcMassimo(A), alTetto + 10);
 const sTetto = M.conAlt(s, 0, 'pc', alTetto), sOltre = M.conAlt(s, 0, 'pc', oltre);
 t('il cursore non si ferma al tetto: oltre si versa, solo senza sconto',
   M.pcMassimo(A) > alTetto + 1, `massimo ${M.pcMassimo(A).toFixed(1)}% (tetto a ${alTetto.toFixed(1)}%)`);
-// L'UNICO LIMITE È LA BUSTA PAGA. Fino al 02/08/2026 ce n'era un secondo, il 50% della RAL, ed
-// era una convenzione nostra sul comportamento della gente messa dove sta un vincolo.
+// L'UNICO LIMITE È LA BUSTA PAGA. Un secondo limite al 50% della RAL sarebbe una convenzione
+// sul comportamento della gente messa dove sta un vincolo.
 t('si ferma dove il versamento mangerebbe tutto lo stipendio netto',
   Math.abs(M.pcMassimo(A) - M.pcSpendibile(A)) < 1e-9 && M.pcMassimo(A) < 100,
   `massimo ${M.pcMassimo(A).toFixed(1)}%`);

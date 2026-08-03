@@ -88,12 +88,10 @@ const SCENARI = {
   // col rendimento basso il pareggio capitale/rendita si rovescia: è il ramo in cui la frase
   // scrive «la rendita è già avanti» invece di una soglia
   'rendimento basso: la rendita si riprende': {...BASE, rend:1},
-  // il fondo sottoscritto per conto proprio: niente quota del datore, e la sezione 1 non deve
-  // parlare di un gradino che lì non c'è
-  'fondo aperto, con la quota del datore scritta lo stesso':
-    {...BASE, tipoFondo0:'individuale', tipoFondo1:'individuale'},
-  'fondo aperto, senza quota del datore':
-    {...BASE, tipoFondo0:'individuale', tipoFondo1:'individuale', pcDat0:'', pcDat1:''},
+  // chi dal datore non riceve niente: la sezione 1 non deve parlare di un gradino che lì non c'è.
+  // Erano due scenari sul fondo sottoscritto per conto proprio; il campo che li distingueva non
+  // c'è più, e ne resta quello che descrive il fatto invece della forma del fondo.
+  'senza quota del datore': {...BASE, pcDat0:'', pcDat1:''},
   // l'ultimo anno di lavoro di ciascuno: il caso in cui resta un tratto senza reddito da
   // lavoro né trattamento, che è la ragione per cui la casella esiste
   'uno smette molto prima della propria pensione': {...BASE, ultimo0:2030},
@@ -202,11 +200,11 @@ const c = (nome, cond, extra = '') => {
 const PERSONA = /\b(vostr\w+|voi|avete|siete|potete|dovete|scrivete|versate|muovete|percepite|prevedete|indicatela|lasciate|smettiate|perdereste|tuo|tua|tuoi|tue|puoi|devi|hai)\b/gi;
 const SPORCO  = /\b(undefined|NaN|\[object|Infinity)\b/;
 
-// LA RISCRITTURA LASCIATA A METÀ. Il 02/08/2026 il ramo dell'erogazione a rate scriveva, in
-// pagina e in produzione, «il residuo è di 32.092 €, cioè la solo la rivalutazione maturata nel
-// frattempo»: un pezzo di frase vecchia rimasto sotto quella nuova. Nessun controllo la vedeva —
-// non ci sono `undefined`, i numeri sono giusti, il registro è impersonale — e nel sorgente la
-// frase è spezzata su tre righe dentro un template literal, dove l'occhio non la ricompone.
+// LA RISCRITTURA LASCIATA A METÀ, cioè un pezzo di frase vecchia rimasto sotto quella nuova:
+// «il residuo è di 32.092 €, cioè la solo la rivalutazione maturata nel frattempo». Nessun altro
+// controllo la vede — non ci sono `undefined`, i numeri sono giusti, il registro è impersonale —
+// e nel sorgente la frase è spezzata su tre righe dentro un template literal, dove l'occhio non
+// la ricompone.
 // Quello che resta sempre falso, in italiano, è un articolo seguito da un altro articolo o da un
 // avverbio che non concorda: sono i due detriti che una sostituzione a metà lascia dietro.
 // Poche coppie, scelte perché non hanno un uso legittimo: «il solo» esiste, «la solo» no.
@@ -347,8 +345,6 @@ for (const [nome, DATI, atteso] of [
   ['versa, datore vuoto',        {...BASE, quanti:'1', pcVoi0:3, pcDat0:''}, /dal datore non entra niente/],
   ['datore sì, propria vuota',   {...BASE, quanti:'1', pcVoi0:'', pcDat0:2}, /va scritto .*0/],
   ['tutte e due vuote',          {...BASE, quanti:'1', pcVoi0:'', pcDat0:''},/non affluisce alcun contributo/],
-  ['fondo sottoscritto da sé',   {...BASE, quanti:'1', pcVoi0:3, pcDat0:2, tipoFondo0:'individuale'},
-                                                                            /non viene conteggiata/],
   ['tutto a posto: nessun avviso', {...BASE, quanti:'1', pcVoi0:1.2, pcDat0:2}, null]
 ]){
   const {scritte, elementi} = esegui(DATI);
@@ -404,9 +400,7 @@ for (const [nome, DATI, atteso] of [
   ['e resta visibile dopo aver risposto',          {...BASE, quanti:'1', pcVoi0:3, pcMin0:1.2}, true],
   ['a chi non versa niente no: lì è vera comunque',{...BASE, quanti:'1', pcVoi0:0, pc0:0}, false],
   ['e senza quota del datore nemmeno, perché non c\'è gradino',
-   {...BASE, quanti:'1', pcVoi0:3, pc0:2, pcDat0:''}, false],
-  ['né su un fondo sottoscritto per conto proprio',
-   {...BASE, quanti:'1', pcVoi0:3, pc0:2, tipoFondo0:'individuale'}, false]
+   {...BASE, quanti:'1', pcVoi0:3, pc0:2, pcDat0:''}, false]
 ]){
   const {elementi} = esegui(DATI);
   c(nome, elementi.chiediMin0.hidden === !atteso,
@@ -422,12 +416,12 @@ for (const [nome, DATI, atteso] of [
 }
 
 // --- un ottimo non si indica su un piano che si esaurisce -------------------
-// IL DIFETTO CHE QUESTI CONTROLLI TENGONO CHIUSO, misurato il 02/08/2026: su un piano che si
-// esauriva nel 2028 la pagina scriveva «il punto più alto è il 50%, vale 32.082 € in più», col
-// pulsante che ci portava — e seguendolo il patrimonio si esauriva nel 2027, un anno PRIMA. Il
-// verdetto in cima diceva «non sostenibile» e il cursore, venti righe sotto, consigliava di
-// accelerare. La causa: sotto zero il patrimonio smette di rendere, quindi massimizzare il
-// finale su una traiettoria già negativa premia i versamenti più alti.
+// IL DIFETTO CHE QUESTI CONTROLLI TENGONO CHIUSO: su un piano che si esaurisce nel 2028 la
+// pagina indicava «il punto più alto è il 50%, vale 32.082 € in più», col pulsante che ci
+// portava — e seguendolo il patrimonio si esauriva un anno PRIMA. Il verdetto in cima diceva
+// «non sostenibile» e il cursore, venti righe sotto, consigliava di accelerare. La causa: sotto
+// zero il patrimonio smette di rendere, quindi massimizzare il finale su una traiettoria già
+// negativa premia i versamenti più alti.
 // I tre rami hanno tre frasi diverse, e il terzo — il piano che REGGE grazie al versamento — è
 // il più prezioso: trasforma un «non sostenibile» in una cosa da fare. Costa cercarlo (serve un
 // fondo che renda molto più del patrimonio), ma esiste, e senza questo controllo la frase più
@@ -455,9 +449,9 @@ for (const [nome, DATI, atteso] of [
 }
 
 // --- il punto più alto dell'erogazione, e la premessa che lo annuncia -------
-// LA PREMESSA E IL RIQUADRO SI SONO GIÀ CONTRADDETTI UNA VOLTA. Fino al 02/08/2026 la premessa
-// diceva «per la seconda non è possibile [individuare un ottimo]» mentre il passo 1 scriveva
-// «il punto più alto è cominciare nel …». Ed è una distinzione di sostanza, non di parole: sul
+// LA PREMESSA E IL RIQUADRO POSSONO CONTRADDIRSI: una premessa che dice «per la seconda non è
+// possibile [individuare un ottimo]» mentre il passo 1 scrive «il punto più alto è cominciare
+// nel …». Ed è una distinzione di sostanza, non di parole: sul
 // passo 1 i due rami finiscono tutti e due in patrimonio, quindi il metro non favorisce nessuno;
 // sui passi 2 e 3 si confronta un lascito con un assegno, ed è lì che il metro non decide.
 // Il controllo tiene insieme le tre cose: la frase, la promessa e il pulsante.
@@ -530,32 +524,66 @@ for (const [nome, DATI] of Object.entries({
     !/l'orizzonte scritto sopra/.test(dopo));
 }
 
-// --- il tipo di fondo: quello che la pagina PROMETTE, non solo quello che calcola ---
-// Il modello è coperto dai controlli e dalle invarianti. Qui si guarda un'altra cosa: che
-// nessuna frase continui a dire «basta versare la quota minima perché scattino X € dall'azienda»
-// a chi quei soldi non li prenderà. Il numero giusto sotto una frase sbagliata resta una
-// promessa falsa, e la sezione 1 esiste apposta per fare quella promessa.
-// COME SI RICONOSCE UNA PROMESSA, e perché non basta nominare l'azienda. Fino al 02/08/2026
-// questo controllo cercava anche la stringa «dall'azienda», e ha dato rosso su un codice giusto
-// appena quella è diventata il NOME DI UNA VOCE DEL MENU: la frase che dice «l'adesione va
-// segnata dall'azienda» nomina un'opzione, non promette un euro. Cercava un indizio invece del
-// fatto. Restano i quattro marcatori che una promessa la fanno davvero — «scattino», «fa
-// scattare», «andrebbe perso», «che oggi non arrivano» — e tutti portano una cifra con sé.
-console.log('\n— il tipo di fondo, in quello che la pagina scrive —');
-for (const [nome, DATI] of Object.entries({
-  'fondo di categoria':      BASE,
-  'aperto, accordo aziendale': {...BASE, tipoFondo0:'aziendale', tipoFondo1:'aziendale'},
-  'fondo scelto da sé':      {...BASE, tipoFondo0:'individuale', tipoFondo1:'individuale'}
-})){
+// --- quello che la pagina PROMETTE, non solo quello che calcola --------------
+// Il modello è coperto dai controlli e dalle invarianti. Qui si guarda un'altra cosa: che nessuna
+// frase dica «basta versare la quota minima perché scattino X € dall'azienda» a chi quei soldi
+// non li prenderà. Il numero giusto sotto una frase sbagliata resta una promessa falsa, e la
+// sezione 1 esiste apposta per fare quella promessa.
+// COME SI RICONOSCE UNA PROMESSA, e perché non basta nominare l'azienda: cercando la stringa
+// «dall'azienda» questo controllo darebbe rosso su codice giusto, perché l'azienda si nomina anche
+// senza promettere un euro. Sarebbe un indizio al posto del fatto. I quattro marcatori cercati
+// sono quelli che una promessa la fanno davvero — «scattino», «fa scattare», «andrebbe perso»,
+// «che oggi non arrivano» — e tutti portano una cifra con sé.
+// ORA LA CONDIZIONE È LA CASELLA: si promette a chi una quota l'ha dichiarata, e a nessun altro.
+console.log('\n— la promessa segue la casella, in quello che la pagina scrive —');
+for (const [nome, DATI, attesa] of [
+  ['quota del datore scritta', BASE, true],
+  ['casella a zero',           {...BASE, pcDat0:0,  pcDat1:0},  false],
+  ['casella vuota',            {...BASE, pcDat0:'', pcDat1:''}, false]
+]){
   const {scritte} = esegui(DATI);
   const tutto = Object.values(scritte).join(' ').replace(/<[^>]+>/g, ' ');
   const promette = /scattin\w+|andrebbe perso|fa scattare|che oggi non arrivano/.test(tutto);
-  const individuale = DATI.tipoFondo0 === 'individuale';
-  c(`${nome}: la quota dell'azienda ${individuale ? 'non va promessa' : 'va promessa'}`,
-    promette === !individuale, promette ? 'la promette' : 'non la promette');
-  if (individuale)
-    c(`${nome}: e la pagina dice perché`,
-      /non viene conteggiata/.test(tutto) && /non spetta/.test(tutto));
+  c(`${nome}: la quota dell'azienda ${attesa ? 'va promessa' : 'non va promessa'}`,
+    promette === attesa, promette ? 'la promette' : 'non la promette');
+}
+
+// --- LA NOTA SULLA QUOTA DEL DATORE, che ha preso il posto del menu ---------
+// Compare solo se una percentuale c'è scritta — prima sarebbe una premessa a una casella vuota —
+// ed è UNA SOLA anche in coppia. Dice la condizione senza scartare il numero: è la differenza fra
+// informare e decidere al posto di chi compila, ed è tutta la ragione per cui il menu è uscito.
+console.log('\n— la nota sulla quota del datore —');
+for (const [nome, DATI, attesa] of [
+  ['con la percentuale scritta compare',      {...BASE, quanti:'1', pcDat0:2},          true],
+  ['con la casella vuota no',                 {...BASE, quanti:'1', pcDat0:''},         false],
+  ['con lo zero scritto nemmeno',             {...BASE, quanti:'1', pcDat0:0},          false],
+  ['in coppia basta che uno ce l\'abbia',     {...BASE, pcDat0:'', pcDat1:2},           true],
+  ['e se nessuno dei due ce l\'ha, tace',     {...BASE, pcDat0:'', pcDat1:''},          false]
+]){
+  const {elementi} = esegui(DATI);
+  c(nome, elementi.notaDatore.hidden === !attesa,
+    `compare: ${!elementi.notaDatore.hidden}, attesa: ${attesa}`);
+}
+{
+  // IL TESTO SI LEGGE NEL MARKUP, non fra le frasi scritte dal JS: questa nota è statica, e
+  // `scritte` raccoglie solo quello che il codice scrive. Cercarla lì darebbe un controllo verde
+  // su una stringa vuota, cioè il modo silenzioso di non controllare niente.
+  const nota = ((PAGINA.match(/<p class="nota-riga[^"]*" id="notaDatore"[^>]*>([\s\S]*?)<\/p>/)
+    || [, ''])[1]).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  c('la nota esiste nel markup, e non è vuota', nota.length > 60, nota.slice(0, 90));
+  // NON DEVE SCARTARE, DEVE DIRE. Se tornasse a parlare come l'avviso che ha sostituito
+  // — «non viene conteggiata» — avremmo rimesso l'override in forma di frase.
+  c('dice la condizione', /discende dal contratto collettivo/.test(nota)
+    && /per conto proprio/.test(nota));
+  c('e non annuncia di aver scartato il numero', !/non\s+(viene\s+)?conteggiat/.test(nota));
+  // LA FRASE È QUELLA DI contributo-datore.html: una frase sola in due posti diverge. Gli spazi
+  // vanno normalizzati come sopra, o il confronto dipende da DOVE va a capo il sorgente — nella
+  // pagina fonte l'a capo cade proprio fra «contratto» e «collettivo», e il controllo dava rosso
+  // su due testi identici.
+  const pagina = fs.readFileSync(join(QUI, '..', 'sito', 'contributo-datore.html'), 'utf8')
+    .replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  c('e la sua fonte dice la stessa cosa, con le stesse parole',
+    /discende dal contratto collettivo/.test(pagina));
 }
 
 // --- la prova di tenuta, nei suoi tre rami ---------------------------------
@@ -589,11 +617,11 @@ console.log('\n— la prova di tenuta —');
     /anziché nel/.test(anticipa) && !/regge lo stesso/.test(anticipa), anticipa);
   c('quando la fine non si muove, non mette due volte lo stesso anno',
     /si esaurisce comunque nel/.test(subito) && !/anziché/.test(subito), subito);
-  // CON RENDIMENTI REALI NON POSITIVI LA PROVA NON HA NIENTE DA TOGLIERE, e fino al 02/08/2026
-  // la riga taceva. Ora dice perché: col listino delle classi in quel ramo ci finiscono chi ha
-  // molta liquidità e chi sta in un comparto garantito — le persone più prudenti, cioè il cuore
-  // di chi legge — e vedersi sparire una riga senza spiegazione è peggio che leggere che non
-  // serve. Quello che NON deve fare resta quello di prima: confrontare un piano con sé stesso.
+  // CON RENDIMENTI REALI NON POSITIVI LA PROVA NON HA NIENTE DA TOGLIERE, e la riga deve dire
+  // perché invece di tacere: in quel ramo ci finiscono chi ha molta liquidità e chi sta in un
+  // comparto garantito — le persone più prudenti — e vedersi sparire una riga senza spiegazione
+  // è peggio che leggere che non serve. Quello che NON deve fare è confrontare un piano con sé
+  // stesso.
   const {scritte: piatto} = esegui({...BASE, rend: 2, rendFondo: 1, infl: 2});
   const testoPiatto = (piatto.tenuta || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   c('con rendimenti reali non positivi la riga dice perché non si applica',
@@ -604,11 +632,11 @@ console.log('\n— la prova di tenuta —');
 }
 
 // --- su cosa poggia il verdetto --------------------------------------------
-// IL RISULTATO NON È INDIPENDENTE DA COME SI PRENDE IL FONDO, e fino al 02/08/2026 non lo
-// diceva. Il modulo parte da «niente in contanti, rendita vitalizia» — un estremo
-// dell'intervallo, visto che la legge consente fino alla metà in capitale — e la scelta si
-// compie in fondo alla pagina, dove chi legge il verdetto non è ancora arrivato: la cifra in
-// cima sembrava un fatto mentre era un fatto CONDIZIONATO.
+// IL RISULTATO NON È INDIPENDENTE DA COME SI PRENDE IL FONDO, e deve dirlo. Il modulo parte da
+// «niente in contanti, rendita vitalizia» — un estremo dell'intervallo, visto che la legge
+// consente fino alla metà in capitale — e la scelta si compie in fondo alla pagina, dove chi
+// legge il verdetto non è ancora arrivato: senza la riga la cifra in cima sembra un fatto mentre
+// è un fatto CONDIZIONATO.
 // Tre proprietà, e la seconda è quella che conta: una riga che dichiarasse sempre il valore di
 // partenza sarebbe peggio del silenzio, perché mentirebbe a chi la scelta l'ha già mossa.
 console.log('\n— su cosa poggia il verdetto —');
@@ -658,9 +686,9 @@ console.log('\n— il contributo dell\'azienda che non arriva —');
   // la casella VUOTA è un'altra cosa: lì risponde l'istruzione accanto alla casella
   c('con la casella vuota tace: al vuoto risponde il modulo, non il risultato',
     !riga({...BASE, pcVoi0:'', pcVoi1:''}).visibile);
-  // su un fondo sottoscritto per conto proprio quella quota non esiste
-  c('su un fondo aperto non promette niente',
-    !riga({...BASE, pcVoi0:0, pcVoi1:0, tipoFondo0:'individuale', tipoFondo1:'individuale'}).visibile);
+  // senza una quota dichiarata dal datore non c'è niente da attivare, e non si promette niente
+  c('senza quota del datore non promette niente',
+    !riga({...BASE, pcVoi0:0, pcVoi1:0, pcDat0:'', pcDat1:''}).visibile);
   // chi ha gia smesso non ha piu niente da attivare
   c('a chi ha gia smesso di lavorare non compare',
     !riga({...BASE, pcVoi0:0, pcVoi1:0, ultimo0:2024, ultimo1:2024}).visibile);
@@ -711,9 +739,9 @@ console.log('\n— il sommario, che ora è un link —');
 // quando il rapporto sta sotto la soglia, e comparire con una persona sola, dove non resta
 // nessuno di cui parlare.
 // ============================================================================
-//  QUATTRO DIFETTI TROVATI LEGGENDO OTTO PERSONE, il 03/08/2026. Nessuno era
-//  visibile a un controllo sui numeri: tutti e quattro si vedono solo aprendo
-//  la pagina con dei dati addosso e leggendo la frase che ne esce.
+//  QUATTRO DIFETTI EMERSI LEGGENDO OTTO PROFILI DIVERSI. Nessuno era visibile
+//  a un controllo sui numeri: tutti e quattro si vedono solo aprendo la pagina
+//  con dei dati addosso e leggendo la frase che ne esce.
 //  Qui diventano controlli, o alla prossima riscrittura tornano.
 // ============================================================================
 console.log('\n— quello che si è visto solo leggendo —');
@@ -752,8 +780,8 @@ console.log('\n— quello che si è visto solo leggendo —');
   // 3. «IL FONDO NON VIENE RISCOSSO DENTRO IL PIANO» detto a chi un fondo non ce l'ha: la
   //    frase gliene annuncia uno che non esiste.
   // «NIENTE FONDO OGGI» NON VUOL DIRE «NIENTE FONDO ALLA PENSIONE»: con i contributi e il TFR
-  // conferito il montante nasce lo stesso da zero, e il primo fixture che avevo scritto ne
-  // aveva uno da 67.000 €. Perché non ce ne sia davvero, vanno spenti tutti e tre gli ingressi.
+  // conferito il montante nasce lo stesso da zero — un fixture col solo `fondo0` a vuoto ne
+  // produce uno da 67.000 €. Perché non ce ne sia davvero, vanno spenti tutti e tre gli ingressi.
   const senza = esegui({...BASE, quanti:'1', fondo0:'', fondo1:'', iscr0:'', iscr1:'',
     pcVoi0:0, pcDat0:0, tfrDove0:'azienda'});
   c('a chi non ha un fondo non si parla del suo fondo',
@@ -833,10 +861,10 @@ console.log('\n— ogni casella ha un nome —');
 }
 
 // --- il nome di una classe non è libero solo perché non lo si è ancora usato ---
-// Il 31/07/2026 una regola `position:fixed` è finita su `.barra`, che era già la classe di
-// ogni blocco col cursore: risultato, tutti i cursori inchiodati in cima allo schermo. Chi sta
-// fisso sul vetro dev'essere UNO. Il conteggio guarda anche il codice, perché metà delle classi
-// le scrivono i template literal e nel solo HTML non si vedono.
+// Una regola `position:fixed` su una classe già usata altrove — `.barra` è anche quella di ogni
+// blocco col cursore — inchioda tutti quegli elementi in cima allo schermo. Chi sta fisso sul
+// vetro dev'essere UNO. Il conteggio guarda anche il codice, perché metà delle classi le scrivono
+// i template literal e nel solo HTML non si vedono.
 console.log('\n— chi sta fisso sullo schermo —');
 {
   const pagina = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8');
@@ -860,11 +888,10 @@ console.log('\n— chi sta fisso sullo schermo —');
 }
 
 // --- le caselle da cui il verdetto dipende, e la frase che le promette ---
-// Il 01/08/2026 la pagina scriveva «per il verdetto bastano tre dati» e la guardia ne
-// controllava tre: chi si fermava lì riceveva un verdetto pieno calcolato con patrimonio zero
-// e nessuna entrata, cioè «decumulo non sostenibile, il patrimonio si esaurisce nel <oggi>».
-// Lo scostamento andava sempre nella direzione più allarmante, perché le entrate mancanti
-// valgono zero e la spesa no.
+// Se la frase promette meno caselle di quante ne pretenda la guardia, chi si ferma alla promessa
+// riceve un verdetto pieno calcolato con patrimonio zero e nessuna entrata, cioè «non
+// sostenibile, il patrimonio si esaurisce nell'anno in corso» — e lo scostamento va sempre nella
+// direzione più allarmante, perché le entrate mancanti valgono zero e la spesa no.
 // Qui si tiene ferma la sola proprietà che conta: LA PROMESSA E LA GUARDIA SONO LA STESSA
 // COSA. Non si controlla la formula della frase, si contano le caselle che chiede.
 console.log('\n— le caselle che il verdetto richiede —');
@@ -952,10 +979,9 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
   const pulito = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   // due persone già in pensione, spesa sopra le entrate ma patrimonio ampio: il rendimento
   // copre il disavanzo, quindi il patrimonio cresce mentre il flusso è negativo.
-  // LA SPESA È SALITA DA 2.800 A 3.200 il 02/08/2026: contando la pensione su tredici rate le
-  // entrate sono cresciute e il disavanzo era sparito, cioè lo scenario non provava più il ramo
-  // che gli sta a cuore. Terza volta in due giorni che un fixture al limite smette di esserlo
-  // perché il modello migliora: quando un controllo cade, prima si guarda se è ancora al bordo.
+  // LA SPESA VA TENUTA AL BORDO: con la pensione contata su tredici rate le entrate crescono e
+  // il disavanzo sparisce, cioè lo scenario smette di provare il ramo che gli sta a cuore.
+  // Quando un controllo così cade, prima si guarda se il fixture è ancora al limite.
   const copre = esegui({quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1955, nascita1:1958,
     annoPens0:2015, annoPens1:2020, pens0:2100, pens1:1250, cl3:380000, spesa:3200,
     etaFine:95, fondo0:'', fondo1:'', ral0:'', ral1:''});
@@ -973,12 +999,11 @@ console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
 }
 
 // --- chi è già in pensione ---
-// Fino al 01/08/2026 la pagina pretendeva una decorrenza futura: chi era in pensione da anni
-// riceveva «Dati incompleti. Per il calcolo serve la decorrenza del trattamento», cioè gli si
-// diceva che aveva lasciato in bianco una casella che aveva compilato. Su un sito che si chiama
-// decumulo, era chiuso fuori proprio chi è in decumulo.
-// Qui si tengono ferme le proprietà del caso nuovo. Quelle sui numeri stanno nelle invarianti:
-// queste guardano cosa la pagina DICE e cosa lascia toccare.
+// Pretendendo una decorrenza FUTURA, a chi è in pensione da anni si risponde «serve la decorrenza
+// del trattamento», cioè gli si dice che ha lasciato in bianco una casella che ha compilato: su
+// un sito che si chiama decumulo, resterebbe fuori proprio chi è in decumulo.
+// Le proprietà sui numeri stanno nelle invarianti; queste guardano cosa la pagina DICE e cosa
+// lascia toccare.
 console.log('\n— chi è già in pensione —');
 {
   const UNO = {quanti:'1', spesa:2500, cl3:400000, nascita0:1955, pens0:1800,
@@ -988,7 +1013,7 @@ console.log('\n— chi è già in pensione —');
   const spente = (r, ids) => ids.every(k => r.elementi[k] && r.elementi[k].disabled === true);
   const attive = (r, ids) => ids.every(k => r.elementi[k] && r.elementi[k].disabled === false);
   const ATTIVITA = ['ral0','cresc0','ultimo0'];
-  const FONDO    = ['tipoFondo0','fondo0','iscr0','pcVoi0','pcDat0','tfrDove0'];
+  const FONDO    = ['fondo0','iscr0','pcVoi0','pcDat0','tfrDove0'];
 
   const gia = esegui({...UNO, annoPens0:2015});
   c('il verdetto esce, invece di chiedere una casella già compilata',

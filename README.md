@@ -55,8 +55,9 @@ node verifiche/a-schermo.mjs     nove pagine × quattro larghezze in due assetti
                                 è l'unico posto dove si può vedere che il tag non parte prima
 
 node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con gli occhi: il
-                                modulo dei contributi, il menu dell'adesione (il punto più
-                                stretto: 93 px di etichetta su 94 utili), il risultato, il
+                                modulo dei contributi, la nota sulla quota del datore (una frase
+                                a tutta riga in una griglia a gruppi di tre: si guarda che non
+                                sfalsi le celle sotto), il risultato, il
                                 cursore portato sotto quello che si versa, e i due pezzi a
                                 390 px. Afferma una cosa sola, che la console sia pulita
 ```
@@ -745,11 +746,11 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 
 | dubbio | cosa servirebbe | perché non è urgente |
 |---|---|---|
-| L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: la voce «dall'azienda» parla di *accordo*, non di liberalità |
+| L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: `notaDatore` parla di quello che il *contratto* riconosce, non di liberalità |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
 | **41 regole su 48 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano**: lo dà `quanteRiscontrate()` in `regole.mjs`, ed era rimasto a «37 su 41» mentre le regole diventavano 48 |
 | L'oggetto finto delle armature è **copiato in sei file** | un modulo solo, importato da tutti | ogni volta che manca un metodo costano sei modifiche invece di una: è successo con `setAttribute` |
-| Chi ha usato il sito prima del 2 agosto ha in memoria un **tipo di fondo** che non esiste più | niente: si autorisolve alla prima riapertura del menu | il valore vecchio cade sul ramo prudente, e l'avviso dice cosa scegliere |
+| Chi ha usato il sito prima del 3 agosto ha in memoria un **tipo di fondo** che non esiste più, e se aveva scelto «scelto da sé» con una percentuale scritta ora quella quota **viene conteggiata** | niente: `ripristina()` scorre le caselle che trova in pagina, quindi la chiave vecchia è ignorata e sparisce al primo salvataggio | è il comportamento voluto — la percentuale scritta vale — e non è silenzioso: `notaDatore` compare proprio perché una percentuale c'è, e dice la condizione |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
 | Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | **ora è misurato, non solo dichiarato**: il riscontro sulla tabella da RAL a netto dà scarto nullo fra 18.000 e 50.000 € e **esattamente −1.200 €** a 15.000. Sotto quella soglia il destinatario tipo di questo conto non c'è, e lo scostamento è noto al centesimo |
 | La **perequazione a fasce** delle pensioni non è modellata | le tre percentuali e le soglie lette sulla norma, non sul commento: il DM 19/11/2025 le applica *per scaglioni* | l'errore è nullo sotto 4 volte il minimo (2.447 €/mese) e piccolo sopra: 2,8% su trent'anni a 3.500 €/mese. Ora è dichiarato con la sua misura |

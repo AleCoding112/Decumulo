@@ -6,7 +6,7 @@
 //
 //  ATTENZIONE: va tenuta al passo. Una seconda implementazione ferma a una
 //  versione vecchia del modello è PEGGIO di nessuna, perché dà un falso
-//  «scarto zero» mentre calcola un'altra cosa. È già successo il 31/07/2026.
+//  «scarto zero» mentre calcola un'altra cosa.
 //
 //  node verifiche/seconda-implementazione.mjs
 // ============================================================================
@@ -151,13 +151,12 @@ function piano(D){
       const ral  = Math.max(0, x.ral) * k;
       const tfrA = ral * V('TFR_SU_RAL');
 
-      // Il datore versa a due condizioni: che il fondo sia quello individuato dal contratto
-      // collettivo, e che versi anche il lavoratore. Oltre quella soglia non cresce.
+      // Il datore versa a una condizione: che versi anche il lavoratore. Oltre quella soglia non
+      // cresce. La percentuale scritta è la dichiarazione e vale: nessun altro campo la azzera.
       const quota = pc => {
         const lav = ral * Math.max(0, pc) / 100;
         const scatta = x.pcVoi > 0 ? pc >= x.pcVoi - 1e-9 : pc > 0;
-        const spetta = scatta && !x.fondoIndividuale;
-        return {lav, dat: spetta ? ral * Math.max(0, x.pcDat) / 100 : 0};
+        return {lav, dat: scatta ? ral * Math.max(0, x.pcDat) / 100 : 0};
       };
       const q = quota(x.pc), qOggi = quota(x.pcVoi);
       const vers = q.lav + q.dat;
@@ -319,9 +318,6 @@ const base = {quanti:'2', cl3:100000, spesa:3300, spesaPens:'', cresc0:'', cresc
   fondo0:80000, pcVoi0:1.5, pcDat0:2, tfrDove0:'fondo', iscr0:2011, rita0:2041, quotaCap0:0.6,
   nascita1:1984, ral1:32000, pens1:1500, annoPens1:2052,
   fondo1:20000, pcVoi1:1, pcDat1:1.5, tfrDove1:'fondo', iscr1:2016, rita1:2052, quotaCap1:1,
-  // scritto per esteso, non lasciato mancante: su una casella nuova un fixture muto fa passare
-  // il confronto senza confrontare nulla
-  tipoFondo0:'collettiva', tipoFondo1:'collettiva',
   // vuoto, non assente: assente varrebbe '0' e vorrebbe dire «smesso nel 1900»
   ultimo0:'', ultimo1:'',
   // L'ABITAZIONE, scritta per esteso anche quando non si usa. È la settima volta che questa
@@ -359,12 +355,13 @@ const casi = {
   'in pensione si spende di più':{spesaPens:4200},
   'la retribuzione cresce':      {cresc0:4, cresc1:3.5},
   'la retribuzione si ferma':    {cresc0:0, cresc1:0},
-  // il fondo sottoscritto per conto proprio: la quota del datore non spetta, e deve sparire
-  // anche da quello che entra nel fondo e dallo spazio deducibile
-  'uno dei due ha un fondo aperto': {tipoFondo0:'individuale'},
-  'tutti e due per conto proprio':  {tipoFondo0:'individuale', tipoFondo1:'individuale'},
-  'fondo aperto e contribuzione al tetto': {tipoFondo0:'individuale', pc0:8, pc1:14},
-  // l'ultimo anno di lavoro, che dal 31/07/2026 è di ciascuno
+  // QUI STAVANO TRE SCENARI SUL FONDO SOTTOSCRITTO PER CONTO PROPRIO, e sono stati tolti invece
+  // che lasciati: senza il campo che li distingueva sarebbero diventati copie del caso base,
+  // cioè tre confronti verdi che non confrontano più niente. Un test che smette di verificare
+  // senza diventare rosso è peggio di un test che non c'è.
+  // Al loro posto, la contribuzione alta al tetto, che era la parte ancora viva del terzo:
+  'contribuzione oltre il tetto deducibile': {pc0:8, pc1:14},
+  // l'ultimo anno di lavoro, che è di ciascuno
   'uno smette dieci anni prima':   {ultimo0:2029},
   'smettono in due anni diversi':  {ultimo0:2031, ultimo1:2037},
   'uno ha gia smesso':             {ultimo0:2024},
@@ -448,17 +445,16 @@ for (const [nome, over, prova, manca] of tutti){
       // qui sotto, ed è l'unico modo perché il confronto possa ancora fallire.
       annoPens:x.annoPens, fondo:x.fondoScritto, pcVoi:x.pcVoi, pcDat:x.pcDat, pc:x.pc, cresc:x.cresc,
       anniFraz:x.anniFraz,
-      fondoIndividuale:x.fondoIndividuale, ultimo:x.ultimo,
+      ultimo:x.ultimo,
       tfrAlFondo:x.tfrAlFondo, iscr:x.iscr, rita:x.rita, quotaCap:x.quotaCap, forma:x.forma}))};
   const P = piano(D);
 
   const rel = Math.abs(P.finale - R.finale) / Math.max(Math.abs(R.finale), 1);
   const guai = [];
   // UN CONFRONTO CIECO AI NaN NON È UN CONFRONTO. `NaN > 1e-9` è FALSO, quindi uno scarto
-  // indefinito passava come uguaglianza: il 02/08/2026 questa implementazione ha smesso di
-  // calcolare — leggeva una casella che non esisteva più — e per sessanta casi su sessanta ha
-  // dichiarato «0 divergenti» producendo NaN. È la seconda volta che tace invece di fallire:
-  // la prima dava «scarto 0.0e+0» mentre non produceva alcun incasso.
+  // indefinito passerebbe come uguaglianza: basta che questa implementazione legga una casella
+  // che non esiste più perché dichiari «0 divergenti» su sessanta casi mentre produce NaN. È il
+  // modo in cui questo file tace invece di fallire, e ci è già riuscito due volte.
   // La regola vale oltre questo file: una soglia interrogata con un valore non finito risponde
   // sempre di sì, e va perciò sempre preceduta dal controllo che il valore esista.
   if (!Number.isFinite(P.finale) || !Number.isFinite(R.finale))

@@ -6,9 +6,9 @@
 //  campi lasciati a metà, testo dentro le caselle numeriche, e nomi che nomi
 //  non sono. Il calcolatore non deve mai:
 //
-//   · piantarsi o esaurire la memoria (successo il 31/07/2026: bastava
-//     scrivere 1e308 nell'orizzonte del piano e il ciclo degli anni girava
-//     finché la scheda non moriva);
+//   · piantarsi o esaurire la memoria (senza la difesa basta scrivere 1e308
+//     nell'orizzonte del piano perché il ciclo degli anni giri finché la
+//     scheda non muore);
 //   · scrivere in pagina «NaN», «undefined» o «Infinity»;
 //   · restare muto: o dà un verdetto, o dice cosa manca;
 //   · lasciar finire dentro innerHTML quello che uno ha scritto nel nome.
@@ -27,7 +27,7 @@ const src = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
 
 const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','ral0','ral1',
   'pens0','pens1','annoPens0','annoPens1','fondo0','fondo1','iscr0','iscr1','pcVoi0','pcVoi1',
-  'pcDat0','pcDat1','cresc0','cresc1','tfrDove0','tfrDove1','tipoFondo0','tipoFondo1',
+  'pcDat0','pcDat1','cresc0','cresc1','tfrDove0','tfrDove1',
   'ultimo0','ultimo1',
   'patrimonio','spesa','spesaPens',
   'rend','rendFondo','infl','etaFine','quotaCap0','quotaCap1','forma0','forma1','rita0','rita1',

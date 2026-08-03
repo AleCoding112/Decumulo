@@ -1,9 +1,8 @@
 // ============================================================================
 //  CHE IL SITO STIA DENTRO LO SCHERMO.
 //
-//  Fino al 01/08/2026 non c'era nessuna media query se non quella di stampa, e
-//  a 390 px il modulo usciva dal video: le caselle tagliate a destra, il
-//  contenuto non compilabile. Nessuno dei 204 controlli se n'era accorto,
+//  Senza media query, a 390 px il modulo esce dal video: caselle tagliate a
+//  destra, contenuto non compilabile. Nessun altro controllo se ne accorge,
 //  perché tutti leggono frasi e numeri e nessuno guarda la larghezza.
 //
 //  QUESTO CONTROLLO È IN NODE PURO e non apre un browser, per stare nella

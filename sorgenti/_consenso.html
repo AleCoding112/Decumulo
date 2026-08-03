@@ -26,8 +26,8 @@
     justify-content:center;font-size:13px;line-height:1.55;color:var(--soft,#4a4a46)}
   /* SENZA QUESTA RIGA IL BANNER NON SI CHIUDE. L'attributo `hidden` nasconde con una regola del
      browser, che ha la specificità più bassa che esista: il `display:flex` qui sopra la batte, e
-     `consenso.hidden = true` non spegne niente. Con nessuno dei due pulsanti il banner spariva.
-     Il progetto ci era già cascato su `.sommario`, e la riga gemella sta accanto a quella. */
+     `consenso.hidden = true` non spegnerebbe niente. Vale per ogni classe con un `display`
+     esplicito, e in questo progetto serve anche su `.sommario`, `.cur` e `.casaSe`. */
   .consenso[hidden]{display:none}
   .consenso p{margin:0;max-width:64ch}
   .consenso b{color:var(--ink,#22221f)}

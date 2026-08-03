@@ -5,9 +5,9 @@
 //  guarda la DIVERGENZA — che due implementazioni concordino, che le pagine
 //  dicano quello che il conto fa, che 4.000 piani rispettino le invarianti.
 //  Nessuno di quei controlli può vedere un'OMISSIONE: un istituto mai
-//  rappresentato non contraddice niente. Le due omissioni trovate il 02/08/2026
-//  (detrazioni art. 13, tredicesima del trattamento) sono uscite da un confronto
-//  con numeri di fuori, non da seicento controlli verdi.
+//  rappresentato non contraddice niente. Le due omissioni che questo file ha
+//  scoperto (detrazioni art. 13, tredicesima del trattamento) sono uscite da un
+//  confronto con numeri di fuori, non da seicento controlli verdi.
 //
 //  IL DISEGNO, che è la parte che conta.
 //
@@ -108,7 +108,7 @@ function fisco(){
   console.log('  ' + ['RAL', 'imponibile', 'IRPEF netta', 'netto annuo', 'netto/mese']
     .map(s => s.padStart(16)).join(''));
   for (const ral of REDDITI){
-    const x = {ral, pcVoi: 0, pcDat: 0, fondoIndividuale: false, pcMin: 0};
+    const x = {ral, pcVoi: 0, pcDat: 0, pcMin: 0};
     const imponibile = ral * (1 - M.IVS);
     const imposta = M.irpefNetta(imponibile, false);
     const netto = M.nettoAnnuo(x, 0);
@@ -136,7 +136,7 @@ function fisco(){
     .map(s => s.padStart(16)).join(''));
   for (const ral of REDDITI){
     const pc1000 = 1000 / ral * 100;
-    const x = {ral, pcVoi: 0, pcDat: 0, fondoIndividuale: true, pcMin: 0};
+    const x = {ral, pcVoi: 0, pcDat: 0, pcMin: 0};
     const costo = M.costoAnnuo(x, pc1000);
     console.log('  ' + [eur(ral), eur(1000), eur(1000 - costo), eur(costo),
       pc(1 - costo/1000, 1)].map(s => s.padStart(16)).join(''));
@@ -479,7 +479,7 @@ function riscontri(){
   const NETTI = [[15000, 14021], [18000, 15934], [20000, 17208],
                  [30000, 23267], [40000, 27865], [50000, 32472]];
   const nostroNetto = ral => {
-    const x = {ral, pcVoi: 0, pcDat: 0, pcMin: null, fondoIndividuale: false};
+    const x = {ral, pcVoi: 0, pcDat: 0, pcMin: null};
     return M.nettoAnnuo(x, 0) - ral * (1 - M.IVS) * ADDIZIONALI;
   };
   for (const [ral, loro] of NETTI){

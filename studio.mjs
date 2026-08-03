@@ -18,20 +18,20 @@
 //  qualcosa che non doveva.
 //
 //  ─────────────────────────────────────────────────────────────────────────
-//  LE DUE TRAPPOLE DI LETTURA IN CUI SONO CADUTO IO, il 03/08/2026, e che
-//  qui sono già disinnescate. Nessuna delle due era un errore del motore.
+//  LE DUE TRAPPOLE DI LETTURA DI QUESTE TAVOLE, qui già disinnescate.
+//  Nessuna delle due è un errore del motore: sono modi di leggerlo male.
 //
 //  1. UNA DIFFERENZA NON È UN RAPPORTO. `fin(versa di più) − fin(base)` è già
 //     il confronto netto con l'alternativa, perché i soldi non versati restano
 //     in busta ed entrano nel patrimonio, dove rendono. La soglia è ZERO, non
-//     uno. Leggendola come un rapporto avrei concluso che il fondo pensione
-//     non conviene quasi mai — l'opposto del vero.
+//     uno. Letta come un rapporto porta a concludere che il fondo pensione non
+//     conviene quasi mai, cioè l'opposto del vero.
 //
 //  2. LA CASA SI CONFRONTA SULLA RICCHEZZA, NON SUL DENARO. Chi non vende
 //     possiede ancora l'abitazione, e quella non compare in nessun saldo.
-//     È l'errore che `casa-e-decumulo.html` descrive per esteso, e ci sono
-//     cascato mezz'ora dopo averlo riletto: col conto sbagliato «vendere e
-//     affittare» conviene già da 1.000 € di canone, con quello giusto mai.
+//     È l'errore che `casa-e-decumulo.html` descrive per esteso, e resta facile
+//     da rifare: col conto sbagliato «vendere e affittare» conviene già da
+//     1.000 € di canone, con quello giusto mai.
 //
 //  Regola: quando una griglia dà una risposta controintuitiva, il primo
 //  sospettato è la metrica, non il modello.
@@ -72,11 +72,11 @@ const titolo = t => console.log(`\n\n╔══ ${t} ` + '═'.repeat(Math.max(4,
 
 const COMUNE = {rend:4, infl:2, rendFondo:3, etaFine:95, nome0:'A', nome1:'B'};
 const uno = (o={}) => ({...COMUNE, quanti:'1', nascita0:1975, annoPens0:2042, pcVoi0:1.5,
-  pcDat0:2, iscr0:2005, tfrDove0:'fondo', tipoFondo0:'collettiva', quotaCap0:0.5,
+  pcDat0:2, iscr0:2005, tfrDove0:'fondo', quotaCap0:0.5,
   forma0:'vita', ...o});
 const due = (o={}) => ({...COMUNE, quanti:'2', nascita0:1975, nascita1:1977, annoPens0:2042,
   annoPens1:2044, pcVoi0:1.5, pcVoi1:1.5, pcDat0:2, pcDat1:2, iscr0:2005, iscr1:2007,
-  tfrDove0:'fondo', tfrDove1:'fondo', tipoFondo0:'collettiva', tipoFondo1:'collettiva',
+  tfrDove0:'fondo', tfrDove1:'fondo',
   quotaCap0:0.5, quotaCap1:0.5, forma0:'vita', forma1:'vita', ...o});
 // LA PENSIONE ATTESA NON È UN DATO DEL MODELLO, è un ingrediente di queste griglie: serve solo
 // a rendere confrontabili le righe fra loro. Regola grezza e DICHIARATA — 70% del lordo, il

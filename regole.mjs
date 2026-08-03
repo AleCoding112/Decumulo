@@ -14,11 +14,9 @@
 // compare in fondo a ogni pagina, ed è l'unico modo perché chi legge sappia se sta guardando
 // valori correnti. L'assegno sociale si rivaluta ogni gennaio; l'IRPEF può cambiare a ogni
 // legge di bilancio.
-// SI SCRIVE IN FORMA ISO, ed è l'unica cosa da cambiare: la stringa in italiano si genera da
-// questa. Tenerne due scritte a mano vuol dire vederle divergere al primo aggiornamento, ed è
-// esattamente il difetto che tutto il resto del build esiste per impedire.
-// La forma confrontabile serve alla guardia in `verifiche/scadenze.mjs`: una data che nessuno
-// può confrontare non protegge da niente.
+// Si scrive in forma ISO ed è l'unica da cambiare: la stringa in italiano si genera da questa,
+// e due date scritte a mano divergerebbero al primo aggiornamento. La forma confrontabile serve
+// alla guardia in `verifiche/scadenze.mjs`.
 export const REVISIONE_ISO = '2026-08-02';
 export const REVISIONE = new Date(REVISIONE_ISO + 'T00:00:00Z')
   .toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'});
@@ -228,10 +226,9 @@ export const REGOLE = {
   // --- imposte sugli investimenti liberi ----------------------------------
   // NON ENTRANO NEL MOTORE, e stanno qui lo stesso. Il conto non tassa il patrimonio: i
   // rendimenti per classe — più sotto, fra le convenzioni — si scrivono già netti, ed è da
-  // QUESTE aliquote che sono stati ricavati. Se restassero scritte a mano nella pagina che
-  // spiega il netto sarebbero l'unica cifra di legge fuori da questo file, e alla prima manovra
-  // la pagina direbbe una cosa e il listino un'altra: è esattamente il difetto che tutto il
-  // build esiste per impedire.
+  // QUESTE aliquote che sono stati ricavati. Scritte a mano nella pagina che spiega il netto
+  // sarebbero l'unica cifra di legge fuori da questo file, e alla prima manovra la pagina direbbe
+  // una cosa e il listino un'altra.
   //
   // PERCHÉ IL LISTINO HA UNA VOCE «OBBLIGAZIONI» E NON DUE. Le due specie stanno sotto regimi
   // diversi — 12,5% i titoli di Stato, 26% le societarie — e separarle sarebbe stato più

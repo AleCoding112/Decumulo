@@ -28,7 +28,7 @@ const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1
   annoPens0:2042, annoPens1:2050, pcVoi0:1.5, pcVoi1:1.2, pcDat0:2, pcDat1:1.6,
   iscr0:2018, iscr1:2012, cl3:120000, spesa:2600, rend:5, infl:2, rendFondo:5,
   etaFine:95, fondo0:90000, fondo1:30000, tfrDove0:'fondo', tfrDove1:'fondo',
-  tipoFondo0:'collettiva', tipoFondo1:'collettiva', ultimo0:'', ultimo1:'',
+  ultimo0:'', ultimo1:'',
   rita0:2042, rita1:2050, quotaCap0:0.6, quotaCap1:1, forma0:'vita', forma1:'vita',
   spesaPens:'', cresc0:'', cresc1:'', pc0:'', pc1:''};
 

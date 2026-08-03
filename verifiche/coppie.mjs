@@ -71,55 +71,56 @@ const BASI = {
     pcVoi0:1.2, pcVoi1:1.5, pcDat0:2, pcDat1:2, iscr0:2005, iscr1:2007,
     fondo0:60000, fondo1:120000, cl3:200000, spesa:2500,
     quotaCap0:0.5, quotaCap1:0.5, forma0:'vita', forma1:'vita',
-    tfrDove0:'fondo', tfrDove1:'fondo', tipoFondo0:'collettiva', tipoFondo1:'collettiva'},
+    tfrDove0:'fondo', tfrDove1:'fondo'},
   'coppia che si esaurisce': {...COMUNE, quanti:'2', nascita0:1975, nascita1:1977,
     ral0:28000, ral1:0, pens0:1100, pens1:700, annoPens0:2042, annoPens1:2044,
     pcVoi0:1, pcVoi1:0, pcDat0:1.5, pcDat1:0, iscr0:2010, iscr1:2012,
     fondo0:20000, fondo1:0, cl3:60000, spesa:3200,
     quotaCap0:1, quotaCap1:1, forma0:'vita', forma1:'vita',
-    tfrDove0:'fondo', tfrDove1:'azienda', tipoFondo0:'collettiva', tipoFondo1:'collettiva'},
+    tfrDove0:'fondo', tfrDove1:'azienda'},
   'una persona sola': {...COMUNE, quanti:'1', nascita0:1980, ral0:35000, pens0:1400,
     annoPens0:2047, pcVoi0:2, pcDat0:2, iscr0:2008, fondo0:80000, cl3:120000, spesa:1900,
-    quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo', tipoFondo0:'collettiva'},
+    quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo'},
   'senza fondo pensione': {...COMUNE, quanti:'1', nascita0:1978, ral0:32000, pens0:1350,
     annoPens0:2045, pcVoi0:0, pcDat0:0, iscr0:'', fondo0:'', cl3:250000, spesa:2100,
-    quotaCap0:0.5, forma0:'vita', tfrDove0:'azienda', tipoFondo0:'collettiva'},
+    quotaCap0:0.5, forma0:'vita', tfrDove0:'azienda'},
   'già in pensione, sola': {...COMUNE, quanti:'1', nascita0:1956, ral0:'', pens0:1600,
     annoPens0:2020, pcVoi0:'', pcDat0:'', iscr0:'', fondo0:'', cl3:180000, spesa:2200,
-    quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo', tipoFondo0:'collettiva'},
+    quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo'},
   'coppia già in pensione': {...COMUNE, quanti:'2', nascita0:1954, nascita1:1958,
     ral0:'', ral1:'', pens0:1700, pens1:1200, annoPens0:2019, annoPens1:2023,
     pcVoi0:'', pcVoi1:'', pcDat0:'', pcDat1:'', iscr0:'', iscr1:'', fondo0:'', fondo1:'',
     cl3:300000, spesa:2800, quotaCap0:0.5, quotaCap1:0.5, forma0:'vita', forma1:'vita',
-    tfrDove0:'fondo', tfrDove1:'fondo', tipoFondo0:'collettiva', tipoFondo1:'collettiva'},
+    tfrDove0:'fondo', tfrDove1:'fondo'},
   'reddito alto, fondo grosso': {...COMUNE, quanti:'1', nascita0:1968, ral0:90000,
     pens0:3200, annoPens0:2035, pcVoi0:3, pcDat0:1.5, iscr0:1998, fondo0:300000,
-    cl3:400000, spesa:4200, quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo',
-    tipoFondo0:'collettiva'},
+    cl3:400000, spesa:4200, quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo'},
   'solo TFR, niente contributi': {...COMUNE, quanti:'1', nascita0:1979, ral0:30000,
     pens0:1250, annoPens0:2046, pcVoi0:0, pcDat0:2, iscr0:2009, fondo0:35000,
-    cl3:90000, spesa:2000, quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo',
-    tipoFondo0:'collettiva'},
+    cl3:90000, spesa:2000, quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo'},
   'smette molto prima della pensione': {...COMUNE, quanti:'1', nascita0:1972, ral0:42000,
     pens0:1500, annoPens0:2039, ultimo0:2032, pcVoi0:2, pcDat0:2, iscr0:2002,
     fondo0:150000, cl3:250000, spesa:2400, quotaCap0:0.5, forma0:'vita',
-    tfrDove0:'fondo', tipoFondo0:'collettiva'},
+    tfrDove0:'fondo'},
   'vende casa e va in affitto': {...COMUNE, quanti:'2', nascita0:1970, nascita1:1972,
     ral0:36000, ral1:30000, pens0:1450, pens1:1200, annoPens0:2037, annoPens1:2039,
     pcVoi0:1.5, pcVoi1:1.5, pcDat0:2, pcDat1:2, iscr0:2004, iscr1:2006,
     fondo0:90000, fondo1:70000, cl3:180000, spesa:2600,
     casaCosa:'affitto', casaAnno:2045, casaValore:300000, casaCanone:900,
     quotaCap0:0.5, quotaCap1:0.5, forma0:'vita', forma1:'vita',
-    tfrDove0:'fondo', tfrDove1:'fondo', tipoFondo0:'collettiva', tipoFondo1:'collettiva'},
+    tfrDove0:'fondo', tfrDove1:'fondo'},
   'compra una casa più piccola': {...COMUNE, quanti:'1', nascita0:1966, ral0:34000,
     pens0:1500, annoPens0:2033, pcVoi0:1.5, pcDat0:2, iscr0:2000, fondo0:110000,
     cl3:150000, spesa:2300, casaCosa:'piccola', casaAnno:2040, casaValore:280000,
-    casaNuova:170000, quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo',
-    tipoFondo0:'collettiva'},
-  'fondo sottoscritto per conto proprio': {...COMUNE, quanti:'1', nascita0:1974,
-    ral0:45000, pens0:1700, annoPens0:2041, pcVoi0:2.5, pcDat0:2, iscr0:2006,
+    casaNuova:170000, quotaCap0:0.5, forma0:'vita', tfrDove0:'fondo'},
+  // SI CHIAMAVA «fondo sottoscritto per conto proprio», e il nome è cambiato col campo che lo
+  // distingueva: senza `tipoFondo` sarebbe rimasto un caso identico a un altro con un'etichetta
+  // che prometteva di provare qualcos'altro. Ora dichiara quello che è davvero — nessuna quota
+  // dal datore — che è la via d'uscita di chi quel contributo non lo riceve.
+  'nessuna quota dal datore': {...COMUNE, quanti:'1', nascita0:1974,
+    ral0:45000, pens0:1700, annoPens0:2041, pcVoi0:2.5, pcDat0:'', iscr0:2006,
     fondo0:100000, cl3:160000, spesa:2500, quotaCap0:0.5, forma0:'vita',
-    tfrDove0:'fondo', tipoFondo0:'individuale'}
+    tfrDove0:'fondo'}
 };
 
 const gira = dati => { DATI = dati; const s = M.leggi(); return {s, r: M.simula(s)}; };
@@ -240,8 +241,8 @@ const PURE = [
     for (let y = 0; y < 200000; y += 250)
       if (M.irpef(y + 250) < M.irpef(y) - 1e-9) return `a ${y} €`;
     return null; }},
-  // E I PUNTI IN CUI SCENDE SONO DUE, NON UNO: anche la seconda volta avevo dichiarato il verso
-  // sbagliato. A 20.000 € subentra l'ulteriore detrazione di 1.000 € del taglio del cuneo, e
+  // E I PUNTI IN CUI SCENDE SONO DUE, NON UNO, che è il verso facile da dichiarare sbagliato.
+  // A 20.000 € subentra l'ulteriore detrazione di 1.000 € del taglio del cuneo, e
   // l'imposta cala di colpo — ma sotto quella soglia c'è la SOMMA del c. 4, che non passa
   // dall'imposta e quindi non compare qui: i due tratti sono una misura sola e si saldano fuori
   // dall'IRPEF. La prova che si saldano davvero è la coppia successiva, sul netto in busta, che
@@ -262,8 +263,8 @@ const PURE = [
     return null; }},
   {nome:'più reddito, più netto in busta (la marginale non arriva al 100%)', prova: () => {
     for (let ral = 5000; ral < 200000; ral += 500){
-      const a = M.nettoAnnuo({ral, pcVoi:0, pcDat:0, pcMin:null, fondoIndividuale:false}, 0);
-      const b = M.nettoAnnuo({ral: ral+500, pcVoi:0, pcDat:0, pcMin:null, fondoIndividuale:false}, 0);
+      const a = M.nettoAnnuo({ral, pcVoi:0, pcDat:0, pcMin:null}, 0);
+      const b = M.nettoAnnuo({ral: ral+500, pcVoi:0, pcDat:0, pcMin:null}, 0);
       if (b < a - 1e-9) return `fra ${ral} e ${ral+500} €`;
     }
     return null; }},
@@ -289,13 +290,13 @@ const PURE = [
   {nome:'versare al fondo costa sempre meno di quanto entra', prova: () => {
     for (let ral = 15000; ral <= 120000; ral += 5000)
       for (let pc = 0.5; pc <= 12; pc += 0.5){
-        const x = {ral, pcVoi:0, pcDat:0, pcMin:null, fondoIndividuale:true};
+        const x = {ral, pcVoi:0, pcDat:0, pcMin:null};
         const costo = M.costoAnnuo(x, pc), entra = M.contributi(x, pc).tot;
         if (costo > entra + 1e-6) return `RAL ${ral}, ${pc}%: costa ${costo.toFixed(0)} e ne entrano ${entra.toFixed(0)}`;
       }
     return null; }},
   {nome:'raggiungere la soglia del datore fa un salto, non una salita', prova: () => {
-    const x = {ral:35000, pcVoi:0, pcDat:2, pcMin:1.2, fondoIndividuale:false};
+    const x = {ral:35000, pcVoi:0, pcDat:2, pcMin:1.2};
     const sotto = M.contributi(x, 1.19).dat, sopra = M.contributi(x, 1.2).dat;
     const molto = M.contributi(x, 8).dat;
     if (sotto !== 0) return 'sotto la soglia il datore versa';

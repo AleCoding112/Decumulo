@@ -26,9 +26,9 @@
   /* IL SOMMARIO IN ALTO. Non è navigazione: è il risultato che resta sott'occhio mentre si
      compila. Compare solo dopo che si è passato il titolo e solo se il risultato vero è fuori
      schermo — se lo si sta già guardando, ripeterlo sarebbe rumore.
-     ATTENZIONE AL NOME: «barra» è già la classe dei blocchi col cursore. Una regola
-     position:fixed su quel nome inchioda ogni cursore in cima allo schermo (successo il
-     31/07/2026). Prima di introdurre una classe si controlla che il nome sia libero. */
+     ATTENZIONE AL NOME: «barra» è già la classe dei blocchi col cursore, e una regola
+     position:fixed su quel nome inchioderebbe ogni cursore in cima allo schermo. Prima di
+     introdurre una classe si controlla che il nome sia libero. */
   .sommario{position:fixed;top:0;left:0;right:0;z-index:20;margin:0;display:block;
     background:var(--card);border-bottom:1px solid var(--line);text-decoration:none;
     padding:9px 20px;font-size:13px;color:var(--soft);box-shadow:0 1px 6px rgba(0,0,0,.05)}
@@ -107,12 +107,10 @@
   .cur input[type=range],.passo input[type=range]{width:100%;margin:0;accent-color:var(--su)}
   .cur .estremi,.passo .estremi{display:flex;justify-content:space-between;gap:18px;
     font-size:11px;color:var(--tenue)}
-  /* L'ESTREMO SINISTRO NON VA MAI A CAPO, ed è una riparazione del 02/08. Togliendo il tetto del
-     50% quello DESTRO è passato da «19.000 €: il 50% della RAL» a «28.690 €: oltre, il versamento
-     supererebbe lo stipendio»: in un flex `space-between` la frase lunga schiaccia l'altra, e
-     «niente: 0 €» si spezzava fra la cifra e il simbolo. Il sinistro è sempre corto — due parole
-     e un importo — quindi può pretendere la sua riga; il destro va a capo per conto suo.
-     NESSUNA MISURA POTEVA VEDERLO: non è uno sbordamento, la pagina resta larga uguale. */
+  /* L'ESTREMO SINISTRO NON VA MAI A CAPO. In un flex `space-between` la frase lunga di destra
+     schiaccia l'altra, e «niente: 0 €» si spezza fra la cifra e il simbolo. Il sinistro è sempre
+     corto — due parole e un importo — quindi può pretendere la sua riga; il destro va a capo per
+     conto suo. Nessuna misura può vederlo: non è uno sbordamento, la pagina resta larga uguale. */
   .cur .estremi span:first-child,.passo .estremi span:first-child{white-space:nowrap}
   .cur .estremi span:last-child,.passo .estremi span:last-child{text-align:right}
   .passo .ora{font-size:13px;color:var(--soft);text-align:center;
@@ -129,10 +127,9 @@
   .cur .ora i{display:block;font-style:normal;font-size:11px;color:var(--tenue);
     margin-top:1px;line-height:1.35}
   /* LA DOMANDA SUL MINIMO occupa la riga intera. `.cur` ha TRE colonne (74px 1fr 250px) e un
-     quarto figlio finirebbe nella prima colonna della riga dopo, larga 74 px: è la stessa
-     aritmetica di griglia che il 30/07 aveva sfalsato il riquadro dei contributi.
+     quarto figlio finirebbe nella prima colonna della riga dopo, larga 74 px.
      E `[hidden]` va dichiarato, perché `display:flex` qui sotto batterebbe quello del browser:
-     quarta volta in questa pagina, dopo `.sommario`, `.cur` e `.casaSe`. */
+     serve ogni volta, come per `.sommario`, `.cur` e `.casaSe`. */
   .cur .chiediMin{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;
     margin:8px 0 0;font-size:12px;color:var(--soft);line-height:1.5}
   .cur .chiediMin[hidden]{display:none}
@@ -298,6 +295,11 @@
      `.due` ha i contenuti a gruppi di tre: un elemento che non occupi tutta la riga sfalserebbe
      ogni cella successiva, e non sarebbe un problema di stile ma di aritmetica della griglia. */
   .avviso.riga-piena{grid-column:1/-1;max-width:none;margin:14px 0 4px}
+  /* LA NOTA NON È UN AVVISO: dice la condizione di un numero corretto, non segnala un errore, e
+     con lo sfondo dell'avviso accuserebbe chi ha compilato bene. Stessa aritmetica di griglia. */
+  .nota-riga{grid-column:1/-1;margin:10px 0 2px;font-size:12px;line-height:1.5;color:var(--soft)}
+  .nota-riga b{color:var(--ink);font-weight:600}
+  .nota-riga a{color:var(--acc);font-weight:600;white-space:nowrap}
   /* le caselle che il piano non usa restano leggibili, ma si vede che non sono in gioco */
   .due input:disabled,.due select:disabled{background:#f4f4f2;color:var(--tenue);
     border-color:var(--line);cursor:not-allowed}
@@ -411,10 +413,9 @@
      un'etichetta più 134+134 px più i vuoti, cioè circa 490 px, e sotto i 530 di larghezza
      utile le caselle escono dallo schermo. Sopra i 600 le tre colonne stanno comode.
 
-     Fino al 01/08/2026 non c'era nessuna media query se non
-     quella di stampa: a 390 px le caselle uscivano dallo schermo tagliate, e
-     il modulo non si poteva compilare. Metà di chi arriva da una ricerca
-     arriva da un telefono, quindi non era un dettaglio di rifinitura.
+     Senza media query, a 390 px le caselle escono dallo schermo tagliate e il
+     modulo non si può compilare. Metà di chi arriva da una ricerca arriva da un
+     telefono, quindi non è un dettaglio di rifinitura.
 
      LA SCELTA: sotto la soglia la seconda persona non sta ACCANTO alla prima
      ma SOTTO. Affiancare due colonne da 134 px su 350 px disponibili si può
@@ -521,21 +522,17 @@
      solo quando riceve il fuoco: per tutti gli altri non esiste. -->
 <a class="salta" href="#dati">Vai alle caselle</a>
 <h1 id="cima">Decumulo</h1>
-<!-- «dalla fine del lavoro» era inesatto anche prima: la proiezione parte dall'anno in corso e
-     comprende gli esercizi di attività, che sono quelli su cui incidono le due decisioni. Per
-     chi è già in pensione era per giunta una data che non esiste nel suo piano. -->
+<!-- La proiezione parte dall'anno in corso e comprende gli esercizi di attività, che sono quelli
+     su cui incidono le due decisioni: «dalla fine del lavoro» sarebbe inesatto, e per chi è già
+     in pensione sarebbe una data che nel suo piano non esiste. -->
 <p class="occhiello">Proiezione del patrimonio di una o due persone dall'anno in corso fino
 all'età indicata: trattamento INPS, fondo pensione, TFR e risparmi, anno per anno, in
 euro di oggi. I dati inseriti restano nel browser.</p>
 
-<!-- IL PERIMETRO, RIDOTTO A QUELLO CHE FA PERDERE TEMPO SE SI SCOPRE DOPO.
-     Fino al 01/08/2026 qui c'erano tre capoversi di avvertenze: 182 parole prima della prima
-     casella, quasi tutte «non si applica a…». Chi arriva da una ricerca leggeva limiti prima
-     di qualunque valore. Ma il perimetro non si poteva togliere: un autonomo che compila dieci
-     caselle e poi scopre che il conto non fa per lui sta peggio di uno avvisato subito.
-     Resta quindi la sola cosa che decide SE compilare; il resto sono limiti di modello, e
-     stanno dove stanno gli altri. È la regola già applicata altrove in questa pagina: non si
-     avvisa tutti in anticipo di un caso che riguarda pochi. -->
+<!-- IL PERIMETRO, RIDOTTO A QUELLO CHE FA PERDERE TEMPO SE SI SCOPRE DOPO: chi compila dieci
+     caselle e poi scopre che il conto non fa per lui sta peggio di chi è avvisato subito. Resta
+     quindi la sola cosa che decide SE compilare, e il resto sono limiti di modello, che stanno
+     dove stanno gli altri — non si avvisa tutti in anticipo di un caso che riguarda pochi. -->
 <p class="perimetro"><b>Il calcolo riguarda il lavoro dipendente privato</b>: non si applica ai
 lavoratori autonomi né ai dipendenti pubblici, per i quali il trattamento di fine servizio segue
 regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a></p>
@@ -552,9 +549,9 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 <p class="vuoto-avviso"><span id="bastano"></span>
 <a href="dove-trovare-i-numeri.html">Dove si ricava ciascun dato →</a></p>
 
-<!-- L'ORDINE DEI RIQUADRI NON È CASUALE: prima quello che si sa (le persone, quello che c'è),
-     poi quello che si sceglie (le ipotesi, che hanno già un valore di partenza). Prima era il
-     contrario, e la prima casella che incontrava chi arrivava era una previsione. -->
+<!-- L'ORDINE DEI RIQUADRI NON È CASUALE: prima quello che si sa (le persone, quello che c'è), poi
+     quello che si sceglie (le ipotesi, che hanno già un valore di partenza). All'incontrario, la
+     prima casella che si incontra arrivando sarebbe una previsione. -->
 <fieldset>
   <legend>Le persone</legend>
   <div class="due">
@@ -572,12 +569,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <div class="cella"><input type="text" inputmode="numeric" id="nascita0" value=""></div>
     <div class="cella p2"><input type="text" inputmode="numeric" id="nascita1" value=""></div>
 
-    <!-- LA RETRIBUZIONE NETTA NON SI CHIEDE PIÙ, si ricava. La casella chiedeva il netto di un
-         mese ordinario, la pagina istruiva a escludere le mensilità aggiuntive e il conto
-         moltiplicava per dodici: tredicesima e quattordicesima non entravano mai nel piano.
-         La RAL invece le comprende tutte, l'IRPEF è annua, e il netto se ne ricava esatto.
-         Una casella in meno da compilare, e il valore ricavato sta sotto quella che lo genera —
-         così si può confrontare con la busta paga, che è quello che la casella serviva a fare. -->
+    <!-- LA RETRIBUZIONE NETTA NON SI CHIEDE, SI RICAVA. Chiedere il netto di un mese ordinario e
+         moltiplicarlo per dodici lascerebbe fuori dal piano tredicesima e quattordicesima; la RAL
+         le comprende tutte, l'IRPEF è annua, e il netto se ne ricava esatto. Il valore ricavato
+         sta sotto la casella che lo genera, così si può confrontare con la busta paga. -->
     <div class="voce rigalav">Retribuzione annua <b>lorda</b><br>
       <span class="come">tutte le mensilità comprese</span></div>
     <div class="cella"><input type="text" inputmode="decimal" id="ral0" value="">
@@ -636,37 +631,17 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <a href="come-prendere-il-fondo.html">Come funziona la soglia →</a></span>
     </div>
 
-    <!-- QUESTA CASELLA DECIDE SE LA QUOTA DEL DATORE ESISTE, quindi sta prima di quella che la
-         chiede. Chiedeva il TIPO DI FONDO — «di categoria» o «aperto o PIP» — e su quello
-         azzerava la quota: ma il tipo di fondo non è ciò che decide. Su un fondo APERTO ad
-         adesione collettiva il datore versa eccome, se l'accordo lo prevede, e quella quota
-         consuma il tetto come le altre (art. 8 c. 4: il limite è per persona e comprende i
-         contributi del lavoratore e del datore, non guarda la forma). Chi dichiarava il vero
-         si vedeva quindi allargare lo spazio deducibile di tutta la quota aziendale — errore in
-         direzione ottimistica — e l'unico rimedio che davamo era dichiarare un fondo diverso dal
-         proprio. La nostra pagina distingueva quattro casi mentre il menu ne offriva due.
-         PERCHÉ TRE VOCI SULL'ADESIONE E NON SUL FONDO. Misurato: il menu chiuso ha 94 px utili,
-         cioè dodici caratteri. «aperto collettivo» ne vuole 117 e verrebbe troncato, quindi sul
-         nome del fondo il terzo caso NON è scrivibile. Sull'adesione sì, ed è anche l'asse che
-         decide davvero. Le tre voci stanno tutte sullo stesso asse: un menu che mescola «tipo di
-         fondo» e «come ho aderito» lascerebbe senza casa chi ha un fondo aperto scelto da sé.
-         E IL CONFINE CHE CONTA È DOVE LA GENTE SA RISPONDERE: solo la terza voce cambia i
-         numeri, ed è quella di cui si è certi («l'ho aperto io»). Sbagliare fra le prime due non
-         sposta nulla, ed è deliberato: l'incertezza sta dove non pesa.
-         Le etichette sono corte perché il menu tronca; il significato sta nella riga sotto. -->
-    <div class="voce rigalav">Come si è aderito<br>
-      <span class="come">decide se la quota del datore spetta</span></div>
-    <div class="cella"><select id="tipoFondo0">
-      <option value="collettiva">dal contratto</option>
-      <option value="aziendale">dall'azienda</option>
-      <option value="individuale">scelto da sé</option></select>
-      <u class="hint" id="tipoNota0">&nbsp;</u></div>
-    <div class="cella p2"><select id="tipoFondo1">
-      <option value="collettiva">dal contratto</option>
-      <option value="aziendale">dall'azienda</option>
-      <option value="individuale">scelto da sé</option></select>
-      <u class="hint" id="tipoNota1">&nbsp;</u></div>
-
+    <!-- QUI C'ERA UN MENU, «Come si è aderito», e la sua terza voce azzerava la quota del datore
+         scritta nella casella più sotto. Era l'unica casella del sito che esisteva per scartare
+         quello che ne diceva un'altra: «il datore versa» risultava dichiarato in due posti, che
+         potevano dissentire — la stessa classe di difetto che `regole.mjs` chiude sulle cifre, e
+         proprio quella da cui erano nati i 760 € di tetto inesistente.
+         E il caso comune ci perdeva: chi ha aderito di sua iniziativa a un fondo di categoria
+         leggeva «scelto da sé» come sua, e si vedeva sparire la quota E IL GRADINO, cioè la cosa
+         che questa pagina esiste per far vedere.
+         Ora la percentuale è la dichiarazione e vale. La condizione — che il contributo segue il
+         fondo individuato dal contratto — non è più applicata di nascosto: la dice `notaDatore`,
+         che compare quando una percentuale c'è scritta. -->
     <div class="voce rigalav">Quanto c'è oggi</div>
     <div class="cella"><input type="text" inputmode="decimal" id="fondo0" value=""></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="fondo1" value=""></div>
@@ -678,24 +653,19 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
   </div>
 
   <div class="gruppo largo rigalav">Quanto ci entra ogni anno
-  <!-- UNA RIGA, E CI SI TORNA PER LA SECONDA VOLTA. Il 30/07 questo capoverso era di 90 parole
-       e fu ridotto a una riga: «occupa spazio inutile, formatta male la pagina e toglie la voglia
-       di usare il calcolatore». Il 02/08 ci ho ATTACCATO una frase invece di riscriverlo, e il
-       muro è tornato. Tutto quello che diceva è coperto da messaggi che compaiono a chi
-       riguardano: il fondo sottoscritto per conto proprio da `tipoNota` e da `avvisoDatore`,
-       lo zero contro il vuoto dalle etichette qui sotto.
-       Regola, terza volta che serve: un capoverso non si allunga, si riscrive. -->
+  <!-- UNA RIGA SOLA, e va tenuta tale: tutto il resto è coperto da messaggi che compaiono a chi
+       riguardano — la condizione della quota del datore da `notaDatore`, i casi da correggere da
+       `avvisoDatore`, lo zero contro il vuoto dalle etichette qui sotto. Un capoverso non si
+       allunga, si riscrive. -->
   <span>Sul CCNL o sull'estratto conto del fondo sono righe separate.
   <a href="contributo-datore.html">Come funziona il contributo del datore →</a></span>
 </div>
   <div class="due">
-    <!-- LE DUE ETICHETTE SONO IN DUE TEMPI VERBALI, E DEVE VEDERSI. Dicevano tutte e due
-         «Contributo …, in % della RAL» e sembravano la stessa domanda fatta due volte, mentre
-         la prima chiede un fatto di oggi e la seconda un condizionale — quello che l'azienda
-         metterebbe SE si versasse. Chi oggi non riceve niente, leggendo un'etichetta al
-         presente, scrive 0, e a quel punto la pagina non può più dirgli quanto si sta
-         perdendo: è l'errore corretto il 30/07 e che l'etichetta aveva riperso.
-         L'istruzione sta nella riga sotto l'etichetta, non in un capoverso lontano: il
+    <!-- LE DUE ETICHETTE SONO IN DUE TEMPI VERBALI, E DEVE VEDERSI: la prima chiede un fatto di
+         oggi, la seconda un condizionale — quello che l'azienda metterebbe SE si versasse. Con
+         due etichette al presente chi oggi non riceve niente scrive 0, e a quel punto la pagina
+         non può più dirgli quanto si sta perdendo.
+         L'istruzione sta nella riga sotto l'etichetta e non in un capoverso lontano, perché il
          suggerimento sotto la casella è già occupato dal valore in euro. -->
     <div class="voce rigalav">Quanto si versa oggi<br>
       <span class="come">in % della RAL — <b>0</b> se non si versa niente</span></div>
@@ -704,32 +674,40 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
     <div class="cella p2"><input type="text" inputmode="decimal" id="pcVoi1" value="" placeholder="es. 1,2">
       <u class="hint" id="pcVoiEuro1">&nbsp;</u></div>
 
-    <!-- IL MINIMO DEL CONTRATTO NON STA PIÙ QUI, ed è la correzione che vale di più in questo
-         riquadro. Era una casella la cui etichetta conteneva la propria condizione — «se si
-         versa di più» — quindi prima di rispondere bisognava stabilire se si era in quel caso;
-         e stava IN MEZZO ai due numeri a cui serve, cioè la si incontrava prima di sapere
-         perché esistesse. Serve a una cosa sola, dire dove sta il gradino, e quella domanda
-         diventa viva in un momento preciso: quando si porta il cursore SOTTO quello che si
-         versa. È lì che ora viene fatta, come reazione — la stessa regola di `avvisoDatore` e
-         delle caselle dell'abitazione, che compaiono solo a chi prevede di cambiarla. -->
-    <!-- «DA CONTRATTO» FA IL LAVORO CHE FACEVA UNA CLAUSOLA. L'etichetta ha detto per un giorno
-         «anche se oggi non arriva»: una negazione su un fatto che non accade, che chiede di
-         scrivere un numero per soldi che non si ricevono senza dire in base a cosa — e che
-         suonava come «inventalo». Dicendo invece da DOVE viene il numero, l'eccezione non va più
-         segnalata: una quota fissata dal contratto ovviamente non è quella che arriva in busta.
-         E LA CONDIZIONE NON STA QUI. Il contributo non dipende dal tipo di fondo ma da cosa il
-         contratto riconosce — nelle adesioni collettive spetta anche su un fondo aperto — quindi
-         nessuna clausola corta sarebbe esatta, e «solo per i fondi chiusi» smentirebbe
-         `avvisoDatore`, che quella via d'uscita la nomina. La condizione è già una casella
-         (`tipoFondo`), e a quella rispondono tre reazioni che sanno la risposta: `tipoNota`,
-         `pcDatEuro` e l'avviso. Dove si legge il numero lo dice la riga in testa al riquadro,
-         una volta sola per tutte e due le caselle. -->
+    <!-- IL MINIMO DEL CONTRATTO NON STA QUI. Serve a una cosa sola, dire dove sta il gradino, e
+         quella domanda diventa viva in un momento preciso: quando si porta il cursore SOTTO
+         quello che si versa. È lì che viene fatta, come reazione — la stessa regola di
+         `avvisoDatore` e delle caselle dell'abitazione. Come casella avrebbe l'etichetta che
+         contiene la propria condizione («se si versa di più»), e starebbe in mezzo ai due numeri
+         a cui serve, cioè prima che si sappia perché esiste. -->
+    <!-- «DA CONTRATTO» FA IL LAVORO CHE FAREBBE UNA CLAUSOLA: dicendo da DOVE viene il numero,
+         l'eccezione non va più segnalata, perché una quota fissata dal contratto ovviamente non è
+         quella che arriva in busta. Una clausola tipo «anche se oggi non arriva» sarebbe invece
+         una negazione su un fatto che non accade, e suonerebbe come «inventalo».
+         E la condizione non sta in etichetta: il contributo non dipende dal tipo di fondo ma da
+         cosa il contratto riconosce — nelle adesioni collettive spetta anche su un fondo aperto —
+         quindi nessuna clausola corta sarebbe esatta, e «solo per i fondi chiusi» direbbe il
+         falso. Sta per esteso in `notaDatore`, qui sotto, che compare quando una percentuale c'è
+         scritta: è il momento in cui riguarda chi legge. -->
     <div class="voce rigalav">Quanto aggiunge il datore, da contratto<br>
       <span class="come">in % della RAL</span></div>
     <div class="cella"><input type="text" inputmode="decimal" id="pcDat0" value="" placeholder="es. 2,0">
       <u class="hint" id="pcDatEuro0">&nbsp;</u></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="pcDat1" value="" placeholder="es. 2,0">
       <u class="hint" id="pcDatEuro1">&nbsp;</u></div>
+
+    <!-- LA CONDIZIONE DEL NUMERO CHE SI È APPENA SCRITTO, e non un allarme: qui il dato è corretto
+         e non c'è niente da correggere, quindi non è un `.avviso` — quello è rossastro e suonerebbe
+         come un errore. Una sola nota anche in coppia: enuncia una regola, non si rivolge a una
+         persona. La frase è quella di `contributo-datore.html`, presa alla lettera: una frase sola
+         in due posti diverge, come facevano le cifre prima di `regole.mjs`.
+         Non nomina il gradino — che il datore versa solo se versa il lavoratore: quello è già detto
+         da `pcVoi`, da `chiediMin`, dai rami di `avvisoDatore` e dalla prosa del cursore.
+         Una nota, un fatto. -->
+    <p class="nota-riga rigalav" id="notaDatore" hidden>La quota del datore discende dal contratto
+      collettivo, e il contratto individua il fondo cui si riferisce: su un fondo aperto o su un
+      PIP sottoscritti <b>per conto proprio</b> di regola non spetta.
+      <a href="contributo-datore.html">Come funziona il contributo del datore →</a></p>
 
     <div class="somma-sep rigalav"></div>
 
@@ -782,14 +760,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 
 <fieldset>
   <legend>Quello che c'è oggi</legend>
-  <!-- IL PATRIMONIO NON SI SCRIVE PIÙ: SI SCRIVE COM'È FATTO, e il totale è la somma.
-       Fino al 02/08/2026 c'era una casella «Patrimonio investito» e, più sotto, le quattro
-       classi: la stessa cifra chiesta due volte, una intera e una a pezzi. Due domande per un
-       dato solo sono anche due occasioni di non farle tornare — e non c'era modo di dire quale
-       delle due valesse, perché al conto servivano il totale dall'una e le proporzioni
-       dall'altra. Ora la domanda è una: quanto c'è, e dove. Il totale si mostra sotto la barra
-       e non si chiede; è sparita con esso la nota che spiegava che le due potevano non tornare,
-       che era una toppa su un difetto invece che una spiegazione. -->
+  <!-- IL PATRIMONIO NON SI SCRIVE: SI SCRIVE COM'È FATTO, e il totale è la somma. Chiederlo anche
+       intero sarebbe la stessa cifra chiesta due volte, una intera e una a pezzi, cioè due
+       occasioni di non farle tornare senza modo di dire quale delle due valga — al conto servono
+       il totale e le proporzioni. La domanda è quindi una sola: quanto c'è, e dove. -->
   <div class="gruppo largo">Il patrimonio investito, e com'è fatto</div>
   <div class="caselle strette" id="composizione"></div>
   <div class="quote">
@@ -826,23 +800,19 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 <fieldset>
   <legend>Le ipotesi</legend>
 
-  <!-- IL RENDIMENTO NON SI CHIEDE PIÙ, SI RICAVA — e la composizione da cui si ricava sta nel
-       riquadro di sopra, perché è un DATO e non un'ipotesi: uno ce l'ha davanti sull'estratto
-       conto. Qui resta soltanto quello che nessun documento dice.
-       Fino al 02/08/2026 c'era una casella sola, «Rendimento degli investimenti», che chiedeva
-       il PRODOTTO di due cose diverse: come si è messi, e quanto rende ciascuna cosa già al
-       netto dell'imposta. Il primo fattore si conosce, il secondo no — e il risultato era che
-       si scriveva il rendimento del proprio ETF dimenticando i sessantamila fermi sul conto.
-       Non è distrazione: la domanda chiedeva un conto che nessuno ha mai fatto.
-       La casella resta, e resta scrivibile, ma ora arriva già compilata. -->
+  <!-- IL RENDIMENTO NON SI CHIEDE, SI RICAVA, e la composizione da cui si ricava sta nel riquadro
+       di sopra perché è un DATO e non un'ipotesi: uno ce l'ha davanti sull'estratto conto. Qui
+       resta soltanto quello che nessun documento dice.
+       Una casella sola, «rendimento degli investimenti», chiederebbe il PRODOTTO di due cose
+       diverse — come si è messi, e quanto rende ciascuna cosa al netto dell'imposta — di cui si
+       conosce solo la prima: si finisce per scrivere il rendimento del proprio ETF dimenticando
+       la liquidità ferma sul conto. La casella resta scrivibile, ma arriva già compilata. -->
   <div class="caselle">
-    <!-- «NETTO» STA NELL'ETICHETTA, e non è una ripetizione della nota qui sotto: la nota la
-         legge chi legge le note, l'etichetta la legge chi compila. Ed è l'unico posto dove
-         serve a qualcosa, perché per chi riscrive il numero a mano è un'ISTRUZIONE — sbagliarla
-         vale più di un punto l'anno — mentre per chi lascia il numero derivato è la garanzia
-         che l'imposta è già stata tolta e non va tolta due volte.
-         Il grassetto dentro l'etichetta è l'idioma che la pagina usa già per «Retribuzione
-         annua lorda», dove lo stesso equivoco costava altrettanto. -->
+    <!-- «NETTO» STA NELL'ETICHETTA e non solo nella nota qui sotto: la nota la legge chi legge le
+         note, l'etichetta la legge chi compila. Per chi riscrive il numero a mano è un'ISTRUZIONE
+         — sbagliarla vale più di un punto l'anno — e per chi lascia il numero derivato è la
+         garanzia che l'imposta è già stata tolta e non va tolta due volte.
+         Il grassetto è l'idioma che la pagina usa già per «Retribuzione annua lorda». -->
     <div><label for="rend">Rendimento del patrimonio, <b>netto</b></label>
       <input type="text" inputmode="decimal" id="rend" value="3">
       <u class="hint" id="rendDa">&nbsp;</u></div>
@@ -869,12 +839,10 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
            compie questa età. Con due date di nascita diverse non è indifferente, e va detto. -->
       <u class="hint">il piano si ferma quando il più giovane compie questa età</u></div>
   </div>
-  <!-- L'ISTRUZIONE HA CAMBIATO DESTINATARIO. Prima diceva a chiunque «scrivi il netto», ed era
-       l'unica difesa contro un errore che valeva più di un punto l'anno: il motore non tassa il
-       patrimonio, quindi il lordo passava intatto. Ora l'imposta la toglie il listino, classe
-       per classe — ed è l'unico modo perché venga tolta GIUSTA, visto che sui titoli di Stato
-       è il 12,5% e sul resto il 26%, distinzione che a mano non fa nessuno. La frase resta per
-       chi il numero lo riscrive a mano, che è l'unico caso in cui serve ancora. -->
+  <!-- L'ISTRUZIONE VALE PER CHI RISCRIVE IL NUMERO A MANO, ed è l'unico caso in cui serve: il
+       motore non tassa il patrimonio, quindi un rendimento lordo passerebbe intatto. Per tutti
+       gli altri l'imposta la toglie il listino classe per classe, che è anche l'unico modo perché
+       venga tolta giusta — sui titoli di Stato è il 12,5% e sul resto il 26%. -->
   <!-- LA NOTA NON RIPETE PIÙ «NETTO», che ora sta nelle due etichette: dice le due cose che
        un'etichetta non può dire, cioè QUALI imposte sono già state tolte e che l'inflazione
        invece no. Lasciarcelo avrebbe fatto leggere tre volte la stessa parola in dieci righe,
@@ -897,17 +865,14 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
 <p class="risposta" id="titolo">&nbsp;</p>
 <p class="sotto" id="sottotitolo">&nbsp;</p>
 <!-- SU COSA POGGIA IL NUMERO, e perché la riga sta qui e non fra le scelte.
-     Il verdetto è calcolato con una forma di erogazione del fondo già decisa: il modulo parte
-     da `quotaCap = 0` e `forma = vita`, cioè NIENTE in contanti e tutto in rendita vitalizia.
-     Non è un default neutro — è un estremo dell'intervallo, visto che la legge consente fino
+     Il verdetto è calcolato con una forma di erogazione del fondo già decisa: il modulo parte da
+     `quotaCap = 0` e `forma = vita`, cioè niente in contanti e tutto in rendita vitalizia. Non è
+     un valore di partenza neutro — è un estremo dell'intervallo, visto che la legge consente fino
      alla metà in capitale — e la scelta si compie mille pixel più in basso, dove chi legge il
-     verdetto non è ancora arrivato. La pagina scriveva quindi una cifra precisa che dipendeva
-     da una decisione di cui il lettore non sapeva ancora l'esistenza.
-     RIORDINARE LE SEZIONI NON L'AVREBBE RISOLTO: un valore di partenza ci sarebbe comunque, e
-     il primo verdetto lo userebbe lo stesso. Non è un difetto d'ordine, è di dichiarazione.
-     La cura è quella già usata due volte in questa pagina: `#tenuta` dichiara la dipendenza
-     dalla sequenza dei rendimenti, e la riga del contributo del datore alza il FATTO lasciando
-     giù la decisione, con un rimando. Qui si fa lo stesso. -->
+     verdetto non è ancora arrivato.
+     Riordinare le sezioni non risolverebbe: un valore di partenza ci sarebbe comunque e il primo
+     verdetto lo userebbe lo stesso. Non è un difetto d'ordine, è di dichiarazione, e la cura è
+     quella già usata altrove qui: si alza il FATTO e si lascia giù la decisione, con un rimando. -->
 <p class="nota" id="assunzioni"></p>
 <!-- Il verdetto nasce da una traiettoria sola. Questa riga dice quanto dipende dall'ORDINE in
      cui arrivano i rendimenti, che una traiettoria sola non può mostrare. Nessuna classe nuova:
@@ -1040,11 +1005,10 @@ pubblica. <a href="il-metodo.html">Metodo di calcolo, ipotesi e limiti →</a></
 
 <!--@@INCLUDI _pie.html@@-->
 
-<!-- I TRE COMANDI DEL PIANO. «Rimetti i valori di partenza» faceva pensare che rimettesse dei
-     dati d'esempio: il codice invece cancella tutto e riapre la pagina come nuova, che è quello
-     che l'etichetta adesso dice. Portare via il piano è la cosa che mancava: un conto che si
-     rifà a mano è un conto che si può controllare, e la tabella anno per anno è la parte
-     verificabile. Il pulsante è spento finché un verdetto non c'è: un file vuoto non serve. -->
+<!-- I TRE COMANDI DEL PIANO. L'etichetta del primo deve dire che cancella tutto e riapre la
+     pagina come nuova, non che rimette dei dati d'esempio. Portare via il piano serve perché un
+     conto che si rifà a mano è un conto che si può controllare, e la tabella anno per anno è la
+     parte verificabile. Il pulsante è spento finché un verdetto non c'è. -->
 <p class="salvataggio">
   <span id="statoSalvataggio"></span>
   <button type="button" id="scarica" disabled>Scarica il piano (foglio di calcolo)</button>
@@ -1059,22 +1023,17 @@ let NOMI = ['il primo', 'il secondo'];   // i nomi li scrivono loro; questi sono
 let DI = ['del primo', 'del secondo'];
 
 // COEFFICIENTI DI CONVERSIONE: quanto paga all'anno, in rendita vitalizia, ogni euro convertito.
-// Crescono con l'età, e non di poco: chi converte a 60 anni prende quasi un terzo in meno di chi
-// converte a 70, perché l'assegno se lo prenderà per più anni. Tenere una costante sola sarebbe
-// giusto solo per chi va in pensione verso i 67 e sbagliato per tutti gli altri.
-//
-// MANUTENZIONE NOSTRA, non una casella: nessuno sa a memoria il coefficiente del proprio fondo,
-// e quasi nessuno ha voglia di andarselo a cercare. Non è nemmeno copiato da un fondo: viene
-// dalla speranza di vita ISTAT allungata di un margine (regole.mjs), e sta dentro le tavole vere
-// per costruzione — verifiche/tavole-dei-fondi.mjs lo controlla a ogni build.
-// BANDA_ALTA e BANDA_BASSA sono i due estremi misurati fra le convenzioni pubblicate: servono a
-// distinguere quello che vale per chiunque da quello che dipende dal fondo.
+// Crescono con l'età — a 60 anni si prende quasi un terzo in meno che a 70 — quindi una costante
+// sola sarebbe giusta solo per chi va in pensione verso i 67.
+// Non sono una casella, perché nessuno conosce a memoria il coefficiente del proprio fondo, e non
+// sono copiati da un fondo: escono dalla speranza di vita ISTAT allungata di un margine
+// (regole.mjs), e verifiche/tavole-dei-fondi.mjs controlla a ogni build che restino dentro le
+// tavole realmente pubblicate. BANDA_ALTA e BANDA_BASSA sono i due estremi misurati fra quelle
+// convenzioni: distinguono ciò che vale per chiunque da ciò che dipende dal proprio fondo.
 //@@REGOLE@@
 
 
-// Il coefficiente di conversione cresce con l'età: chi converte a 60 anni prende quasi un terzo
-// in meno di chi converte a 70, perché l'assegno se lo prenderà per più anni. La tabella sta in
-// regole.mjs; qui c'è solo come si legge in mezzo a due righe.
+// La tabella sta in regole.mjs; qui c'è solo come si legge in mezzo a due età.
 function coeffEta(eta){
   const primo = COEFF_ETA[0], ultimo = COEFF_ETA[COEFF_ETA.length-1];
   if (!(eta > primo[0])) return primo[1];
@@ -1086,9 +1045,9 @@ function coeffEta(eta){
   return ultimo[1];
 }
 
-// Gli anni che restano da vivere, secondo l'ISTAT, a una certa età. Stessa tavola da cui
-// escono i coefficienti, letta allo stesso modo: serve per dire a quale età è misurato il
-// confronto fra capitale e rendita, invece di sceglierla noi.
+// Gli anni che restano da vivere, secondo l'ISTAT, a una certa età: stessa tavola dei
+// coefficienti, letta allo stesso modo. Serve a fissare l'età a cui è misurato il confronto fra
+// capitale e rendita, invece di sceglierla noi.
 function speranzaVita(eta){
   const primo = SPERANZA_VITA[0], ultimo = SPERANZA_VITA[SPERANZA_VITA.length-1];
   if (!(eta > primo[0])) return primo[1];
@@ -1100,21 +1059,17 @@ function speranzaVita(eta){
   return ultimo[1];
 }
 
-// LA PENSIONE AI SUPERSTITI, e la riduzione che quasi nessuno si aspetta.
-// Al coniuge spetta il 60% della pensione del defunto, ma se ha redditi PROPRI elevati quella
-// quota viene tagliata del 25, 40 o 50% (Tabella F, art. 1 c. 41 L. 335/1995). Ignorarla
-// sovrastimerebbe chi resta, cioè sbaglierebbe nella direzione che questo conto rifiuta.
-//
-// I REDDITI CHE CONTANO sono quelli assoggettabili a IRPEF: la pensione propria e la
-// retribuzione. Restano fuori la rendita del fondo, che sconta un'imposta sostitutiva, e la
-// pensione ai superstiti stessa.
-//
-// LE DUE PROTEZIONI, senza le quali il conto costruirebbe un gradino che la legge non ha:
-//  · la salvaguardia di legge — superata una soglia, il totale (redditi + pensione ridotta) non
-//    può risultare inferiore a quello del limite massimo della fascia precedente. Senza, un euro
-//    di reddito in più ne farebbe perdere centinaia;
-//  · Corte costituzionale 162/2022 — la riduzione non può eccedere l'ammontare dei redditi
-//    che l'hanno provocata.
+// LA PENSIONE AI SUPERSTITI. Al coniuge spetta il 60% della pensione del defunto, ma se ha
+// redditi PROPRI elevati quella quota è tagliata del 25, 40 o 50% (Tabella F, art. 1 c. 41
+// L. 335/1995). Ignorare il taglio sovrastimerebbe chi resta.
+// I redditi che contano sono quelli assoggettabili a IRPEF: pensione propria e retribuzione.
+// Restano fuori la rendita del fondo, che sconta un'imposta sostitutiva, e la pensione ai
+// superstiti stessa.
+// Due protezioni, senza le quali il conto costruirebbe un gradino che la legge non ha:
+//  · salvaguardia di legge — superata una soglia, il totale (redditi + pensione ridotta) non può
+//    risultare inferiore a quello del limite massimo della fascia precedente. Senza, un euro di
+//    reddito in più ne farebbe perdere centinaia;
+//  · Corte costituzionale 162/2022 — la riduzione non può eccedere i redditi che l'hanno causata.
 function aiSuperstiti(lordaDefunto, redditiPropri){
   const piena = Math.max(0, lordaDefunto) * REVERSIBILITA;
   if (!(piena > 0)) return 0;
@@ -1145,16 +1100,15 @@ const quotaMax = (montante, coeff) => montante < soglia(coeff || COEFF_RENDITA)
 // Tassazione separata della liquidazione (art. 19 TUIR): l'aliquota non è quella dell'ultimo
 // anno, è la media che si ottiene portando il TFR a «reddito di riferimento» — cioè dividendolo
 // per gli anni di servizio e moltiplicandolo per dodici. Con TFR piccoli o carriere lunghe è
-// molto più bassa dell'aliquota marginale, e va calcolata, non indovinata.
+// molto più bassa dell'aliquota marginale.
 function aliquotaTfr(totale, anni){
   const rif = anni > 0 ? (totale / anni) * 12 : totale;
   return rif > 0 ? irpef(rif) / rif : 0;
 }
 
-// L'IMPOSTA LORDA, i soli scaglioni. RESTA PURA, e non è un dettaglio: la usa `aliquotaTfr` per
-// la tassazione separata dell'art. 19, che è un altro regime e ha detrazioni sue. Se la
-// detrazione entrasse qui, il TFR se la prenderebbe di nascosto. Chi ne ha diritto passa da
-// `irpefNetta`, e la porta è una sola.
+// L'imposta lorda, i soli scaglioni. Deve restare pura: la usa `aliquotaTfr` per la tassazione
+// separata dell'art. 19, che è un altro regime e ha detrazioni sue. Se la detrazione entrasse
+// qui, il TFR se la prenderebbe indebitamente. Chi ne ha diritto passa da `irpefNetta`.
 function irpef(imponibile){
   let t = 0, sotto = 0;
   for (const [tetto, al] of SCAGLIONI){
@@ -1165,21 +1119,16 @@ function irpef(imponibile){
   return t;
 }
 
-// LE DETRAZIONI DELL'ART. 13 TUIR, e perché il conto senza di esse sbagliava parecchio.
-// Sono due, non cumulabili, e si calcolano sul REDDITO COMPLESSIVO: una per chi lavora (c. 1),
-// una per chi è in pensione (c. 3). Decrescono fino ad azzerarsi a 50.000 €.
-// Fino al 02/08/2026 non c'erano, e il conto tassava la pensione con i soli scaglioni: su
-// 1.500 € lordi al mese dava 1.155 € netti invece di 1.267, e su 1.000 € 770 invece di 914.
-// L'errore era prudente — il piano sembrava peggiore del vero — ma valeva fino al 19% del netto
-// proprio sulle pensioni basse, cioè per chi ha più bisogno di sapere se ce la fa.
-//
-// SUL LATO LAVORO ENTRA IN UNA DERIVATA, non in un livello: quello che conta è il beneficio
-// MARGINALE di dedurre. Poiché la detrazione decresce col reddito, dedurre un euro ne fa
-// risalire una parte, e l'aliquota effettiva sale — con una RAL di 38.000 dedurre 1.000 € vale
+// LE DETRAZIONI DELL'ART. 13 TUIR. Sono due, non cumulabili, e si calcolano sul REDDITO
+// COMPLESSIVO: una per chi lavora (c. 1), una per chi è in pensione (c. 3). Decrescono fino ad
+// azzerarsi a 50.000 €. Senza di esse la pensione risulterebbe tassata dei soli scaglioni, con
+// un errore che sulle pensioni basse arriva al 19% del netto.
+// Sul lato lavoro entrano in una DERIVATA, non in un livello: quello che conta è il beneficio
+// marginale di dedurre. Poiché la detrazione decresce col reddito, dedurre un euro ne fa
+// risalire una parte e l'aliquota effettiva sale — con una RAL di 38.000 dedurre 1.000 € vale
 // 417 € invece di 330. Vale perché i contributi trattenuti in busta non formano reddito di
-// lavoro dipendente (art. 51 c. 2 lett. h), quindi abbassano il reddito complessivo per davvero;
+// lavoro dipendente (art. 51 c. 2 lett. h) e abbassano quindi il reddito complessivo per davvero;
 // per un versamento fatto di tasca propria e dedotto come onere non sarebbe così.
-//
 // In ogni banda il numeratore è il limite superiore della banda stessa: bastano quattro numeri.
 const detrazione = (tab, R) => {
   for (const [fino, base, quota, den] of tab)
@@ -1191,9 +1140,9 @@ const detrazione = (tab, R) => {
 function irpefNetta(reddito, pensione){
   const R = Math.max(0, reddito);
   const piu = pensione && R > 25000 && R <= 29000 ? DETRAZIONE_PENS_PIU : 0;
-  // L'ULTERIORE DETRAZIONE spetta ai soli titolari di reddito di LAVORO: i pensionati sono
-  // esclusi dalla legge, non da noi (art. 1 c. 6 L. 207/2024). Ha la forma delle altre bande,
-  // quindi la calcola la stessa funzione.
+  // L'ulteriore detrazione spetta ai soli titolari di reddito di LAVORO: i pensionati ne sono
+  // esclusi per legge (art. 1 c. 6 L. 207/2024). Ha la forma delle altre bande, quindi la
+  // calcola la stessa funzione.
   const cuneo = pensione ? 0 : detrazione(ULTERIORE_DETRAZIONE, R);
   return Math.max(0, irpef(R) - detrazione(pensione ? DETRAZIONE_PENS : DETRAZIONE_LAV, R)
                     - piu - cuneo);
@@ -1206,35 +1155,22 @@ const sommaCuneo = R => {
   return 0;
 };
 
-// QUANTO ENTRA NEL FONDO, data la percentuale che sceglie il lavoratore.
-// Il punto che cambia tutto: nei fondi negoziali il contributo del datore è dovuto SOLO se il
-// lavoratore versa la sua quota, e una volta scattato NON cresce se lui versa di più. Il valore
-// del denaro versato non è quindi una retta: è un gradino.
-//
-// LA SOGLIA È `pcMin`, e per un pezzo è stata `pcVoi`. Il minimo del contratto varia da CCNL a
-// CCNL e non si può inventare, quindi si piazzava il gradino su quello che si dichiara di
-// versare oggi. Reggeva su un'osservazione vera — nessuno versa MENO del minimo contrattuale —
-// che però non dice niente di chi versa DI PIÙ: a quello la pagina affermava «sotto il 3%
-// versato oggi il datore non versa», mentre il datore versa fino all'1,2% del suo contratto.
-// Ora il minimo si può scrivere, in una casella facoltativa che vuota vale `pcVoi`: chi non la
-// compila si comporta esattamente come prima. Chi ha soglia 0 la fa scattare a qualunque
-// versamento positivo, ed è lì che serve il messaggio a chi oggi non versa niente.
-//
-// LA QUOTA STA IN UNA FUNZIONE SUA, e non dentro `contributi`, per due ragioni. La prima è che
-// la vista deve poterla nominare anche quando NON scatta: tutta la sezione 1 esiste per dire
-// «ecco quanto state lasciando lì». La seconda è che la ricalcolava a mano in tre punti diversi,
-// che è il modo sicuro perché uno dei tre resti indietro il giorno che la regola cambia.
-// E LA REGOLA È CAMBIATA QUI: il contributo del datore nasce dal contratto collettivo e segue
-// il fondo che il contratto individua. Chi ha sottoscritto per conto proprio un fondo aperto o
-// un PIP non lo riceve, e attribuirglielo è un errore in direzione ottimistica — il peggiore
-// dei due, perché fa versare in un fondo contando su denaro che non arriverà.
-const quotaDatore = x => x.fondoIndividuale ? 0
-  : Math.max(0, x.ral) * Math.max(0, x.pcDat) / 100;
+// QUANTO ENTRA NEL FONDO, data la percentuale scelta dal lavoratore.
+// Nei fondi negoziali il contributo del datore è dovuto SOLO se il lavoratore versa la sua quota,
+// e scattato non cresce se lui versa di più: non è una retta, è un gradino.
+// Sta in una funzione sua perché la vista deve poterla nominare anche quando NON scatta: tutta
+// la sezione 1 esiste per dire quanto si sta lasciando lì.
+// LA PERCENTUALE SCRITTA VALE, e nessun altro campo la contraddice. Qui c'era un `fondoIndividuale`
+// che l'azzerava sulla risposta a un menu: due dichiarazioni per un fatto solo, che potevano
+// dissentire — ed è da due fonti in disaccordo che era nato il difetto dei 760 € di tetto
+// inesistente. Il contributo nasce sì dal contratto collettivo e segue il fondo che il contratto
+// individua, ma quella condizione ora è DETTA (`notaDatore`), non applicata di nascosto sopra un
+// numero che chi compila ha letto sul proprio contratto.
+const quotaDatore = x => Math.max(0, x.ral) * Math.max(0, x.pcDat) / 100;
 
-// La soglia sta in una funzione sua per la ragione di sempre: il modello e la frase che la
-// racconta devono leggerla dallo stesso posto, o il giorno che cambia una delle due resta
-// indietro. `null` è la casella lasciata vuota — «quello che verso è il minimo» — e qui, in un
-// punto solo, diventa `pcVoi`. Lo zero SCRITTO resta zero, e vuol dire un'altra cosa.
+// Il modello e la frase che lo racconta devono leggere la soglia dallo stesso posto, o una delle
+// due resterà indietro. `null` è la casella lasciata vuota — «quello che verso è il minimo» — e
+// qui, in un punto solo, diventa `pcVoi`. Lo zero SCRITTO resta zero: vuol dire un'altra cosa.
 const sogliaDatore = x => Math.max(0, x.pcMin == null ? x.pcVoi : x.pcMin);
 
 function contributi(x, pc){
@@ -1252,32 +1188,20 @@ function spazioDeducibile(x){
   return Math.max(0, TETTO_DEDUZIONE - contributi(x, x.pcVoi).tot);
 }
 // La percentuale oltre la quale la deduzione non c'è più.
-// LA QUOTA DEL DATORE VA CONTATA COME SARÀ, NON COM'È OGGI: scatta appena si versa qualcosa, e
-// consuma il tetto anche per chi oggi versa zero. Calcolandola su `pcVoi` — che per quelli è
-// zero — il tetto risultava più in là del vero di tanti punti quanti ne mette l'azienda, e la
-// pagina indicava «dove finisce la deduzione» un punto in cui era già finita.
+// La quota del datore va contata COME SARÀ, non com'è oggi: scatta appena si versa qualcosa e
+// consuma il tetto anche per chi oggi versa zero. Contandola su `pcVoi` il tetto finirebbe più
+// in là del vero di tanti punti quanti ne mette l'azienda.
 function pcTetto(x){
   if (!(x.ral > 0)) return Math.max(x.pcVoi, 0);
-  // «come sarà» è esattamente la quota del datore: sopra la soglia `contributi` restituisce
-  // quella, e chiederla passando per una percentuale di comodo era un giro inutile che, con la
-  // soglia diventata una casella, avrebbe anche potuto sbagliare il valore di comodo.
+  // «come sarà» è esattamente `quotaDatore`: sopra la soglia è quello che `contributi` restituisce
   return Math.max(x.pcVoi, (TETTO_DEDUZIONE - quotaDatore(x)) / x.ral * 100);
 }
 // Dove si ferma il cursore. Un massimo di legge non c'è: si può versare quanto si vuole, e
-// l'unico limite vero è la busta paga — il versamento esce dallo stipendio netto, e oltre quel
-// punto il piano racconterebbe cose che non possono succedere. `costoAnnuo` è misurato rispetto
-// a quello che si versa oggi, quindi il confronto è fra l'AUMENTO e l'intero netto attuale: chi
-// già versa vive su quello che gli resta, ed è quello che può ancora impegnare. Cresce con la
-// percentuale, quindi il punto si trova per bisezione.
-//
-// FINO AL 02/08/2026 IL CURSORE SI FERMAVA PRIMA, al 50% della RAL, per una convenzione nostra
-// («nessuno versa più del 50%»). Tolta: non era un fatto, era una stima di comportamento messa
-// dove sta un vincolo, e nascondeva metà del dominio a chi la stima non la rispetta. Il limite
-// che resta è misurato sui suoi numeri, non supposto sui suoi gusti.
-// LA CONDIZIONE È DIVENTATA QUELLA CHE HA SEMPRE VOLUTO DIRE. Prima confrontava l'AUMENTO del
-// versamento con il netto dichiarato nella casella; ora che il netto si deriva, la stessa cosa
-// si dice in un modo che non ha bisogno di essere spiegato: il cursore si ferma dove la busta
-// arriva a zero.
+// l'unico limite vero è la busta paga, perché il versamento esce dallo stipendio netto. Il
+// cursore si ferma quindi dove la busta arriva a zero, non a una percentuale convenzionale —
+// quella sarebbe una stima di comportamento messa dove sta un vincolo, e nasconderebbe metà del
+// dominio a chi non la rispetta. Il netto decresce al crescere della percentuale in modo
+// monotono, quindi il punto si trova per bisezione.
 function pcSpendibile(x){
   if (!(x.ral > 0)) return x.pcVoi;
   if (nettoAnnuo(x, 100) >= 0) return 100;
@@ -1289,27 +1213,20 @@ function pcSpendibile(x){
 function pcMassimo(x){
   return Math.max(x.pcVoi, Math.min(100, pcSpendibile(x)));
 }
-// Quanto esce DAVVERO dalla busta rispetto a quello che versa oggi.
-// La quota del datore CONSUMA il tetto ma non passa dalla vostra busta e non è vostro reddito:
-// qui si deduce solo la vostra, dentro lo spazio che resta una volta contato il datore. È la
-// scelta prudente: contando la deduzione anche sulla quota del datore, versare risulterebbe
-// perfino a costo negativo — vero solo se quella quota fosse dentro la vostra RAL, e non lo
-// sappiamo.
+// La quota del datore CONSUMA il tetto ma non passa dalla busta e non è reddito del lavoratore:
+// qui si deduce solo la sua, dentro lo spazio che resta una volta contato il datore. È la scelta
+// prudente: deducendo anche la quota del datore, versare risulterebbe perfino a costo negativo —
+// vero solo se quella quota stesse dentro la RAL, e non lo sappiamo.
 const dedLav = c => Math.min(c.lav, Math.max(0, TETTO_DEDUZIONE - c.dat));
 
-// QUELLO CHE RESTA IN BUSTA IN UN ANNO, ricavato invece che chiesto.
-// Fino al 02/08/2026 il netto era una casella, e il conto lo moltiplicava per dodici — mentre
-// la pagina istruiva a NON includere le mensilità aggiuntive. Tredicesima e quattordicesima
-// nette non entravano quindi mai nel piano: l'8-14% delle disponibilità di ogni esercizio
-// lavorativo, sparito senza che niente lo dichiarasse.
-// Chiedere «quante mensilità» avrebbe corretto il numero e sbagliato l'imposta, perché la
-// tredicesima NON si tassa come un mese ordinario: le detrazioni sono annue e già consumate sui
-// dodici. La RAL invece le mensilità le comprende già tutte — la pagina che dice dove trovarla
-// lo chiede esplicitamente — e l'IRPEF è annua per costruzione. Derivarlo è quindi l'unica via
-// esatta, e per giunta toglie una casella invece di aggiungerne una.
-//
-// NON È IL NETTO DELLA BUSTA PAGA, ed è dichiarato: mancano le addizionali regionale e comunale
-// e le detrazioni per carichi di famiglia. Le prime lo alzano, le seconde lo abbassano.
+// QUELLO CHE RESTA IN BUSTA IN UN ANNO, ricavato dalla RAL invece che chiesto.
+// Chiedere il netto mensile e moltiplicarlo per dodici perde tredicesima e quattordicesima, cioè
+// l'8-14% delle disponibilità dell'anno; chiedere «quante mensilità» correggerebbe il numero e
+// sbaglierebbe l'imposta, perché la tredicesima non si tassa come un mese ordinario (le
+// detrazioni sono annue e già consumate sui dodici). La RAL comprende già tutte le mensilità e
+// l'IRPEF è annua per costruzione, quindi derivarlo è l'unica via esatta.
+// Non è il netto della busta paga, ed è dichiarato: mancano le addizionali regionale e comunale
+// (lo alzano) e le detrazioni per carichi di famiglia (lo abbassano).
 function nettoAnnuo(x, pc){
   const base = Math.max(0, x.ral) * (1 - IVS);
   const c = contributi(x, pc);
@@ -1323,10 +1240,9 @@ const scontoIrpef = (x, pc) => {
   return irpefNetta(base - dedLav(contributi(x, x.pcVoi)), false)
        - irpefNetta(base - dedLav(contributi(x, pc)), false);
 };
-// IL COSTO È LA DIFFERENZA FRA DUE BUSTE, e detto così si aggiorna da solo. Prima era scritto
-// come «quello che si versa in più, meno lo sconto IRPEF»: identico finché il netto dipendeva
-// solo dall'imposta, ma la somma del cuneo NON passa dall'imposta — quella formula l'avrebbe
-// ignorata e il costo sarebbe rimasto indietro senza che niente lo dicesse.
+// Il costo è la differenza fra due buste, non «quello che si versa in più meno lo sconto IRPEF»:
+// le due formule coincidono solo finché il netto dipende dalla sola imposta, e la somma del
+// cuneo non passa dall'imposta.
 function costoAnnuo(x, pc){
   return nettoAnnuo(x, x.pcVoi) - nettoAnnuo(x, pc);
 }
@@ -1346,18 +1262,15 @@ const E50 = n => E0(Math.floor(n / 50) * 50);
 // E lo zero fa storia a sé: si legge «zero», quindi vuole «lo», non «il».
 // i decimali si scrivono solo se ci sono: «11,9%» ma «50%», non «50,0%»
 const pcTesto = n => fmt(n, Math.abs(n * 10 % 10) < 1e-9 ? 0 : 1) + '%';
-// L'ELISIONE SI DECIDE SU COME SI LEGGE IL NUMERO SCRITTO, non sul valore, e prima si guardava
-// il valore. Due trappole, tutte e due raggiungibili con numeri veri:
-//  · «0,8%» si legge «zero virgola otto» e vuole «lo», pur non essendo zero — e i minimi
-//    contrattuali sotto l'1% esistono (0,55%), quindi usciva «il 0,55%»;
-//  · 0,96 si SCRIVE «1,0%», si legge «uno virgola zero» e vuole «l'», mentre la parte intera
-//    del valore è 0.
+// L'elisione si decide su come si legge il numero SCRITTO, non sul valore. Due casi veri:
+//  · «0,8%» si legge «zero virgola otto» e vuole «lo» pur non essendo zero, e i minimi
+//    contrattuali sotto l'1% esistono (0,55%);
+//  · 0,96 si scrive «1,0%», si legge «uno virgola zero» e vuole «l'», ma la parte intera è 0.
 // Si prende quindi la parte intera dal testo già formattato, che è quella che si legge.
 const interoDetto = n => parseInt(pcTesto(n), 10);
-// E GLI OTTANTA MANCAVANO. La regola guardava 1, 8 e 11 — che bastano per le percentuali, quasi
-// sempre sotto il 50 — ma «ottantatré» comincia per vocale come «otto», e il titolo scriveva
-// «ai 83 anni». Vale per 80-89 e per 8, 11 e 1: si guarda la PRIMA PAROLA con cui il numero si
-// legge, che è l'unica cosa che decide l'elisione in italiano.
+// Vale per 1, 8, 11 e per tutti gli 80-89: «ottantatré» comincia per vocale come «otto». Decide
+// la PRIMA PAROLA con cui il numero si legge, che in italiano è l'unica cosa che conta per
+// l'elisione — e serve anche fuori dalle percentuali, per l'età nel titolo.
 const vocaleDetta = i => i === 1 || i === 8 || i === 11 || (i >= 80 && i <= 89);
 // L'articolo da solo, per i numeri che non sono percentuali: l'età nel verdetto, dove serve
 // «agli 83 anni» e non «ai 83 anni».
@@ -1369,25 +1282,19 @@ const perc = (n, prep) => { const i = interoDetto(n);
         : vocaleDetta(i)     ? ART[prep][1]
                              : ART[prep][0])
     + pcTesto(n); };
-// LE DIFESE SUI VALORI. Un modulo pubblico prende addosso, il primo giorno, numeri che nessuno
-// di noi scriverebbe: un incollaggio sbagliato nell'orizzonte del piano (1e308) mandava il
-// ciclo degli anni a girare finché non finiva la memoria, e la scheda si piantava. Il campo
-// porta anche `min` e `max`, ma quello lo può aggirare chiunque: la difesa vera è qui.
-// Si limita il valore, non si riscrive la casella: quello che hanno scritto resta scritto.
+// LE DIFESE SUI VALORI. Un orizzonte incollato per sbaglio (1e308) manda il ciclo degli anni a
+// girare finché non finisce la memoria. Gli attributi `min` e `max` del campo non bastano,
+// perché si aggirano: la difesa vera è qui.
+// Si limita il valore, non si riscrive la casella: quello che è stato scritto resta scritto.
 const fra = (v, min, max) => Math.min(max, Math.max(min, v));
-// COME SI SCRIVONO I NUMERI IN ITALIANO, e perché le caselle non sono più `type="number"`.
-// Quel tipo di casella, per specifica, ammette come separatore decimale SOLO il punto: chi
-// scriveva «1,5» non veniva letto male, non veniva letto affatto — il browser restituisce
-// stringa vuota al codice, che quindi non può nemmeno accorgersene e ripiegava su zero. E
-// funzionava o no secondo la lingua del BROWSER, non della pagina: un difetto che colpisce un
-// sottoinsieme imprevedibile di chi passa è peggio di uno che colpisce tutti, perché nessuno
-// lo segnala. Il segnaposto delle percentuali, intanto, diceva «es. 1,2».
+// COME SI SCRIVONO I NUMERI IN ITALIANO, e perché le caselle non sono `type="number"`.
+// Quel tipo di campo ammette per specifica il solo punto come separatore decimale: «1,5» non
+// viene letto male, non viene letto affatto — il browser restituisce stringa vuota e il codice
+// ripiega su zero senza potersene accorgere. E il comportamento dipende dalla lingua del
+// BROWSER, non della pagina. Peggio ancora, «2.500» è un numero valido e vale due virgola
+// cinque: una spesa scritta all'italiana renderebbe il piano sostenibile per finta.
 //
-// IL CASO PEGGIORE ERA L'ALTRO, e non lo vedeva nessuno: «2.500» è un numero VALIDO e vale
-// due virgola cinque. Una spesa scritta come si scrive in italiano rendeva il piano sostenibile
-// per finta, senza un avviso.
-//
-// Ora la casella è di testo e la conversione la facciamo qui:
+// La casella è quindi di testo, e la conversione si fa qui:
 //   virgola sola              → decimale       «1,5» → 1,5
 //   punto e virgola insieme   → l'ultimo dei due è il decimale, l'altro sono migliaia
 //   punto seguito da 3 cifre  → migliaia       «2.500» → 2500 · «1.234.567» → 1234567
@@ -1481,23 +1388,12 @@ function leggi(){
     pcDatVuoto: EL('pcDat'+i).value.trim() === '',
     pcDat:    numFra('pcDat'+i, 0, 100),
     // LA SOGLIA DEL GRADINO, che è un'altra cosa da quello che si versa. Vuota vale «quello che
-    // verso è il minimo», ma il ripiego NON si applica qui: il campo porta `null`, e la soglia
-    // la compone `sogliaDatore`. Scrivendoci dentro `pcVoi` si otterrebbe lo stesso numero e un
-    // difetto in più — ogni oggetto costruito con `{...x, pcVoi: 0}` si porterebbe dietro la
-    // soglia vecchia, e il gradino resterebbe dov'era. Due controlli sono caduti proprio così.
-    // E lo ZERO SCRITTO non è il vuoto nemmeno qui: dice «il contratto non chiede una quota
-    // mia», caso delle adesioni in cui il datore versa comunque.
+    // verso è il minimo», ma il ripiego lo applica `sogliaDatore`: qui il campo porta `null`.
+    // Scrivendoci dentro `pcVoi` si otterrebbe lo stesso numero e un difetto in più, perché ogni
+    // oggetto costruito con `{...x, pcVoi: 0}` si porterebbe dietro la soglia vecchia.
+    // Lo ZERO SCRITTO non è il vuoto nemmeno qui: dice «il contratto non chiede una quota mia»,
+    // caso delle adesioni in cui il datore versa comunque.
     pcMin: EL('pcMin'+i).value.trim() === '' ? null : numFra('pcMin'+i, 0, 100),
-    // Il valore che spegne la quota del datore è quello ESPLICITO: un campo che non esiste, o
-    // che il salvataggio di una visita precedente ha lasciato vuoto, non deve togliere a nessuno
-    // un contributo che gli spetta. Si spegne solo chi dichiara di aver sottoscritto da sé.
-    // COME SI È ADERITO, non che tipo di fondo è: la quota del datore non dipende dal contenitore
-    // ma da cosa il contratto riconosce. `adesione` porta il fatto grezzo, così le frasi possono
-    // distinguere i tre casi; `fondoIndividuale` resta la sola cosa che il conto guarda, ed è
-    // vera per una sola delle tre. Un valore sconosciuto — un salvataggio vecchio, un fuzz —
-    // cade quindi sul ramo prudente, quello in cui la quota si conta.
-    adesione: EL('tipoFondo'+i).value,
-    fondoIndividuale: EL('tipoFondo'+i).value === 'individuale',
     pc:       fra(EL('pc'+i).value === '' ? num('pcVoi'+i) : num('pc'+i), 0, 100),
     tfrAlFondo: EL('tfrDove'+i).value !== 'azienda',
     iscr:     numFra('iscr'+i, 1900, ANNO0 + 80),
@@ -1508,13 +1404,9 @@ function leggi(){
     anniFraz: Math.max(FRAZ_ANNI_MIN, numFra('anniFraz'+i, 0, 60) || FRAZ_ANNI_MIN),
     forma:    EL('forma'+i).value || 'vita'
   }));
-  // L'ULTIMO ANNO DI LAVORO È DI CIASCUNO, e il valore di partenza è la propria pensione.
-  // Prima era uno solo per tutti e due, ricavato dalla PRIMA delle due decorrenze: chi aveva
-  // accanto una persona più grande smetteva di lavorare quando andava in pensione l'altra, e
-  // perdeva stipendio, contributi, quota del datore e TFR di tutti gli anni in mezzo. Su una
-  // coppia con sette anni di differenza sono sette anni di reddito tolti a chi ancora lavora,
-  // e l'errore va in direzione pessimistica. Era un'ipotesi ereditata da una pagina scritta per
-  // due persone che volevano davvero smettere insieme: come regola generale è falsa.
+  // L'ULTIMO ANNO DI LAVORO È DI CIASCUNO, e il valore di partenza è la propria pensione: uno
+  // solo per tutti e due toglierebbe a chi ha accanto una persona più grande tutti gli anni di
+  // reddito che gli restano, in direzione pessimistica.
   // Vuoto vuol dire «fino alla propria pensione», che è il caso base; chi smette prima lo
   // scrive. Non si può lavorare oltre la decorrenza: il conto pagherebbe stipendio e
   // trattamento nello stesso esercizio, quindi il valore scritto viene ricondotto lì.
@@ -1526,18 +1418,14 @@ function leggi(){
     x.ultimo = x.ultimoScritto === null ? x.annoPens - 1
                                         : Math.min(x.ultimoScritto, x.annoPens - 1);
     // CHI È GIÀ IN PENSIONE. La decorrenza è passata, quindi nel piano non c'è nessun esercizio
-    // di attività: niente retribuzione, niente TFR che matura, niente contributi. Tutto questo
-    // il motore lo ricava già da `ultimo`, che resta indietro rispetto all'anno in corso.
-    //
-    // IL FONDO PENSIONE INVECE VA TOLTO A MANO, ed è il punto delicato. `annoIncasso` è
-    // `max(annoPens, ANNO0)`: senza questa riga il montante scritto verrebbe riscosso NEL 2026,
-    // cioè una seconda volta, perché chi l'ha già riscosso quel capitale ce l'ha dentro
-    // «patrimonio investito». Sarebbe un errore in direzione ottimistica, il peggiore qui.
-    // E il coefficiente di conversione sarebbe quello dell'età alla decorrenza passata, non
-    // dell'età di adesso: il conto sarebbe sbagliato anche per chi non l'avesse ancora preso.
+    // di attività: niente retribuzione, niente TFR che matura, niente contributi. Il motore lo
+    // ricava già da `ultimo`, che resta indietro rispetto all'anno in corso.
+    // Il fondo pensione invece va azzerato a mano. `annoIncasso` è `max(annoPens, ANNO0)`, quindi
+    // senza questa riga il montante scritto verrebbe riscosso nell'anno in corso — una seconda
+    // volta, perché chi l'ha già riscosso ce l'ha dentro «patrimonio investito» — e per giunta
+    // con il coefficiente dell'età di adesso invece che di quella alla decorrenza.
     // Chi non l'ha ancora riscosso resta fuori: è un limite dichiarato, non un conto sbagliato.
-    // La decorrenza NELL'ANNO IN CORSO non è questo caso: lì la riscossione cade nel piano,
-    // all'età giusta, ed è modellata come qualunque altra.
+    // La decorrenza NELL'ANNO IN CORSO non è questo caso: lì la riscossione cade nel piano.
     x.giaInPens = !x.annoPensVuoto && x.annoPens < ANNO0;
     x.fondoScritto = x.fondo;
     if (x.giaInPens) x.fondo = 0;
@@ -1561,26 +1449,20 @@ function leggi(){
   const reale = nom => (1 + nom) / (1 + infl) - 1;
   // LA CRESCITA DELLA RETRIBUZIONE SI SCRIVE NOMINALE, come i rendimenti, e il conto le toglie
   // l'inflazione: chi scrive il 2% con l'inflazione al 2% sta dicendo «segue il costo della
-  // vita», e in euro di oggi non deve cambiare niente. Chiederla già reale avrebbe voluto dire
-  // chiedere un conto che nessuno ha in mente.
-  // Vuoto vuol dire «segue il costo della vita», che in euro di oggi è crescita zero: è anche
-  // l'unico modo perché il valore di partenza resti giusto se si cambia l'inflazione. Un numero
-  // scritto si prende alla lettera, nominale, e l'inflazione gliela toglie il conto.
+  // vita», e in euro di oggi non deve cambiare niente.
+  // Vuoto vuol dire lo stesso, cioè crescita reale zero: è anche l'unico modo perché il valore
+  // di partenza resti giusto se si cambia l'inflazione.
   p.forEach(x => { x.cresc = x.crescNom === null ? 0 : reale(x.crescNom / 100); });
   // QUANDO IL PIANO NON HA NESSUN ESERCIZIO DI ATTIVITÀ, la spesa «di oggi» non ha anni a cui
-  // applicarsi: il passaggio fra le due spese cade all'ultimo anno di lavoro, che è già alle
-  // spalle, e il conto userebbe per intero quella «in pensione». La prima casella, che è quella
-  // che si sa, verrebbe scartata in silenzio. Le due spese qui coincidono, quindi ne vale una:
-  // la seconda si annulla e la pagina disattiva la casella dicendo perché.
+  // applicarsi: il passaggio fra le due spese cade all'ultimo anno di lavoro, già alle spalle, e
+  // la prima casella — l'unica che si sa — verrebbe scartata in silenzio. Le due spese qui
+  // coincidono, quindi ne vale una: la seconda si annulla e la pagina disattiva la casella.
   const tuttoInPens = p.every(x => !x.annoPensVuoto && x.ultimo < ANNO0);
-  // --- L'ABITAZIONE. Non entra nel patrimonio: è una posta che diventa denaro solo se si
-  // decide di cambiarla, e allora lo fa in un anno solo. Finché la scelta è «resto», niente di
-  // tutto questo tocca il conto e lo stato resta spento.
-  //
-  // L'ANNO SEGUE LA REGOLA DELLE QUATTRO CIFRE, come ogni altro anno della pagina: mentre si
-  // digita 2040 si passa da 2, 20, 204, e ognuno di quelli sarebbe una vendita in un anno
-  // diverso — con la spesa che cambia e un ricavato che entra. Sotto le quattro cifre la
-  // scelta vale come non ancora compilata.
+  // --- L'ABITAZIONE. Non entra nel patrimonio: diventa denaro solo se si decide di cambiarla, e
+  // allora in un anno solo. Finché la scelta è «resto», lo stato resta spento.
+  // L'anno segue la regola delle quattro cifre come ogni altro anno della pagina: digitando 2040
+  // si passa da 2, 20, 204, e ognuno di quelli sarebbe una vendita in un anno diverso. Sotto le
+  // quattro cifre la scelta vale come non ancora compilata.
   const casaCosa   = EL('casaCosa').value || 'resto';
   const casaAnnoS  = annoOpt('casaAnno');
   const casaValore = numFra('casaValore', 0, 1e10);
@@ -1609,23 +1491,19 @@ function leggi(){
       - (casaCosa === 'piccola' ? casaNuova + casa.costiAcquisto : 0)
     : 0;
   // LA SPESA ABITATIVA È UN FLUSSO A PARTE, e da qui in giù non si mescola mai con `spesa`.
-  // Due ragioni, e tutte e due cambierebbero il risultato: la bisezione di `spesaSostenibile`
-  // scala la spesa cercando quella massima, e un canone d'affitto scalato vorrebbe dire
-  // «il piano regge se si paga meno di affitto», che non è una scelta di chi ci abita; la
-  // scala di equivalenza del superstite riduce i consumi di chi resta, ma non il canone dello
-  // stesso appartamento, che si paga uguale in uno o in due.
+  // Due ragioni, entrambe capaci di cambiare il risultato: `spesaSostenibile` scala la spesa per
+  // bisezione, e un canone scalato direbbe «il piano regge pagando meno di affitto», che non è
+  // una scelta di chi ci abita; la scala di equivalenza del superstite riduce i consumi di chi
+  // resta, ma non il canone dello stesso appartamento, che si paga uguale in uno o in due.
   // Per la casa più piccola resta zero: costerebbe meno di manutenzione e di utenze, ma di
   // quanto non lo sappiamo, e non contarlo tiene lo scenario dalla parte prudente.
   casa.spesaAnnua = casa.attiva && casaCosa === 'affitto' ? casaCanone * 12 : 0;
-  // QUALE IMMOBILE SI POSSIEDE ALLA FINE DEL PIANO, e serve per una ragione sola: confrontare
-  // due mondi in cui la ricchezza non ha la stessa forma.
-  // IL DIFETTO CHE QUESTA RIGA RIPARA, trovato il 02/08/2026 subito dopo la pubblicazione:
-  // la riga «+127.984 € alla fine rispetto a restare dove si è» misurava il solo patrimonio
-  // investito, e chi resta la casa CE L'HA ANCORA. Sullo stesso caso il confronto vero era
-  // −192.016 €: non un numero impreciso, il segno opposto. Ed era prevedibile — il metro
-  // premia il capitale finanziario e non vede il bene che si è ceduto, che è esattamente il
-  // difetto già visto sulla metrica dello scenario del superstite.
-  // In euro di oggi non si rivaluta nulla, coerentemente con quanto la pagina dichiara.
+  // QUALE IMMOBILE SI POSSIEDE ALLA FINE DEL PIANO. Serve a confrontare due mondi in cui la
+  // ricchezza non ha la stessa forma: misurando il solo patrimonio investito, chi vende risulta
+  // più ricco di chi resta soltanto perché chi resta la casa CE L'HA ANCORA — su un caso reale
+  // il confronto passa da +127.984 € a −192.016 €, cioè cambia segno. È lo stesso difetto della
+  // metrica dello scenario del superstite: il metro premia il capitale finanziario e non vede il
+  // bene ceduto. In euro di oggi non si rivaluta nulla, come la pagina dichiara.
   casa.immobileDopo = !casa.attiva ? casaValore
     : casaCosa === 'affitto' ? 0
     : casaNuova;
@@ -1651,10 +1529,9 @@ function leggi(){
 // imposta sulla prestazione: 15%, meno 0,30 punti per ogni anno di iscrizione oltre il
 // quindicesimo, col pavimento del 9% (art. 11 c. 6 D.Lgs. 252/2005)
 const aliquota = anni => Math.max(0.09, 0.15 - 0.003 * Math.max(0, anni - 15));
-// L'EROGAZIONE FRAZIONATA HA LA SUA, ed è peggiore: parte dal 20% e scende di 0,25 punti,
-// fermandosi al 15%. Chi ha trentacinque anni di iscrizione ci arriva dove le altre
-// prestazioni PARTONO. Non è un dettaglio: è la ragione per cui quella forma va guardata
-// coi numeri e non scelta per comodità.
+// L'erogazione frazionata ha la sua, ed è peggiore: parte dal 20% e scende di 0,25 punti,
+// fermandosi al 15%. Chi ha trentacinque anni di iscrizione ci arriva dove le altre prestazioni
+// PARTONO.
 const aliquotaFraz = anni =>
   Math.max(ALIQ_FRAZ_MIN, ALIQ_FRAZ_MAX - ALIQ_FRAZ_PASSO * Math.max(0, anni - 15));
 
@@ -1680,11 +1557,10 @@ const vitaIntera = eta => {
 };
 
 function simula(s, spesaMese){
-  // DUE SPESE, UNA PER FASE. Prima c'era un numero solo per tutto il piano, e la nota chiedeva
-  // di scrivere già quella della pensione: così però gli anni di lavoro venivano falsati. Il
-  // passaggio è l'anno in cui si smette di lavorare, che è lo stesso per tutti e due.
-  // `spesaMese` resta la spesa di ADESSO — la cerca spesaSostenibile — e quella della pensione
-  // la segue in proporzione, altrimenti il rapporto fra le due lo deciderebbe la bisezione.
+  // DUE SPESE, UNA PER FASE, col passaggio all'anno in cui si smette di lavorare.
+  // `spesaMese` resta la spesa di ADESSO — è quella che cerca `spesaSostenibile` — e quella della
+  // pensione la segue in proporzione, altrimenti il rapporto fra le due lo deciderebbe la
+  // bisezione invece di chi compila.
   const k = spesaMese === undefined || !(s.spesa > 0) ? 1 : spesaMese / s.spesa;
   const spesaOggi = (spesaMese === undefined ? s.spesa : spesaMese) * 12;
   const spesaPens = (s.spesaPens === null || s.spesaPens === undefined ? s.spesa : s.spesaPens)
@@ -1695,42 +1571,39 @@ function simula(s, spesaMese){
     // quanto entra nel fondo lo decide la percentuale scelta, non una casella: dentro c'è anche
     // il contributo del datore, che c'è o non c'è a seconda che si arrivi al minimo
     const c = contributi(x, x.pc);
-    // il TFR si ricalcola qui e non si eredita: così non può restare quello di una RAL vecchia
-    // questi sono i valori del PRIMO anno: se la retribuzione cresce, dentro il ciclo si
-    // ricalcolano anno per anno. `stipBase` è la retribuzione netta scritta nella casella,
-    // prima che il versamento in più se ne prenda un pezzo.
+    // il TFR si ricalcola qui e non si eredita: così non può restare quello di una RAL vecchia.
+    // Questi sono i valori del PRIMO anno: se la retribuzione cresce, dentro il ciclo si
+    // ricalcolano anno per anno.
     return {...x, vers: c.tot, versLav: c.lav, versDat: c.dat, scattaDatore: c.scatta,
             tfrAnno: Math.max(0, x.ral) * TFR_SU_RAL};
   });
   const annoFine = Math.max(...P.map(x => x.nascita)) + s.etaFine;
-  // IL PASSAGGIO FRA LE DUE SPESE è quando la casa è del tutto in pensione, cioè quando ha
-  // smesso l'ULTIMO. Prima leggeva `P[0].ultimo`, che era lecito solo perché tutti smettevano
-  // insieme: con due cessazioni sfalsate avrebbe fatto scattare la spesa da pensionati mentre
-  // uno dei due lavora ancora, e per giunta guardando sempre la prima colonna.
+  // Il passaggio fra le due spese è quando la casa è del tutto in pensione, cioè quando ha smesso
+  // l'ULTIMO: con due cessazioni sfalsate, leggere la prima colonna farebbe scattare la spesa da
+  // pensionati mentre uno dei due lavora ancora.
   const smetteUltimo = Math.max(...P.map(x => x.ultimo));
 
-  // LO SCENARIO DEL SUPERSTITE. Come `s.prova`, è un secondo giro del motore sugli stessi dati,
-  // non un cambio del piano: il verdetto continua a rispondere a «quanto dura se tutto va come
-  // previsto», e questo risponde a «e se uno dei due mancasse».
+  // LO SCENARIO DEL SUPERSTITE. Come `s.prova`, è un secondo giro del motore sugli stessi dati e
+  // non un cambio del piano: il verdetto risponde a «quanto dura se tutto va come previsto»,
+  // questo a «e se uno dei due mancasse».
   // `s.manca` = {chi, anno, equiv}: chi manca, da quando, e quanto spende chi resta rispetto a
-  // prima. Il coefficiente non è una casella e non è una nostra stima: sono le due scale di
-  // equivalenza pubbliche, e il calcolo si fa con entrambe.
+  // prima. `equiv` non è una casella né una nostra stima: sono le due scale di equivalenza
+  // pubbliche, e il calcolo si fa con entrambe.
   const manca  = s.manca || null;
   const morto  = (i, anno) => manca !== null && i === manca.chi && anno >= manca.anno;
   const resta  = manca === null ? -1 : P.findIndex((_, j) => j !== manca.chi);
 
   // LA PROVA DI TENUTA. Il verdetto nasce da una traiettoria sola, con lo stesso rendimento tutti
-  // gli anni. Ma nel decumulo conta la SEQUENZA: gli stessi rendimenti in ordine diverso danno
+  // gli anni, ma nel decumulo conta la SEQUENZA: gli stessi rendimenti in ordine diverso danno
   // piani diversi, perché quello che manca all'inizio non c'è più a rendere dopo.
-  // `s.prova` spegne il rendimento per i primi esercizi. Non è una nuvola di scenari: quella
-  // richiederebbe una distribuzione che non possiamo citare, e questo sito non pubblica cifre
-  // che non può dichiarare. È una perturbazione sola, che chiunque può rifare a mano.
-  // Il TFR lasciato in azienda NON viene toccato, ed è corretto: la sua rivalutazione è fissata
-  // dall'art. 2120 c.c., non dal mercato. È l'unica posta che una prova di tenuta non scalfisce.
-  // `Math.min(0, …)` E NON ZERO SECCO, ed è un difetto trovato guardando l'output: chi scrive un
-  // rendimento più basso dell'inflazione ha un rendimento REALE negativo, e portarlo a zero gli
-  // migliorerebbe il piano. Una prova di tenuta che rende un piano più solido non è una prova.
-  // Così la perturbazione è per costruzione non migliorativa, ed è un'invariante controllabile.
+  // `s.prova` spegne il rendimento per i primi esercizi. Non è una nuvola di scenari — quella
+  // richiederebbe una distribuzione che non possiamo citare — ma una perturbazione sola, che
+  // chiunque può rifare a mano.
+  // Il TFR lasciato in azienda non viene toccato: la sua rivalutazione è fissata dall'art. 2120
+  // c.c., non dal mercato, ed è l'unica posta che una prova di tenuta non scalfisce.
+  // `Math.min(0, …)` e non zero secco: chi scrive un rendimento più basso dell'inflazione ha un
+  // rendimento REALE negativo, e portarlo a zero gli migliorerebbe il piano. Così la
+  // perturbazione è per costruzione non migliorativa, ed è un'invariante controllabile.
   const fermi = s.prova ? ANNO0 + s.prova : ANNO0;
   const rendDi      = anno => anno < fermi ? Math.min(0, s.rend)      : s.rend;
   const rendFondoDi = anno => anno < fermi ? Math.min(0, s.rendFondo) : s.rendFondo;
@@ -1756,13 +1629,11 @@ function simula(s, spesaMese){
 
   for (let anno = ANNO0; anno <= annoFine; anno++){
     const inizio = patr;
-    // LA SPESA ABITATIVA STA FUORI DAI DUE MOLTIPLICATORI, ed è il punto su cui questa funzione
-    // si può sbagliare senza che nulla lo segnali.
-    // `k` è la bisezione di `spesaSostenibile`, che cerca la spesa massima: lasciandoci dentro
-    // il canone, il conto «risolverebbe» un piano stretto pagando meno di affitto, che non è
-    // una leva di chi ci abita. `equiv` è la scala di equivalenza dello scenario del superstite,
-    // che riduce i consumi di chi resta: un appartamento già affittato costa uguale in uno o in
-    // due. Entrambi si applicano quindi PRIMA, e il canone si somma dopo.
+    // LA SPESA ABITATIVA STA FUORI DAI DUE MOLTIPLICATORI. `k` è la bisezione di
+    // `spesaSostenibile`: lasciandoci dentro il canone, il conto «risolverebbe» un piano stretto
+    // pagando meno di affitto, che non è una leva di chi ci abita. `equiv` è la scala di
+    // equivalenza del superstite, che riduce i consumi di chi resta, mentre un appartamento già
+    // affittato costa uguale in uno o in due. Entrambi si applicano PRIMA, il canone si somma dopo.
     const spesa = (anno <= smetteUltimo ? spesaOggi : spesaPens)
                   * (manca !== null && anno >= manca.anno ? manca.equiv : 1)
                   + (casa !== null && anno >= casa.anno ? casa.spesaAnnua : 0);
@@ -1964,10 +1835,9 @@ function simula(s, spesaMese){
         daRendita += f[i].rendita / Math.pow(1 + s.infl, anno - f[i].annoRendita);
     });
 
-    // IL SUPERSTITE, e perché non basta sommare due importi netti.
-    // La pensione propria e quella ai superstiti fanno capo a UN SOLO contribuente: l'IRPEF si
-    // calcola sulla somma. Sommare due nette calcolate separatamente regalerebbe due volte gli
-    // scaglioni bassi, cioè uno sconto che non esiste.
+    // IL SUPERSTITE. La pensione propria e quella ai superstiti fanno capo a UN SOLO
+    // contribuente: l'IRPEF si calcola sulla somma, e sommare due nette calcolate separatamente
+    // regalerebbe due volte gli scaglioni bassi.
     // La reversibilità decorre da quando il defunto aveva diritto al proprio trattamento: la
     // pensione indiretta, che spetterebbe a chi manca prima, dipende dalla sua storia
     // contributiva e non è ricavabile da queste caselle. Il limite è dichiarato, non aggirato.
@@ -2264,13 +2134,11 @@ function tabella(r, s){
   const allora = EL('euroAllora').checked;
   const kOf = anno => allora ? Math.pow(1 + s.infl, anno - ANNO0) : 1;
   const ev = {}; eventi(r, kOf).forEach(e => ev[e.anno] = e.testo);
-  // «Pensioni» teneva dentro anche la rendita del fondo, e siccome quella non si rivaluta la
-  // colonna calava di ~80 € l'anno: sembrava che a erodersi fosse l'INPS. Sono due fonti
-  // diverse e adesso stanno in due colonne diverse.
-  // LA COLONNA DELLA CASA COMPARE SOLO SE SERVE, e non si somma a quella del fondo: sotto la
-  // tabella c'è scritto che ogni riga si rifà a mano, quindi il ricavato deve stare in una
-  // colonna sua o quel conto non torna. Metterlo dentro «Fondo e TFR» avrebbe unito in un
-  // numero solo una prestazione previdenziale e il prezzo di una casa.
+  // La rendita del fondo e la pensione INPS stanno in due colonne diverse: sono fonti diverse, e
+  // la rendita non si rivaluta, quindi unite farebbero sembrare che a erodersi sia l'INPS.
+  // La colonna della casa compare solo se serve e non si somma a quella del fondo: sotto la
+  // tabella c'è scritto che ogni riga si rifà a mano, e unire una prestazione previdenziale al
+  // prezzo di una casa in un numero solo renderebbe quel conto impossibile.
   const conCasa = !!(r.casa && r.casa.ricavato !== 0);
   const nCol = conCasa ? 9 : 8;
   let h = `<tr><th>Anno</th><th>Lavoro</th><th>Pensione INPS</th><th>Rendita del fondo</th>
@@ -2295,24 +2163,20 @@ function tabella(r, s){
   EL('tabella').innerHTML = h;
 }
 
-// IL SOMMARIO IN ALTO, in un punto solo. Dipende da tre cose che cambiano in momenti diversi:
-// il risultato (a ogni calcolo), se si è passato il titolo e se il risultato è sullo schermo
-// (a ogni scorrimento). Lo stato sta qui e chi lo tocca richiama sempre la stessa funzione:
-// tre sorgenti di verità separate erano il modo sicuro per vederlo comparire quando non serve.
-//
-// In cima alla pagina NON deve comparire: lì non c'è ancora niente da tenere sott'occhio, e
+// IL SOMMARIO IN ALTO, in un punto solo. Dipende da tre cose che cambiano in momenti diversi: il
+// risultato (a ogni calcolo), se si è passato il titolo e se il risultato è sullo schermo (a ogni
+// scorrimento). Lo stato sta qui e chi lo tocca richiama sempre la stessa funzione: tre sorgenti
+// di verità separate lo farebbero comparire quando non serve.
+// In cima alla pagina non deve comparire: lì non c'è ancora niente da tenere sott'occhio, e
 // coprirebbe il titolo del sito appena aperto.
 let sommarioTesto = '', sommarioClasse = '', risultatoInVista = true, sonoInCima = true;
-// IL SOMMARIO È IL TITOLO, ACCORCIATO. Non una metrica in più inventata per la riga in alto:
-// se quello che resta appiccicato dice una cosa e il risultato ne dice un'altra, chi legge deve
-// capire quale delle due vale. Per questo la chiamata sta ATTACCATA a ogni titolo, e non dopo:
-// chi cambia il titolo ha la sua riduzione sotto gli occhi.
-//
-// Perché il patrimonio residuo e non la spesa massima sostenibile, che pure si muove di più:
-// quella è una domanda che chi compila non ha fatto — è un'ipotesi controfattuale, e letta da
-// sola in cima allo schermo sembra un consiglio di spesa. Il residuo è invece roba loro.
-// Da solo non basterebbe («un milione alla fine» non dice se ci si è andati vicini), ma qui non
-// è solo: accanto c'è il verdetto, che dice esattamente quello.
+// IL SOMMARIO È IL TITOLO, ACCORCIATO, non una metrica in più inventata per la riga in alto: se
+// quello che resta appiccicato dicesse una cosa e il risultato un'altra, chi legge dovrebbe
+// capire quale delle due vale. Per questo la chiamata sta ATTACCATA a ogni titolo, così chi
+// cambia il titolo ha la sua riduzione sotto gli occhi.
+// Porta il patrimonio residuo e non la spesa massima sostenibile, che pure si muove di più:
+// quella è un'ipotesi controfattuale che nessuno ha chiesto, e letta da sola in cima allo schermo
+// sembra un consiglio di spesa. Il residuo da solo non basterebbe, ma accanto ha il verdetto.
 const sommarioDelTitolo = (coda, verdetto = 'Sostenibile', classe = 'su') =>
   aggiornaSommario(`<span class="v">${verdetto}</span> · ${coda}`, classe);
 
@@ -2324,13 +2188,10 @@ function aggiornaSommario(testo = sommarioTesto, classe = sommarioClasse){
   b.hidden = !testo || risultatoInVista || sonoInCima;
 }
 
-// LE CASELLE DA CUI IL VERDETTO DIPENDE, in un punto solo.
-// Da qui escono due cose che devono coincidere: la frase che promette quante caselle servono e
-// la guardia che le pretende. Scritte in due punti, avevano già divergito una volta — «bastano
-// tre dati» sopra una guardia che ne controllava tre su sei — e sarebbero tornate a divergere
-// appena il numero avesse smesso di essere sempre lo stesso, cosa che succede da quando una
-// decorrenza può essere già trascorsa: a chi è in pensione la retribuzione non si chiede.
-//
+// LE CASELLE DA CUI IL VERDETTO DIPENDE, in un punto solo. Da qui escono due cose che devono
+// coincidere: la frase che promette quante caselle servono e la guardia che le pretende. Scritte
+// in due punti divergono, e il numero non è più sempre lo stesso da quando una decorrenza può
+// essere già trascorsa — a chi è in pensione la retribuzione non si chiede.
 // `manca` non decide COSA serve, dice solo se quella casella è ancora da compilare. Vuoto e zero
 // restano due informazioni diverse: uno zero scritto è una risposta.
 function richieste(s){
@@ -2350,12 +2211,9 @@ function richieste(s){
     ];
     // Si chiede solo quello che il piano usa davvero: a chi ha già smesso di lavorare non
     // servirebbe la retribuzione, e un trattamento che decorre oltre l'orizzonte non entra mai
-    // nel conto.
-    // MA LE CONDIZIONI GUARDANO IL VALORE SCRITTO, NON QUELLO DERIVATO. Con `x.ultimo`, che vale
-    // `annoPens − 1`, finché la decorrenza mancava non veniva chiesta nemmeno la retribuzione: il
-    // modulo appena aperto ne elencava quattro sotto una frase che ne prometteva sei, e le altre
-    // due comparivano dopo. Un elenco che si allunga mentre si compila è lo stesso difetto della
-    // frase sbagliata, in forma più lenta.
+    // nel conto. Ma le condizioni guardano il valore SCRITTO, non quello derivato: con `x.ultimo`,
+    // che vale `annoPens − 1`, finché manca la decorrenza non verrebbe chiesta nemmeno la
+    // retribuzione, e l'elenco si allungherebbe mentre lo si compila.
     if ((x.ultimoScritto === null || x.ultimoScritto >= ANNO0)
         && (x.annoPensVuoto || x.ultimo >= ANNO0))
       voci.push({testo: 'la retribuzione annua lorda', manca: x.ralVuoto});
@@ -2462,7 +2320,7 @@ function calc(){
   // Sta qui, prima delle uscite anticipate, perché dipende solo da come è compilato il modulo.
   {
     const SPENTE = ['ral', 'cresc', 'ultimo',              // esercizi di attività
-                    'tipoFondo', 'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];  // fondo
+                    'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];               // fondo
     s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
 
     // la seconda spesa esiste solo se c'è un passaggio fra due fasi: senza esercizi di attività
@@ -2495,21 +2353,18 @@ function calc(){
         due volte. Chi non l'ha ancora riscossa non rientra in questo calcolo.`;
     }
   }
-  // E SU SCHERMO STRETTO ogni casella porta il nome della propria persona. Sotto i 640 px le
-  // due colonne diventano un elenco: senza il nome, scorrendo non si saprebbe più a chi
-  // appartenga il campo che si sta compilando. Lo mostra il CSS, non l'HTML: su schermo largo
-  // l'intestazione di colonna basta e ripeterlo sarebbe rumore.
-  // NON TUTTE LE CELLE SONO DI UNA PERSONA: «Il piano riguarda» sta nella stessa griglia e non
-  // appartiene a nessuno. Marcandole tutte compariva un'intestazione ANNA sopra quel menu, e un
-  // BRUNO orfano sotto. Il criterio è la presenza di un campo di quella persona, cioè di un id
-  // che finisce col suo indice.
-  // E IL NOME ACCESSIBILE DI OGNI CASELLA. Ventinove campi su trentotto non avevano
-  // un'etichetta collegata: il testo si vedeva, ma stava in un `<div>` accanto, e un lettore di
-  // schermo annunciava «casella di testo» e basta. In una griglia a due colonne non c'era
-  // nemmeno modo di sapere quale fosse di chi.
-  // Non si duplica il testo: si legge dalla `.voce` della stessa riga, che è già lì, e vi si
-  // aggiunge il nome della persona. Il rimando alla pagina che spiega la casella si toglie,
-  // perché è un collegamento, non parte del nome del campo.
+  // SU SCHERMO STRETTO ogni casella porta il nome della propria persona: sotto i 640 px le due
+  // colonne diventano un elenco, e senza il nome non si saprebbe più a chi appartenga il campo
+  // che si sta compilando. Lo mostra il CSS, non l'HTML, perché su schermo largo l'intestazione
+  // di colonna basta e ripeterlo sarebbe rumore.
+  // Non tutte le celle sono di una persona — «Il piano riguarda» sta nella stessa griglia e non
+  // appartiene a nessuno — quindi il criterio è la presenza di un campo di quella persona, cioè
+  // di un id che finisce col suo indice.
+  // Da qui esce anche il NOME ACCESSIBILE di ogni casella: il testo sta in un `<div>` accanto e
+  // non in un'etichetta collegata, quindi un lettore di schermo annuncerebbe «casella di testo»
+  // e basta. Non si duplica: si legge dalla `.voce` della stessa riga e vi si aggiunge il nome
+  // della persona. Il rimando alla pagina che spiega la casella si toglie, perché è un
+  // collegamento e non parte del nome del campo.
   const etichettaDi = cella => {
     let e = cella.previousElementSibling;
     while (e && !(e.classList && e.classList.contains('voce'))) e = e.previousElementSibling;
@@ -2535,14 +2390,10 @@ function calc(){
       s.N === 2 && suo ? `${voce}, ${NOMI[i]}` : voce);
   });
 
-  // QUELLO CHE DIPENDE DAL MODULO, PRIMA DI QUELLO CHE DIPENDE DAL CONTO.
-  // Questo blocco stava DOPO le due uscite anticipate. Conseguenza: chi aveva compilato RAL e
-  // contributi ma non ancora la decorrenza non vedeva NESSUN valore ricavato — né i contributi
-  // in euro, né quanto resta del tetto, né il TFR — perché il calcolo usciva prima di scriverli.
-  // Le hint tacevano per la mancanza di un campo che con loro non c'entra, e il modulo sembrava
-  // non rispondere. È lo stesso difetto delle due colonne, nella sua forma più fastidiosa.
-  // Verificato col metodo del progetto: impronta di tutto quello che la pagina scrive su dodici
-  // scenari, prima e dopo lo spostamento, confrontata riga per riga.
+  // QUELLO CHE DIPENDE DAL MODULO VA SCRITTO PRIMA DELLE USCITE ANTICIPATE, che dipendono dal
+  // conto: altrimenti chi ha compilato RAL e contributi ma non la decorrenza non vede nessun
+  // valore ricavato — né i contributi in euro, né quanto resta del tetto, né il TFR — e il modulo
+  // sembra non rispondere per la mancanza di un campo che con quelli non c'entra.
   // i valori che la pagina ricava, accanto alla casella che li genera
   s.indici.forEach(i => {
     // i nomi li scrivono loro, ma i riquadri sono costruiti una volta sola: vanno riscritti
@@ -2568,17 +2419,11 @@ function calc(){
         ? E0(x.pens) + ' netti per rata · ' + fmt(MENS_PENS) + ' rate l\'anno' : '&nbsp;');
     const co = contributi(x, x.pcVoi);
     H('pcVoiEuro'+i, co.lav > 0.5 ? E0(co.lav) + " l'anno" : '&nbsp;');
+    // DUE RAMI, non più tre: la quota scritta si conta sempre, quindi «non conteggiato» non
+    // esiste più. Resta la distinzione che serve — la cifra quando entra, e perché non entra
+    // quando il gradino non è scattato.
     H('pcDatEuro'+i, co.dat > 0.5 ? E0(co.dat) + " l'anno"
-        : x.fondoIndividuale ? (x.pcDat > 0 ? 'non conteggiato' : '&nbsp;')
         : (x.pcDat > 0 ? 'subordinato al contributo indicato' : '&nbsp;'));
-    // LA NOTA PORTA IL SIGNIFICATO CHE NELLE OPZIONI NON CI STA. Dodici caratteri non possono
-    // dire «fondo aperto ad adesione collettiva»: l'etichetta nomina il caso, la riga sotto dice
-    // cosa comporta. Parla per tutte e tre le voci, perché qui il silenzio della prima
-    // lascerebbe credere di aver scelto male.
-    H('tipoNota'+i,
-        x.adesione === 'individuale' ? 'la quota del datore di regola non spetta'
-      : x.adesione === 'aziendale'   ? 'fondo aperto: il datore versa se l’accordo lo prevede'
-      :                                'fondo di categoria previsto dal CCNL');
 
     // DUE TOTALI, e non uno. Contributi e TFR entrano tutti e due nel fondo, ma solo i primi
     // consumano il tetto deducibile: sommarli in un numero solo faceva credere di essere già
@@ -2621,26 +2466,17 @@ function calc(){
     H('totFondo'+i, dentro < 0.5 ? '—' : E0(dentro) + " l'anno");
   });
 
+  // LA NOTA SULLA QUOTA DEL DATORE compare quando una percentuale c'è scritta, che è il momento in
+  // cui la condizione riguarda chi legge: prima sarebbe una premessa a una casella ancora vuota.
+  // UNA SOLA anche in coppia — enuncia una regola, non si rivolge a una persona — quindi `some`
+  // e non un elemento per colonna.
+  EL('notaDatore').hidden = !s.p.some(x => x.pcDat > 0);
+
   // L'AVVISO SUL CONTRIBUTO DEL DATORE non è un'istruzione preventiva: comparirebbe a tutti
   // per un caso che riguarda pochi. Compare a chi ci è dentro, e dice cosa fare adesso.
   (() => {
     const guai = s.p.map((x, i) => {
       if (!(x.ral > 0)) return null;
-      // Su un fondo scelto per conto proprio gli altri avvisi non hanno senso: parlano tutti di
-      // una quota che lì non esiste. Questo li sostituisce, e porta con sé la via d'uscita.
-      // LA VIA D'USCITA ERA L'ISTRUZIONE PEGGIORE DEL CALCOLATORE: diceva «va indicato di
-      // categoria», cioè chiedeva di dichiarare un fondo diverso dal proprio per ottenere il
-      // conto giusto. Funzionava solo perché quel menu non aveva altre conseguenze — un
-      // accidente dell'implementazione, non una garanzia. Ora la voce che serve esiste, e si
-      // indica quella: si dichiara il vero e il conto viene giusto.
-      if (x.fondoIndividuale)
-        return x.pcDat > 0
-          ? `<b>${x.nome}</b>: la quota indicata per il datore non viene conteggiata. Il
-             contributo discende dal contratto collettivo e segue il fondo che il contratto
-             individua, quindi su un fondo scelto per conto proprio di regola non spetta. Se
-             invece il fondo è stato indicato da un accordo aziendale, l'adesione va segnata
-             <b>dall'azienda</b>.`
-          : null;
       if (x.pcDat > 0 && x.pcVoiVuoto)
         return `<b>${x.nome}</b>: c'è la quota del datore ma non quella del lavoratore. Se
           oggi non si versa niente va scritto <b>0</b>: il conto dirà quanto vale attivarla.`;
@@ -2649,23 +2485,15 @@ function calc(){
           avvenuta col solo TFR, va lasciato <b>0</b> nella quota del lavoratore e indicata quella
           che il contratto <i>prevede</i> per il datore: il conto quantificherà cosa si sta
           perdendo.`;
-      // DAL DATORE NON ENTRA NIENTE: un ramo solo per il vuoto e per lo zero.
-      // Prima ce n'erano due e uno taceva. Quello che parlava reagiva alla casella VUOTA
-      // («manca la quota del datore»); chi ci scriveva 0 — o la lasciava vuota avendo già
-      // scritto 0 nella propria — non incontrava alcun messaggio, e nemmeno il riquadro «quanto
-      // stai lasciando lì», che pretende una quota positiva per poterla quantificare. Cioè
-      // taceva proprio con chi ha aderito col solo TFR, la persona che questa sezione esiste
-      // per servire.
-      // I DUE CASI SI SONO FUSI perché il consiglio è identico — cerca sul contratto e scrivi
-      // quella cifra — e la regola del progetto dice di distinguere vuoto e zero *solo quando
-      // cambiano un messaggio*. Qui non lo cambiano: cambiano la causa, non la cura, e due
-      // frasi gemelle da tenere allineate a mano sono un difetto che qui è già costato.
+      // DAL DATORE NON ENTRA NIENTE: un ramo solo per il vuoto e per lo zero. La regola del
+      // progetto è di distinguerli solo quando cambiano un messaggio, e qui cambiano la causa,
+      // non la cura — il consiglio è identico, cercare la cifra sul contratto e scriverla —
+      // mentre due frasi gemelle da tenere allineate a mano divergono.
       // Non serve la guardia `fondo > 0` del ramo qui sopra: là tutte e due le caselle sono
       // vuote, cioè il modulo è appena stato aperto; qui la propria quota è SCRITTA, e chi
       // scrive uno zero si è già occupato di questo riquadro.
-      // Qui vive anche la frase che per un giorno è stata in etichetta: non è una regola per
-      // tutti, è un'istruzione per un caso — e qui può portarsi dietro il perché, che in
-      // un'etichetta non ci stava.
+      // L'istruzione sta qui e non in etichetta perché riguarda un caso e non tutti, e qui può
+      // portarsi dietro il perché.
       if (!(x.pcDat > 0) && !x.pcVoiVuoto)
         return `<b>${x.nome}</b>: dal datore non entra niente. <b>Se il contratto prevede una
           quota a suo carico va indicata anche se oggi non viene percepita</b>: serve a
@@ -2677,11 +2505,9 @@ function calc(){
     el.innerHTML = guai.join('<br>');
   })();
 
-  // QUANDO SI SMETTE, e soprattutto se resta un tratto scoperto. Fino al 31/07/2026 questo
-  // riquadro dichiarava che si smette insieme, l'anno prima della prima delle due decorrenze:
-  // era un'ipotesi, non un fatto, e toglieva anni di reddito a chi ha accanto una persona più
-  // grande. Ora l'anno è di ciascuno, e quello che conta è il divario fra la fine dell'attività
-  // e la decorrenza del trattamento: gli esercizi in cui non entra né l'uno né l'altro.
+  // QUANDO SI SMETTE, e soprattutto se resta un tratto scoperto. L'anno è di ciascuno, e quello
+  // che conta è il divario fra la fine dell'attività e la decorrenza del trattamento: gli
+  // esercizi in cui non entra né l'uno né l'altro.
   {
     const dice = i => {
       const x = s.p[i], buco = x.annoPens - 1 - Math.max(x.ultimo, ANNO0 - 1);
@@ -2691,15 +2517,14 @@ function calc(){
       // lavorare di Anna». Due forme del nome, come già per NOMI e DI.
       const smette = s.N === 1 ? 'Si smette di lavorare'
                                : `${(r.nomi || NOMI)[i]} smette di lavorare`;
-      // CHI È GIÀ IN PENSIONE non ha una cessazione da annunciare: il piano comincia con il
-      // trattamento già in erogazione, e la frase deve dire da quando, non quando finirà una
-      // attività finita anni fa.
-      // il complemento va dentro la frase, non dopo i due punti: con una coppia in cui l'altro
-      // lavora ancora, «il piano non comprende esercizi di attività» sarebbe falso del piano
-      // SENZA LA DECORRENZA NON C'È NIENTE DA DIRE. `ultimo` vale `annoPens − 1`, e con la
-      // casella vuota `annoPens` è il minimo del taglio: la pagina annunciava «cessazione
-      // dell'attività nel 1899» a chi l'aveva appena aperta. Trovato dal controllo sulle date
-      // inventate, non da un occhio: era lì da sempre, in cima al modulo vuoto.
+      // CHI È GIÀ IN PENSIONE non ha una cessazione da annunciare: il piano comincia col
+      // trattamento già in erogazione, e la frase deve dire da quando.
+      // Il complemento va dentro la frase e non dopo i due punti: con una coppia in cui l'altro
+      // lavora ancora, «il piano non comprende esercizi di attività» sarebbe falso riferito al
+      // piano, mentre è vero di questa persona.
+      // Senza la decorrenza non c'è niente da dire: `ultimo` vale `annoPens − 1`, e con la
+      // casella vuota `annoPens` è il minimo del taglio, quindi la pagina annuncerebbe una
+      // cessazione dell'attività nel 1899 a chi l'ha appena aperta.
       return x.annoPensVuoto ? ''
         : x.giaInPens
         ? `Trattamento${chi} in erogazione dal <b>${x.annoPens}</b>, senza anni di lavoro
@@ -2721,25 +2546,19 @@ function calc(){
     EL('quandoSmettete').innerHTML = s.indici.map(dice).filter(Boolean).join(' ');
   }
 
-  // L'ABITAZIONE, la parte che dipende SOLO DAL MODULO. Sta qui e non in `aggiornaDecisioni`
-  // per la regola che è già costata due volte: quello che dipende dalle caselle si applica
-  // prima delle uscite anticipate di `calc()`. Altrimenti chi sceglie «vado in affitto» senza
-  // aver ancora compilato la decorrenza non vedrebbe comparire le caselle dell'anno e del
-  // canone, e il modulo sembrerebbe non rispondere per la mancanza di un campo che con la casa
-  // non c'entra nulla.
+  // L'ABITAZIONE, la parte che dipende SOLO DAL MODULO: sta qui e non in `aggiornaDecisioni` per
+  // la stessa regola di sopra. Altrimenti chi sceglie «vado in affitto» senza aver ancora
+  // compilato la decorrenza non vedrebbe comparire le caselle dell'anno e del canone.
   casaModulo(s);
 
 
-  // Pagina appena aperta: le caselle sono vuote e non c'è niente da dire. Dare un verdetto su
-  // un piano di zero anni sarebbe peggio che non darlo — va chiesto quello che manca, e basta.
-  //
-  // LE CASELLE CHE SI CHIEDONO SONO QUELLE DA CUI IL VERDETTO DIPENDE, non solo quelle che
-  // mancando darebbero un piano di zero esercizi. Con la sola spesa, la nascita e la decorrenza
-  // il conto girava lo stesso, con patrimonio zero e nessuna entrata, e rispondeva «decumulo non
-  // sostenibile, il patrimonio si esaurisce nel <anno in corso>» a chi non aveva ancora scritto
-  // quanto ha e quanto guadagna. Un verdetto sicuro su un conto che non ha i suoi numeri, e con
-  // lo scostamento sempre nella stessa direzione, la più allarmante: le entrate mancanti valgono
-  // zero e la spesa no.
+  // Pagina appena aperta: le caselle sono vuote e non c'è niente da dire. Dare un verdetto su un
+  // piano di zero anni sarebbe peggio che non darlo — va chiesto quello che manca, e basta.
+  // Le caselle che si chiedono sono quelle da cui il VERDETTO dipende, non solo quelle che
+  // mancando darebbero un piano di zero esercizi: con la sola spesa, la nascita e la decorrenza il
+  // conto girerebbe lo stesso, con patrimonio zero e nessuna entrata, e risponderebbe «non
+  // sostenibile» a chi non ha ancora scritto quanto ha e quanto guadagna — sempre nella direzione
+  // più allarmante, perché le entrate mancanti valgono zero e la spesa no.
   // Il patrimonio e le entrate si chiedono quindi PRIMA del verdetto; tutto il resto (RAL, fondo,
   // contributi, TFR) affina il conto, e lasciarlo vuoto sposta il risultato per difetto.
   // Lo STESSO elenco della frase qui sopra, filtrato su quello che è ancora da compilare.
@@ -2804,11 +2623,11 @@ function calc(){
     (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '') +
     `, contro ${E0(s.spesa)} indicati.`;
 
-  // QUANTI ARRIVANO A UNA RISPOSTA. Sapere quante visite arrivano non dice la cosa che conta:
-  // se il modulo è troppo lungo, la gente lo abbandona e le visite restano identiche. Questo è
-  // l'unico evento del sito, si manda UNA VOLTA per apertura e **senza alcun parametro**: né
-  // l'esito né una cifra. Serve a decidere se accorciare il modulo, non a sapere com'è messo
-  // chi lo compila. `gtag` esiste solo dopo il consenso, quindi senza consenso non parte nulla.
+  // QUANTI ARRIVANO A UNA RISPOSTA. Il numero delle visite non lo dice: se il modulo è troppo
+  // lungo la gente lo abbandona e le visite restano identiche. È l'unico evento del sito, si
+  // manda UNA VOLTA per apertura e senza alcun parametro — né l'esito né una cifra — perché serve
+  // a decidere se accorciare il modulo, non a sapere com'è messo chi lo compila. `gtag` esiste
+  // solo dopo il consenso, quindi senza consenso non parte nulla.
   // Da qui in giù un verdetto c'è: il piano si può portare via. Prima di questo punto `calc()`
   // è già uscita, quindi il pulsante resta spento e non si scarica un file vuoto.
   ultimo = {s, r};
@@ -2859,15 +2678,12 @@ function calc(){
   }
 
   // SE UNO DEI DUE MANCASSE.
-  //
-  // LA METRICA È STATA SCELTA MISURANDO, e la prima era sbagliata. Col patrimonio finale lo
-  // scenario diceva sistematicamente che chi resta sta MEGLIO: la spesa scende al 60-67% e quel
-  // risparmio domina la perdita di reddito. Vero nel modello, grottesco da pubblicare, e
-  // soprattutto risposta a una domanda che nessuno si fa.
-  // La domanda vera è se chi resta mantiene il tenore di vita. Quindi si confrontano due
-  // discese: quella delle ENTRATE RICORRENTI e quella della SPESA. La seconda non è una nostra
-  // stima, sono le due scale di equivalenza pubbliche, e danno la soglia con cui confrontarsi.
-  //
+  // La metrica non può essere il patrimonio finale: la spesa di chi resta scende al 60-67% e quel
+  // risparmio domina la perdita di reddito, quindi lo scenario direbbe sistematicamente che chi
+  // resta sta MEGLIO — vero nel modello, e risposta a una domanda che nessuno si fa.
+  // La domanda vera è se chi resta mantiene il tenore di vita, quindi si confrontano due discese:
+  // quella delle ENTRATE RICORRENTI e quella della SPESA. La seconda non è una nostra stima, sono
+  // le due scale di equivalenza pubbliche, e danno la soglia con cui confrontarsi.
   // Vale solo con due persone: se manca l'unica, non resta nessuno di cui dire qualcosa.
   {
     const el = EL('superstite');
@@ -2921,26 +2737,18 @@ function calc(){
   }
 
   // IL CONTRIBUTO DELL'AZIENDA CHE NON ARRIVA, portato accanto al risultato.
-  //
-  // PERCHÉ QUI E NON SOLO IN FONDO. È l'unico numero del sito che cambia un comportamento oggi,
-  // e stava nella sezione delle decisioni, cioè sotto il verdetto: chi legge «sostenibile» e
-  // chiude la pagina non lo vedeva mai.
-  //
-  // PERCHÉ NON È UN DOPPIONE. Qui sta il FATTO — quanto non entra — e in fondo resta la
-  // DECISIONE, col cursore, il costo in busta e il punto più alto. Sono due cose diverse, e la
-  // riga porta il rimando invece di ripetere il conto.
-  //
-  // QUELLO CHE NON SI PUÒ DIRE, ed è il vincolo che ha deciso la frase: **il minimo del
-  // contratto non lo sappiamo**. Serve a dire quanto costa attivare la contribuzione, e
-  // inventarlo sarebbe un errore in direzione ottimistica (la stessa ragione per cui il 30/07
-  // non si è cablato l'1%). Il modello fa scattare il datore a qualunque versamento positivo,
-  // quindi si potrebbe scrivere «basta lo 0,1%»: sarebbe esatto nel modello e falso nel mondo,
-  // perché nessun CCNL funziona così. Si dice quindi solo ciò che è esatto: quanto vale la
-  // quota, per quanti esercizi, e dove si legge il minimo. Il totale è **senza rendimento**,
-  // cioè per difetto: una somma che chiunque può rifare a mano.
+  // Sta qui e non solo in fondo perché è l'unico numero del sito che cambia un comportamento
+  // oggi: lasciato nella sezione delle decisioni, sotto il verdetto, chi legge «sostenibile» e
+  // chiude la pagina non lo vedrebbe mai. E non è un doppione — qui sta il FATTO, quanto non
+  // entra; in fondo resta la DECISIONE, col cursore, il costo in busta e il punto più alto.
+  // IL VINCOLO CHE HA DECISO LA FRASE: il minimo del contratto non lo sappiamo. Il modello fa
+  // scattare il datore a qualunque versamento positivo, quindi si potrebbe scrivere «basta lo
+  // 0,1%» — esatto nel modello e falso nel mondo, perché nessun CCNL funziona così. Si dice
+  // quindi solo ciò che è esatto: quanto vale la quota, per quanti esercizi, e dove si legge il
+  // minimo. Il totale è senza rendimento, cioè per difetto, e chiunque può rifarlo a mano.
   {
     const persi = s.p.map(x => {
-      if (!(x.ral > 0) || x.fondoIndividuale || !(x.pcDat > 0)) return null;
+      if (!(x.ral > 0) || !(x.pcDat > 0)) return null;
       // zero SCRITTO, non casella vuota: al vuoto risponde l'istruzione accanto alla casella,
       // che è un'altra cosa e sta in un altro posto
       if (x.pcVoiVuoto || x.pcVoi > 0) return null;
@@ -2985,21 +2793,18 @@ function calc(){
 
   // COME IL CONTO STA PRENDENDO IL FONDO. Il verdetto qui sopra non è indipendente da questa
   // scelta, e finché non la si dichiara la cifra sembra un fatto mentre è un fatto CONDIZIONATO.
-  // La riga si scrive sempre che ci sia un fondo da prendere, non solo quando la scelta è
-  // ancora quella di partenza: dopo che uno l'ha mossa serve ancora, perché il verdetto resta
-  // appeso a quella decisione e chi torna sulla pagina domani non ricorda cosa aveva scelto.
-  //
-  // SI PARLA SOLO DI CHI LA SCELTA CE L'HA DAVVERO: chi ha la decorrenza alle spalle l'ha già
+  // La riga si scrive sempre che ci sia un fondo da prendere, anche dopo che la scelta è stata
+  // mossa: chi torna sulla pagina domani non ricorda cosa aveva scelto.
+  // Si parla solo di chi la scelta ce l'ha davvero: chi ha la decorrenza alle spalle l'ha già
   // compiuta — `leggi()` gli azzera il fondo — e a chi non ha montante non si applica. È la
-  // stessa condizione con cui `aggiornaDecisioni` spegne i riquadri, e dev'essere la stessa:
-  // una riga che rimanda a una scelta che non c'è manderebbe su una sezione spenta.
+  // stessa condizione con cui `aggiornaDecisioni` spegne i riquadri, e dev'essere la stessa, o
+  // la riga rimanderebbe a una sezione spenta.
   {
     const conScelta = s.indici.filter(i => !s.p[i].giaInPens && s.p[i].fondo > 0);
-    // «erogazione» regge tutti e cinque i nomi della tavola FORME senza storpiature —
-    // «vitalizia», «a durata definita», «frazionata» — ed è la parola che la pagina usa già
-    // nel titolo del riquadro. Comporre invece «in rendita» + nome avrebbe prodotto «in rendita
-    // a durata definita», che per giunta è falso: quelle due forme NON convertono in rendita,
-    // tengono il montante e lo consumano.
+    // «erogazione» regge tutti e cinque i nomi della tavola FORME senza storpiature ed è la
+    // parola che la pagina usa già nel titolo del riquadro. Comporre «in rendita» + nome darebbe
+    // «in rendita a durata definita», che è anche falso: quelle due forme non convertono in
+    // rendita, tengono il montante e lo consumano.
     const come = i => {
       const x = s.p[i], pc = Math.round(fra(x.quotaCap, 0, 1) * 100);
       const f = FORME.find(f => f.k === x.forma) || FORME[0];
@@ -3025,16 +2830,11 @@ function calc(){
   // partenza. Misurato: sul caso di prova a 4.000 € di spesa il verdetto si rovescia davvero.
   if (s.rend <= 0 && s.rendFondo <= 0){
     // CON RENDIMENTI REALI GIÀ NON POSITIVI LA PROVA NON TOGLIE NIENTE: la perturbazione è
-    // `Math.min(0, rendimento)`, che su un numero già negativo lo lascia dov'era — il piano
-    // provato e il piano sono lo stesso piano, e mostrare il confronto direbbe «regge lo
-    // stesso» su un piano paragonato a sé stesso.
-    //
-    // AL POSTO DEL SILENZIO ORA C'È UNA RIGA. Fino al 02/08/2026 questo ramo non toccava quasi
-    // nessuno: coi rendimenti proposti — 4% e 3% contro il 2% di inflazione — entrambi i reali
-    // erano positivi e la prova si vedeva sempre. Col listino delle classi ci finisce chi ha
-    // molta liquidità e chi sta in un comparto garantito, cioè le persone più prudenti, che
-    // sono il cuore di chi legge questo sito. Vedersi sparire una riga senza sapere perché è
-    // peggio che leggere che non serve: la prova non manca, è già dentro le ipotesi.
+    // `Math.min(0, rendimento)`, che su un numero già negativo lo lascia dov'era, e mostrare il
+    // confronto direbbe «regge lo stesso» su un piano paragonato a sé stesso.
+    // Al posto del silenzio c'è una riga. In questo ramo ci finisce chi ha molta liquidità o sta
+    // in un comparto garantito, cioè le persone più prudenti: vedersi sparire una riga senza
+    // sapere perché è peggio che leggere che non serve.
     EL('tenuta').innerHTML = `<b>Prova di tenuta.</b> Non si applica: con rendimenti che non
       superano l'inflazione il piano sta già nel suo scenario peggiore, e ${fmt(PROVA_ANNI)}
       anni iniziali a rendimento reale nullo non gli toglierebbero niente.`;
@@ -3088,22 +2888,17 @@ function calc(){
      <b>${fmt(s.rendFondo*100, 2)}%</b> per i fondi pensione`;
 
 
-  // Questa frase descrive il rapporto fra due caselle, quindi si deriva. Scritta a mano diceva
-  // «il fondo rende meno», e appena i rendimenti sono cambiati è diventata falsa: una pagina
-  // non può affermare una cosa che le sue stesse caselle smentiscono.
-  //
-  // E NON DIAGNOSTICA PIÙ UN ERRORE DI CHI COMPILA. Fino al 02/08/2026, con il fondo davanti,
-  // la frase avvertiva che il confronto era «distorto a favore del fondo» se il numero era
-  // lordo. Ma il segno di questa differenza NON È UNA PROVA: le due caselle non descrivono lo
-  // stesso comparto, e un fondo in azionario contro risparmi in un bilanciato prudente dà quel
-  // divario in modo perfettamente corretto — l'allocazione pesa più del cuneo fiscale (20% per
-  // competenza contro 26% al realizzo quasi si compensano su orizzonti lunghi). Il rischio del
-  // lordo esiste per TUTTE E DUE le caselle e da qui non si vede: chi scrive il lordo in
-  // entrambe non riceveva alcun avviso. Sta quindi dove sta l'istruzione, nella riga sopra.
-  // Simmetricamente è caduto il ramo opposto, che diceva «rende meno, COERENTEMENTE con…»:
-  // se il segno non prova un errore in un verso, non prova la correttezza nell'altro.
-  // Resta il fatto sul modello, che vale in tutti i rami: da questa differenza dipendono due
-  // esiti veri. La spiegazione fiscale è dominio, e sta in pagina.
+  // Questa frase descrive il rapporto fra due caselle, quindi si deriva: scritta a mano dice «il
+  // fondo rende meno» e diventa falsa appena i rendimenti cambiano.
+  // E NON DIAGNOSTICA UN ERRORE DI CHI COMPILA, perché il segno di questa differenza non è una
+  // prova: le due caselle non descrivono lo stesso comparto, e un fondo in azionario contro
+  // risparmi in un bilanciato prudente dà quel divario in modo perfettamente corretto —
+  // l'allocazione pesa più del cuneo fiscale (20% per competenza contro 26% al realizzo quasi si
+  // compensano su orizzonti lunghi). Il rischio di scrivere il lordo riguarda TUTTE E DUE le
+  // caselle e da qui non si vedrebbe, quindi l'istruzione sta nella riga sopra. Per la stessa
+  // ragione non esiste il ramo opposto: se il segno non prova un errore in un verso, non prova la
+  // correttezza nell'altro. Resta il fatto sul modello, da cui dipendono due esiti veri; la
+  // spiegazione fiscale è dominio e sta in pagina.
   const dif = s.rendFondoNom - s.rendNom;
   const nomi = `Per i fondi pensione è indicato <b>${fmt(s.rendFondoNom*100,1)}%</b>, per gli
     investimenti liberi <b>${fmt(s.rendNom*100,1)}%</b>: `;
@@ -3124,14 +2919,12 @@ function calc(){
               : `fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}%
                  contro ${fmt(s.rendFondoNom*100,1)}%)`;
   EL('regola').innerHTML = r.incassi.length === 0
-    // Senza esercizi di attività la ragione l'ha già data l'avviso accanto alla decorrenza:
-    // ripeterla qui sarebbe un doppione, e per giunta sotto una sezione che non c'è più.
-    // E «nessuno dei DUE» si diceva anche con una persona sola: quinta volta che un numero
-    // cablato sopravvive al caso a una persona.
-    // E CHI NON HA UN FONDO NON HA UN FONDO CHE «NON VIENE RISCOSSO»: quella frase gliene
-    // annuncia uno che non esiste. Sono due situazioni diverse dietro lo stesso `incassi` vuoto
-    // — il fondo che c'è ma esce fuori dall'orizzonte, e il fondo che non c'è — e a chi legge
-    // la seconda non va detto niente: il riquadro del modulo dice già che si può lasciare vuoto.
+    // Senza esercizi di attività la ragione l'ha già data l'avviso accanto alla decorrenza, e
+    // ripeterla qui sarebbe un doppione sotto una sezione che non c'è più.
+    // Chi non ha un fondo non ha un fondo che «non viene riscosso»: quella frase gliene
+    // annuncerebbe uno inesistente. Dietro lo stesso `incassi` vuoto ci sono due situazioni — il
+    // fondo che c'è ma cade fuori dall'orizzonte, e il fondo che non c'è — e alla seconda non va
+    // detto niente, perché il riquadro del modulo dice già che si può lasciare vuoto.
     ? (s.tuttoInPens || s.indici.every(i => !(s.p[i].fondo > 0)) ? ''
        : s.N === 1 ? 'Il fondo non viene riscosso dentro il piano.'
                    : 'Nessuno dei due fondi viene riscosso dentro il piano.')
@@ -3187,8 +2980,7 @@ function conAlt(s, i, campo, valore){
   return simula({...s, p: s.p.map((x,j) => j === i ? {...x, [campo]: valore} : x)});
 }
 
-// il valore, fra quelli provati, che lascia più soldi alla fine
-// I CANDIDATI PER IL PUNTO PIÙ ALTO, e perché sono questi.
+// I CANDIDATI PER IL PUNTO PIÙ ALTO, cioè il valore che lascia più soldi alla fine.
 // Fra un punto notevole e l'altro il patrimonio finale è LINEARE nella percentuale versata:
 // ogni euro in più fa sempre la stessa cosa (esce dalla busta, entra nel fondo, sconta la
 // stessa aliquota). Una funzione lineare a tratti ha il massimo su un vertice, quindi basta
@@ -3203,8 +2995,8 @@ function conAlt(s, i, campo, valore){
 // Superarla di un euro fa scendere la quota liquidabile dal 100% al 60%, e il resto diventa una
 // rendita che non si rivaluta: nel conto quel salto vale decine di migliaia di euro. Il punto in
 // cui il montante la incrocia si trova per bisezione — il montante cresce con quello che si
-// versa — e vanno provati i due decimi che lo stringono. Senza, la pagina consigliava il decimo
-// di punto sbagliato (trovato il 31/07/2026 su un caso vero: 507 € lasciati lì).
+// versa — e vanno provati i due decimi che lo stringono, o si finisce per consigliare il decimo
+// di punto sbagliato: su un caso reale, 507 € lasciati lì.
 function pcSoglia(s, i, pcMax){
   const scarto = pc => {
     const inc = conAlt(s, i, 'pc', pc).incassi.find(z => z.chi === s.p[i].nome);
@@ -3239,15 +3031,13 @@ function candidatiVersamento(x, pcMax, altri = []){
   return [...passo].sort((a, b) => a - b);
 }
 
-// UN CANDIDATO CHE MANDA IL PATRIMONIO SOTTO ZERO NON È UN OTTIMO, e per un pezzo lo è stato.
+// UN CANDIDATO CHE MANDA IL PATRIMONIO SOTTO ZERO NON È UN OTTIMO.
 // Il patrimonio negativo smette di rendere (`Math.max(inizio, 0)` in `simula`): da lì in poi il
-// finale peggiora soltanto della differenza fra spesa ed entrate, mentre l'incasso del fondo,
-// che arriva più tardi, lo risolleva di colpo. Massimizzare il finale su una traiettoria già
-// sotto zero premia quindi proprio i versamenti più alti. Misurato il 02/08/2026 su un piano che
-// si esaurisce nel 2028: la pagina indicava «il punto più alto è il 50%, vale 32.082 € in più»,
-// e seguendolo il patrimonio si esauriva nel 2027 — un anno PRIMA. Il verdetto in cima diceva
-// «non sostenibile» e il cursore, venti righe sotto, consigliava di accelerare.
-//
+// finale peggiora soltanto della differenza fra spesa ed entrate, mentre l'incasso del fondo, che
+// arriva più tardi, lo risolleva di colpo. Massimizzare il finale su una traiettoria già sotto
+// zero premia quindi proprio i versamenti più alti. Su un piano che si esaurisce nel 2028 il
+// punto indicato era il 50%, «32.082 € in più», e seguendolo il patrimonio si esauriva un anno
+// PRIMA: il verdetto in cima diceva «non sostenibile» e il cursore consigliava di accelerare.
 // L'ordine giusto ha tre gradini, e il primo è di specie diversa dagli altri due:
 //   1. un piano che arriva in fondo batte SEMPRE uno che non ci arriva. Non è un peso maggiore,
 //      è un'altra categoria: finché il patrimonio si esaurisce, il finale non misura niente;
@@ -3636,13 +3426,11 @@ function aggiornaDecisioni(s, r){
     const voci = [];
     if (conFondo) voci.push('per la prima il conto indica il punto più alto, sotto il cursore');
     // E LA SECONDA NON È UNA SCELTA SOLA, ma tre passi con statuto diverso: sul primo — quando
-    // il fondo comincia a uscire — un punto più alto ESISTE, perché anticipare o attendere
-    // sposta gli stessi importi fra il fondo e il patrimonio e i due esiti si misurano con la
-    // stessa unità. Sul secondo e sul terzo no, e il motivo è il metro (il patrimonio finale è
-    // una grandezza di lascito, che la rendita per costruzione non produce). La promessa diceva
-    // «per la seconda non è possibile» mentre il passo 1 scriveva «il punto più alto è
-    // cominciare nel …»: la premessa era smentita dal riquadro che introduce, come già successo
-    // con l'abitazione.
+    // il fondo comincia a uscire — un punto più alto ESISTE, perché anticipare o attendere sposta
+    // gli stessi importi fra il fondo e il patrimonio e i due esiti si misurano con la stessa
+    // unità. Sul secondo e sul terzo no, e il motivo è il metro: il patrimonio finale è una
+    // grandezza di lascito, che la rendita per costruzione non produce. La frase deve distinguerli,
+    // o la premessa viene smentita dal riquadro che introduce.
     if (conFondo) voci.push('per la seconda il punto più alto esiste solo sul primo dei tre passi, '
       + 'e per gli altri due è detto perché');
     voci.push(s.casa.attiva && s.casa.spesaAnnua > 0
@@ -3673,14 +3461,13 @@ function aggiornaDecisioni(s, r){
     const pc = +cv.value;
     const c = contributi(x, pc), oggi = contributi(x, x.pcVoi);
 
-    // DOVE STA IL CURSORE, DETTO NELLA SUA UNITÀ. Il riquadro parlava solo in euro, mentre
-    // tutti i bersagli intorno al cursore sono percentuali: la casella («Quanto si versa oggi,
-    // in % della RAL»), il pulsante «torna al …», il gradino «sotto il … chiesto dal contratto»
-    // e soprattutto «il punto più alto è il …». La pagina indicava un traguardo in percentuale
-    // e non dava alcuna lettura in percentuale con cui centrarlo: restava trascinare a occhio.
-    // LA BASE VA DETTA, e non è pignoleria: la percentuale è quella A CARICO DEL LAVORATORE,
-    // mentre gli euro della riga sopra comprendono il datore. Senza «della RAL» il numero si
-    // leggerebbe come la percentuale di quel totale, che è un'altra grandezza.
+    // DOVE STA IL CURSORE, DETTO NELLA SUA UNITÀ. Tutti i bersagli intorno al cursore sono
+    // percentuali — la casella, il pulsante «torna al …», il gradino, «il punto più alto è il …»
+    // — quindi un riquadro che parla solo in euro indica un traguardo in percentuale senza dare
+    // la lettura con cui centrarlo, e resta il trascinamento a occhio.
+    // La base va detta: la percentuale è quella A CARICO DEL LAVORATORE, mentre gli euro della
+    // riga sopra comprendono il datore. Senza «della RAL» il numero si leggerebbe come la
+    // percentuale di quel totale, che è un'altra grandezza.
     // Lo zero non è un caso a parte: `perc` scrive «lo 0%» con l'articolo giusto, e all'estremo
     // sinistro del cursore la posizione va letta come in ogni altro punto.
     EL('cVers'+i+'Ora').innerHTML = !(x.ral > 0)
@@ -3697,18 +3484,15 @@ function aggiornaDecisioni(s, r){
               : `dei ${E0(TETTO_DEDUZIONE)} che si deducono ne restano
                  ${E0(TETTO_DEDUZIONE - c.tot)}`}</i>`;
     EL('cVers'+i+'Sx').textContent = 'niente: 0 €';
-    // dire PERCHÉ il cursore si ferma lì. IL VINCOLO È UNO SOLO, ed è dimostrato: qui c'erano
-    // due frasi, «oltre, il versamento supererebbe lo stipendio» e «il tot% della RAL», per il
-    // caso in cui il cursore fosse arrivato a fondo scala. Quel caso non esiste. Versando il
-    // 100% della retribuzione il netto vale −RAL×IVS − irpefNetta(R) + sommaCuneo(R), dove
-    // l'imposta netta non è mai negativa e la somma del cuneo vale al più la sua aliquota più
-    // alta su un imponibile minore della RAL: con IVS al 9,19% contro il 7,1% la busta resta
-    // sotto zero per qualunque retribuzione, con un margine di due punti.
-    // La seconda frase non è quindi mai comparsa in tre giorni di sito pubblicato, e teneva in
-    // piedi un vincolo che chi legge il codice credeva vivo. Due invarianti la sostituiscono
-    // (`verifiche/invarianti.mjs`): la disuguaglianza fra le due cifre di legge, e la prova sui
-    // 4.000 piani che `pcSpendibile` resta sotto 100. Se una legge di bilancio le incrociasse,
-    // fallirebbero prima che la pagina possa scrivere una frase sbagliata.
+    // dire PERCHÉ il cursore si ferma lì, e il vincolo è UNO SOLO: il caso in cui arrivi a fondo
+    // scala non esiste. Versando il 100% della retribuzione il netto vale
+    // −RAL×IVS − irpefNetta(R) + sommaCuneo(R), dove l'imposta netta non è mai negativa e la
+    // somma del cuneo vale al più la sua aliquota più alta su un imponibile minore della RAL:
+    // con IVS al 9,19% contro il 7,1% la busta resta sotto zero per qualunque retribuzione, con
+    // due punti di margine. Una seconda frase per quel caso terrebbe in piedi un vincolo morto.
+    // Lo garantiscono due invarianti (`verifiche/invarianti.mjs`): la disuguaglianza fra le due
+    // cifre di legge, e la prova sui 4.000 piani che `pcSpendibile` resta sotto 100. Se una legge
+    // di bilancio le incrociasse, fallirebbero prima che la pagina scriva una frase sbagliata.
     EL('cVers'+i+'Dx').innerHTML = !(x.ral > 0) ? ''
       : `${E0(x.ral * pcTop / 100)}: oltre, il versamento supererebbe lo stipendio`;
 
@@ -3716,13 +3500,6 @@ function aggiornaDecisioni(s, r){
     const perso = oggi.dat > 0.5 ? oggi.dat : quotaDatore(x);
     if (!(x.ral > 0)){
       EL('cVers'+i+'Picco').textContent = '';
-    } else if (x.fondoIndividuale){
-      // chi ha sottoscritto per conto proprio non ha un gradino da mostrare: dirgli quanto
-      // «starebbe lasciando lì» sarebbe indicargli un guadagno che non può prendere
-      EL('cVers'+i+'Picco').textContent = x.pcDat > 0
-        ? 'su un fondo sottoscritto per conto proprio la quota indicata non viene conteggiata: '
-          + 'il versamento rende la sola deduzione IRPEF'
-        : 'senza quota del datore, il versamento rende solo la deduzione IRPEF';
     } else if (x.pcVoi > 0 && !c.scatta){
       // LA SOGLIA, NON QUELLO CHE SI VERSA. Con la casella del minimo compilata le due cose sono
       // diverse, e la frase deve nominare quella che decide davvero: chi versa il 3% con un
@@ -3760,7 +3537,7 @@ function aggiornaDecisioni(s, r){
     // rivolge è vera con qualunque minimo, quindi sarebbe una domanda che non cambia risposta.
     // E non compare dove una quota del datore non c'è: senza gradino non c'è soglia da collocare.
     {
-      const serve = x.ral > 0 && !x.fondoIndividuale && x.pcDat > 0
+      const serve = x.ral > 0 && x.pcDat > 0
         && (x.pcMin !== null || (x.pcVoi > 0 && pc < x.pcVoi - 0.049));
       EL('chiediMin'+i).hidden = !serve;
       EL('pcMin'+i).setAttribute('aria-label', `Quota minima chiesta dal contratto, ${NOMI[i]}`);
@@ -3777,9 +3554,9 @@ function aggiornaDecisioni(s, r){
     bt.hidden = !spostato;
     if (spostato) bt.textContent = `torna ${perc(x.pcVoi,'al')}, quello versato oggi`;
 
-    // Il punto più alto, che adesso ESISTE: da quando il cursore va oltre il tetto, versare di
-    // più smette di convenire e il massimo cade dove finisce la deduzione — o più in là, se il
-    // fondo rende più del portafoglio. Prima era sempre all'estremo destro e non diceva niente.
+    // Il punto più alto ESISTE perché il cursore va oltre il tetto: da lì versare di più smette
+    // di convenire e il massimo cade dove finisce la deduzione, o più in là se il fondo rende più
+    // del portafoglio. Fermando il cursore al tetto sarebbe sempre all'estremo destro.
     const bVai = EL('cVers'+i+'Vai');
     if (x.ral > 0 && pcMax > 0.05){
       // si cerca su TUTTO il cursore, non solo da quello che si versa oggi in su: la frase dice
@@ -4051,11 +3828,10 @@ function aggiornaDecisioni(s, r){
         <b>non si rivaluta</b>: ${E0(nulla)} di oggi, dopo ${r.annoFine - inc.anno} anni, ne
         varranno ${E0(nulla / Math.pow(1 + s.infl, r.annoFine - inc.anno))}.`;
 
-      // QUANTO PESA LA LONGEVITÀ, misurata invece che dichiarata. Fino al 31/07/2026 qui c'era
-      // scritto che un ottimo non si può indicare perché il modello non rappresenta la durata
-      // della vita. Provato: portando il piano a 105 anni i contanti restano avanti lo stesso,
-      // quindi la longevità non era la ragione. La ragione è il rendimento, e la longevità è
-      // quanto quella soglia si sposta fra un'età e l'altra.
+      // QUANTO PESA LA LONGEVITÀ, misurata invece che dichiarata. Non è la longevità a impedire
+      // di indicare un ottimo: portando il piano a 105 anni i contanti restano avanti lo stesso.
+      // La ragione è il rendimento, e la longevità è quanto quella soglia si sposta fra un'età e
+      // l'altra.
       const etaMedia = Math.round(inc.etaPens + speranzaVita(inc.etaPens));
       const etaOriz  = r.annoFine - x.nascita;
       // `breve` per il secondo estremo: ripetere «la rendita converrebbe sotto» due volte nella

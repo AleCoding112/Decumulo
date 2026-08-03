@@ -1,28 +1,16 @@
-# ============================================================================
-#  LA PUBBLICAZIONE PASSA DAI CONTROLLI, O NON AVVIENE.
+# A ogni push su `main` gira `node verifica.mjs`: se un solo passo fallisce la
+# pubblicazione si ferma e online resta la versione buona.
 #
-#  A ogni push su `main` GitHub esegue `node verifica.mjs` — build, 213 controlli
-#  sul motore, le frasi su diciotto scenari, i valori ostili, le tavole dei
-#  fondi, la seconda implementazione, 4.000 piani casuali, gli schermi, la
-#  coerenza fra pagine e motore, la guardia sulle scadenze.
-#  Se un solo passo fallisce, il lavoro si ferma qui e ONLINE RESTA LA VERSIONE
-#  BUONA. È la stessa regola che il progetto si è dato per il codice, applicata
-#  a quello che vede la gente.
+# `sito/` non sta nel repository, lo ricostruisce questo lavoro: così non può
+# finire online una cartella costruita a mano che non è passata dai controlli.
 #
-#  `sito/` non sta nel repository: lo ricostruisce questo lavoro. Così non può
-#  finire online una cartella costruita a mano che non è passata dai controlli.
+# Resta fuori di proposito `verifiche/a-schermo.mjs`, che apre Chrome: si lancia
+# a mano quando si tocca il layout, perché qui renderebbe la pubblicazione lenta
+# e fragile per una cosa che va comunque guardata con gli occhi.
 #
-#  RESTA FUORI DI PROPOSITO `verifiche/a-schermo.mjs`, che apre Chrome vero: si
-#  lancia a mano quando si tocca il layout. Un controllo che qui richiederebbe
-#  un browser renderebbe la pubblicazione lenta e fragile per una cosa che va
-#  comunque guardata con gli occhi.
-#
-#  DUE MOMENTI IN CUI QUESTO FALLIRÀ, ed è voluto:
-#   · passato il 1° gennaio, `scadenze.mjs` blocca finché i parametri dell'anno
-#     nuovo non sono riverificati (l'assegno sociale si rivaluta a gennaio e la
-#     legge di bilancio può cambiare gli scaglioni);
-#   · se una modifica al testo rompe una frase, prima che arrivi al pubblico.
-# ============================================================================
+# Due momenti in cui fallirà, ed è voluto: passato il 1° gennaio `scadenze.mjs`
+# blocca finché i parametri dell'anno nuovo non sono riverificati; e quando una
+# modifica al testo rompe una frase, prima che arrivi al pubblico.
 name: pubblica
 
 on:
