@@ -75,6 +75,16 @@ const SCENARI = {
   // tutta in rendita — è il caso in cui saltavano fuori «il fondo di il primo» e «il 0%»
   'prima visita: una persona, nomi vuoti': {...BASE, quanti:'1', nome0:'', nome1:'',
     quotaCap0:0, quotaCap1:0},
+  // I NOMI VUOTI CON QUALCOSA DA NOMINARE. Lo scenario qui sopra ha i nomi vuoti ma non riscuote
+  // niente dentro il piano, quindi le frasi che compongono «di» + nome non le scriveva nessuno:
+  // il controllo sulla preposizione attaccata all'articolo non poteva fallire, e infatti non ha
+  // visto «fondo di la persona» finché non è esistito questo caso. Qui il fondo esce, il TFR si
+  // liquida e la casa si vende, tutto senza un nome scritto — che è la prima visita vera.
+  'nomi vuoti, e tutto da nominare': {...BASE, quanti:'1', nome0:'', nome1:'',
+    tfrDove0:'azienda', fondo0:90000, quotaCap0:0.5,
+    casaCosa:'affitto', casaAnno:2050, casaValore:250000, casaCanone:800},
+  'nomi vuoti in due, e tutto da nominare': {...BASE, nome0:'', nome1:'',
+    tfrDove0:'azienda', tfrDove1:'azienda', quotaCap0:0.5, quotaCap1:0.5},
   // col rendimento basso il pareggio capitale/rendita si rovescia: è il ramo in cui la frase
   // scrive «la rendita è già avanti» invece di una soglia
   'rendimento basso: la rendita si riprende': {...BASE, rend:1},
@@ -201,6 +211,16 @@ const SPORCO  = /\b(undefined|NaN|\[object|Infinity)\b/;
 // avverbio che non concorda: sono i due detriti che una sostituzione a metà lascia dietro.
 // Poche coppie, scelte perché non hanno un uso legittimo: «il solo» esiste, «la solo» no.
 const ROTTA = /\b(?:(?:il|lo|un|dei|degli)\s+(?:sola|sole|le|gli|la)|(?:la|le|una|i|gli)\s+(?:solo|il|lo|gli|le)|(?:il|la|lo|i|gli|le|un|una|uno)\s+(?:anche|però|quindi|invece|infatti|comunque))\b|\b(\w{3,})\s+\1\b/i;
+// LA PREPOSIZIONE ATTACCATA ALL'ARTICOLO: «di la persona», «di il primo». In italiano non
+// esiste, mai, e nasce sempre dallo stesso gesto — comporre a pezzi una forma articolata invece
+// di farla viaggiare col nome. Il progetto l'aveva già imparato una volta e c'era un commento
+// che lo diceva, a due righe dai due punti che continuavano a farlo: la regola scritta accanto
+// al codice non basta, ci vuole un controllo che la faccia rispettare.
+// «là» con l'accento non ci casca: «più in là» resta fuori perché `la` ha il confine di parola.
+// E `con` NON sta in questo elenco: è l'unica delle preposizioni che non si contrae per forza —
+// «con la rendita reversibile» e «con i primi dieci anni» sono italiano corretto, e mettercelo
+// faceva fallire venti scenari su frasi giuste. Le altre cinque si fondono sempre.
+const PREPOSTA = /\b(?:di|a|da|in|su)\s+(?:il|lo|la|i|gli|le)\b/i;
 
 console.log('\n— quello che il calcolatore scrive, scenario per scenario —');
 for (const [nome, DATI] of Object.entries(SCENARI)){
@@ -221,6 +241,11 @@ for (const [nome, DATI] of Object.entries(SCENARI)){
     .find(([, m]) => m);
   c(`${nome}: nessuna frase lasciata a metà`, !rotta,
     rotta ? `«${rotta[1][0]}» in #${rotta[0]}` : '');
+  const preposta = Object.entries(scritte)
+    .map(([k, v]) => [k, String(v).replace(/<[^>]+>/g, ' | ').match(PREPOSTA)])
+    .find(([, m]) => m);
+  c(`${nome}: nessuna preposizione incollata a un articolo`, !preposta,
+    preposta ? `«${preposta[1][0]}» in #${preposta[0]}` : '');
   // 1900 è il valore a cui il taglio riconduce un anno troppo piccolo: se compare in pagina,
   // un numero che nessuno ha scritto è diventato una risposta. Non è un formato sbagliato —
   // `SPORCO` non lo vedrebbe — è una data inventata, ed è peggio.
@@ -685,6 +710,64 @@ console.log('\n— il sommario, che ora è un link —');
 // sbagliare sono due, e nessuna la vedrebbe un controllo sui numeri: dire «tenore mantenuto»
 // quando il rapporto sta sotto la soglia, e comparire con una persona sola, dove non resta
 // nessuno di cui parlare.
+// ============================================================================
+//  QUATTRO DIFETTI TROVATI LEGGENDO OTTO PERSONE, il 03/08/2026. Nessuno era
+//  visibile a un controllo sui numeri: tutti e quattro si vedono solo aprendo
+//  la pagina con dei dati addosso e leggendo la frase che ne esce.
+//  Qui diventano controlli, o alla prossima riscrittura tornano.
+// ============================================================================
+console.log('\n— quello che si è visto solo leggendo —');
+{
+  const pulito = v => String(v).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  // 1. «AI 83 ANNI» invece di «agli». L'elisione si decide su come si LEGGE il numero, e la
+  //    regola conosceva 1, 8 e 11 — che bastano alle percentuali — ma non gli ottanta, che
+  //    nel verdetto sono l'età più frequente di tutte.
+  // IL CASO VA CERCATO, NON SUPPOSTO: la prima versione di questo controllo fissava una data di
+  // nascita e sperava che l'esaurimento cadesse negli ottanta. Cadeva a quaranta, e il controllo
+  // passava senza aver guardato niente — lo stesso difetto che sto controllando altrove.
+  // Qui si prova finché l'età non è davvero fra 80 e 89, e se non si trova si fallisce.
+  const titoloConEta = () => {
+    for (let nascita = 1940; nascita <= 1975; nascita++){
+      const {scritte} = esegui({...BASE, quanti:'1', nome0:'', nome1:'', nascita0: nascita,
+        annoPens0: 2027, pens0: 400, ral0: 18000, cl3: 60000, spesa: 2600,
+        fondo0:'', fondo1:'', iscr0:'', pcVoi0:0, pcDat0:0, tfrDove0:'azienda', etaFine: 105});
+      const testo = pulito(scritte.titolo || '');
+      const m = testo.match(/\b(?:ai|agli) (\d+) anni/);
+      if (m && +m[1] >= 80 && +m[1] <= 89) return testo;
+    }
+    return null;
+  };
+  const t80 = titoloConEta();
+  c('esiste un caso in cui il verdetto dice un\'età negli ottanta', !!t80, t80 || 'non trovato');
+  c('e lì l\'articolo è eliso: «agli 83 anni», non «ai 83 anni»',
+    !!t80 && !/\bai 8\d anni/.test(t80), t80 ? t80.slice(-40) : '');
+
+  // 2. «COM'È ADESSO» E BASTA, a chi non versa niente: la riga che spiega quanto costa la
+  //    quota esiste solo per chi una quota ce l'ha, e il riquadro restava con due parole.
+  //    È la persona a cui quella sezione serve di più.
+  const zero = esegui({...BASE, quanti:'1', pcVoi0:0, pcDat0:2, pcMin0:''});
+  const esito = pulito(zero.scritte.cVers0Esito || '');
+  c('a chi non versa niente il riquadro del cursore dice qualcosa', esito.length > 20, esito);
+
+  // 3. «IL FONDO NON VIENE RISCOSSO DENTRO IL PIANO» detto a chi un fondo non ce l'ha: la
+  //    frase gliene annuncia uno che non esiste.
+  // «NIENTE FONDO OGGI» NON VUOL DIRE «NIENTE FONDO ALLA PENSIONE»: con i contributi e il TFR
+  // conferito il montante nasce lo stesso da zero, e il primo fixture che avevo scritto ne
+  // aveva uno da 67.000 €. Perché non ce ne sia davvero, vanno spenti tutti e tre gli ingressi.
+  const senza = esegui({...BASE, quanti:'1', fondo0:'', fondo1:'', iscr0:'', iscr1:'',
+    pcVoi0:0, pcDat0:0, tfrDove0:'azienda'});
+  c('a chi non ha un fondo non si parla del suo fondo',
+    !/fondo/i.test(pulito(senza.scritte.regola || '')), pulito(senza.scritte.regola || '(muto)'));
+
+  // 4. UN EVENTO ANNUNCIATO PRIMA CHE IL PIANO COMINCI. Chi ha la decorrenza nell'anno in
+  //    corso non è «già in pensione», ma il suo ultimo anno di lavoro cade fuori dal piano:
+  //    raccontarlo significa nominare un fatto che nella tabella non compare.
+  const quest = esegui({...BASE, quanti:'1', annoPens0: 2026, ral0: 30000});
+  const q = pulito(quest.scritte.quandoSmettete || '');
+  c('non si annuncia un anno precedente all\'inizio del piano', !/\b(19|20[0-2])\d\b/.test(
+      q.replace(/\b202[6-9]\b|\b20[3-9]\d\b/g, '')), q);
+}
+
 console.log('\n— se uno dei due mancasse —');
 {
   const riga = o => { const {scritte} = esegui({...BASE, ...o});

@@ -19,7 +19,7 @@ lancia da solo:
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
 | `node test.mjs` | 260 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su ventiquattro scenari e legge le frasi che scrive |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su ventisei scenari e legge le frasi che scrive |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
@@ -678,6 +678,42 @@ crescita quello che era il gradino. Passava solo perché quel campo era sempre z
 
 **Regola: un'armatura che riempie i buchi con un valore di comodo non sta provando il caso
 normale, sta provando il valore di comodo.**
+
+## Otto persone, lette una per una (03/08/2026)
+
+L'ultimo pezzo, e l'unico che nessun controllo può fare: **otto profili realistici, e leggere
+quello che il calcolatore gli dice.** Non «i numeri tornano» — quello lo sanno già in seicento —
+ma «questa frase, a questa persona, sta in piedi?».
+
+**La regola che li rende utili: metterci i casi scomodi.** Un operaio che versa solo il TFR, una
+impiegata sola senza fondo, una vedova con 950 € di pensione e 25.000 € da parte. È lì che un
+calcolatore dice le cose più stupide, ed è lì che il collaudo naturale non va mai, perché si prova
+sempre il caso che funziona. Dei sette difetti trovati, **cinque stavano su quei tre profili.**
+
+| letto | cos'era |
+|---|---|
+| «il patrimonio si esaurisce **ai 83 anni**» | l'elisione conosceva 1, 8 e 11 — bastano alle percentuali — ma non gli **ottanta**, che nel verdetto sono l'età più frequente |
+| «**com'è adesso**» e basta | la riga che spiega quanto costa la quota esiste solo per chi una quota ce l'ha: chi non versa niente vedeva due parole. È la persona a cui quella sezione serve di più |
+| «Il fondo non viene riscosso dentro il piano» | detto a chi **un fondo non ce l'ha**: gliene annuncia uno che non esiste |
+| «fondo **di la persona** riscosso nel 2038» | la forma articolata viaggia col nome, e due punti la ricomponevano a pezzi. **C'era già un commento che lo vietava, due righe sopra** |
+| «**Consistenza** minima nel 2053» | la parola che avevamo tolto dalle etichette era rimasta nelle frasi generate |
+| «il secondo **smette di lavorare nel 2025**» | chi ha la decorrenza nell'anno in corso non è «già in pensione», ma il suo ultimo anno di lavoro cade prima che il piano cominci: si annunciava un fatto che nella tabella non compare |
+| «TFR **la persona**» sul grafico | l'etichetta corta non deve nominare nessuno quando la persona è una sola |
+
+**E adesso sono controlli, in `come-parla.mjs`.** Il più generale vale da solo: **una preposizione
+attaccata a un articolo** — «di la», «di il», «a le» — in italiano non esiste mai, e nasce sempre
+dallo stesso gesto. Attenzione a **`con`**, che è l'unica preposizione che non si contrae per
+forza: metterlo nell'elenco faceva fallire venti scenari su frasi corrette («con la rendita
+reversibile»).
+
+**LA LEZIONE PIÙ UTILE È SU DUE CONTROLLI CHE HO SCRITTO IO E CHE NON POTEVANO FALLIRE.**
+Il primo cercava «agli ottanta» in un caso in cui l'età era quaranta. Il secondo cercava un piano
+senza fondo in un fixture che il fondo se lo costruiva da solo, coi contributi e il TFR — «niente
+fondo oggi» non vuol dire «niente fondo alla pensione». Passavano tutti e due, senza aver guardato
+niente. E il controllo sulla preposizione, appena scritto, **non vedeva il difetto che l'aveva
+motivato**: tutti gli scenari avevano i nomi compilati, e quel difetto vive solo coi nomi vuoti.
+**Ogni difetto va rimesso e visto fallire, o si è scritta una cerimonia.** Fatto per tutti e
+quattro.
 
 ## Il registro dei dubbi
 

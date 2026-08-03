@@ -1029,7 +1029,7 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
   </p>
   <div class="scorre"><table id="tabella"></table></div>
   <p class="nota">Importi <b>annui</b>; accanto all'anno, in corpo minore, l'età.
-  Ogni riga è verificabile manualmente: <i>consistenza precedente + rendimento + entrate −
+  Ogni riga è verificabile manualmente: <i>quello che c'era + rendimento + entrate −
   spesa</i>. <a href="il-metodo.html">Metodo di calcolo →</a></p>
 </details>
 
@@ -1354,10 +1354,20 @@ const pcTesto = n => fmt(n, Math.abs(n * 10 % 10) < 1e-9 ? 0 : 1) + '%';
 //    del valore è 0.
 // Si prende quindi la parte intera dal testo già formattato, che è quella che si legge.
 const interoDetto = n => parseInt(pcTesto(n), 10);
+// E GLI OTTANTA MANCAVANO. La regola guardava 1, 8 e 11 — che bastano per le percentuali, quasi
+// sempre sotto il 50 — ma «ottantatré» comincia per vocale come «otto», e il titolo scriveva
+// «ai 83 anni». Vale per 80-89 e per 8, 11 e 1: si guarda la PRIMA PAROLA con cui il numero si
+// legge, che è l'unica cosa che decide l'elisione in italiano.
+const vocaleDetta = i => i === 1 || i === 8 || i === 11 || (i >= 80 && i <= 89);
+// L'articolo da solo, per i numeri che non sono percentuali: l'età nel verdetto, dove serve
+// «agli 83 anni» e non «ai 83 anni».
+const ART = {il:['il ', "l'"], al:['al ', "all'"], del:['del ', "dell'"], sul:['sul ', "sull'"],
+             ai:['ai ', 'agli ']};
+const art = (n, prep) => ART[prep][vocaleDetta(Math.trunc(Math.abs(n))) ? 1 : 0];
 const perc = (n, prep) => { const i = interoDetto(n);
-  return (i === 0                        ? {il:'lo ', al:'allo ', del:'dello ', sul:'sullo '}[prep]
-        : i === 1 || i === 8 || i === 11 ? {il:"l'",  al:"all'",  del:"dell'",  sul:"sull'"}[prep]
-                                         : {il:'il ', al:'al ',   del:'del ',   sul:'sul '}[prep])
+  return (i === 0            ? {il:'lo ', al:'allo ', del:'dello ', sul:'sullo '}[prep]
+        : vocaleDetta(i)     ? ART[prep][1]
+                             : ART[prep][0])
     + pcTesto(n); };
 // LE DIFESE SUI VALORI. Un modulo pubblico prende addosso, il primo giorno, numeri che nessuno
 // di noi scriverebbe: un incollaggio sbagliato nell'orizzonte del piano (1e308) mandava il
@@ -1800,7 +1810,7 @@ function simula(s, spesaMese){
           const al = aliquotaTfr(tfr[i].messo, tfr[i].anni);
           const tasse = tfr[i].messo * al;
           daTfr += tfr[i].pot - tasse;
-          liquidazioni.push({chi:x.nome, anno, lordo:tfr[i].pot, al, tasse,
+          liquidazioni.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, lordo:tfr[i].pot, al, tasse,
                              netto:tfr[i].pot - tasse, anni:tfr[i].anni});
           tfr[i].pot = 0;
         }
@@ -2085,7 +2095,7 @@ function scriviFasi(r){
       : `disavanzo ${E0(-f.flusso)} al mese`;
     const d = f.fine - f.righe[0].inizio;
     const sotto = f.rendimento < 1
-      ? 'nessun rendimento: consistenza nulla o negativa'
+      ? 'nessun rendimento: il patrimonio è nullo o negativo'
       : `rendimento medio ${E0(f.rendimento)} al mese`;
     h += `<div class="fase"><b>${seg}</b><div class="cosa">${f.cosa}</div>
       <div class="flusso ${cl}">${testo}<i>${sotto}</i></div>
@@ -2094,8 +2104,8 @@ function scriviFasi(r){
     // invece di aggiungerne, e «più −18.000 € una tantum» non è italiano né aritmetica.
     if (f.unaTantum !== 0){
       const dentro = v => v.anno >= f.da && v.anno <= f.a;
-      const voci = r.incassi.filter(dentro).map(i => `fondo di ${i.chi} riscosso nel ${i.anno}`)
-        .concat(r.liquidazioni.filter(dentro).map(l => `TFR di ${l.chi} liquidato nel ${l.anno}`));
+      const voci = r.incassi.filter(dentro).map(i => `fondo ${i.di} riscosso nel ${i.anno}`)
+        .concat(r.liquidazioni.filter(dentro).map(l => `TFR ${l.di} liquidato nel ${l.anno}`));
       if (r.casa && r.casa.anno >= f.da && r.casa.anno <= f.a)
         voci.push(r.casa.cosa === 'piccola'
           ? `abitazione cambiata nel ${r.casa.anno}`
@@ -2198,13 +2208,17 @@ function eventi(r, kOf = () => 1){
   else idx.forEach(i => inizio[i] &&
     push(inizio[i], `decorrenza del trattamento ${(r.di||DI)[i]}`, `pens. ${nomi[i]}`));
 
+  // L'ETICHETTA CORTA DEL GRAFICO NON NOMINA NESSUNO SE C'È UNA PERSONA SOLA: «TFR la persona»
+  // è il nome di ripiego usato dove non serve alcun nome, e sul grafico c'è spazio per poco.
+  const solo = idx.length === 1;
   for (const l of r.liquidazioni) fatto(l.anno,
-    `il TFR di ${l.chi} lasciato in azienda: ${E0(l.lordo * kOf(l.anno))} meno `
+    `il TFR ${l.di} lasciato in azienda: ${E0(l.lordo * kOf(l.anno))} meno `
     + `${E0(l.tasse * kOf(l.anno))} di imposta (${fmt(l.al*100,1)}%, tassazione separata su `
-    + `${l.anni} anni) → ${E0(l.netto * kOf(l.anno))}`, `TFR ${l.chi}`);
+    + `${l.anni} anni) → ${E0(l.netto * kOf(l.anno))}`, solo ? 'TFR' : `TFR ${l.chi}`);
   for (const t of r.rite) fatto(t.da, `${t.chi} comincia a prendere il fondo a rate (RITA): `
-    + `${E0(t.rata * kOf(t.da))} lordi l'anno, ${t.n} rate fino al ${t.a}`, `rate ${t.chi}`);
-  for (const i of r.incassi) fatto(i.anno, `il fondo di ${i.chi}: ${E0(i.montante * kOf(i.anno))}`
+    + `${E0(t.rata * kOf(t.da))} lordi l'anno, ${t.n} rate fino al ${t.a}`,
+    solo ? 'a rate' : `rate ${t.chi}`);
+  for (const i of r.incassi) fatto(i.anno, `il fondo ${i.di}: ${E0(i.montante * kOf(i.anno))}`
     + ` meno ${E0(i.tasse * kOf(i.anno))} di imposta (${fmt(i.al*100,1)}%) → `
     + `${E0(i.capitale * kOf(i.anno))} in contanti`
     + (i.assegno > 1 ? ` e ${E0(i.assegno * kOf(i.anno))} al mese di rendita a vita` : '')
@@ -2690,6 +2704,13 @@ function calc(){
         : x.giaInPens
         ? `Trattamento${chi} in erogazione dal <b>${x.annoPens}</b>, senza anni di lavoro
            nel piano.`
+        // CHI HA LA DECORRENZA QUEST'ANNO NON È «GIÀ IN PENSIONE» — il piano lo comprende —
+        // ma il suo ultimo anno di lavoro cade PRIMA che il piano cominci, e annunciarlo
+        // significa raccontare un fatto che nella tabella non compare da nessuna parte.
+        // Si dice invece la stessa cosa da dentro il piano: qui di lavoro non ce n'è.
+        : x.ultimo < ANNO0
+        ? `Il trattamento${chi} decorre nel <b>${x.annoPens}</b>: nel piano non ci sono
+           anni di lavoro.`
         : buco <= 0
         ? `${smette} nel <b>${x.ultimo}</b>, l'anno prima della
            decorrenza.`
@@ -2801,8 +2822,9 @@ function calc(){
   if (r.annoZero !== null){
     t.className = 'risposta giu';
     t.innerHTML = `<u>Decumulo non sostenibile</u>
-      <em>Il patrimonio si esaurisce nel ${r.annoZero}</em>, ai
-      ${r.annoZero - giovane.nascita} anni ${DI[s.p.indexOf(giovane)]}.`;
+      <em>Il patrimonio si esaurisce nel ${r.annoZero}</em>,
+      ${art(r.annoZero - giovane.nascita, 'ai')}${r.annoZero - giovane.nascita} anni
+      ${DI[s.p.indexOf(giovane)]}.`;
     sommarioDelTitolo(`il patrimonio si esaurisce nel ${r.annoZero}`, 'Non sostenibile', 'giu');
     sub.innerHTML = q === null || q < 1
       ? (puoRimandare
@@ -2831,7 +2853,7 @@ function calc(){
     t.innerHTML = `<u>Decumulo sostenibile</u>
       <em>Il patrimonio arriva al ${r.annoFine}</em> con un residuo di ${E0(r.finale)}.`;
     sommarioDelTitolo(`al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
-    sub.innerHTML = `Il patrimonio inizia a ridursi dal ${giu}. Consistenza minima nel
+    sub.innerHTML = `Il patrimonio inizia a ridursi dal ${giu}. Il punto più basso è nel
       <b>${min.anno}</b>: ${E0(min.patr)}${min.anno < r.annoFine ? ', in ripresa negli anni successivi' : ''}. `
       + margine;
   }
@@ -3106,7 +3128,11 @@ function calc(){
     // ripeterla qui sarebbe un doppione, e per giunta sotto una sezione che non c'è più.
     // E «nessuno dei DUE» si diceva anche con una persona sola: quinta volta che un numero
     // cablato sopravvive al caso a una persona.
-    ? (s.tuttoInPens ? ''
+    // E CHI NON HA UN FONDO NON HA UN FONDO CHE «NON VIENE RISCOSSO»: quella frase gliene
+    // annuncia uno che non esiste. Sono due situazioni diverse dietro lo stesso `incassi` vuoto
+    // — il fondo che c'è ma esce fuori dall'orizzonte, e il fondo che non c'è — e a chi legge
+    // la seconda non va detto niente: il riquadro del modulo dice già che si può lasciare vuoto.
+    ? (s.tuttoInPens || s.indici.every(i => !(s.p[i].fondo > 0)) ? ''
        : s.N === 1 ? 'Il fondo non viene riscosso dentro il piano.'
                    : 'Nessuno dei due fondi viene riscosso dentro il piano.')
     : r.incassi.map(i => {
@@ -3666,7 +3692,7 @@ function aggiornaDecisioni(s, r){
     EL('cVers'+i+'Dx').innerHTML = !(x.ral > 0) ? ''
       : `${E0(x.ral * pcTop / 100)}: ` + (fermaStipendio
           ? `oltre, il versamento supererebbe lo stipendio`
-          : `il ${fmt(pcTop,0)}% della RAL`);
+          : `${perc(pcTop, 'il')} della RAL`);
 
     // il gradino, detto per esteso: è la cosa che questa pagina esiste per far vedere
     const perso = oggi.dat > 0.5 ? oggi.dat : quotaDatore(x);
@@ -3784,8 +3810,13 @@ function aggiornaDecisioni(s, r){
     EL('cVers'+i+'Esito').innerHTML = !(x.ral > 0)
       ? `<i>—</i>`
       // istruzioni per usare un cursore, scritte accanto al cursore: chi lo vede sa che si muove
+      // «COM'È ADESSO» DA SOLO È UNA FRASE CHE SI INTERROMPE, e capitava proprio a chi non versa
+      // niente: la riga sotto — quanto costa la quota e quanto ne fa entrare — esiste solo per
+      // chi una quota ce l'ha, quindi il riquadro restava con due parole e nient'altro. È la
+      // persona a cui questa sezione serve di più. Trovato leggendo, non da un controllo.
       : (Math.abs(d) < 1
-          ? `<i>com'è adesso</i>`
+          ? (primi.tot > 0.5 ? `<i>com'è adesso</i>`
+                             : `<i>com'è adesso: nel fondo non entra alcun contributo</i>`)
           : `<b>${d > 0 ? '+' : '−'}${E0(Math.abs(d))}</b> alla fine
              <i>${costo >= 0 ? 'costa' : 'lascia'} ${E0(Math.abs(costo)/12)} al mese
                 di stipendio netto, rispetto a oggi</i>`)
@@ -3811,7 +3842,7 @@ function aggiornaDecisioni(s, r){
          <b>${E0(inc.montante)}</b>, ed è poco <i>perché</i> è già stato preso, non perché il
          fondo fosse piccolo.`
       : `alla pensione, nel ${inc.anno}, vale <b>${E0(inc.montante)}</b>
-         (${E0(netto)} netti, tolta l'imposta del ${fmt(inc.al*100,1)}%)`;
+         (${E0(netto)} netti, tolta l'imposta ${perc(inc.al*100, 'del')})`;
 
     // --- passo 1: quando comincia a uscire. La RITA si apre al massimo 10 anni prima.
     const fine = Math.max(x.annoPens, ANNO0);
@@ -3901,7 +3932,7 @@ function aggiornaDecisioni(s, r){
     const coeff = inc ? inc.coeff : (x.coeff || COEFF_RENDITA);
     const alMese = q => netto * (1 - q) * coeff / 12;
     EL('cCap'+i+'Ora').innerHTML = !inc ? '—'
-      : `<b>${E0(netto * qc)}</b> subito<i>il ${fmt(qc*100)}% di quello che c'è</i>`;
+      : `<b>${E0(netto * qc)}</b> subito<i>${perc(qc*100, 'il')} di quello che c'è</i>`;
     EL('cCap'+i+'Sx').textContent = 'niente: tutto in rendita';
     EL('cCap'+i+'Dx').textContent = maxPc >= 100
       ? 'tutto: 100%' : `il massimo di legge: ${maxPc}%`;
@@ -4025,7 +4056,7 @@ function aggiornaDecisioni(s, r){
         sc += ` <b>Quanto pesa vivere a lungo</b>: arrivando a ${etaMedia} anni, la speranza di
           vita ISTAT alla decorrenza, ${pMedia}${pOriz
             ? `; arrivando a ${etaOriz}, dove il piano si ferma, ${pOriz}` : ''}.
-          L'ipotesi in vigore è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.`;
+          L'ipotesi scritta qui sopra è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.`;
     }
     EL('cScambio'+i).innerHTML = sc;
 
@@ -4105,7 +4136,7 @@ function aggiornaDecisioni(s, r){
              ? `sopra quella soglia vendere e andare in affitto lascia più patrimonio, sotto
                 conviene restare`
              : `sotto quella soglia conviene restare, sopra vendere lascia più patrimonio`}.
-           L'ipotesi in vigore è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.
+           L'ipotesi scritta qui sopra è ${fmt(s.rend*100, 2)}%, al netto dell'inflazione.
            Il canone si paga finché si abita, il rendimento non è garantito: la soglia dice su
            quali ipotesi poggia la conclusione, non che vada seguita.`;
     }
@@ -4289,7 +4320,7 @@ function pianoInFoglio(s, r){
     perPersona('Retribuzione netta annua, stimata', x => nettoAnnuo(x, x.pc)),
     perPersona('Retribuzione annua lorda', x => x.ral),
     perPersona('Ultimo anno di lavoro', x => x.ultimo),
-    perPersona('Fondo pensione, consistenza iniziale', x => x.fondoScritto),
+    perPersona('Fondo pensione, quanto c\'è oggi', x => x.fondoScritto),
     perPersona('Anno di iscrizione al fondo', x => x.iscr),
     [],
     [G("QUELLO CHE C'È OGGI")],
