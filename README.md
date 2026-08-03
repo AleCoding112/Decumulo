@@ -18,8 +18,8 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 260 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su ventisei scenari e legge le frasi che scrive |
+| `node test.mjs` | 326 controlli sul motore, letto da `sito/index.html` |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su ventisei scenari e legge le frasi che scrive: 401 controlli sul testo |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
@@ -725,7 +725,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 |---|---|---|
 | L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: la voce «dall'azienda» parla di *accordo*, non di liberalità |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
-| **37 regole su 41 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti e le detrazioni | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica |
+| **41 regole su 48 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano**: lo dà `quanteRiscontrate()` in `regole.mjs`, ed era rimasto a «37 su 41» mentre le regole diventavano 48 |
 | L'oggetto finto delle armature è **copiato in sei file** | un modulo solo, importato da tutti | ogni volta che manca un metodo costano sei modifiche invece di una: è successo con `setAttribute` |
 | Chi ha usato il sito prima del 2 agosto ha in memoria un **tipo di fondo** che non esiste più | niente: si autorisolve alla prima riapertura del menu | il valore vecchio cade sul ramo prudente, e l'avviso dice cosa scegliere |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
@@ -739,7 +739,7 @@ che in un messaggio: **un dubbio che vive solo in una conversazione è un dubbio
 
 ## Prima di pubblicare
 
-**La matematica non è il punto critico.** 204 controlli, seconda implementazione indipendente
+**La matematica non è il punto critico.** 326 controlli, seconda implementazione indipendente
 (scarto 4,5·10⁻¹⁶), 4.000 piani casuali con invarianti, la curva dei coefficienti tenuta dentro
 le tavole vere. Il rischio residuo è di *modello*, ed è dichiarato in `il-metodo.html`.
 
