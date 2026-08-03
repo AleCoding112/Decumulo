@@ -405,6 +405,48 @@ function riscontri(){
     Math.abs(M.TRATT_MINIMO_ANNO * 3 - 23862.15) < 0.01,
     `3× ${eur(M.TRATT_MINIMO_ANNO*3)} · 4× ${eur(M.TRATT_MINIMO_ANNO*4)}`
     + ` · 5× ${eur(M.TRATT_MINIMO_ANNO*5)}`);
+
+  // --- 5. la Tabella F, letta sul testo della legge -------------------------
+  // NON SU UNA CIRCOLARE NÉ SU UNA GUIDA: sul testo dell'art. 1 c. 41 e della
+  // Tabella F della L. 335/1995. È la fonte più a monte che esista per questa
+  // parte, e riscontra TRE cose insieme che finora poggiavano su fonti
+  // secondarie o su una lettura fatta una volta sola.
+  //
+  // LA LEGGE ESPRIME LA CUMULABILITÀ, NOI LA RIDUZIONE, e sono complementari:
+  // dove il testo dice «75 per cento» noi scriviamo 0,25. Se un giorno le due
+  // cose si confondessero, l'errore sarebbe enorme e silenzioso — la riduzione
+  // del 75% invece del 25% — quindi il controllo si scrive nella forma della
+  // legge e si converte qui, non nei dati.
+  console.log('\n  La Tabella F, sul testo della L. 335/1995');
+  const LEGGE = 'art. 1 c. 41 e Tabella F della L. 335/1995, testo letto sul PDF della '
+    + 'Presidenza del Consiglio';
+  const CUMULABILE = [[3, 0.75], [4, 0.60], [5, 0.50]];
+  const nostroCumulo = [[3, 0.25], [4, 0.40], [5, 0.50]];   // com'è in regole.mjs
+  c('le tre fasce sono 3, 4 e 5 volte il minimo',
+    CUMULABILE.every(([v], i) => nostroCumulo[i][0] === v), LEGGE);
+  c('e le nostre riduzioni sono il complemento delle percentuali di cumulabilità',
+    CUMULABILE.every(([, q], i) => Math.abs((1 - q) - nostroCumulo[i][1]) < 1e-9),
+    CUMULABILE.map(([v, q], i) => `oltre ${v}× cumulabile ${pc(q, 0)} → riduzione `
+      + pc(nostroCumulo[i][1], 0)).join(' · '));
+  // «CALCOLATO IN MISURA PARI A 13 VOLTE L'IMPORTO IN VIGORE AL 1° GENNAIO»: le
+  // tredici mensilità del trattamento minimo non sono una nostra convenzione,
+  // le detta la Tabella F. È la stessa cosa che il conto aveva sbagliato sul
+  // trattamento INPS, contandone dodici, e qui è scritta nel testo.
+  c('il minimo ANNUO è tredici volte il mensile, come dice la Tabella F',
+    M.MENS_PENS === 13, LEGGE);
+  // LA CLAUSOLA DI SALVAGUARDIA, verbatim: «Il trattamento derivante dal cumulo
+  // […] non può essere comunque inferiore a quello che spetterebbe allo stesso
+  // soggetto qualora il reddito risultasse pari al limite massimo delle fasce
+  // immediatamente precedenti». Nel motore è il `pavimento`, e si vede provando
+  // un euro sopra una soglia: la pensione non deve crollare del gradino intero.
+  const LORDA = 1500 * M.MENS_PENS;
+  for (const volte of [3, 4, 5]){
+    const sotto = M.aiSuperstiti(LORDA, M.TRATT_MINIMO_ANNO * volte);
+    const sopra = M.aiSuperstiti(LORDA, M.TRATT_MINIMO_ANNO * volte + 1);
+    c(`un euro sopra ${volte} volte il minimo non fa crollare la pensione`,
+      Math.abs(sotto - sopra) <= 1.01,
+      `${eur(sotto)} → ${eur(sopra)} · la clausola di salvaguardia del c. 41`);
+  }
 }
 
 fisco();

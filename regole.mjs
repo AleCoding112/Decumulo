@@ -326,12 +326,14 @@ export const REGOLE = {
     fonte: 'circolare INPS 153 del 19 dicembre 2025, valore provvisorio 2026',
     verificata: true },
   TRATT_MINIMO_MENS: { nome: "Mensilità del trattamento minimo annuo", val: 13, come: 'secco',
-    fonte: 'la Tabella F computa il trattamento minimo annuo come 13 volte quello mensile',
+    fonte: 'la Tabella F lo dice alla lettera: «calcolato in misura pari a 13 volte l\'importo in vigore al 1° gennaio». Non è una nostra convenzione',
+    riscontro: 'verifiche/casi-esterni.mjs',
     verificata: true },
   // La riduzione morde sui redditi PROPRI del superstite, non sulla pensione che eredita.
   CUMULO_SUPERSTITI: { nome: "Riduzione della pensione ai superstiti per redditi propri",
     val: [[3, 0.25], [4, 0.40], [5, 0.50]], come: 'cumulo',
-    fonte: 'Tabella F, art. 1 c. 41 L. 335/1995: oltre 3, 4 e 5 volte il trattamento minimo annuo',
+    fonte: 'Tabella F, art. 1 c. 41 L. 335/1995, letta sul testo: la legge esprime la CUMULABILITÀ (75, 60 e 50 per cento del trattamento di reversibilità) e qui sta la riduzione, che ne è il complemento; le fasce sono oltre 3, 4 e 5 volte il trattamento minimo annuo',
+    riscontro: 'verifiche/casi-esterni.mjs',
     verificata: true },
   // QUANTO SPENDE CHI RESTA. Non è una casella e non è una nostra invenzione: sono le due scale
   // di equivalenza pubbliche, e la distanza fra loro è l'incertezza dichiarata.
