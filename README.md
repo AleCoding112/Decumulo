@@ -636,10 +636,21 @@ tre dicono se stiamo nel mondo.**
   riduzione per redditi propri della pensione ai superstiti **non si applica affatto**
   (art. 1 c. 41 L. 335/1995). Noi la applicavamo comunque. Lo scarto è prudenziale, ma taceva.
 
-**Quello che resta scoperto, e perché.** Il netto in busta e il netto sul cedolino hanno solo
-calcolatori interattivi, che nessuno script può compilare. Le detrazioni che li determinano sono
-però già riscontrate una per una in `riscontri-esterni.mjs`, su due fonti indipendenti che si
-sovrappongono in un punto.
+**IL NETTO IN BUSTA È STATO CHIUSO** (03/08/2026), e sembrava il buco non chiudibile: quel
+numero esiste solo dentro calcolatori interattivi, che nessuno script può compilare. Lo ha risolto
+una **tabella pubblicata** — «da RAL a netto» del *Commercialista Telematico* — che vale più di un
+calcolatore per la stessa ragione dei progetti esemplificativi: **dichiara le proprie ipotesi**,
+comprese le due aliquote di addizionale, che sono l'unica differenza di perimetro col nostro conto
+e che si tolgono con le loro stesse cifre.
+
+**Sei retribuzioni, cinque a scarto ZERO** (18.000, 20.000, 30.000, 40.000, 50.000 €), il che
+riscontra in un colpo scaglioni, detrazione dell'art. 13, ulteriore detrazione del cuneo e somma
+del comma 4. **E la sesta si discosta di 1.200,00 € esatti**: è il trattamento integrativo, che il
+modello dichiara di non rappresentare.
+
+**Un limite dichiarato è diventato un limite misurato**, ed è il guadagno vero: `il-metodo.html`
+non dice più «il risultato è conseguentemente prudenziale» ma *di quanto*. Se un giorno quello
+scarto cambiasse, vorrebbe dire che si è mosso qualcos'altro.
 
 ## La rete che non pescava (03/08/2026)
 
@@ -729,7 +740,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | L'oggetto finto delle armature è **copiato in sei file** | un modulo solo, importato da tutti | ogni volta che manca un metodo costano sei modifiche invece di una: è successo con `setAttribute` |
 | Chi ha usato il sito prima del 2 agosto ha in memoria un **tipo di fondo** che non esiste più | niente: si autorisolve alla prima riapertura del menu | il valore vecchio cade sul ramo prudente, e l'avviso dice cosa scegliere |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
-| Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | somma e ulteriore detrazione del cuneo sono ora modellate (circolare AdE 4/E del 16/05/2025); resta fuori solo questo, e sotto i 15.000 € di reddito complessivo il destinatario tipo di questo conto non c'è |
+| Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | **ora è misurato, non solo dichiarato**: il riscontro sulla tabella da RAL a netto dà scarto nullo fra 18.000 e 50.000 € e **esattamente −1.200 €** a 15.000. Sotto quella soglia il destinatario tipo di questo conto non c'è, e lo scostamento è noto al centesimo |
 | La **perequazione a fasce** delle pensioni non è modellata | le tre percentuali e le soglie lette sulla norma, non sul commento: il DM 19/11/2025 le applica *per scaglioni* | l'errore è nullo sotto 4 volte il minimo (2.447 €/mese) e piccolo sopra: 2,8% su trent'anni a 3.500 €/mese. Ora è dichiarato con la sua misura |
 | L'invariante «la prova di tenuta non fa durare di più il patrimonio» ha violato **una volta su 4.000** il 03/08/2026, e non è stato possibile riprodurla | ritrovare il piano che la viola, e vedere se è l'effetto di confine già documentato | l'eccezione di legge (sotto la soglia dei montanti contenuti esce più capitale) è applicata al controllo sul **patrimonio finale** e non a quello sull'**anno di esaurimento**: è la spiegazione probabile. Ma dopo aver seminato il generatore e corretto la copertura su `pcMin` non ricompare in **80.000 piani**, e non è stata messa a tacere: se torna, adesso ferma la catena e dice con quale seme riprodurla |
 | Gli **scaglioni IRPEF sono nominali** e il conto lavora in reale: il modello assume che vengano adeguati all'inflazione | niente da verificare: è un'ipotesi sul legislatore | rappresentare l'alternativa vorrebbe dire prevedere una legge di bilancio. Dichiarata, non sostituita da una previsione |

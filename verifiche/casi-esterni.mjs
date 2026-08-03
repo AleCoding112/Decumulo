@@ -459,6 +459,41 @@ function riscontri(){
     `3× ${eur(M.TRATT_MINIMO_ANNO*3)} · 4× ${eur(M.TRATT_MINIMO_ANNO*4)}`
     + ` · 5× ${eur(M.TRATT_MINIMO_ANNO*5)}`);
 
+  // --- 4-bis. IL NETTO IN BUSTA, contro una tabella pubblicata ---------------
+  // ERA L'ULTIMO BUCO, e sembrava non chiudibile: il netto in busta esiste solo dentro
+  // calcolatori interattivi, che nessuno script può compilare. La tabella «da RAL a netto» del
+  // Commercialista Telematico lo risolve perché è PUBBLICATA e perché DICHIARA LE PROPRIE
+  // IPOTESI — comprese le due aliquote di addizionale, che sono l'unica differenza di perimetro
+  // fra il loro conto e il nostro e che qui si tolgono con le loro stesse cifre.
+  //
+  // IL RISULTATO VALE DUE VOLTE. Cinque retribuzioni su sei tornano a ZERO, il che riscontra
+  // scaglioni, detrazioni dell'art. 13, ulteriore detrazione e somma del cuneo tutti insieme.
+  // E la sesta si discosta di 1.200,00 € esatti: è il trattamento integrativo, che il modello
+  // dichiara di non rappresentare. **Un limite dichiarato diventa un limite misurato**, e se un
+  // giorno lo scarto cambiasse vorrebbe dire che si è mosso qualcos'altro.
+  console.log('\n  Il netto in busta, contro una tabella pubblicata');
+  const FONTE_BUSTA = 'Commercialista Telematico, «Tabella completa da RAL a netto», '
+    + 'aggiornata al 24/07/2026 — ipotesi dichiarate: contributi 9,19%, addizionale regionale '
+    + '1,73% e comunale 0,80%, nessun familiare a carico';
+  const ADDIZIONALI = 0.0173 + 0.0080;
+  const NETTI = [[15000, 14021], [18000, 15934], [20000, 17208],
+                 [30000, 23267], [40000, 27865], [50000, 32472]];
+  const nostroNetto = ral => {
+    const x = {ral, pcVoi: 0, pcDat: 0, pcMin: null, fondoIndividuale: false};
+    return M.nettoAnnuo(x, 0) - ral * (1 - M.IVS) * ADDIZIONALI;
+  };
+  for (const [ral, loro] of NETTI){
+    const d = nostroNetto(ral) - loro;
+    if (ral === 15000){
+      // l'unica riga sotto la soglia del trattamento integrativo
+      c(`  ${eur(ral)}: lo scarto è il trattamento integrativo, e vale 1.200 € esatti`,
+        Math.abs(d + 1200) < 1, `scarto ${eur(d)} · ${FONTE_BUSTA}`);
+    } else {
+      c(`  ${eur(ral)}: netto annuo identico`, Math.abs(d) < 1,
+        `nostro ${eur(nostroNetto(ral))} · loro ${eur(loro)} · scarto ${eur(d)}`);
+    }
+  }
+
   // --- 5. la Tabella F, letta sul testo della legge -------------------------
   // NON SU UNA CIRCOLARE NÉ SU UNA GUIDA: sul testo dell'art. 1 c. 41 e della
   // Tabella F della L. 335/1995. È la fonte più a monte che esista per questa
