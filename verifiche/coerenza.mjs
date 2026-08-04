@@ -180,26 +180,55 @@ const REGISTRO = {
   massima:  /^(Una?|Ogni|Qualunque|Nessun[ao]?|Chiunque)\s+[a-zà-ù]+[^0-9]*$/
 };
 // le celle e le voci di elenco si scartano: sono etichette, non prosa, e una massima lì è un titolo
-const prosa = f => fs.readFileSync(join(SORG, f), 'utf8')
-  .replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')
-  .replace(/<!--[\s\S]*?-->/g, '').replace(/<t[dh][^>]*>|<li[^>]*>/g, ' ¶ ')
-  .replace(/<[^>]+>/g, ' ')
+const ripulisci = t => t
+  .replace(/<t[dh][^>]*>|<li[^>]*>/g, ' ¶ ').replace(/<[^>]+>/g, ' ')
   .replace(/&egrave;/g, 'è').replace(/&agrave;/g, 'à').replace(/&rsquo;/g, '’')
   .replace(/&mdash;/g, '—').replace(/&laquo;|&raquo;/g, '').replace(/&[a-z]+;/g, ' ')
   .replace(/\s+/g, ' ')
   .split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length >= 40 && !s.includes('¶'));
 
+const prosa = f => ripulisci(fs.readFileSync(join(SORG, f), 'utf8')
+  .replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')
+  .replace(/<!--[\s\S]*?-->/g, ''));
+
+// METÀ DEL TESTO CHE SI LEGGE NON STA NELL'HTML. Il verdetto, lo scenario del superstite, la
+// prova di tenuta e le frasi dei cursori le scrive il codice mentre si compila: sono ~1.750
+// parole, e per un pezzo il metro qui sopra le ha saltate, perché salta i <script>. Sono anche
+// le frasi più lette del sito — sono la risposta — e quelle che si aggiungono più spesso.
+//
+// SI PRENDONO I TEMPLATE LITERAL, ed è l'unico posto dove quelle frasi possono stare. Un
+// template contiene però anche formule e tracciati SVG: si tiene solo ciò che ha almeno sei
+// parole E una parola grammaticale italiana, che nessuna formula ha. I `${...}` diventano un
+// segno, o una frase spezzata dai suoi valori sembrerebbe finita.
+const generate = f => {
+  if (!fs.readFileSync(join(SORG, f), 'utf8').includes('function simula(')) return [];
+  const codice = [...fs.readFileSync(join(SORG, f), 'utf8')
+    .matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n');
+  const frasi = [];
+  for (const m of codice.matchAll(/`([^`]*)`/g)){
+    const t = m[1].replace(/\$\{[^}]*\}/g, '…');
+    if (t.split(/\s+/).length < 6) continue;
+    if (!/\b(il|la|le|lo|un|una|che|non|si|per|con|del|della)\b/.test(t.replace(/<[^>]+>/g, ' '))) continue;
+    frasi.push(...ripulisci(t));
+  }
+  return frasi;
+};
+
 console.log('\n  IL REGISTRO DELLE PAGINE — riferimento: rita.html, che sta a 6');
 console.log('  (si stampa, non fallisce: metà delle segnalazioni sono legittime e vanno lette)\n');
-const righe = [];
-for (const f of pagine){
-  const frasi = prosa(f);
-  if (!frasi.length) continue;
+const misura = (nome, frasi) => {
+  if (!frasi.length) return null;
   const trovate = [];
   for (const s of frasi)
     for (const k of Object.keys(REGISTRO))
       if (REGISTRO[k].test(s)) trovate.push([k, s]);
-  righe.push([f, frasi.length, trovate]);
+  return [nome, frasi.length, trovate];
+};
+const righe = [];
+for (const f of pagine){
+  for (const r of [misura(f, prosa(f)), misura('il motore, frasi generate', generate(f))])
+    if (r) righe.push(r);
+
 }
 righe.sort((a, b) => b[2].length / b[1] - a[2].length / a[1]);
 for (const [f, tot, trovate] of righe)
