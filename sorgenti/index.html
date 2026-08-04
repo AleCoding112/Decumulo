@@ -533,15 +533,16 @@ euro di oggi. I dati inseriti restano nel browser.</p>
      caselle e poi scopre che il conto non fa per lui sta peggio di chi è avvisato subito. Resta
      quindi la sola cosa che decide SE compilare, e il resto sono limiti di modello, che stanno
      dove stanno gli altri — non si avvisa tutti in anticipo di un caso che riguarda pochi. -->
+<!-- UN RIQUADRO SOLO. Perimetro e fallibilità dicono la stessa cosa — leggi questo prima di
+     cominciare — e per un giorno sono stati due riquadri identici incollati, ciascuno col suo
+     collegamento alla stessa pagina.
+     Che il conto possa essere sbagliato non era scritto da nessuna parte: erano dichiarate le
+     ipotesi e i parametri stimati, cioè i modi in cui il risultato è incerto a conto giusto. -->
 <p class="perimetro"><b>Il calcolo riguarda il lavoro dipendente privato</b>: non si applica ai
 lavoratori autonomi né ai dipendenti pubblici, per i quali il trattamento di fine servizio segue
-regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a></p>
-
-<!-- Le ipotesi e i parametri stimati erano dichiarati; che il conto possa essere sbagliato no.
-     Sta in cima, dove si legge prima di compilare. -->
-<p class="perimetro">È un progetto personale e <b>può contenere errori</b>: il metodo è
-documentato per intero, e le segnalazioni sono le benvenute.
-<a href="il-metodo.html">Come sono fatti i conti &rarr;</a></p>
+regole diverse. È un progetto personale e <b>può contenere errori</b>: il metodo è documentato per
+intero, e le segnalazioni sono le benvenute.
+<a href="il-metodo.html">Come sono fatti i conti, e cosa non sanno &rarr;</a></p>
 
 <h2 class="sezione" id="dati">I dati</h2>
 
@@ -668,7 +669,7 @@ documentato per intero, e le segnalazioni sono le benvenute.
        pregresso, che invece non segue quella scelta. -->
   <div class="gruppo rigalav">Il TFR
   <span>Il trattamento di fine rapporto matura comunque: queste righe dicono quanto ce n'è già da
-  parte e dove va quello nuovo. Senza, il piano si calcola lo stesso e viene per difetto.
+  parte e dove va quello nuovo. Senza, il piano si calcola lo stesso.
   <a href="tfr-fondo-o-azienda.html">Nel fondo o in azienda →</a></span>
   </div>
   <div class="due">
@@ -714,8 +715,9 @@ documentato per intero, e le segnalazioni sono le benvenute.
        riguardano — la condizione della quota del datore da `notaDatore`, i casi da correggere da
        `avvisoDatore`, lo zero contro il vuoto dalle etichette qui sotto. Un capoverso non si
        allunga, si riscrive. -->
-  <span>Sul CCNL o sull'estratto conto del fondo sono righe separate.
-  <a href="contributo-datore.html">Come funziona il contributo del datore →</a></span>
+  <!-- Il collegamento sta su `notaDatore`, qui sotto, che compare a chi una percentuale l'ha
+       scritta. Per un giorno è stato in tutti e due i posti, con lo stesso testo. -->
+  <span>Sul CCNL o sull'estratto conto del fondo sono righe separate.</span>
 </div>
   <div class="due">
     <!-- LE DUE ETICHETTE SONO IN DUE TEMPI VERBALI, E DEVE VEDERSI: la prima chiede un fatto di
@@ -969,11 +971,8 @@ documentato per intero, e le segnalazioni sono le benvenute.
   <div class="dec" id="decContrib">
     <h3 id="contribuzione"><i class="np-dec" id="nContrib"></i>Entità della contribuzione</h3>
     <p class="spiega"><b>L'azienda versa la propria quota solo se la versa anche il lavoratore</b>,
-    e oltre quella soglia non aumenta: il primo tratto vale il contributo dell'azienda più lo
-    sconto IRPEF, quello che si versa in più vale il solo sconto. <b>Un massimo di legge non
-    esiste</b>: oltre la soglia di deducibilità si può versare lo stesso, semplicemente senza
-    sconto. Il cursore si ferma dove il versamento assorbirebbe l'intera retribuzione netta, e
-    all'estremo destro è scritto quale dei due limiti lo sta fermando.
+    e oltre quella soglia non aumenta: <b>il primo tratto vale il contributo dell'azienda più lo
+    sconto IRPEF, quello che si versa in più vale il solo sconto.</b>
     <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
     <div id="decVersare"></div>
   </div>
@@ -987,8 +986,7 @@ documentato per intero, e le segnalazioni sono le benvenute.
     invece <b>a quali ipotesi la conclusione si rovescia</b>: sotto quale rendimento del
     patrimonio, e quanto la soglia si sposta se la vita è più lunga. La misura è il patrimonio
     che resta alla fine, e la rendita per costruzione non ne lascia: in cambio dà un assegno che
-    arriva finché si vive.
-    <a href="come-prendere-il-fondo.html">Perché, e come si sceglie →</a></p>
+    arriva finché si vive.</p>
     <div id="decFondo"></div>
   </div>
 
@@ -1050,7 +1048,7 @@ documentato per intero, e le segnalazioni sono le benvenute.
   <div class="scorre"><table id="tabella"></table></div>
   <p class="nota">Importi <b>annui</b>; accanto all'anno, in corpo minore, l'età.
   Ogni riga è verificabile manualmente: <i>quello che c'era + rendimento + entrate −
-  spesa</i>. <a href="il-metodo.html">Metodo di calcolo →</a></p>
+  spesa</i>.</p>
 </details>
 
 <p class="avvertenza"><b>Proiezione a fini informativi.</b> Non costituisce consulenza
@@ -2410,15 +2408,18 @@ function calc(){
   const parte = s.N === 1 ? `più ${elenco(voci(req.dei[0]))}`
     : uguali ? `più, per ciascuno, ${elenco(voci(req.dei[0]))}`
     : req.dei.map(g => `${g.di} ${elenco(voci(g))}`).join('; ');
+  // QUALI caselle, e basta. Qui seguivano tre proposizioni che dicevano come si comporta il
+  // modulo: che senza una di queste il verdetto resta sospeso, che lo zero è una risposta, che
+  // il resto si può compilare dopo. Le prime e le ultime si vedono usando; la regola sullo zero
+  // sta scritta MEGLIO sulle due caselle dove serve — «0 se non si versa niente», «se resta
+  // vuota, il conto tiene la stessa di adesso» — e una regola generale lontana dalla casella
+  // vale meno dell'istruzione specifica sulla casella.
+  // Quello che resta è l'unica cosa che non si scopre riempiendo: QUALI, fra una trentina di
+  // caselle, sono il minimo. E resta perché la frase e la guardia devono chiedere le stesse
+  // cose: `come-parla.mjs` conta le etichette nominate qui e le confronta con quelle pretese.
   EL('bastano').innerHTML = `Per il verdetto bastano
     <b>${PAROLA[req.quante] || req.quante} dati</b>: ${elenco(req.comuni.map(v => v.testo))}${
-    uguali || s.N === 1 ? ', ' : '; '}${parte}. Finché uno <i>di questi</i> manca il verdetto resta
-    sospeso; lo <b>zero</b> è invece una risposta, e il conto lo prende alla lettera. Il resto
-    affina il conto e apre le decisioni sul fondo pensione, e si può compilare dopo.`;
-    // L'ORDINE È LA CORREZIONE, non le parole: la regola sul vuoto veniva DOPO «il resto si può
-    // compilare dopo», e senza un referente vicino si leggeva come «qualunque casella vuota
-    // sospende il verdetto» — cioè l'opposto della frase che la precedeva. Ora sta attaccata
-    // all'elenco a cui si riferisce, e la parte facoltativa chiude.
+    uguali || s.N === 1 ? ', ' : '; '}${parte}.`;
 
   // CHI HA UNA DECORRENZA GIÀ TRASCORSA: da lì in giù una parte del modulo non ha più oggetto.
   // Le caselle si DISATTIVANO invece di essere ignorate in silenzio: un valore che il conto
