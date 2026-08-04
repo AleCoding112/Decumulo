@@ -188,6 +188,24 @@ const senzaCommenti = (html, nome) => {
     return `<script${attr}>${pulito}</script>`;
   });
 
+  // I COMMENTI DEL FOGLIO DI STILE, che al primo giro erano sfuggiti: nel CSS non si commenta
+  // con `//` né con `<!--`, si commenta con `/* */`, e centouno di quelli hanno continuato a
+  // uscire mentre tutto il resto era pulito. È il difetto tipico di una regola scritta guardando
+  // il posto dove il problema si era visto: il codice della pagina, non il suo aspetto.
+  html = html.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/g, (tutto, attr, css) => {
+    // GUARDIA 4 — un marcatore dentro una stringa CSS (`content: "/*"`). Nel CSS le stringhe
+    // sono poche e corte, ma tagliare a partire da lì mangerebbe regole vere.
+    for (const s of css.matchAll(/"[^"\n]*"|'[^'\n]*'/g))
+      if (s[0].includes('/*') || s[0].includes('*/'))
+        throw new Error(`${nome}: una stringa del foglio di stile contiene ${s[0]}. `
+          + `Il taglio dei commenti CSS non è più sicuro: va guardato a mano.`);
+
+    const pulito = css.replace(/\/\*[\s\S]*?\*\//g, () => { tolti++; return ''; })
+                      .replace(/[ \t]+$/gm, '')
+                      .replace(/\n{3,}/g, '\n\n');
+    return `<style${attr}>${pulito}</style>`;
+  });
+
   return { html, tolti };
 };
 

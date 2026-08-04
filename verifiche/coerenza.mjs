@@ -121,10 +121,15 @@ c('nessun parametro è cablato anche nel motore', doppioni.length === 0,
 // in una riga di build, e una riga si può togliere senza accorgersene.
 // Restano i commenti in CODA a una riga di codice, che il build non tocca: sono contati qui, e
 // il conto stampato serve a ricordare che quelli si leggono.
+// SI CONTANO TUTTI E TRE I MODI DI COMMENTARE, e non è un dettaglio: la prima versione di questo
+// controllo guardava solo `<!--` e `//`, cioè i due modi che si usano nel testo e nel codice, e
+// dava verde mentre centouno commenti del FOGLIO DI STILE — che si scrivono `/* */` — uscivano
+// tranquillamente. Un controllo che guarda dove il problema si è già visto non trova il prossimo.
 let commenti = 0, inCoda = 0;
 for (const f of fs.readdirSync(SITO).filter(x => x.endsWith('.html'))){
   const t = fs.readFileSync(join(SITO, f), 'utf8');
   commenti += (t.match(/<!--/g) || []).length;
+  commenti += (t.match(/\/\*/g)  || []).length;
   for (const r of t.split('\n')){
     if (/^\s*\/\//.test(r)) commenti++;
     else if (/\s\/\/\s/.test(r) && !/https?:\/\//.test(r)) inCoda++;
