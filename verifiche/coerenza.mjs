@@ -113,6 +113,26 @@ const doppioni = [...sospetti.keys()].filter(n => valori.has(n));
 c('nessun parametro è cablato anche nel motore', doppioni.length === 0,
   doppioni.length ? doppioni.join(', ') : `${sospetti.size} numeri liberi nel motore, nessuno è un parametro`);
 
+// --- 4. quello che si pubblica è la pagina, non il ragionamento -------------
+// I COMMENTI DEI SORGENTI NON DEVONO USCIRE. Un sito è pubblico quanto il suo «visualizza
+// sorgente», e in un commento si scrive come si scrive quando si sta ragionando: numeri di
+// prova, casi di persone, ripensamenti. Per un po' ne sono usciti milleduecento.
+// Ora `build.mjs` li toglie, e questo controllo verifica che continui a farlo: la garanzia sta
+// in una riga di build, e una riga si può togliere senza accorgersene.
+// Restano i commenti in CODA a una riga di codice, che il build non tocca: sono contati qui, e
+// il conto stampato serve a ricordare che quelli si leggono.
+let commenti = 0, inCoda = 0;
+for (const f of fs.readdirSync(SITO).filter(x => x.endsWith('.html'))){
+  const t = fs.readFileSync(join(SITO, f), 'utf8');
+  commenti += (t.match(/<!--/g) || []).length;
+  for (const r of t.split('\n')){
+    if (/^\s*\/\//.test(r)) commenti++;
+    else if (/\s\/\/\s/.test(r) && !/https?:\/\//.test(r)) inCoda++;
+  }
+}
+c('nelle pagine pubblicate non resta un commento intero', commenti === 0,
+  commenti ? `${commenti} trovati` : `${inCoda} commenti in coda a una riga, che il build non toglie`);
+
 // --- e i limiti dichiarati, da rileggere ------------------------------------
 console.log('\n  I LIMITI CHE LE PAGINE DICHIARANO — vanno riletti quando si tocca il motore:');
 const RE = /(non (?:è|sono) rappresentat[oiae]|non rappresenta|non (?:è|sono) previst[oiae]|non contempla|non applica|non quantifica|resta[no]? estranei?|non modellat[oiae])/gi;

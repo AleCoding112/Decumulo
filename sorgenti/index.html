@@ -790,9 +790,9 @@ regole diverse. <a href="il-metodo.html">Cosa il conto non rappresenta &rarr;</a
   <input type="hidden" id="pc0" value=""><input type="hidden" id="pc1" value="">
   <!-- SI PARTE DALLA RENDITA, e per tutti e due uguale. Non è una preferenza: è il caso base
        della legge (art. 11 c. 3: la prestazione È erogata in rendita, il capitale si RICHIEDE).
-       Qui c'erano 0,6 e 1 — le scelte di due persone vere, rimaste dalla pagina privata: la
-       pagina si apriva con la scelta già fatta, al massimo, in una sezione che dichiara di non
-       indicare un ottimo. E quella scelta decideva di nascosto anche il punto più alto della
+       Qui c'erano 0,6 e 1, rimasti da una compilazione di prova: la pagina si apriva con la
+       scelta già fatta, e al massimo, in una sezione che dichiara di non indicare un ottimo.
+       E quella scelta decideva di nascosto anche il punto più alto della
        contribuzione, che si sposta parecchio a seconda di come il fondo verrà riscosso. -->
   <input type="hidden" id="quotaCap0" value="0"><input type="hidden" id="quotaCap1" value="0">
   <input type="hidden" id="forma0" value="vita"><input type="hidden" id="forma1" value="vita">
@@ -1579,8 +1579,8 @@ function leggi(){
   casa.spesaAnnua = casa.attiva && casaCosa === 'affitto' ? casaCanone * 12 : 0;
   // QUALE IMMOBILE SI POSSIEDE ALLA FINE DEL PIANO. Serve a confrontare due mondi in cui la
   // ricchezza non ha la stessa forma: misurando il solo patrimonio investito, chi vende risulta
-  // più ricco di chi resta soltanto perché chi resta la casa CE L'HA ANCORA — su un caso reale
-  // il confronto passa da +127.984 € a −192.016 €, cioè cambia segno. È lo stesso difetto della
+  // più ricco di chi resta soltanto perché chi resta la casa CE L'HA ANCORA — e su un piano con
+  // un immobile di valore rilevante il confronto cambia segno. È lo stesso difetto della
   // metrica dello scenario del superstite: il metro premia il capitale finanziario e non vede il
   // bene ceduto. In euro di oggi non si rivaluta nulla, come la pagina dichiara.
   casa.immobileDopo = !casa.attiva ? casaValore

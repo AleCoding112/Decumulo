@@ -106,7 +106,92 @@ const applicazione = (html, url) => {
   })}</script>\n`;
 };
 
-let pagine = 0, avvisi = 0;
+// ============================================================================
+//  I COMMENTI NON SI PUBBLICANO. Restano nei sorgenti — sono la memoria del
+//  progetto, e servono a chi ci torna fra sei mesi — ma la pagina servita non
+//  se li porta dietro: «visualizza sorgente» è pubblico quanto la pagina, e in
+//  un commento finisce quello che si scrive quando si sta ragionando, non
+//  quando si sta parlando a qualcuno. Da qui in avanti non c'è più niente da
+//  ricordarsi mentre si scrive: quello che sta in un commento resta di qua.
+//
+//  SI TOLGONO SOLO I DUE CASI SICURI, perché togliere commenti da un linguaggio
+//  senza analizzarlo davvero è il modo classico di romperlo: `https://` contiene
+//  due barre, e dentro una stringa `-->` è testo e basta.
+//    · i commenti HTML che stanno FUORI da <script> e <style>;
+//    · dentro <script>, le righe che COMINCIANO con //.
+//  Un commento in coda a una riga di codice sopravvive: sono pochi, e per
+//  toglierli servirebbe leggere il JavaScript sul serio. La regola che resta da
+//  tenere a mente è una sola, ed è corta: quello che va a fine riga si legge.
+//
+//  TRE GUARDIE, e falliscono rumorosamente invece di pubblicare un danno.
+//  Le prime due impediscono i due modi in cui questo taglio potrebbe cambiare
+//  il SIGNIFICATO della pagina invece che solo il suo peso; la terza è la rete
+//  sotto a tutto, e verifica il risultato invece delle ipotesi.
+// ============================================================================
+// Il segnaposto si costruisce, non si batte: un carattere di controllo scritto
+// dentro al sorgente sarebbe invisibile a chi legge questo file.
+const SEGNO    = String.fromCharCode(0);
+const RIPRENDI = new RegExp(SEGNO + '(\\d+)' + SEGNO, 'g');
+
+const senzaCommenti = (html, nome) => {
+  let tolti = 0;
+
+  // GUARDIA 1 — un marcatore HTML dentro al codice. Se un giorno una stringa
+  // contenesse `<!--`, tagliare fin dopo il primo `-->` mangerebbe codice vero.
+  for (const re of [/<script\b[^>]*>([\s\S]*?)<\/script>/g, /<style\b[^>]*>([\s\S]*?)<\/style>/g])
+    for (const m of html.matchAll(re))
+      if (m[1].includes('<!--') || m[1].includes('-->'))
+        throw new Error(`${nome}: c'è un marcatore di commento HTML dentro <script> o <style>. `
+          + `Il taglio dei commenti non è più sicuro: va guardato a mano.`);
+
+  // i commenti HTML, ma solo fuori dal codice: le due zone si mettono da parte
+  // e si rimettono identiche, così la regex non può nemmeno vederle.
+  // IL SEGNAPOSTO È UN CARATTERE DI CONTROLLO, non un numero fra spazi: la pagina è piena di
+  // numeri fra spazi, e uno di quelli si sarebbe ripreso un pezzo di codice al posto suo. Un NUL
+  // in un file HTML non esiste — e se un giorno esistesse, la riga qui sotto se ne accorge prima
+  // che faccia danni.
+  if (html.includes(SEGNO)) throw new Error(`${nome}: contiene un carattere di controllo NUL`);
+  const scorte = [];
+  html = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/g,
+                      t => SEGNO + (scorte.push(t) - 1) + SEGNO);
+  html = html.replace(/<!--[\s\S]*?-->/g, () => { tolti++; return ''; });
+  html = html.replace(RIPRENDI, (_, i) => scorte[+i]);
+
+  // le righe di solo commento dentro al codice
+  html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, (tutto, attr, codice) => {
+    if (/type=/.test(attr) && !/javascript/.test(attr)) return tutto;   // ld+json: non è codice
+
+    // GUARDIA 2 — una riga che comincia con // dentro un template literal è
+    // TESTO, non un commento, e toglierla cambierebbe quello che la pagina
+    // scrive. Il conto delle apici inverse dice se ci siamo dentro; se il
+    // conto non torna, il build si ferma invece di indovinare.
+    let dentro = false;
+    codice.split('\n').forEach((r, i) => {
+      if (dentro && /^\s*\/\//.test(r))
+        throw new Error(`${nome}: riga ${i + 1} del codice comincia con // ma sta dentro un `
+          + `template literal. Non è un commento: il taglio va rifatto a mano.`);
+      if ((r.match(/(?<!\\)`/g) || []).length % 2) dentro = !dentro;
+    });
+
+    let pulito = codice.split('\n')
+      .filter(r => { const c = /^\s*\/\//.test(r); if (c) tolti++; return !c; })
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n');       // i buchi lasciati dai blocchi tolti
+
+    // GUARDIA 3 — quello che resta deve ancora essere JavaScript valido.
+    // `new Function` COMPILA senza eseguire: non serve un browser, e non
+    // dipende da nessuna ipotesi su come è scritto il codice qui sopra.
+    try { new Function(pulito); }
+    catch (e) { throw new Error(`${nome}: togliendo i commenti il codice non compila più `
+      + `(${e.message}). Niente è stato pubblicato.`); }
+
+    return `<script${attr}>${pulito}</script>`;
+  });
+
+  return { html, tolti };
+};
+
+let pagine = 0, avvisi = 0, commentiTolti = 0;
 // i file che cominciano con _ non sono pagine: sono pezzi da includere
 const pezzo = n => readFileSync(join(DA, n), 'utf8');
 
@@ -195,9 +280,13 @@ ${briciole(html, url)}${applicazione(html, url)}</head>`;
     }
   }
 
-  writeFileSync(join(A, nome), html);
+  // 6. i commenti restano di qua: quello che si pubblica è la pagina, non il ragionamento
+  const pulita = senzaCommenti(html, nome);
+  commentiTolti += pulita.tolti;
+
+  writeFileSync(join(A, nome), pulita.html);
   pagine++;
-  console.log(`  ✓ ${nome}`);
+  console.log(`  ✓ ${nome}${pulita.tolti ? ` (${pulita.tolti} commenti tolti)` : ''}`);
 }
 
 // --- i due file che non sono pagine ma servono a chi indicizza --------------
@@ -252,7 +341,8 @@ writeFileSync(join(A, 'favicon.ico'), ico());
 console.log(`  ✓ sitemap.xml (${urls.length} pagine) · robots.txt · CNAME (${dominio})`);
 
 const aperte = daConfermare();
-console.log(`\n${pagine} pagine costruite in sito/${avvisi ? `, ${avvisi} avvisi` : ''}.`);
+console.log(`\n${pagine} pagine costruite in sito/${avvisi ? `, ${avvisi} avvisi` : ''}`
+  + `, ${commentiTolti} commenti tolti.`);
 if (aperte.length) {
   console.log(`\nCifre ancora da confermare (${aperte.length}):`);
   for (const r of aperte) console.log(`  · ${r.nome} — ${r.fonte}`);

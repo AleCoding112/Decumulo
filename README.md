@@ -309,6 +309,13 @@ sorgenti/       index.html + le pagine; i file con _ sono pezzi da includere
 sito/           quello che si pubblica
 ```
 
+**I commenti restano nei sorgenti.** Sono la memoria del progetto — perché una cosa è fatta così
+e non in un altro modo — ma `build.mjs` li toglie da `sito/`: «visualizza sorgente» su un sito
+pubblico è pubblico quanto la pagina, e in un commento si scrive come si scrive quando si sta
+ragionando. Si tolgono solo i due casi in cui è sicuro farlo senza analizzare il linguaggio — i
+commenti HTML e le righe che *cominciano* con `//` — sotto tre guardie che fermano il build invece
+di pubblicare un danno. **Un commento in coda a una riga di codice esce**: quelli si leggono.
+
 **I coefficienti di conversione non si copiano da nessun fondo.** Si ricostruiscono dalla
 speranza di vita ISTAT allungata di un margine (`SPERANZA_VITA` × `MARGINE_RENDITA`): una tavola
 pubblica e una stima sola, invece di dieci numeri presi da una convenzione privata che scade.
