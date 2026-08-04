@@ -15,6 +15,21 @@
   a{color:var(--acc)}
   ul{margin:0 0 15px;padding-left:20px}
   li{margin-bottom:7px}
+  /* L'indice lo scrive il build dai titoli. Su due colonne perché su `il-metodo.html` le voci
+     sono ventinove: in colonna sola sarebbero un muro davanti al muro che dovevano aprire.
+     `scroll-margin-top` serve o il titolare finisce incollato al bordo dopo il salto. */
+  .indice{margin:0 0 34px;padding:15px 20px 12px;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.45}
+  .indice ul{margin:0;padding:0;list-style:none}
+  .indice>ul{columns:2;column-gap:30px}
+  .indice li{margin:0 0 7px;break-inside:avoid}
+  .indice ul ul{margin:5px 0 0 13px;font-size:13px;border-left:2px solid var(--line);
+    padding-left:10px}
+  .indice ul ul li{margin:0 0 4px}
+  .indice a{color:var(--soft);text-decoration:none}
+  .indice a:hover{color:var(--acc);text-decoration:underline}
+  h2,h3{scroll-margin-top:14px}
+  @media (max-width:600px){ .indice>ul{columns:1} }
   .chiave{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--su);
     border-radius:0 9px 9px 0;padding:16px 20px;margin:24px 0}
   .chiave p:last-child{margin:0}

@@ -21,15 +21,10 @@ export const REVISIONE_ISO = '2026-08-02';
 export const REVISIONE = new Date(REVISIONE_ISO + 'T00:00:00Z')
   .toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'});
 
-// CHI RISPONDE, E DOVE SCRIVERGLI. Stanno qui per la stessa ragione della revisione: compaiono
-// in due punti che dicono cose diverse — il piè di pagina invita a segnalare gli errori, la
-// pagina privacy deve dichiarare il titolare del trattamento — e un recapito scritto due volte è
-// un recapito che al primo cambio ne ha uno vecchio.
-//
-// IL NOME STA SOLO DOVE SERVE. L'art. 13 par. 1 lett. a del GDPR chiede identità E recapito del
-// titolare: per una persona fisica l'identità è il nome, e senza quello l'informativa resta
-// incompleta. Ma serve LÌ, in una riga sola: nel piè di pagina, che gira su ogni pagina, va il
-// solo indirizzo. Un sito che calcola pensioni non ha bisogno di ripetere chi l'ha scritto.
+// Recapito e titolare compaiono in due punti (piè di pagina e pagina privacy): scritti qui una
+// volta sola, come la revisione, non possono divergere al primo cambio.
+// Il nome serve solo nell'informativa, dove l'art. 13 par. 1 lett. a chiede l'identità del
+// titolare; nel piè di pagina va il solo indirizzo.
 export const TITOLARE = 'Alessandro Lovato';
 export const RECAPITO = 'ugofoscolo6278@gmail.com';
 

@@ -41,6 +41,54 @@ const FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
   `<path d="M4 9 C 12 9, 15 14, 18 20 S 25 27, 28 27" fill="none" stroke="#2f6f4e" ` +
   `stroke-width="3.4" stroke-linecap="round"/></svg>`);
 
+// L'INDICE SI GENERA DAI TITOLI, non si scrive a mano: scritto a mano diverge al primo ritocco a
+// una sezione, ed è lo stesso difetto per cui esiste `coerenza.mjs`. Stessa idea delle briciole,
+// che si ricavano dalla riga che la pagina già mostra.
+//
+// Serve dove una pagina è lunga abbastanza da consultarsi invece che leggersi. Su `il-metodo.html`
+// una sola sezione — «Fenomeni non rappresentati» — ne contiene quindici, ed è dove si va a
+// cercare: senza indice quelle quindici non esistono finché non si scorre.
+// `rita.html` non ce l'ha, e resta la prova che una pagina corta non ne ha bisogno.
+// L'ETICHETTA E L'ANCORA NON SI RICAVANO ALLO STESSO MODO. L'ancora deve essere ASCII; l'etichetta
+// no, e passandola per la stessa strada l'indice diceva «perche» e «mensilita» mentre il titolo
+// sotto era scritto giusto. I titoli usano sia le entità sia i caratteri accentati veri, quindi
+// per l'ancora si sciolgono le prime e si spogliano i secondi.
+const ENTITA = {egrave:'e', eacute:'e', agrave:'a', ograve:'o', ugrave:'u', igrave:'i',
+                rsquo:"'", laquo:'', raquo:'', mdash:'-', nbsp:' ', amp:'e', Egrave:'e'};
+const etichetta  = t => t.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+const chiocciola = t => etichetta(t)
+  .replace(/&([a-zA-Z]+);/g, (_, e) => ENTITA[e] ?? ' ')
+  .normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function indice(html, nome){
+  if (!html.includes('<!--@@INDICE@@-->')) return html;
+  const voci = [];
+  // l'id si aggiunge al titolo solo se non ne ha già uno suo
+  html = html.replace(/<(h2|h3)([^>]*)>([\s\S]*?)<\/\1>/g, (tutto, tag, attr, dentro) => {
+    if (/\bid=/.test(attr)) return tutto;
+    const id = chiocciola(dentro);
+    if (!id) return tutto;
+    if (voci.some(v => v.id === id))
+      throw new Error(`${nome}: due titoli danno la stessa ancora «${id}». `
+        + `L'indice punterebbe due volte allo stesso posto.`);
+    voci.push({tag, id, testo: etichetta(dentro)});
+    return `<${tag}${attr} id="${id}">${dentro}</${tag}>`;
+  });
+  if (!voci.length) throw new Error(`${nome}: c'è il marcatore dell'indice ma nessun titolo.`);
+  let out = '<nav class="indice" aria-label="Indice della pagina">\n<ul>';
+  let dentroH3 = false;
+  for (const v of voci){
+    if (v.tag === 'h3'){ if (!dentroH3){ out += '\n<ul>'; dentroH3 = true; } }
+    else if (dentroH3){ out += '</ul></li>'; dentroH3 = false; }
+    else if (out.endsWith('</a>')) out += '</li>';
+    out += `\n<li><a href="#${v.id}">${v.testo}</a>`;
+    if (v.tag === 'h3') out += '</li>';
+  }
+  out += (dentroH3 ? '</ul></li>' : '</li>') + '\n</ul>\n</nav>';
+  return html.replace('<!--@@INDICE@@-->', out);
+}
+
 // L'ORIGINE DEL SITO, letta una volta sola dal canonical della home. Serve per gli URL delle
 // immagini di anteprima, che gli scraper pretendono ASSOLUTI. Non si può ricavare dalla pagina
 // in corso: la 404 un canonical non ce l'ha, perché non va indicizzata.
@@ -107,29 +155,21 @@ const applicazione = (html, url) => {
 };
 
 // ============================================================================
-//  I COMMENTI NON SI PUBBLICANO. Restano nei sorgenti — sono la memoria del
-//  progetto, e servono a chi ci torna fra sei mesi — ma la pagina servita non
-//  se li porta dietro: «visualizza sorgente» è pubblico quanto la pagina, e in
-//  un commento finisce quello che si scrive quando si sta ragionando, non
-//  quando si sta parlando a qualcuno. Da qui in avanti non c'è più niente da
-//  ricordarsi mentre si scrive: quello che sta in un commento resta di qua.
+//  I commenti restano nei sorgenti e non finiscono in `sito/`: con «visualizza
+//  sorgente» si leggono come la pagina, e per un po' si sono letti.
 //
-//  SI TOLGONO SOLO I DUE CASI SICURI, perché togliere commenti da un linguaggio
-//  senza analizzarlo davvero è il modo classico di romperlo: `https://` contiene
-//  due barre, e dentro una stringa `-->` è testo e basta.
-//    · i commenti HTML che stanno FUORI da <script> e <style>;
-//    · dentro <script>, le righe che COMINCIANO con //.
-//  Un commento in coda a una riga di codice sopravvive: sono pochi, e per
-//  toglierli servirebbe leggere il JavaScript sul serio. La regola che resta da
-//  tenere a mente è una sola, ed è corta: quello che va a fine riga si legge.
+//  Si tolgono i tre casi in cui è sicuro farlo senza analizzare il linguaggio:
+//    · i commenti HTML fuori da <script> e <style>;
+//    · dentro <script>, le righe che COMINCIANO con // (`https://` ha due barre
+//      a metà riga, e va lasciato stare);
+//    · dentro <style>, i blocchi /* */.
+//  Un commento in coda a una riga di codice sopravvive: toglierlo richiederebbe
+//  di leggere il JavaScript sul serio.
 //
-//  TRE GUARDIE, e falliscono rumorosamente invece di pubblicare un danno.
-//  Le prime due impediscono i due modi in cui questo taglio potrebbe cambiare
-//  il SIGNIFICATO della pagina invece che solo il suo peso; la terza è la rete
-//  sotto a tutto, e verifica il risultato invece delle ipotesi.
+//  Quattro guardie qui sotto. Fermano il build invece di pubblicare un danno.
 // ============================================================================
-// Il segnaposto si costruisce, non si batte: un carattere di controllo scritto
-// dentro al sorgente sarebbe invisibile a chi legge questo file.
+// Il segnaposto si costruisce invece di batterlo: un carattere di controllo
+// scritto nel sorgente sarebbe invisibile a chi legge questo file.
 const SEGNO    = String.fromCharCode(0);
 const RIPRENDI = new RegExp(SEGNO + '(\\d+)' + SEGNO, 'g');
 
@@ -144,12 +184,10 @@ const senzaCommenti = (html, nome) => {
         throw new Error(`${nome}: c'è un marcatore di commento HTML dentro <script> o <style>. `
           + `Il taglio dei commenti non è più sicuro: va guardato a mano.`);
 
-  // i commenti HTML, ma solo fuori dal codice: le due zone si mettono da parte
-  // e si rimettono identiche, così la regex non può nemmeno vederle.
-  // IL SEGNAPOSTO È UN CARATTERE DI CONTROLLO, non un numero fra spazi: la pagina è piena di
-  // numeri fra spazi, e uno di quelli si sarebbe ripreso un pezzo di codice al posto suo. Un NUL
-  // in un file HTML non esiste — e se un giorno esistesse, la riga qui sotto se ne accorge prima
-  // che faccia danni.
+  // i commenti HTML, ma solo fuori dal codice: le due zone si mettono da parte e si rimettono
+  // identiche, così la regex non le vede. Il segnaposto è un carattere di controllo e non un
+  // numero fra spazi: di numeri fra spazi la pagina è piena, e uno si sarebbe ripreso un pezzo
+  // di codice al posto suo.
   if (html.includes(SEGNO)) throw new Error(`${nome}: contiene un carattere di controllo NUL`);
   const scorte = [];
   html = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/g,
@@ -161,10 +199,10 @@ const senzaCommenti = (html, nome) => {
   html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, (tutto, attr, codice) => {
     if (/type=/.test(attr) && !/javascript/.test(attr)) return tutto;   // ld+json: non è codice
 
-    // GUARDIA 2 — una riga che comincia con // dentro un template literal è
-    // TESTO, non un commento, e toglierla cambierebbe quello che la pagina
-    // scrive. Il conto delle apici inverse dice se ci siamo dentro; se il
-    // conto non torna, il build si ferma invece di indovinare.
+    // GUARDIA 2 — dentro un template literal una riga che comincia con // è testo, e toglierla
+    // cambierebbe quello che la pagina scrive. Il conto delle apici inverse dice se ci siamo
+    // dentro. Nota: questo caso compila lo stesso dopo il taglio, quindi la guardia 3 non lo
+    // vedrebbe.
     let dentro = false;
     codice.split('\n').forEach((r, i) => {
       if (dentro && /^\s*\/\//.test(r))
@@ -178,9 +216,8 @@ const senzaCommenti = (html, nome) => {
       .join('\n')
       .replace(/\n{3,}/g, '\n\n');       // i buchi lasciati dai blocchi tolti
 
-    // GUARDIA 3 — quello che resta deve ancora essere JavaScript valido.
-    // `new Function` COMPILA senza eseguire: non serve un browser, e non
-    // dipende da nessuna ipotesi su come è scritto il codice qui sopra.
+    // GUARDIA 3 — quello che resta deve ancora essere JavaScript valido. `new Function` compila
+    // senza eseguire: non serve un browser.
     try { new Function(pulito); }
     catch (e) { throw new Error(`${nome}: togliendo i commenti il codice non compila più `
       + `(${e.message}). Niente è stato pubblicato.`); }
@@ -188,13 +225,11 @@ const senzaCommenti = (html, nome) => {
     return `<script${attr}>${pulito}</script>`;
   });
 
-  // I COMMENTI DEL FOGLIO DI STILE, che al primo giro erano sfuggiti: nel CSS non si commenta
-  // con `//` né con `<!--`, si commenta con `/* */`, e centouno di quelli hanno continuato a
-  // uscire mentre tutto il resto era pulito. È il difetto tipico di una regola scritta guardando
-  // il posto dove il problema si era visto: il codice della pagina, non il suo aspetto.
+  // I commenti del foglio di stile, sfuggiti al primo giro: nel CSS si commenta con /* */, e
+  // centouno di quelli hanno continuato a uscire mentre tutto il resto era pulito.
   html = html.replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/g, (tutto, attr, css) => {
-    // GUARDIA 4 — un marcatore dentro una stringa CSS (`content: "/*"`). Nel CSS le stringhe
-    // sono poche e corte, ma tagliare a partire da lì mangerebbe regole vere.
+    // GUARDIA 4 — un marcatore dentro una stringa CSS (`content: "/*"`): tagliare a partire da
+    // lì mangerebbe regole vere.
     for (const s of css.matchAll(/"[^"\n]*"|'[^'\n]*'/g))
       if (s[0].includes('/*') || s[0].includes('*/'))
         throw new Error(`${nome}: una stringa del foglio di stile contiene ${s[0]}. `
@@ -244,6 +279,9 @@ for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsW
              .replace('<!--@@STATO_PARAMETRI@@-->', statoParametri())
              .replace('<!--@@TABELLA_SOGLIE@@-->', tabellaSoglie())
              .replace('<!--@@TABELLA_PAREGGI@@-->', tabellaPareggi());
+
+  // 3-ter. l'indice, e gli id sui titoli che gli servono da bersaglio
+  html = indice(html, nome);
 
   // 3-bis. I METADATI DELLA CONDIVISIONE, ricavati da quello che la pagina già dichiara.
   // Titolo, descrizione e canonical stanno scritti una volta sola in cima a ciascuna pagina:

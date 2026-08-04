@@ -114,17 +114,12 @@ c('nessun parametro è cablato anche nel motore', doppioni.length === 0,
   doppioni.length ? doppioni.join(', ') : `${sospetti.size} numeri liberi nel motore, nessuno è un parametro`);
 
 // --- 4. quello che si pubblica è la pagina, non il ragionamento -------------
-// I COMMENTI DEI SORGENTI NON DEVONO USCIRE. Un sito è pubblico quanto il suo «visualizza
-// sorgente», e in un commento si scrive come si scrive quando si sta ragionando: numeri di
-// prova, casi di persone, ripensamenti. Per un po' ne sono usciti milleduecento.
-// Ora `build.mjs` li toglie, e questo controllo verifica che continui a farlo: la garanzia sta
-// in una riga di build, e una riga si può togliere senza accorgersene.
-// Restano i commenti in CODA a una riga di codice, che il build non tocca: sono contati qui, e
-// il conto stampato serve a ricordare che quelli si leggono.
-// SI CONTANO TUTTI E TRE I MODI DI COMMENTARE, e non è un dettaglio: la prima versione di questo
-// controllo guardava solo `<!--` e `//`, cioè i due modi che si usano nel testo e nel codice, e
-// dava verde mentre centouno commenti del FOGLIO DI STILE — che si scrivono `/* */` — uscivano
-// tranquillamente. Un controllo che guarda dove il problema si è già visto non trova il prossimo.
+// `build.mjs` toglie i commenti da `sito/`; qui si controlla che continui a farlo, perché la
+// garanzia sta in una riga di build e una riga si può togliere senza accorgersene.
+// I commenti in coda a una riga di codice il build non li tocca: si contano, e il conto ricorda
+// che quelli si leggono.
+// Si contano tutti e tre i modi di commentare. La prima versione guardava solo `<!--` e `//` e
+// dava verde mentre centouno commenti CSS — che si scrivono `/* */` — uscivano tranquillamente.
 let commenti = 0, inCoda = 0;
 for (const f of fs.readdirSync(SITO).filter(x => x.endsWith('.html'))){
   const t = fs.readFileSync(join(SITO, f), 'utf8');
@@ -159,29 +154,25 @@ for (const f of pagine){
 console.log(`\n  ${n} limiti dichiarati.`);
 
 // --- il registro: quanto le pagine suonano scritte da una macchina ----------
-// UNA FRASE CHE NON PU ESSERE FALSA NON INFORMA, e su uno strumento che chiede fiducia perché è
-// verificabile una frase che si compiace annulla il lavoro di quelle che si possono controllare.
-// Il difetto non ha una forma lessicale — cercare parole dava quasi solo falsi positivi — ne ha
-// una logica, e sono quattro mosse:
+// Cerca le frasi che suonano scritte da una macchina. Il difetto non ha una forma lessicale —
+// cercare parole dava quasi solo falsi positivi — ne ha una logica, e sono quattro mosse, con la
+// prova che le distingue da una frase legittima:
 //
-//   annuncio  la frase promette di dire qualcosa, poi lo dice. Due mosse dove ne basta una:
-//             «non compare, E LA RAGIONE È SEMPLICE: non produce reddito» → «non compare PERCHÉ»;
-//   chiosa    la frase finisce e aggiunge perché contava: «…, che è l'informazione utile».
-//             Prova: togliendola si perde un fatto? Se no, va via;
+//   annuncio  promette di dire qualcosa, poi lo dice: «non compare, e la ragione è semplice: non
+//             produce reddito» → «non compare perché non produce reddito»;
+//   chiosa    dopo la frase, perché contava: «…, che è l'informazione utile».
+//             Prova: togliendola si perde un fatto?
 //   antitesi  «non è un dettaglio», «e non è una cautela di stile».
-//             Prova: qualcuno l'avrebbe pensato? Se sì informa — ed è il caso di `rita.html`,
-//             che nega perché la RITA la si confonde davvero con un riscatto. Se no, è l'autore
-//             che si difende da un'obiezione che nessuno ha fatto;
-//   massima   soggetto generico più giudizio, al posto di un fatto.
-//             Prova: può essere falsa? «Una proiezione a quarant'anni ha valore solo se le sue
-//             assunzioni sono esplicite» — nessuno potrebbe contestarla, quindi non dice niente.
+//             Prova: qualcuno l'avrebbe pensato? `rita.html` scrive «non è né un'anticipazione
+//             né un riscatto», e lì informa, perché la RITA la si confonde davvero con quelle;
+//   massima   soggetto generico più giudizio al posto di un fatto.
+//             Prova: può essere falsa?
 //
-// IL RIFERIMENTO NON È INVENTATO: è `rita.html`, che tratta materia altrettanto ostica e sta a 6
-// su 100. Prima della revisione `casa-e-decumulo.html` stava a 25, cioè al quadruplo.
+// Il riferimento è `rita.html`, che tratta materia altrettanto ostica e sta a 6 su 100. Prima
+// della revisione `casa-e-decumulo.html` stava a 25.
 //
-// STAMPA E NON FALLISCE, ed è una scelta. Un giudizio serve — metà di queste segnalazioni sono
-// legittime, e su `il-metodo.html` quasi tutte — e una soglia numerica su uno stile diventa la
-// soglia che qualcuno alza per far tornare il verde. Qui serve che si veda, non che si blocchi.
+// Stampa e non fallisce: metà delle segnalazioni sono legittime, e su `il-metodo.html` quasi
+// tutte. Una soglia numerica su uno stile diventa la soglia che si alza per far tornare il verde.
 const REGISTRO = {
   annuncio: /(la ragione è|il motivo è|il punto è|una cosa che|un modo|per quello che è|ed è quello che|vale la pena|conviene [a-zà-ù]+la|c.è un|esistono du|sono due|si spiega|va detto)[^:]{0,40}\s?:/i,
   chiosa:   /,\s*(che è|ed è|che significa|e non è|il che)[^.]{4,95}\.$/,
