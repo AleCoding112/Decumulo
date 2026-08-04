@@ -32,7 +32,7 @@ globalThis.document={body:{classList:{toggle(){}}},
 const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quotaMax,SOGLIA_TUTTO,soglia,coeffEta,
   COEFF_RENDITA,QUOTA_ORDINARIA,ASSEGNO_SOCIALE,TETTO_DEDUZIONE,TFR_SU_RAL,spazioDeducibile,contributi,costoAnnuo,pcTetto,
   aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz,
-  pcSpendibile,nettoAnnuo,IVS,SOMMA_CUNEO};`)();
+  pcSpendibile,nettoAnnuo,IVS,SOMMA_CUNEO,COMPARTI,FORME_FONDO,rendDiComparto,inCasella};`)();
 
 let n=0; const rotte={};
 const ko=(k,d)=>{ (rotte[k]??=[]).push(d); };
@@ -445,6 +445,39 @@ c('aliquota TFR: media, non marginale, e sempre ≤ marginale',
   `100.000 € in 10 anni → ${(M.aliquotaTfr(100000,10)*100).toFixed(1)}%`);
 c('aliquota TFR: non dipende dal totale ma dalla retribuzione annua',
   Math.abs(M.aliquotaTfr(50000,10) - M.aliquotaTfr(100000,20)) < 1e-12);
+
+// --- IL LISTINO DEI COMPARTI E DELLE FORME, che sono DUE LISTE PARALLELE ------
+// È la forma più facile da rompere in silenzio: basta aggiungere un comparto e dimenticarsi di
+// aggiungere il costo corrispondente in ogni forma, e il quinto comparto prenderebbe
+// `undefined` come maggior costo — cioè NaN nel rendimento, senza che nulla lo dica.
+console.log('\n— il listino dei comparti e delle forme —');
+c('ogni forma ha un costo per ciascun comparto, e non uno di più',
+  M.FORME_FONDO.every(([, v]) => v.length === M.COMPARTI.length),
+  `${M.COMPARTI.length} comparti · ` + M.FORME_FONDO.map(([n,v]) => `${n} ${v.length}`).join(' · '));
+c('il negoziale non costa niente in più: è il livello a cui COMPARTI è già scritto',
+  M.FORME_FONDO[0][0] === 'negoziale' && M.FORME_FONDO[0][1].every(x => x === 0),
+  'se costasse, il suo costo verrebbe contato due volte');
+c('nessuna forma fa risparmiare: il negoziale è il più economico di tutti',
+  M.FORME_FONDO.every(([, v]) => v.every(x => x >= 0)));
+c('e più si sale di rischio, più il divario si allarga',
+  M.FORME_FONDO.every(([, v]) => v[3] >= v[0]),
+  'sugli azionari le forme care pesano più che sui garantiti');
+// LA DIVERSITÀ DEI DODICI VALORI È UN'INVARIANTE DEL LISTINO, non del codice, ed è quella su
+// cui poggia `allineaComparto`: se due combinazioni dessero lo stesso numero, la tendina
+// mostrerebbe la prima trovata invece della vera — un errore invisibile, su un conto giusto.
+{
+  const tutti = [];
+  M.FORME_FONDO.forEach((_, f) => M.COMPARTI.forEach((_, i) =>
+    tutti.push(M.inCasella(M.rendDiComparto(i, f)))));
+  c('i dodici rendimenti sono tutti diversi, COME SI SCRIVONO',
+    new Set(tutti).size === tutti.length,
+    tutti.join(' · '));
+  c('e nessuno è negativo: un comparto che perde denaro per i soli costi sarebbe da dichiarare',
+    M.FORME_FONDO.every((_, f) => M.COMPARTI.every((_, i) => M.rendDiComparto(i, f) >= 0)));
+}
+c('il negoziale restituisce esattamente il listino di prima, comparto per comparto',
+  M.COMPARTI.every(([, v], i) => Math.abs(M.rendDiComparto(i, 0) - v) < 1e-12),
+  'chi non tocca la tendina nuova deve vedere il piano di sempre');
 
 // ============================================================================
 //  E ADESSO SI FALLISCE DAVVERO.

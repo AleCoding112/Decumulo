@@ -425,8 +425,43 @@ export const REGOLE = {
     val: [['Garantito', 0.01], ['Obbligazionario', 0.02],
           ['Bilanciato', 0.03], ['Azionario', 0.05]],
     come: 'listino',
-    fonte: 'convenzione: rendimenti nominali nella stessa forma in cui li pubblica la COVIP, cioè al netto dei costi di gestione e degli oneri fiscali — quindi anche del 20% che grava sul patrimonio del comparto. Garantito, obbligazionario e azionario sono scelti; il bilanciato ne discende applicando il 33,7% di esposizione azionaria rilevato dalla COVIP. Ordine di grandezza riscontrato sulla Tav. 4 di «La previdenza complementare, principali dati statistici, dicembre 2025», dove i dieci anni a fine 2025 danno 4,8-5,1% agli azionari e 2,7-2,9% ai bilanciati',
-    verificata: true }
+    fonte: 'convenzione: rendimenti nominali nella stessa forma in cui li pubblica la COVIP, cioè al netto dei costi di gestione e degli oneri fiscali — quindi anche del 20% che grava sul patrimonio del comparto. Sono i rendimenti di un FONDO NEGOZIALE: le altre forme costano di più, e il di più lo toglie FORME_FONDO. Garantito, obbligazionario e azionario sono scelti; il bilanciato ne discende applicando il 33,7% di esposizione azionaria rilevato dalla COVIP. Ordine di grandezza riscontrato sulla Tav. 4 di «La previdenza complementare, principali dati statistici, dicembre 2025», dove i dieci anni a fine 2025 danno 4,8-5,1% agli azionari e 2,7-2,9% ai bilanciati',
+    verificata: true },
+
+  // QUANTO COSTA DI PIÙ NON ESSERE IN UN FONDO NEGOZIALE, ed è la cifra che il calcolatore
+  // taceva. Fino al 04/08/2026 la tendina dei comparti dava un numero solo — 5% all'azionario —
+  // a tre popolazioni che sui costi distano più di due punti l'anno. Chi ha un PIP leggeva il
+  // rendimento di un negoziale.
+  //
+  // PERCHÉ IL DI PIÙ E NON IL COSTO INTERO. I rendimenti di COMPARTI sono già al netto dei
+  // costi, a livello di fondo negoziale: sottrarre l'ISC per intero lo conterebbe due volte.
+  // Si toglie quindi solo la DIFFERENZA fra la forma scelta e il negoziale, che è un dato
+  // misurato e non una convenzione — l'unica cosa scelta qui resta la mediana come sintesi.
+  //
+  // LA DISPERSIONE DENTRO OGNI FORMA È GRANDE quanto la distanza fra le forme: sugli azionari
+  // aperti l'ISC va da 0,76% a 2,31%. La mediana dice dove sta il fondo tipico, non il tuo:
+  // per questo la casella del rendimento resta scrivibile a mano, e chi conosce il proprio ISC
+  // lo usa. È dichiarato in `il-metodo.html`.
+  //
+  // ORDINE VINCOLATO: ogni riga ha un valore per ciascun comparto, NELLO STESSO ORDINE di
+  // COMPARTI. Sono due liste parallele, cioè la forma più facile da rompere in silenzio che ci
+  // sia: `test.mjs` controlla che le lunghezze coincidano, che il negoziale sia tutto a zero e
+  // che i dodici rendimenti che ne escono siano tutti diversi fra loro — se due coincidessero,
+  // la tendina non saprebbe più quale delle due mostrare.
+  FORME_FONDO: { nome: "Forme pensionistiche, costo annuo in più rispetto a un fondo negoziale",
+    val: [['negoziale', [0,      0,      0,      0     ]],
+          ['aperto',    [0.0051, 0.0074, 0.0109, 0.0137]],
+          ['PIP',       [0.0093, 0.0147, 0.0166, 0.0203]]],
+    come: 'listino',
+    fonte: 'differenza fra gli ISC mediani a 35 anni pubblicati dalla COVIP («Indicatore sintetico dei costi», comparatore interattivo, dati al 31/12/2025) e quelli dei fondi negoziali dello stesso comparto. Mediane calcolate comparto per comparto: garantiti 0,57% negoziali contro 1,08% aperti e 1,50% PIP; obbligazionari 0,23 / 0,97 / 1,70; bilanciati 0,24 / 1,33 / 1,90; azionari 0,23 / 1,60 / 2,26. Numerosità: 35/23/27/26 comparti negoziali, 38/35/46/38 aperti, 52/16/58/60 PIP',
+    verificata: true },
+
+  // IL GARANTITO DEI PIP È L'UNICA CASELLA CHE NON REGGE FINO IN FONDO, e va detto qui perché
+  // non si veda solo da fuori: quasi sempre è una gestione separata di ramo I, che non si valuta
+  // a mercato e non ha lo stesso sottostante di un garantito negoziale. Togliere il solo
+  // differenziale di costo assume che sotto ci sia la stessa roba, e lì non è vero. Ne esce
+  // 0,07%, che è basso ma non assurdo per un prodotto garantito e caro; resta un'approssimazione
+  // dichiarata, non una misura.
 };
 
 const V = k => REGOLE[k].val;
@@ -642,7 +677,8 @@ const COSTI_VENDITA = ${V('COSTI_VENDITA')}, COSTI_ACQUISTO = ${V('COSTI_ACQUIST
 // da qui invece di ripeterle in HTML. Aggiungere una classe o rinominare un comparto resta una
 // riga sola in regole.mjs: se i nomi stessero anche nel markup, il primo ritocco li sdoppierebbe.
 const CLASSI = ${JSON.stringify(V('CLASSI'))};
-const COMPARTI = ${JSON.stringify(V('COMPARTI'))};`;
+const COMPARTI = ${JSON.stringify(V('COMPARTI'))};
+const FORME_FONDO = ${JSON.stringify(V('FORME_FONDO'))};`;
 }
 
 // --- la tabella completa delle regole, per la pagina «il metodo». Generata, non scritta:

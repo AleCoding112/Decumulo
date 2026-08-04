@@ -184,6 +184,12 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // vada a capo in un punto stupido: è larga 134 px come tutte, ma porta una cifra E una
     // percentuale, che è il contenuto più lungo di ogni suggerimento del modulo.
     fatti.push(await b.scatta('riquadro-tfr', '.due:has(#tfrGia0)'));
+    // LE IPOTESI, che da oggi hanno una casella in più. La griglia è `auto-fit` con colonne da
+    // 200 px: aggiungendo la quinta voce il numero di colonne per riga può cambiare, e con esso
+    // l'allineamento delle etichette — che a occhio si vede e a misura no. Si guarda anche che
+    // «Che tipo di fondo è» non vada a capo, perché una riga in più su UNA casella disallinea
+    // tutta la fila: è già successo con «Comparto del fondo pensione».
+    fatti.push(await b.scatta('ipotesi', '.caselle:has(#comparto)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
 
     // LA COMPOSIZIONE E LA SUA BARRA. Nessuna misura sa dire se quattro segmenti si distinguono,
@@ -207,6 +213,37 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
 
     console.log('  ' + fatti.length + ' scatti in verifiche/scatti/');
     for (const f of fatti) console.log('      · ' + f.split('/').slice(-1)[0]);
+
+    // LE DUE TENDINE DEL FONDO, E PERCHÉ IL CONTROLLO STA QUI. Comparto e forma scrivono
+    // insieme il rendimento, e il rendimento riscritto a mano le rimette a posto: è un giro
+    // completo che nessuna delle sedici verifiche può fare, perché quelle tendine la pagina le
+    // COSTRUISCE a runtime e in un DOM finto non hanno opzioni. Senza questo blocco il cablaggio
+    // poteva rompersi e restare rotto, con tutte le verifiche verdi.
+    {
+      const giro = await b.js(`(() => {
+        const C = document.getElementById('comparto'), F = document.getElementById('formaFondo'),
+              R = document.getElementById('rendFondo'), fuori = [];
+        const tocca = (e, v) => { e.value = v; e.dispatchEvent(new Event('input',{bubbles:true})); };
+        for (let f = 0; f < FORME_FONDO.length; f++)
+          for (let i = 0; i < COMPARTI.length; i++){
+            tocca(C, String(i)); tocca(F, String(f));
+            const scritto = R.value;                       // dalle tendine al numero
+            tocca(R, '0'); tocca(R, scritto);              // e ritorno, dal numero alle tendine
+            if (C.value !== String(i) || F.value !== String(f))
+              fuori.push(\`\${COMPARTI[i][0]}/\${FORME_FONDO[f][0]} → \${scritto}% → \${C.value}/\${F.value}\`);
+          }
+        tocca(R, '4,2');                                   // un numero che non è di nessuno
+        const aMano = C.value === '' && F.value === '';
+        return {fuori, aMano}; })()`);
+      if (giro.fuori.length){
+        console.log('  ✗ le tendine non riconoscono il numero che hanno scritto:');
+        for (const g of giro.fuori) console.log('      · ' + g);
+        process.exitCode = 1;
+      } else if (!giro.aMano){
+        console.log('  ✗ un rendimento che non è di nessun comparto non riporta le tendine a «scritto a mano»');
+        process.exitCode = 1;
+      } else console.log('  ok  le due tendine del fondo, andata e ritorno su tutte e 12 le combinazioni');
+    }
     if (b.guai.length) {
       console.log('  ✗ la pagina ha scritto in console:');
       for (const g of [...new Set(b.guai)]) console.log('      · ' + g.slice(0, 160));
