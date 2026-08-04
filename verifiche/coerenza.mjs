@@ -158,5 +158,68 @@ for (const f of pagine){
 }
 console.log(`\n  ${n} limiti dichiarati.`);
 
+// --- il registro: quanto le pagine suonano scritte da una macchina ----------
+// UNA FRASE CHE NON PU ESSERE FALSA NON INFORMA, e su uno strumento che chiede fiducia perché è
+// verificabile una frase che si compiace annulla il lavoro di quelle che si possono controllare.
+// Il difetto non ha una forma lessicale — cercare parole dava quasi solo falsi positivi — ne ha
+// una logica, e sono quattro mosse:
+//
+//   annuncio  la frase promette di dire qualcosa, poi lo dice. Due mosse dove ne basta una:
+//             «non compare, E LA RAGIONE È SEMPLICE: non produce reddito» → «non compare PERCHÉ»;
+//   chiosa    la frase finisce e aggiunge perché contava: «…, che è l'informazione utile».
+//             Prova: togliendola si perde un fatto? Se no, va via;
+//   antitesi  «non è un dettaglio», «e non è una cautela di stile».
+//             Prova: qualcuno l'avrebbe pensato? Se sì informa — ed è il caso di `rita.html`,
+//             che nega perché la RITA la si confonde davvero con un riscatto. Se no, è l'autore
+//             che si difende da un'obiezione che nessuno ha fatto;
+//   massima   soggetto generico più giudizio, al posto di un fatto.
+//             Prova: può essere falsa? «Una proiezione a quarant'anni ha valore solo se le sue
+//             assunzioni sono esplicite» — nessuno potrebbe contestarla, quindi non dice niente.
+//
+// IL RIFERIMENTO NON È INVENTATO: è `rita.html`, che tratta materia altrettanto ostica e sta a 6
+// su 100. Prima della revisione `casa-e-decumulo.html` stava a 25, cioè al quadruplo.
+//
+// STAMPA E NON FALLISCE, ed è una scelta. Un giudizio serve — metà di queste segnalazioni sono
+// legittime, e su `il-metodo.html` quasi tutte — e una soglia numerica su uno stile diventa la
+// soglia che qualcuno alza per far tornare il verde. Qui serve che si veda, non che si blocchi.
+const REGISTRO = {
+  annuncio: /(la ragione è|il motivo è|il punto è|una cosa che|un modo|per quello che è|ed è quello che|vale la pena|conviene [a-zà-ù]+la|c.è un|esistono du|sono due|si spiega|va detto)[^:]{0,40}\s?:/i,
+  chiosa:   /,\s*(che è|ed è|che significa|e non è|il che)[^.]{4,95}\.$/,
+  antitesi: /[Nn]on è (un|una|uno|il|la|lo)[^,.:;]{2,45}[,:—]/,
+  massima:  /^(Una?|Ogni|Qualunque|Nessun[ao]?|Chiunque)\s+[a-zà-ù]+[^0-9]*$/
+};
+// le celle e le voci di elenco si scartano: sono etichette, non prosa, e una massima lì è un titolo
+const prosa = f => fs.readFileSync(join(SORG, f), 'utf8')
+  .replace(/<script[\s\S]*?<\/script>/g, '').replace(/<style[\s\S]*?<\/style>/g, '')
+  .replace(/<!--[\s\S]*?-->/g, '').replace(/<t[dh][^>]*>|<li[^>]*>/g, ' ¶ ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&egrave;/g, 'è').replace(/&agrave;/g, 'à').replace(/&rsquo;/g, '’')
+  .replace(/&mdash;/g, '—').replace(/&laquo;|&raquo;/g, '').replace(/&[a-z]+;/g, ' ')
+  .replace(/\s+/g, ' ')
+  .split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length >= 40 && !s.includes('¶'));
+
+console.log('\n  IL REGISTRO DELLE PAGINE — riferimento: rita.html, che sta a 6');
+console.log('  (si stampa, non fallisce: metà delle segnalazioni sono legittime e vanno lette)\n');
+const righe = [];
+for (const f of pagine){
+  const frasi = prosa(f);
+  if (!frasi.length) continue;
+  const trovate = [];
+  for (const s of frasi)
+    for (const k of Object.keys(REGISTRO))
+      if (REGISTRO[k].test(s)) trovate.push([k, s]);
+  righe.push([f, frasi.length, trovate]);
+}
+righe.sort((a, b) => b[2].length / b[1] - a[2].length / a[1]);
+for (const [f, tot, trovate] of righe)
+  console.log(`   ${f.padEnd(29)}${String(trovate.length).padStart(3)} su ${String(tot).padStart(3)} frasi`
+    + `${String(Math.round(100 * trovate.length / tot)).padStart(6)} ogni 100`);
+const alte = righe.filter(r => 100 * r[2].length / r[1] > 12);
+if (alte.length){
+  console.log('\n   sopra il livello di `rita.html` del doppio — da rileggere:');
+  for (const [f, , trovate] of alte)
+    for (const [k, s] of trovate.slice(0, 6)) console.log(`   · [${f}] ${k}: …${s.slice(0, 110)}…`);
+}
+
 console.log(ko ? `\n  ✗ ${ko} controlli falliti` : '\n  pagine e motore non divergono su niente di controllabile');
 if (ko) process.exitCode = 1;
