@@ -168,16 +168,79 @@ l&rsquo;et&agrave;</a>).</p>
 da conoscere, poich&eacute; incide sulla modalit&agrave; di erogazione e non sull&rsquo;ammontare
 accumulato.</p>
 
+<h2>Quanto resta in mano, in cifre</h2>
+
+<p>Su una retribuzione di <b>{{exRal}}</b> il TFR maturando &egrave; di <b>{{exTfr}}</b> l&rsquo;anno.
+Le due destinazioni a confronto su <b>{{exTfrAnni}} anni</b>, con il comparto bilanciato
+({{exTfrRendBase}} nominale, il valore predefinito del calcolatore) e inflazione al {{exTfrInfl}}.
+Gli importi sono in <b>euro di oggi</b>.</p>
+
+<div class="conto affianco">
+<table>
+  <thead><tr><th></th><th>In azienda</th><th>Nel fondo pensione</th></tr></thead>
+  <tbody>
+    <tr><td>Accantonato in {{exTfrAnni}} anni</td><td>{{exTfrMesso}}</td><td>{{exTfrMesso}}</td></tr>
+    <tr><td>Montante alla cessazione</td><td>{{exTfrAzMontante}}</td><td>{{exTfrFoMontante}}</td></tr>
+    <tr><td>Imposta all&rsquo;erogazione</td>
+        <td>&minus;{{exTfrAzImposta}}<span class="sotto">{{exTfrAzAliquota}}, separata</span></td>
+        <td>&minus;{{exTfrFoImposta}}<span class="sotto">{{exTfrFoAliquota}}, sostitutiva</span></td></tr>
+  </tbody>
+  <tfoot><tr><td>Resta in mano</td><td>{{exTfrAzMano}}</td><td>{{exTfrFoMano}}</td></tr></tfoot>
+</table>
+</div>
+
+<p>La differenza &egrave; di <b>{{exTfrDiff}}</b>, e <b>{{exTfrDiffImposta}}</b> di essi sono
+minore imposta: la crescita in pi&ugrave; ne spiega la parte minore. &Egrave; la ragione per cui il
+regime fiscale conta pi&ugrave; del rendimento su orizzonti ordinari &mdash; l&rsquo;imposta si
+applica a tutto quanto accantonato, il rendimento alla sola parte che si aggiunge.</p>
+
+<h2>La risposta cambia con il comparto</h2>
+
+<p>Il confronto non ha un esito unico, perch&eacute; il rendimento del fondo dipende dalla linea di
+investimento prescelta mentre la rivalutazione in azienda &egrave; la medesima per tutti
+(<b>{{exTfrRivReale}}</b> l&rsquo;anno in termini reali, al netto dell&rsquo;imposta sostitutiva).
+Quanto resta in mano in pi&ugrave;, nello stesso caso, al variare del comparto e della durata:</p>
+
+<div class="scorre">
+<table>
+  <thead><tr><th>Comparto</th><!--@@INTESTAZIONE_TFR@@--></tr></thead>
+  <tbody>
+<!--@@TABELLA_TFR@@-->
+  </tbody>
+</table>
+</div>
+
+<p><span class="marca m-stima">stima</span> <b>Nel comparto {{exTfrDoveGirano}} il conferimento
+non risulta pi&ugrave; conveniente</b>, ed &egrave; l&rsquo;unico caso in cui questo confronto
+depone per il mantenimento in azienda. La ragione &egrave; aritmetica: il garantito rende
+l&rsquo;1% nominale, meno dell&rsquo;inflazione ipotizzata, mentre la rivalutazione di legge
+resta di poco positiva in termini reali. Oltre una certa durata lo scarto composto supera il
+vantaggio fiscale, che &egrave; invece limitato dall&rsquo;aliquota minima del
+{{aliqFondoMin}}.</p>
+
+<div class="chiave allarme">
+  <p><b>Quanto l&rsquo;esempio non rappresenta.</b> Il rendimento del comparto &egrave; qui un
+  valore atteso costante: nel conto il fondo non perde mai, mentre nella realt&agrave; il
+  rendimento &egrave; incerto e pu&ograve; essere negativo, come indicato nella prima tabella.
+  Un comparto azionario consegue quel valore in media su periodi lunghi, non ogni anno.</p>
+  <p>L&rsquo;esempio assume inoltre che la <b>partecipazione alla previdenza complementare inizi
+  ora</b>: chi &egrave; gi&agrave; iscritto da anni ha un&rsquo;anzianit&agrave; maggiore della
+  durata indicata, quindi un&rsquo;aliquota pi&ugrave; bassa e un vantaggio superiore a quello
+  esposto. Il calcolatore usa l&rsquo;anno di prima iscrizione effettivo.</p>
+</div>
+
 <h2>Tre cose distinte, da tenere separate</h2>
 
 <p>La decisione poggia su tre elementi distinti, e conviene tenerli separati.</p>
 
 <ul>
-  <li><b>Il regime fiscale</b> &egrave; l&rsquo;elemento di maggiore impatto e opera a favore del
-    conferimento in modo tanto pi&ugrave; marcato quanto pi&ugrave; lunga &egrave; la
-    partecipazione.</li>
+  <li><b>Il regime fiscale</b> &egrave; l&rsquo;elemento di maggiore impatto, e il vantaggio
+    cresce con la durata della partecipazione fino all&rsquo;aliquota minima del
+    {{aliqFondoMin}}, raggiunta al {{aliqFondoAnni}}&deg; anno.</li>
   <li><b>Il rendimento</b> dipende dal comparto prescelto ed &egrave; incerto: la rivalutazione di
-    legge &egrave; modesta ma garantita.</li>
+    legge &egrave; modesta ma garantita. <b>&Egrave; l&rsquo;elemento che pu&ograve; ribaltare
+    l&rsquo;esito</b>, come mostra la riga del garantito: una durata maggiore non depone di per
+    s&eacute; per il conferimento, se il comparto rende meno dell&rsquo;inflazione.</li>
   <li><b>La reversibilit&agrave;</b> &egrave; asimmetrica, e non ha natura finanziaria: il
     conferimento &egrave; definitivo.</li>
 </ul>

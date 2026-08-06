@@ -29,6 +29,7 @@ lancia da solo:
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali **seminati** + le funzioni di legge ai punti esatti. `SEME=<n>` per cambiare popolazione |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
+| `node verifiche/esempi.mjs` | i numeri d'esempio delle pagine (`ESEMPIO`, `ESEMPIO_TFR`) **ricalcolati col motore vero**: erano l'unica seconda implementazione senza rete |
 | `node verifiche/consenso.mjs` | che il tag di misurazione non parta senza consenso |
 | `node verifiche/anteprime.mjs` | la scheda che si vede condividendo il link, e le briciole dichiarate |
 | `node verifiche/scarica.mjs` | il piano portato via: che il foglio di calcolo sia un file valido e dica quello che si vede |
@@ -349,6 +350,12 @@ risultato dato in cifre.
 
 Ogni pagina di contenuto è **raggiungibile dal punto del modulo che la riguarda**, non solo dal
 piè di pagina: è lì che serve a chi sta compilando.
+
+**Una pagina di decisione deve chiudere con un numero** (06/08/2026). `tfr-fondo-o-azienda.html`
+era l'unica che non lo faceva: esponeva bene i tre elementi del confronto e poi rimandava al
+calcolatore. Misurato: `contributo-datore.html` usava dodici segnaposto `{{ex…}}`, quella del TFR
+zero. Ora chiude con il caso in cifre e con la matrice comparto × orizzonte, generata da
+`ESEMPIO_TFR`.
 
 ---
 
@@ -747,6 +754,39 @@ motivato**: tutti gli scenari avevano i nomi compilati, e quel difetto vive solo
 **Ogni difetto va rimesso e visto fallire, o si è scritta una cerimonia.** Fatto per tutti e
 quattro.
 
+## 2026-08-06 — gli esempi delle pagine avevano una rete: nessuna
+
+`ESEMPIO` in `regole.mjs` **è una seconda implementazione** delle regole del motore, scritta per
+far parlare le pagine in cifre. Fino a oggi non la confrontava niente: `grep -rn ESEMPIO test.mjs
+verifiche/ build.mjs` non trovava una riga, e i dodici numeri di `contributo-datore.html` erano
+pubblicati sulla fiducia. Il rischio non era teorico — il commento sopra `irpefNetta` racconta la
+volta in cui «la pagina direbbe 330 € dove il conto ne dice 417».
+
+`verifiche/esempi.mjs` ricalcola quei numeri **col motore vero**, caricato dalla pagina costruita
+come fa `seconda-implementazione.mjs`. Il lato «TFR in azienda» si confronta end-to-end, perché il
+motore lo espone in `liquidazioni` con montante, aliquota e imposta; il lato «nel fondo» non è
+isolabile — dentro il fondo il TFR si mescola ai contributi — e lì si confronta la regola.
+
+**Ha trovato due cose al primo giro, e nessuna delle due si vedeva da fuori.**
+
+**1. `irpefNetta` in `regole.mjs` non applicava l'ulteriore detrazione**, che il motore applica
+(art. 1 c. 6 L. 207/2024, spetta al solo reddito di lavoro). **Sul numero pubblicato non si
+vedeva**, ed è la parte che vale: con la RAL dell'esempio (35.000 €) i due redditi confrontati
+cadono tutti e due nella banda piatta da 1.000 €, che sparisce nella differenza. Nella banda in
+cui la detrazione decresce sarebbe stato falso: a 38.000 € lo sconto vero è 247 € e la funzione
+ne dava 190.
+**Regola: un esempio che cade in una zona piatta non prova la formula che lo ha prodotto.**
+E il difetto resisteva anche a una rilettura, perché `aliqMargEff` contava già la pendenza
+dell'ulteriore detrazione: la pagina dichiarava l'aliquota effettiva giusta e lo sconto sbagliato.
+
+**2. `ALIQ_FONDO_MAX/MIN/PASSO` erano scritte a mano nel calcolatore** (`0.15`, `0.09`, `0.003`)
+mentre in `REGOLE` avevano fonte e `verificata: true`. Le tre sorelle dell'erogazione frazionata
+(`ALIQ_FRAZ_*`) si generavano già; queste no. Correggere la legge in `regole.mjs` avrebbe spostato
+`il-metodo.html` e **non il conto**. Ora escono da `blocco()` come tutte le altre.
+Da notare: `coerenza.mjs` dichiarava «nessun parametro è cablato anche nel motore» e non le vedeva
+— cercava le cifre nella forma in cui stanno in `REGOLE`, non nella forma decimale con cui erano
+scritte nel codice.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -758,7 +798,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: `notaDatore` parla di quello che il *contratto* riconosce, non di liberalità |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
 | **41 regole su 48 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano**: lo dà `quanteRiscontrate()` in `regole.mjs`, ed era rimasto a «37 su 41» mentre le regole diventavano 48 |
-| L'oggetto finto delle armature è **copiato in sei file** | un modulo solo, importato da tutti | ogni volta che manca un metodo costano sei modifiche invece di una: è successo con `setAttribute` |
+| L'oggetto finto delle armature è **copiato in otto file** (era sei; `esempi.mjs` l'ha portato a otto il 06/08/2026) | un modulo solo, importato da tutti | ogni volta che manca un metodo costano otto modifiche invece di una: è successo con `setAttribute`. Il conto si rifà con `grep -c 'const finto = ()' verifiche/*.mjs test.mjs`, non a memoria |
 | Chi ha usato il sito prima del 3 agosto ha in memoria un **tipo di fondo** che non esiste più, e se aveva scelto «scelto da sé» con una percentuale scritta ora quella quota **viene conteggiata** | niente: `ripristina()` scorre le caselle che trova in pagina, quindi la chiave vecchia è ignorata e sparisce al primo salvataggio | è il comportamento voluto — la percentuale scritta vale — e non è silenzioso: `notaDatore` compare proprio perché una percentuale c'è, e dice la condizione |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
 | Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | **ora è misurato, non solo dichiarato**: il riscontro sulla tabella da RAL a netto dà scarto nullo fra 18.000 e 50.000 € e **esattamente −1.200 €** a 15.000. Sotto quella soglia il destinatario tipo di questo conto non c'è, e lo scostamento è noto al centesimo |

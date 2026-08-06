@@ -13,7 +13,7 @@ import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TESTI, REVISIONE, REVISIONE_ISO, blocco, daConfermare, tabellaRegole, statoParametri,
-         tabellaSoglie, tabellaPareggi } from './regole.mjs';
+         tabellaSoglie, tabellaPareggi, tabellaTfr, intestazioneTfr } from './regole.mjs';
 import { anteprima, icona, ico } from './anteprima.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -278,7 +278,9 @@ for (const nome of readdirSync(DA).filter(f => f.endsWith('.html') && !f.startsW
   html = html.replace('<!--@@TABELLA_REGOLE@@-->', tabellaRegole())
              .replace('<!--@@STATO_PARAMETRI@@-->', statoParametri())
              .replace('<!--@@TABELLA_SOGLIE@@-->', tabellaSoglie())
-             .replace('<!--@@TABELLA_PAREGGI@@-->', tabellaPareggi());
+             .replace('<!--@@TABELLA_PAREGGI@@-->', tabellaPareggi())
+             .replace('<!--@@TABELLA_TFR@@-->', tabellaTfr())
+             .replace('<!--@@INTESTAZIONE_TFR@@-->', intestazioneTfr());
 
   // 3-ter. l'indice, e gli id sui titoli che gli servono da bersaglio
   html = indice(html, nome);

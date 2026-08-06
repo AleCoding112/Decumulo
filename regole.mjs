@@ -515,11 +515,26 @@ const detrazione = (tab, R) => {
     if (R <= fino) return base + (den > 0 ? quota * (fino - R) / den : 0);
   return 0;
 };
-const irpefNetta = (reddito, pensione) => {
+// esportata perché `verifiche/esempi.mjs` la confronti con quella del motore: sono due
+// implementazioni della stessa cosa, e hanno già divergiuto una volta.
+export const irpefNetta = (reddito, pensione) => {
   const R = Math.max(0, reddito);
   const piu = pensione && R > 25000 && R <= 29000 ? V('DETRAZIONE_PENS_PIU') : 0;
+  // L'ULTERIORE DETRAZIONE MANCAVA QUI fino al 06/08/2026, mentre il motore la applicava: spetta
+  // ai soli titolari di reddito di lavoro (art. 1 c. 6 L. 207/2024). Trovata da
+  // `verifiche/esempi.mjs` al primo giro.
+  //
+  // SUL NUMERO PUBBLICATO NON SI VEDEVA, ed è la parte istruttiva. Con la RAL dell'esempio
+  // (35.000 €) i due redditi confrontati cadono tutti e due nella banda piatta da 1.000 €, che
+  // sparisce nella differenza: `exSconto` era giusto per combinazione. Nella banda in cui la
+  // detrazione decresce — RAL fra 35.000 e 44.000 circa — non lo sarebbe stato: a 38.000 € lo
+  // sconto vero è 247 € e questa funzione ne dava 190.
+  // Che `aliqMargEff` qui sotto contasse già la pendenza dell'ulteriore detrazione rendeva il
+  // difetto invisibile anche a una rilettura: la pagina dichiarava l'aliquota effettiva giusta.
+  // Regola: un esempio che cade in una zona piatta non prova la formula che lo ha prodotto.
+  const cuneo = pensione ? 0 : detrazione(V('ULTERIORE_DETRAZIONE'), R);
   return Math.max(0, irpef(R)
-    - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu);
+    - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu - cuneo);
 };
 {
   const e = ESEMPIO;
@@ -545,6 +560,71 @@ const irpefNetta = (reddito, pensione) => {
     e.aliqMargEff = e.aliqMarg + pendenza(V('DETRAZIONE_LAV'))
                   + pendenza(V('ULTERIORE_DETRAZIONE'));
   }
+}
+
+// --- IL TFR NELLE DUE DESTINAZIONI, in cifre --------------------------------
+// `tfr-fondo-o-azienda.html` era l'unica pagina di decisione che non mostrava un numero: esponeva
+// bene i tre elementi del confronto e poi rimandava al calcolatore. Chi ci arriva da una ricerca
+// se ne andava senza la cifra che era venuto a cercare.
+//
+// LE FORMULE SONO QUELLE DEL MOTORE, non delle approssimazioni scritte per la pagina — la
+// rivalutazione reale è quella di `index.html` (`rivTfr`), l'aliquota separata quella di
+// `aliquotaTfr`, e l'aliquota sulla prestazione scende di ALIQ_FONDO_PASSO oltre il quindicesimo
+// anno come nel conto. Che restino uguali non è affidato alla buona volontà: `verifiche/esempi.mjs`
+// ricalcola questi stessi numeri col motore vero e fallisce se divergono di più di un euro.
+//
+// LA BASE IMPONIBILE SONO GLI ACCANTONAMENTI, non il montante, e vale per entrambe le
+// destinazioni. In azienda la rivalutazione ha già pagato il 17% anno per anno e all'erogazione
+// è esente; nel fondo il TFR è reddito mai tassato ed entra tutto nella base, mentre i rendimenti
+// hanno già scontato l'imposta in capo al fondo.
+export const ESEMPIO_TFR = { anni: [10, 20, 35], base: 20, infl: 0.02 };
+{
+  const t = ESEMPIO_TFR;
+  t.ral = ESEMPIO.ral;
+  t.annuo = ESEMPIO.tfr;
+
+  // la rivalutazione REALE del TFR in azienda: 1,5% fisso più il 75% dell'inflazione, meno il 17%
+  // di imposta sostitutiva, il tutto riportato a moneta di oggi. Stessa riga di `index.html`.
+  t.rivReale = (1 + (V('TFR_RIV_FISSA') + V('TFR_RIV_QUOTA') * t.infl) * (1 - V('TFR_IMPOSTA_RIV')))
+               / (1 + t.infl) - 1;
+
+  const montante = (a, r, n) => Math.abs(r) > 1e-9 ? a * ((1 + r) ** n - 1) / r : a * n;
+  // art. 19 TUIR: l'aliquota è la media sul «reddito di riferimento», cioè il trattamento diviso
+  // per gli anni di servizio e moltiplicato per dodici. Non è l'aliquota marginale dell'ultimo anno.
+  const aliqSeparata = (messo, n) => { const rif = n > 0 ? (messo / n) * 12 : messo;
+    return rif > 0 ? irpef(rif) / rif : 0; };
+  const aliqFondo = n => Math.max(V('ALIQ_FONDO_MIN'),
+    V('ALIQ_FONDO_MAX') - Math.max(0, n - 15) * V('ALIQ_FONDO_PASSO'));
+
+  // un caso = una destinazione, un rendimento, un orizzonte. `messo` è la base imponibile.
+  t.caso = (rendNominale, n) => {
+    const messo = t.annuo * n;
+    const rReale = (1 + rendNominale) / (1 + t.infl) - 1;
+    const az = montante(t.annuo, t.rivReale, n), alAz = aliqSeparata(messo, n);
+    const fo = montante(t.annuo, rReale, n),     alFo = aliqFondo(n);
+    return { messo,
+      azMontante: az, azAliquota: alAz, azImposta: messo * alAz, azMano: az - messo * alAz,
+      foMontante: fo, foAliquota: alFo, foImposta: messo * alFo, foMano: fo - messo * alFo };
+  };
+
+  // IL CASO BASE è quello del comparto predefinito del calcolatore, non un comparto scelto qui:
+  // se un domani la casella cambia valore, la pagina lo segue invece di restare indietro.
+  t.rendBase = V('COMPARTI').find(([nome]) => nome === 'Bilanciato')[1];
+  Object.assign(t, t.caso(t.rendBase, t.base));
+  t.diff = t.foMano - t.azMano;
+  // quanto della differenza è imposta risparmiata e quanto è crescita in più: è il punto della
+  // pagina, e va ricavato invece che affermato.
+  t.diffImposta = t.azImposta - t.foImposta;
+  t.diffCrescita = t.foMontante - t.azMontante;
+
+  // IL COMPARTO IN CUI IL CONFERIMENTO NON CONVIENE. Il garantito rende meno dell'inflazione
+  // (1% nominale contro 2%), mentre il TFR in azienda si rivaluta poco ma in positivo: oltre un
+  // certo orizzonte lo scarto composto supera il vantaggio fiscale. Non è un caso di scuola —
+  // è il comparto di chi si è iscritto e non ha scelto. Il valore si ricava, non si scrive.
+  t.doveGirano = V('COMPARTI').map(([nome, rend]) => {
+    const n = t.anni.find(n => t.caso(rend, n).foMano < t.caso(rend, n).azMano);
+    return { nome, rend, anni: n ?? null };
+  }).filter(c => c.anni !== null);
 }
 
 export const TESTI = {
@@ -638,7 +718,34 @@ export const TESTI = {
   // l'aliquota marginale effettiva più alta: scaglione + le due detrazioni che decrescono insieme
   exAliquotaMax: pc(V('SCAGLIONI')[1][1]
     + V('DETRAZIONE_LAV')[2][2] / V('DETRAZIONE_LAV')[2][3]
-    + V('ULTERIORE_DETRAZIONE')[2][2] / V('ULTERIORE_DETRAZIONE')[2][3], 1)
+    + V('ULTERIORE_DETRAZIONE')[2][2] / V('ULTERIORE_DETRAZIONE')[2][3], 1),
+
+  // il TFR nelle due destinazioni: il caso base della pagina `tfr-fondo-o-azienda.html`
+  exTfrAnni:       ESEMPIO_TFR.base,
+  exTfrInfl:       pc(ESEMPIO_TFR.infl),
+  exTfrRivReale:   pc(ESEMPIO_TFR.rivReale, 2),
+  exTfrRendBase:   pc(ESEMPIO_TFR.rendBase),
+  exTfrMesso:      eur(ESEMPIO_TFR.messo),
+  exTfrAzMontante: eur(ESEMPIO_TFR.azMontante),
+  exTfrAzAliquota: pc(ESEMPIO_TFR.azAliquota, 1),
+  exTfrAzImposta:  eur(ESEMPIO_TFR.azImposta),
+  exTfrAzMano:     eur(ESEMPIO_TFR.azMano),
+  exTfrFoMontante: eur(ESEMPIO_TFR.foMontante),
+  exTfrFoAliquota: pc(ESEMPIO_TFR.foAliquota, 1),
+  exTfrFoImposta:  eur(ESEMPIO_TFR.foImposta),
+  exTfrFoMano:     eur(ESEMPIO_TFR.foMano),
+  exTfrDiff:       eur(ESEMPIO_TFR.diff),
+  exTfrDiffImposta: eur(ESEMPIO_TFR.diffImposta),
+  // i comparti in cui, entro gli orizzonti mostrati, il conferimento NON conviene. La frase si
+  // genera dall'elenco: se un domani i rendimenti attesi cambiano e il caso sparisce, sparisce
+  // anche la frase, invece di restare a dire una cosa che il conto non fa più.
+  // in che anno di partecipazione l'aliquota tocca il minimo: si ricava dai tre parametri, così
+  // non resta un numero scritto a mano che nessuno ricalcola se il passo cambia.
+  aliqFondoAnni: String(15 + Math.ceil(
+    (V('ALIQ_FONDO_MAX') - V('ALIQ_FONDO_MIN')) / V('ALIQ_FONDO_PASSO'))),
+  exTfrDoveGirano: ESEMPIO_TFR.doveGirano.length
+    ? ESEMPIO_TFR.doveGirano.map(c => `${c.nome.toLowerCase()} (dal ${c.anni}&deg; anno)`).join(', ')
+    : ''
 };
 
 // --- il blocco di costanti che finisce dentro il calcolatore ---------------
@@ -675,6 +782,11 @@ const CERTA_ANNI = ${V('CERTA_ANNI')};
 const BANDA_ALTA = ${V('BANDA_ALTA')}, BANDA_BASSA = ${V('BANDA_BASSA')};
 // La durata della rendita a durata definita: anni INTERI, tavola dei fondi (art. 11 c. 3-ter).
 const VITA_INTERA = [${V('VITA_INTERA').map(([e, v]) => `[${e},${v}]`).join(',')}];
+// L'imposta sulla prestazione. ERANO SCRITTE A MANO NEL CALCOLATORE fino al 06/08/2026, mentre
+// qui avevano già fonte e riscontro: le tre sorelle dell'erogazione frazionata si generavano,
+// queste no. Correggere la legge in REGOLE avrebbe spostato le pagine e non il conto.
+const ALIQ_FONDO_MAX = ${V('ALIQ_FONDO_MAX')}, ALIQ_FONDO_MIN = ${V('ALIQ_FONDO_MIN')},
+      ALIQ_FONDO_PASSO = ${V('ALIQ_FONDO_PASSO')};
 const ALIQ_FRAZ_MAX = ${V('ALIQ_FRAZ_MAX')}, ALIQ_FRAZ_MIN = ${V('ALIQ_FRAZ_MIN')},
       ALIQ_FRAZ_PASSO = ${V('ALIQ_FRAZ_PASSO')};
 const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};
@@ -771,6 +883,33 @@ export function tabellaSoglie(){
 export function tabellaPareggi(){
   return [60, 67, 72].map(e => `<tr><td>${e} anni</td><td>${pc(coeffEta(e), 1)}</td>
     <td>${(1/coeffEta(e)).toLocaleString('it-IT', {minimumFractionDigits:1, maximumFractionDigits:1})}</td></tr>`).join('\n');
+}
+// LA MATRICE DEL TFR: quanto resta in mano in più (o in meno) conferendo, per comparto e per
+// orizzonte. Serve una matrice e non un numero solo perché la risposta cambia di segno: col
+// garantito, oltre un certo orizzonte, il TFR lasciato in azienda supera il conferimento. Un
+// esempio a un comparto solo avrebbe nascosto proprio il caso in cui il sito dice il contrario
+// di quello che si sente dire in giro.
+export function tabellaTfr(){
+  const t = ESEMPIO_TFR;
+  // LO SPAZIO PRIMA DELL'EURO DEVE ESSERE UNIFICATORE. Visto con gli occhi a 600 px: la cella
+  // andava a capo fra la cifra e il simbolo, e «+1.489» su una riga con «€» sotto non è un
+  // importo. Il punto di ritorno a capo resta quello fra la parola e la cifra, che va bene.
+  const legato = x => eur(x).replace(' €', '&nbsp;€');
+  const cella = (rend, n) => {
+    const c = t.caso(rend, n), d = c.foMano - c.azMano;
+    // il segno lo porta la parola, non il meno: «in azienda» si legge anche in diagonale, «−1.759 €»
+    // richiede di ricordare qual è il verso della sottrazione.
+    return d >= 0 ? `<td>nel fondo <b>+${legato(d)}</b></td>`
+                  : `<td class="ko">in azienda <b>+${legato(-d)}</b></td>`;
+  };
+  return V('COMPARTI').map(([nome, rend]) =>
+    `<tr><td>${nome}<span class="sotto">${pc(rend)} nominale</span></td>
+    ${t.anni.map(n => cella(rend, n)).join('')}</tr>`).join('\n');
+}
+// l'intestazione segue `ESEMPIO_TFR.anni`: cambiando gli orizzonti non restano due liste da
+// tenere allineate a mano, che è il modo più facile di pubblicare una tabella storta.
+export function intestazioneTfr(){
+  return ESEMPIO_TFR.anni.map(n => `<th>dopo ${n} anni</th>`).join('');
 }
 
 // Lo stato dei parametri è un blocco intero e non un elenco, perché quando non

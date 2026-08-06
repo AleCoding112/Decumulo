@@ -1604,8 +1604,11 @@ function leggi(){
 }
 
 // imposta sulla prestazione: 15%, meno 0,30 punti per ogni anno di iscrizione oltre il
-// quindicesimo, col pavimento del 9% (art. 11 c. 6 D.Lgs. 252/2005)
-const aliquota = anni => Math.max(0.09, 0.15 - 0.003 * Math.max(0, anni - 15));
+// quindicesimo, col pavimento del 9% (art. 11 c. 6 D.Lgs. 252/2005). Le tre cifre vengono da
+// `regole.mjs` come tutte le altre: scritte qui a mano, una correzione della legge avrebbe
+// spostato le pagine e non il conto.
+const aliquota = anni =>
+  Math.max(ALIQ_FONDO_MIN, ALIQ_FONDO_MAX - ALIQ_FONDO_PASSO * Math.max(0, anni - 15));
 // L'erogazione frazionata ha la sua, ed è peggiore: parte dal 20% e scende di 0,25 punti,
 // fermandosi al 15%. Chi ha trentacinque anni di iscrizione ci arriva dove le altre prestazioni
 // PARTONO.

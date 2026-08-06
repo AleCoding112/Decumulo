@@ -26,6 +26,7 @@ const passi = [
   ['verifiche/invarianti.mjs',             'invarianti su piani casuali'],
   ['verifiche/schermi.mjs',                'che niente esca dallo schermo di un telefono'],
   ['verifiche/coerenza.mjs',               'che le pagine dicano quello che il conto fa'],
+  ['verifiche/esempi.mjs',                 'gli esempi delle pagine, ricalcolati col motore vero'],
   ['verifiche/consenso.mjs',               'che il tag non parta senza consenso'],
   ['verifiche/anteprime.mjs',              'la scheda che si vede condividendo il link'],
   ['verifiche/scarica.mjs',                'il piano portato via in un foglio di calcolo'],

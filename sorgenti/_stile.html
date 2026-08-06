@@ -48,6 +48,11 @@
     margin:22px 0;font-variant-numeric:tabular-nums}
   .conto table{font-size:15px}
   .conto td:last-child{text-align:right}
+  /* due colonne di importi da confrontare a colpo d'occhio: allineate a destra tutte e due, o il
+     confronto si fa contando le cifre. Modificatore, non regola generale: le tabelle a tre
+     colonne esistenti tengono la loro incolonnatura. */
+  .conto.affianco td+td,.conto.affianco th+th{text-align:right}
+  .sotto{display:block;font-size:12px;color:var(--tenue);font-weight:400}
   .conto tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0}
   .fonti{font-size:13.5px;color:var(--soft);margin-top:42px;padding-top:18px;
     border-top:1px solid var(--line)}
