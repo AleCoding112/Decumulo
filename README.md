@@ -256,6 +256,49 @@ La terza riga è costata cara: la quota in capitale partiva dal massimo — 0,6 
 il secondo, resti della pagina privata — e quella scelta mai presa **spostava anche il punto più
 alto della contribuzione**, che dipende da come il fondo verrà riscosso (31/07/2026).
 
+**5. Il vestito ha tre regole, e stanno insieme.** (07/08/2026)
+
+**Due caratteri, e si dividono i mestieri.** `--voce` (Georgia) dove il sito *parla*: la testata,
+il verdetto, i titoli delle pagine di spiegazione. `--dati` (il sans di sistema) dove *misura*:
+modulo, cifre, tabelle, etichette, pulsanti. Prima ce n'era uno solo — il sans dell'interfaccia
+del sistema operativo, cioè il carattere del *software* — in ogni ruolo.
+
+- **Sono di sistema, non scaricati**: `privacy.html` dichiara che la pagina non chiama domini
+  terzi, e un font preso da fuori romperebbe quella promessa prima di ogni altra cosa.
+- **Perché Georgia e non `ui-serif`**, che era la prima scelta: misurando la larghezza del
+  verdetto contro quella dei singoli caratteri è venuto fuori che **basta che Georgia compaia
+  nella pila perché vinca lei, anche messa dopo**. «New York su Apple, Georgia altrove» non
+  succedeva: succedeva Georgia dappertutto, mentre la dichiarazione prometteva altro. Meglio
+  dichiarare quello che accade.
+- **Le sue cifre sono alla vecchia maniera** e non si possono allineare: Georgia non porta la
+  variante `lnum`, quindi `font-variant-numeric:lining-nums` sul verdetto non faceva niente.
+  Provato, non dedotto — e tolto, perché una dichiarazione che non fa nulla è peggio di una che
+  manca.
+- **I due segnaposto stanno in due file** (`index.html` ha il proprio `<style>`, le pagine usano
+  `_stile.html`): `coerenza.mjs` confronta le due dichiarazioni nei file costruiti e fallisce se
+  si separano.
+
+**Una scala sola: `11 · 12 · 13 · 14 · 15 · 16`**, più i due corpi da display (26 e 34). Erano
+**quattordici corpi**, di cui cinque fuori scala — 10 · 10,5 · 11,5 · 12,5 · 13,5 · 14,5 · 17 —
+in diciassette dichiarazioni. Le mezze misure sono abolite: se una riga «non sta bene» a 13 non
+si inventa 13,5, si sceglie 12 o 14.
+**E la misura di lettura ha due valori**: `68ch` per la prosa, `74ch` per le note tecniche. Erano
+sei (60 · 64 · 66 · 68 · 70 · 74 · 78), sedimentate.
+
+**Il verde è il giudizio, non la ferramenta.** Resta al verdetto, al sommario, al grafico e al
+cursore (che è l'oggetto che si muove). Non veste più i cerchi numerati, i bordi dei pulsanti, il
+pulsante scelto, il testo del punto più alto, l'accantonamento nelle fasi. Erano **dieci ruoli**:
+un colore che significa dieci cose non ne significa nessuna. **Il rosso non si tocca**, e diventa
+l'unico colore che chiede attenzione — lo schema è «neutro salvo allarme».
+*Le pagine di contenuto tengono i loro tre verdi dichiarati* (il richiamo `.chiave`, il pulsante
+che riporta al calcolatore, la marca `legge`): lì non c'è affollamento, e il pulsante è l'unica
+azione del sito.
+
+**Cosa NON si tocca, e serve ricordarlo**: il bianco caldo di fondo, i riquadri senza ombra, i
+raggi dei bordi, le micro-etichette maiuscole spaziate. Sono l'idioma «documento» e funzionano.
+Niente ombre, niente icone, nessun colore d'accento nuovo: sono le quattro cose che sposterebbero
+il sito verso l'aspetto di chi ha qualcosa da vendere.
+
 **4. Il modulo ha due strati, e nello strato aperto ci sta solo quello che il verdetto pretende
 più il fondo pensione.** (07/08/2026)
 

@@ -241,5 +241,24 @@ if (alte.length){
     for (const [k, s] of trovate.slice(0, 6)) console.log(`   · [${f}] ${k}: …${s.slice(0, 110)}…`);
 }
 
+// --- 4. i due caratteri, dichiarati in due fogli diversi --------------------
+// Il calcolatore ha il proprio `<style>` e non include quello delle pagine: `--voce` e `--dati`
+// sono scritti due volte, ed è la stessa forma di divergenza che questo file combatte sulle
+// cifre. Fra sei mesi uno dei due cambia e l'altro no, e il sito diventa due posti: un titolo
+// col serif di qua e uno col sans di là non è un difetto che qualcuno segnala, è un difetto che
+// si sente e basta. Si confrontano i file COSTRUITI, che sono quelli che la gente riceve.
+{
+  const dichiara = (file, nome) => {
+    const t = fs.readFileSync(join(SITO, file), 'utf8');
+    const m = t.match(new RegExp('--' + nome + ':([^;]+);'));
+    return m ? m[1].replace(/\s+/g, ' ').trim() : null;
+  };
+  for (const nome of ['voce', 'dati']){
+    const a = dichiara('index.html', nome), b = dichiara('il-metodo.html', nome);
+    c(`il carattere «${nome}» è lo stesso nel calcolatore e nelle pagine`,
+      a !== null && a === b, a === b ? a : `calcolatore: ${a} · pagine: ${b}`);
+  }
+}
+
 console.log(ko ? `\n  ✗ ${ko} controlli falliti` : '\n  pagine e motore non divergono su niente di controllabile');
 if (ko) process.exitCode = 1;

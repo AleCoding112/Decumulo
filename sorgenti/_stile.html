@@ -1,13 +1,24 @@
 <style>
   :root{--bg:#faf8f4;--card:#fff;--ink:#26241f;--soft:#5f5b52;--tenue:#8a857a;
-    --line:#e4e0d7;--su:#2f6f4e;--giu:#a33a2a;--acc:#2f6f4e}
+    --line:#e4e0d7;--su:#2f6f4e;--giu:#a33a2a;--acc:#2f6f4e;
+    /* GLI STESSI DUE CARATTERI DEL CALCOLATORE, e la stessa divisione dei mestieri: `--voce`
+       dove il sito parla (qui i titoli), `--dati` dove misura (prosa, tabelle, etichette).
+       IL BLOCCO È RIPETUTO perché il calcolatore non include questo foglio: ha il proprio
+       `<style>`. È la stessa forma di divergenza che il progetto combatte sulle cifre — fra sei
+       mesi uno dei due cambia e l'altro no — quindi `coerenza.mjs` confronta le due
+       dichiarazioni nei file COSTRUITI e fallisce se si separano. */
+    --voce: Georgia, "Times New Roman", serif;
+    --dati: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 var(--dati)}
   .pagina{max-width:760px;margin:0 auto;padding:28px 20px 80px}
   .briciole{font-size:13px;color:var(--tenue);margin:0 0 22px}
   .briciole a{color:var(--soft)}
-  h1{font-size:31px;line-height:1.2;letter-spacing:-.015em;margin:0 0 14px}
+  /* I TITOLI PARLANO, il resto della pagina misura: prendono il carattere della voce, come la
+     testata e il verdetto del calcolatore. È il pezzo che rende il sito una cosa sola —
+     passando dal conto a una spiegazione non si deve cambiare posto. */
+  h1,h2,h3{font-family:var(--voce)}
+  h1{font-size:31px;line-height:1.2;letter-spacing:-.01em;margin:0 0 14px}
   h2{font-size:20px;line-height:1.3;margin:40px 0 12px}
   h3{font-size:16px;margin:26px 0 7px}
   p{margin:0 0 15px}
@@ -39,9 +50,9 @@
      scappa sotto il dito. Vale per tutti e due i contenitori di tabelle, non solo per uno. */
   .scorre,.conto{overflow-x:auto}
   .scorre{margin:20px 0}
-  table{width:100%;border-collapse:collapse;font-size:14.5px;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
   th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-  thead th{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--tenue);
+  thead th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--tenue);
     font-weight:600;white-space:nowrap}
   td.ok{color:var(--su)} td.ko{color:var(--giu);font-weight:600}
   .conto{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 20px;
@@ -54,18 +65,18 @@
   .conto.affianco td+td,.conto.affianco th+th{text-align:right}
   .sotto{display:block;font-size:12px;color:var(--tenue);font-weight:400}
   .conto tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0}
-  .fonti{font-size:13.5px;color:var(--soft);margin-top:42px;padding-top:18px;
+  .fonti{font-size:13px;color:var(--soft);margin-top:42px;padding-top:18px;
     border-top:1px solid var(--line)}
   /* i tre livelli di fonte, sempre distinti: legge · contratto collettivo · stima nostra */
-  .marca{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;
+  .marca{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;padding:2px 7px;border-radius:4px;vertical-align:2px;margin-right:6px}
   .m-legge{background:#e8efe9;color:var(--su)}
   .m-ccnl{background:#eceaf3;color:#4b4468}
   .m-stima{background:#f6ece9;color:var(--giu)}
-  .legenda-fonti{font-size:12.5px;color:var(--tenue);margin:0 0 26px;line-height:1.9}
+  .legenda-fonti{font-size:12px;color:var(--tenue);margin:0 0 26px;line-height:1.9}
   .pie{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
-    font-size:12.5px;line-height:1.6;color:var(--tenue)}
-  .pie p{margin:0 0 10px;max-width:78ch}
+    font-size:12px;line-height:1.6;color:var(--tenue)}
+  .pie p{margin:0 0 10px;max-width:74ch}
   .pie b{color:var(--soft)}
   .pie a{color:var(--soft)}
   .pie-nav{font-size:13px}

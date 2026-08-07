@@ -10,18 +10,44 @@
   :root{
     --ink:#1a1a1a; --soft:#6b6b6b; --tenue:#8a857a; --line:#e0ddd6; --bg:#faf9f6;
     --card:#fff; --su:#2f6f4e; --giu:#a33a2a; --acc:#3b6ea5;
+    /* DUE CARATTERI, E SI DIVIDONO I MESTIERI. Fino al 07/08/2026 ce n'era uno solo — il sans
+       di sistema — in ogni ruolo: testata, verdetto, prosa, cifre, micro-etichette. Ma quello
+       è il carattere dell'interfaccia del sistema operativo, cioè il carattere del software:
+       una pagina che dà un giudizio sui risparmi di qualcuno, letta nel font dei menù, suona
+       come un pannello di controllo.
+       `--voce` sta dove il sito PARLA (testata e verdetto, e i titoli nelle pagine di
+       spiegazione); `--dati` dove MISURA: modulo, cifre, tabelle, etichette, pulsanti. Un serif
+       sulle maiuscole spaziate le renderebbe illeggibili, e il sito sembrerebbe travestito.
+       SONO DUE CARATTERI DI SISTEMA, non scaricati: `privacy.html` dichiara che la pagina non
+       chiama domini terzi, e un font preso da fuori romperebbe quella promessa prima di ogni
+       altra cosa.
+       PERCHÉ GEORGIA E NON `ui-serif`, che era la prima scelta: misurando la larghezza del
+       verdetto contro quella dei singoli caratteri è venuto fuori che **basta che Georgia
+       compaia nella pila perché vinca lei**, anche messa dopo — quindi «New York su Apple,
+       Georgia altrove» non succedeva: succedeva Georgia dappertutto, mentre la dichiarazione
+       prometteva altro. Meglio dichiarare quello che accade: Georgia sta su Mac, iPad e
+       Windows, è disegnata per lo schermo, e tutti vedono la stessa pagina. Times resta per
+       Android, `serif` per il resto.
+       LE SUE CIFRE SONO ALLA VECCHIA MANIERA (il 3, il 4 e il 9 scendono sotto la riga) e non
+       si possono allineare: Georgia non porta la variante `lnum`, quindi
+       `font-variant-numeric:lining-nums` non ha alcun effetto. Provato, non dedotto.
+       LO STESSO BLOCCO STA IN `_stile.html`, che il calcolatore non include: `coerenza.mjs`
+       controlla che le due dichiarazioni restino identiche. */
+    --voce: Georgia, "Times New Roman", serif;
+    --dati: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--dati)}
   /* 760 px, la stessa larghezza delle pagine di contenuto. Erano 900, e la differenza si
      notava passando dal calcolatore alle pagine: due metà dello stesso sito con due misure.
      Il modulo non ne soffre — le griglie fisse più larghe (`.fase`, `.cur`, `.passo`) occupano
      440 px, e il resto è elastico — e le righe di testo, che qui arrivavano a 90 caratteri,
      rientrano in una misura leggibile. */
   .pagina{max-width:760px;margin:0 auto;padding:32px 20px 80px}
-  h1{font-size:22px;font-weight:700;margin:0 0 8px;color:var(--ink);letter-spacing:.14em;
-    text-transform:uppercase}
+  /* LA SPAZIATURA SCENDE DA .14 A .10em: le grazie separano già le lettere, e la spaziatura
+     larga che serviva al sans qui sfilaccia la parola invece di comporla. */
+  h1{font-family:var(--voce);font-size:26px;font-weight:700;margin:0 0 8px;color:var(--ink);
+    letter-spacing:.10em;text-transform:uppercase}
 
   /* IL SOMMARIO IN ALTO. Non è navigazione: è il risultato che resta sott'occhio mentre si
      compila. Compare solo dopo che si è passato il titolo e solo se il risultato vero è fuori
@@ -42,12 +68,21 @@
   /* col sommario fissato in alto, saltando a un'ancora non deve coprirla */
   html{scroll-padding-top:52px}
 
-  .risposta{margin:0 0 6px;font-size:30px;line-height:1.25;font-weight:600;letter-spacing:-.015em}
+  /* IL VERDETTO PARLA, quindi porta il carattere della voce.
+     LE CIFRE RESTANO QUELLE DEL CARATTERE, cioè alla vecchia maniera. Era stato deciso il
+     contrario — allinearle, perché qui il numero È il messaggio — ma Georgia non porta la
+     variante che serve: `font-variant-numeric:lining-nums` sul verdetto non cambiava nulla, e
+     una dichiarazione che non fa niente è peggio di una che manca, perché la prossima volta
+     qualcuno la crede vera. Tolta.
+     `tabular-nums` non si mette per la stessa ragione: qui non c'è niente da incolonnare, è una
+     frase. Sta dove servono le colonne, cioè nelle tabelle e negli esiti. */
+  .risposta{font-family:var(--voce);margin:0 0 6px;font-size:34px;line-height:1.2;
+    font-weight:600;letter-spacing:-.005em}
   .occhiello{color:var(--soft);font-size:15px;line-height:1.6;margin:0 0 30px;max-width:68ch;
     padding-bottom:22px;border-bottom:1px solid var(--line)}
   .sezione{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
     color:var(--tenue);margin:34px 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line)}
-  .vuoto-avviso{color:var(--soft);font-size:14px;line-height:1.55;margin:0 0 14px;max-width:60ch}
+  .vuoto-avviso{color:var(--soft);font-size:14px;line-height:1.55;margin:0 0 14px;max-width:68ch}
   /* le cifre stanno a destra, il testo a sinistra. Il criterio non può più essere `type=text`,
      perché da quando la virgola si accetta lo sono anche le caselle dei numeri: quelle però
      portano `inputmode`, e i due campi dei nomi no. */
@@ -70,7 +105,7 @@
   .legenda{display:flex;gap:18px;flex-wrap:wrap;color:var(--soft);font-size:13px;
     margin:0 0 10px;padding:0 4px}
   .legenda span{display:flex;align-items:center;gap:6px}
-  .inflazione{margin:0 0 28px;padding:0 4px;max-width:70ch}
+  .inflazione{margin:0 0 28px;padding:0 4px;max-width:68ch}
   .chip{width:11px;height:11px;border-radius:2px;display:inline-block}
 
   /* --- le fasi --- */
@@ -78,7 +113,12 @@
     padding:4px 18px 8px;margin:0 0 28px}
   .fasi h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
     color:var(--soft);margin:16px 0 10px}
-  .fase{display:grid;grid-template-columns:100px 1fr 208px 132px;gap:10px 16px;
+  /* 208 px NON BASTAVANO alla riga che ci va dentro: «accantonamento 1.647 € al mese» ne vuole
+     una trentina di più, e mandava «mese» a capo da solo, allineato a destra, in tutte e tre le
+     fasi e a ogni larghezza sopra i 600 px. Una vedova tipografica non sborda e non schiaccia
+     niente: nessuna misura la vede, si vede soltanto. I 30 px li cede la colonna della
+     descrizione, che è prosa e va a capo per mestiere. */
+  .fase{display:grid;grid-template-columns:100px 1fr 238px 132px;gap:10px 16px;
     align-items:baseline;padding:11px 0;border-top:1px solid var(--line)}
   .fase:first-of-type{border-top:0}
   .fase b{font-variant-numeric:tabular-nums;font-weight:600}
@@ -87,18 +127,22 @@
   .fase .fine{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
   .fase i{display:block;font-style:normal;font-size:12px;color:var(--tenue);font-weight:400;
     line-height:1.35;margin-top:2px}
-  .su-t{color:var(--su)} .giu-t{color:var(--giu)}
+  /* IL FLUSSO POSITIVO NON È UN COLORE. Lo schema è «neutro salvo allarme»: l'accantonamento
+     è la condizione normale di un piano che lavora, e colorarlo metteva il verde in quattro
+     punti della stessa schermata, dove ne basta uno — il verdetto. Il rosso resta esattamente
+     dov'era, e diventa l'unico colore che chiede attenzione. */
+  .su-t{color:var(--ink)} .giu-t{color:var(--giu)}
   .unatantum{grid-column:1/-1;margin:2px 0 0;font-size:13px;color:var(--acc)}
 
   /* --- le tre decisioni --- */
   .decisioni{margin:0 0 28px}
   .decisioni h2{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;
     color:var(--soft);margin:0 0 6px}
-  .premessa{color:var(--soft);font-size:14px;margin:0 0 14px;max-width:70ch}
+  .premessa{color:var(--soft);font-size:14px;margin:0 0 14px;max-width:68ch}
   .dec{background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:16px 18px 18px;margin:0 0 12px}
   .dec h3{font-size:16px;font-weight:600;margin:0 0 6px}
-  .spiega{color:var(--soft);font-size:13.5px;margin:0 0 16px;max-width:74ch;line-height:1.55}
+  .spiega{color:var(--soft);font-size:13px;margin:0 0 16px;max-width:74ch;line-height:1.55}
   .spiega a{color:var(--acc);font-weight:600;white-space:nowrap}
   /* stessa ragione di `.sommario[hidden]`: con una persona sola, o per chi è già in pensione,
      `riga.hidden = true` non spegneva niente e il cursore dell'altro restava in pagina. */
@@ -125,7 +169,7 @@
   .cur .esito{text-align:right;font-variant-numeric:tabular-nums;font-size:14px;line-height:1.4}
   .cur .esito b{font-size:15px}
   .cur .esito i{display:block;font-style:normal;font-size:12px;color:var(--tenue)}
-  .cur .esito i.forte{color:var(--su);font-weight:600;margin-top:4px}
+  .cur .esito i.forte{color:var(--ink);font-weight:600;margin-top:4px}
   .cur .ora{font-size:13px;color:var(--soft);text-align:center;font-variant-numeric:tabular-nums}
   .cur .ora b{font-size:15px;color:var(--ink)}
   .cur .ora i{display:block;font-style:normal;font-size:11px;color:var(--tenue);
@@ -139,9 +183,8 @@
   .cur .chiediMin[hidden]{display:none}
   .cur .chiediMin input{width:70px;padding:4px 8px;font-size:12px;text-align:right}
   .cur .chiediMin .pct{margin-left:-4px;color:var(--tenue)}
-  .picco{font-size:12px;color:var(--su);margin:5px 0 0;line-height:1.45}
-  .picco.piu{color:var(--soft)}
-  .picco.piu b{color:var(--su)}
+  .picco{font-size:12px;color:var(--soft);margin:5px 0 0;line-height:1.45}
+  .picco b{color:var(--ink);font-weight:600}
   .picco:empty{display:none}
   .spiega.regole{margin:2px 0 18px;padding:11px 14px;background:#f6f7f5;border:1px solid var(--line);
     border-radius:9px}
@@ -152,17 +195,17 @@
   .torna{align-self:flex-start;margin:7px 0 0;padding:5px 11px;font:inherit;font-size:12px;
     color:var(--soft);background:#fff;border:1px solid var(--line);border-radius:7px;
     cursor:pointer}
-  .torna:hover{border-color:var(--su);color:var(--su)}
+  .torna:hover{border-color:var(--tenue);color:var(--ink)}
   /* --- «come esce il fondo»: tre passi in fila, uno sotto l'altro --- */
   .fondoP{border-top:1px solid var(--line);padding:14px 0 4px}
   .fondoP:first-child{border-top:0;padding-top:2px}
-  .fondoP .capo{font-size:13.5px;color:var(--soft);line-height:1.5;margin:0 0 10px;
+  .fondoP .capo{font-size:13px;color:var(--soft);line-height:1.5;margin:0 0 10px;
     max-width:74ch}
   .fondoP .capo b:first-child{color:var(--ink);font-size:15px;margin-right:8px}
   .passo{display:grid;grid-template-columns:74px 1fr 250px;gap:6px 18px;align-items:center;
     padding:8px 0}
   .passo .np{grid-column:1;grid-row:1/4;align-self:center;
-    width:22px;height:22px;border-radius:50%;background:var(--su);color:#fff;
+    width:22px;height:22px;border-radius:50%;background:#eceae4;color:var(--ink);
     font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;
     margin-left:auto}
   .passo .pt{grid-column:2;font-size:12px;font-weight:600;text-transform:uppercase;
@@ -172,7 +215,7 @@
     font-size:14px;line-height:1.4}
   .passo .esito b{font-size:15px}
   .passo .esito i{display:block;font-style:normal;font-size:12px;color:var(--tenue)}
-  .scambio{font-size:12.5px;color:var(--soft);margin:10px 0 0;line-height:1.55;max-width:74ch}
+  .scambio{font-size:12px;color:var(--soft);margin:10px 0 0;line-height:1.55;max-width:74ch}
   .scambio b{color:var(--ink)}
   /* --- l'abitazione. Il numero del titolo lo scrive il codice, perché i riquadri sopra
      spariscono per chi è già in pensione e la numerazione deve seguirli. --- */
@@ -184,8 +227,8 @@
   .casaEsito:empty{display:none}
   .casaEsito b{font-size:15px}
   .casaEsito i{display:block;font-style:normal;font-size:12px;color:var(--tenue);margin-top:3px}
-  .scelte button u{display:block;text-decoration:none;font-size:10px;font-weight:600;
-    text-transform:uppercase;letter-spacing:.07em;color:var(--su)}
+  .scelte button u{display:block;text-decoration:none;font-size:11px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.07em;color:var(--tenue)}
   /* le due famiglie stanno UNA SOTTO L'ALTRA: affiancate si spezzavano a metà, e «certa 10
      anni» finiva su una riga per conto suo come se fosse di un altro gruppo */
   .scelte{display:flex;flex-direction:column;gap:14px}
@@ -202,9 +245,9 @@
   .scelte button{font:inherit;font-size:13px;padding:7px 12px;border-radius:8px;cursor:pointer;
     border:1px solid var(--line);background:#fff;color:var(--ink);
     font-variant-numeric:tabular-nums;text-align:left}
-  .scelte button.attiva{border-color:var(--su);background:#f1f6f2;font-weight:600}
+  .scelte button.attiva{border-color:var(--soft);background:#f2f1ed;font-weight:600}
   .scelte button[disabled]{opacity:.45;cursor:not-allowed}
-  .scelte button i{display:block;font-style:normal;font-size:11.5px;color:var(--tenue)}
+  .scelte button i{display:block;font-style:normal;font-size:11px;color:var(--tenue)}
 
   /* --- caselle --- */
   fieldset{border:1px solid var(--line);border-radius:10px;background:var(--card);
@@ -241,7 +284,7 @@
      ricava stanno SOTTO la casella che li genera, non in una riga a parte. */
   .due{display:grid;grid-template-columns:minmax(0,1fr) 134px 134px;gap:9px 14px;
     align-items:start;max-width:566px}
-  .due .voce{font-size:13.5px;color:var(--soft);line-height:1.35;padding-top:10px}
+  .due .voce{font-size:13px;color:var(--soft);line-height:1.35;padding-top:10px}
   .due .voce b{color:var(--ink);font-weight:600}
   .due .voce.totale{padding-top:2px;font-weight:600;color:var(--ink)}
   /* l'istruzione per compilare, sotto l'etichetta: più piccola e più chiara del nome del campo,
@@ -257,8 +300,8 @@
     padding:1px 2px 0}
   .cella .somma{display:block;text-align:right;font-size:15px;font-variant-numeric:tabular-nums;
     padding:4px 2px 0}
-  .cella .somma.grande{font-size:17px}
-  .due .voce.totale u{display:block;text-decoration:none;font-weight:400;font-size:11.5px;
+  .cella .somma.grande{font-size:16px}
+  .due .voce.totale u{display:block;text-decoration:none;font-weight:400;font-size:11px;
     color:var(--tenue);text-transform:none;letter-spacing:0;margin-top:1px}
   .somma-sep{grid-column:1/-1;height:1px;background:var(--line);margin:5px 0 1px}
   /* i separatori diventano titoletti: dicono anche di cosa si sta parlando */
@@ -320,7 +363,7 @@
   .senza-lavoro .rigalav + .cella + .cella{display:none}
   /* nell'area del risultato la colonna non è quella del modulo: la misura di lettura
      la detta il testo, non la griglia delle caselle */
-  #lasciato{max-width:66ch;margin:14px 0 0;font-size:14px}
+  #lasciato{max-width:68ch;margin:14px 0 0;font-size:14px}
 
   /* --- LA BARRA DELLA COMPOSIZIONE ------------------------------------
      UNA TINTA SOLA A GRADINI, non quattro colori. Le quattro classi sono una SCALA — dalla
@@ -354,7 +397,7 @@
      accanto è quello che porta l'identità: un numero verde sarebbe inchiostro che finge. */
   /* e la legenda è quella del grafico, `.legenda` con i suoi `.chip`, non una seconda scritta
      da capo: due legende diverse nella stessa pagina si sarebbero viste */
-  .quote .legenda{gap:5px 18px;font-size:12.5px;font-variant-numeric:tabular-nums;margin:0}
+  .quote .legenda{gap:5px 18px;font-size:12px;font-variant-numeric:tabular-nums;margin:0}
   .quote .legenda b{color:var(--ink);font-weight:600}
   .quote .legenda:empty{display:none}
   .nota{color:var(--soft);font-size:13px;margin:14px 0 0;line-height:1.5}
@@ -372,8 +415,8 @@
   .avvertenza a{color:var(--acc);font-weight:600}
   /* il piè di pagina è condiviso con le pagine di contenuto */
   .pie{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);
-    font-size:12.5px;line-height:1.6;color:var(--tenue)}
-  .pie p{margin:0 0 10px;max-width:78ch}
+    font-size:12px;line-height:1.6;color:var(--tenue)}
+  .pie p{margin:0 0 10px;max-width:74ch}
   .pie b{color:var(--soft)}
   .pie a{color:var(--soft)}
   .pie-nav{font-size:13px}
@@ -422,7 +465,7 @@
      disonesto: il piano verrebbe più basso del vero e la pagina non lo direbbe. Stessa forma di
      `.gruppo span`, che è il posto dove il modulo mette da sempre le spiegazioni di un titoletto. */
   .assunto{display:block;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
-    color:var(--soft);margin-top:5px;line-height:1.5;max-width:70ch}
+    color:var(--soft);margin-top:5px;line-height:1.5;max-width:68ch}
   .assunto b{color:var(--ink);font-weight:600}
   /* il blocco che sta da solo in cima al modulo — le ipotesi — è una scheda come i fieldset
      accanto, non una sezione dentro a un'altra: riprende il loro riquadro e la loro etichetta */
@@ -432,7 +475,7 @@
     color:var(--soft);padding:10px 0 2px}
   .strato.riquadro[open] > summary{border-bottom:0;padding-bottom:10px}
   .scorre{overflow-x:auto;margin-top:14px;max-height:560px}
-  table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+  table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
   th,td{padding:4px 7px;text-align:right;white-space:nowrap}
   td.anno u{text-decoration:none;color:var(--tenue);font-size:11px;margin-left:5px}
   th{font-weight:600;color:var(--tenue);position:sticky;top:0;background:var(--card);
@@ -2230,12 +2273,17 @@ function disegna(r){
     <clipPath id="sopra"><rect x="${L}" y="${T-6}" width="${xs}" height="${(base-T+6).toFixed(1)}"/></clipPath>
     <clipPath id="sotto"><rect x="${L}" y="${base.toFixed(1)}" width="${xs}" height="${(H-B-base).toFixed(1)}"/></clipPath>
   </defs>`;
+  // IL PESO STA NEL TRATTO, NON NEL RIEMPIMENTO. Le due aree erano più forti della linea che
+  // le genera: si vedeva un blocco di colore, non un andamento. Schiarite (#cfe0d6 → #dde9e1,
+  // #dfe6ef → #e9edf4) e linea da 2 a 2,5, il grafico si legge come su un giornale: la curva
+  // prima, il volume dopo. L'area sotto lo zero resta più satura delle altre due, perché lì il
+  // riempimento È la notizia.
   const area = p => `${via(p)} L ${fin} ${base.toFixed(1)} L ${L} ${base.toFixed(1)} Z`;
-  h += `<path d="${area(pT)}" fill="#dfe6ef" clip-path="url(#sopra)"/>`;
-  h += `<path d="${area(pP)}" fill="#cfe0d6" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pT)}" fill="#e9edf4" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pP)}" fill="#dde9e1" clip-path="url(#sopra)"/>`;
   h += `<path d="${area(pP)}" fill="#f0dad5" clip-path="url(#sotto)"/>`;
-  h += `<path d="${via(pP)}" fill="none" stroke="#2f6f4e" stroke-width="2" clip-path="url(#sopra)"/>`;
-  h += `<path d="${via(pP)}" fill="none" stroke="#a33a2a" stroke-width="2" clip-path="url(#sotto)"/>`;
+  h += `<path d="${via(pP)}" fill="none" stroke="#2f6f4e" stroke-width="2.5" clip-path="url(#sopra)"/>`;
+  h += `<path d="${via(pP)}" fill="none" stroke="#a33a2a" stroke-width="2.5" clip-path="url(#sotto)"/>`;
 
   // gli anni in cui cambia qualcosa. Tre file di etichette: ciascuna va nella prima fila
   // dove non si accavalla con la precedente; se non ce n'è, resta solo la riga tratteggiata
@@ -2243,7 +2291,11 @@ function disegna(r){
   for (const e of eventi(r)){
     const i = g0.findIndex(v => v.anno === e.anno);
     if (i < 0) continue;
-    const testo = e.breve + (e.altri ? ` +${e.altri}` : '');
+    // «SMETTE ANNA +2» SI LEGGEVA COME «PIÙ DUE ANNI». Vuol dire un'altra cosa — che in
+    // quell'anno succedono altre due cose — e su un grafico dove ogni etichetta sta accanto a
+    // un anno, un numero preceduto dal segno più è una data, non un conteggio. Per esteso il
+    // testo esiste già e sta nella tabella; qui bastano tre parole in più.
+    const testo = e.breve + (e.altri ? `, e ${e.altri === 1 ? 'un altro' : 'altri ' + e.altri}` : '');
     const px = x(i), largh = testo.length * 5.5 + 12;
     const dx = px + largh > W - R ? -5 : 5;              // le ultime si appoggiano a sinistra
     const sx = dx < 0 ? px - largh : px;
