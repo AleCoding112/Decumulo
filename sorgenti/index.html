@@ -63,6 +63,10 @@
   .grafico{background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:14px 10px 6px;margin:0 0 10px}
   svg{display:block;width:100%;height:auto}
+  /* stessa ragione di `.sommario[hidden]` e di `.cur[hidden]`: qui il `display:flex` batte
+     quello del browser, e senza questa riga la legenda resterebbe in pagina anche a piano
+     inesistente, sotto un grafico spento. */
+  .legenda[hidden]{display:none}
   .legenda{display:flex;gap:18px;flex-wrap:wrap;color:var(--soft);font-size:13px;
     margin:0 0 10px;padding:0 4px}
   .legenda span{display:flex;align-items:center;gap:6px}
@@ -392,6 +396,41 @@
   details{background:var(--card);border:1px solid var(--line);border-radius:10px;
     padding:14px 18px;margin:0 0 14px}
   summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--soft)}
+
+  /* --- IL SECONDO STRATO DEL MODULO ------------------------------------
+     Non sono schede dentro una scheda: sono i titoletti che il modulo aveva già (`.gruppo`),
+     con la differenza che adesso si aprono. Prendono quindi l'aspetto del titoletto e non
+     quello di `details`, che qui dentro disegnerebbe un riquadro dentro il riquadro — e la
+     nidificazione si vedrebbe come profondità che non c'è.
+     `.piu` era il nome ovvio ed è già occupato da `.picco.piu`: controllato prima di
+     scriverlo, come dice la regola. */
+  /* UN <details> CHIUSO NON NASCONDE UN FIGLIO A CUI QUALCUNO HA DATO UN `display`, ed è lo
+     stesso meccanismo che la regola di stampa più sotto sfrutta al contrario per aprirli tutti:
+     il contenuto sta in uno slot spento, e un `display` esplicito sul figlio lo riaccende.
+     Qui i figli diretti sono griglie (`.due`, `.caselle`), quindi i blocchi chiusi mostravano
+     ugualmente tutte le loro caselle: 28 controlli visibili invece di 12, cioè chiudere non
+     chiudeva niente. Trovato misurando l'apertura, non guardandola: la pagina sembrava giusta.
+     Il `!important` della stampa batte questa riga, quindi su carta resta tutto aperto. */
+  .strato:not([open]) > *:not(summary){display:none}
+  .strato{background:none;border:0;border-top:1px solid var(--line);border-radius:0;
+    padding:0;margin:16px 0 0}
+  .strato > summary{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--tenue);padding:14px 0 2px}
+  .strato > summary:hover{color:var(--soft)}
+  .strato[open] > summary{padding-bottom:7px;border-bottom:1px solid var(--line)}
+  /* COSA IL CONTO STA ASSUMENDO MENTRE IL BLOCCO È CHIUSO. Senza questa riga nascondere sarebbe
+     disonesto: il piano verrebbe più basso del vero e la pagina non lo direbbe. Stessa forma di
+     `.gruppo span`, che è il posto dove il modulo mette da sempre le spiegazioni di un titoletto. */
+  .assunto{display:block;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
+    color:var(--soft);margin-top:5px;line-height:1.5;max-width:70ch}
+  .assunto b{color:var(--ink);font-weight:600}
+  /* il blocco che sta da solo in cima al modulo — le ipotesi — è una scheda come i fieldset
+     accanto, non una sezione dentro a un'altra: riprende il loro riquadro e la loro etichetta */
+  .strato.riquadro{border:1px solid var(--line);border-radius:10px;background:var(--card);
+    padding:6px 18px 14px;margin:0 0 14px}
+  .strato.riquadro > summary{font-size:12px;font-weight:600;letter-spacing:.09em;
+    color:var(--soft);padding:10px 0 2px}
+  .strato.riquadro[open] > summary{border-bottom:0;padding-bottom:10px}
   .scorre{overflow-x:auto;margin-top:14px;max-height:560px}
   table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
   th,td{padding:4px 7px;text-align:right;white-space:nowrap}
@@ -568,10 +607,6 @@ intero, e le segnalazioni sono le benvenute.
       <option value="2">due persone</option></select></div>
     <div class="cella p2"></div>
 
-    <div class="voce">Nome</div>
-    <div class="cella"><input type="text" id="nome0" value="" placeholder="il primo" maxlength="14"></div>
-    <div class="cella p2"><input type="text" id="nome1" value="" placeholder="il secondo" maxlength="14"></div>
-
     <div class="voce">Anno di nascita</div>
     <div class="cella"><input type="text" inputmode="numeric" id="nascita0" value=""></div>
     <div class="cella p2"><input type="text" inputmode="numeric" id="nascita1" value=""></div>
@@ -586,24 +621,6 @@ intero, e le segnalazioni sono le benvenute.
       <u class="hint" id="nettoRal0">&nbsp;</u></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="ral1" value="">
       <u class="hint" id="nettoRal1">&nbsp;</u></div>
-
-    <div class="voce rigalav">Crescita annua della retribuzione</div>
-    <div class="cella"><input type="text" inputmode="decimal" id="cresc0" value=""
-        placeholder="facoltativo">
-      <u class="hint" id="crescReale0">&nbsp;</u></div>
-    <div class="cella p2"><input type="text" inputmode="decimal" id="cresc1" value=""
-        placeholder="facoltativo">
-      <u class="hint" id="crescReale1">&nbsp;</u></div>
-
-    <!-- Vuoto significa «fino alla propria pensione»: il caso base. Chi smette prima lo scrive,
-         ed è lì che si apre il buco fra la fine del lavoro e la decorrenza del trattamento. -->
-    <div class="voce rigalav">Ultimo anno di lavoro</div>
-    <div class="cella"><input type="text" inputmode="numeric" id="ultimo0" value=""
-        placeholder="alla pensione">
-      <u class="hint" id="ultimoNota0">&nbsp;</u></div>
-    <div class="cella p2"><input type="text" inputmode="numeric" id="ultimo1" value=""
-        placeholder="alla pensione">
-      <u class="hint" id="ultimoNota1">&nbsp;</u></div>
 
     <div class="gruppo">La pensione INPS
     <!-- L'ISTRUZIONE VALE PER CHI IL TRATTAMENTO LO ASPETTA. Chi lo percepisce già non ha
@@ -658,6 +675,17 @@ intero, e le segnalazioni sono le benvenute.
     <div class="cella p2"><input type="text" inputmode="numeric" id="iscr1" value=""></div>
 
   </div>
+
+  <!-- IL BLOCCO PIÙ GRANDE DEL SECONDO STRATO, e quello che pesa di più sul conto. Sta chiuso
+       perché non serve al verdetto: chi lo lascia com'è ottiene un piano SENZA TFR e SENZA
+       contributi, cioè più basso del vero, e la riga sotto il titolo lo dice — è la condizione
+       a cui nascondere resta onesto.
+       `rigalav` sull'intero blocco: quando il piano non ha nessun esercizio di attività qui
+       dentro non resta niente da chiedere, e un titolo che si apre sul vuoto è peggio di un
+       titolo che non c'è. Prima lo stesso lavoro lo facevano le singole righe. -->
+  <details class="strato rigalav" id="strFondo">
+    <summary>Il TFR e i contributi che entrano ogni anno
+      <span class="assunto" id="assuntoFondo"></span></summary>
 
   <!-- UN RIQUADRO SUO, e non due righe infilate fra i contributi. Il TFR già accantonato è uno
        STOCK, e il riquadro dei contributi si intitola «Quanto ci entra ogni anno»: mettercelo
@@ -791,6 +819,42 @@ intero, e le segnalazioni sono le benvenute.
     </div>
 
   <p class="avviso" id="avvisoDatore" hidden></p>
+  </details>
+
+  <!-- IL SECONDO STRATO DELLE PERSONE, ed è una griglia sua e non tre righe di quella di sopra.
+       Le tre caselle non servono al verdetto — il nome è un modo di chiamarsi, la crescita e
+       l'ultimo anno hanno un caso base che copre quasi tutti — ma stavano in mezzo a quelle che
+       il verdetto pretende, e non si toglie di mezzo una riga di una griglia a gruppi di tre
+       senza sfalsare tutto quello che viene dopo: si sposta la riga intera in una griglia
+       sorella. Le due condividono `grid-template-columns`, quindi le colonne restano allineate
+       fra un blocco e l'altro come se la griglia fosse ancora una sola. -->
+  <details class="strato" id="strPersone">
+    <summary>Nome, crescita della retribuzione, ultimo anno di lavoro
+      <span class="assunto" id="assuntoPersone"></span></summary>
+  <div class="due">
+    <div class="voce">Nome</div>
+    <div class="cella"><input type="text" id="nome0" value="" placeholder="il primo" maxlength="14"></div>
+    <div class="cella p2"><input type="text" id="nome1" value="" placeholder="il secondo" maxlength="14"></div>
+
+    <div class="voce rigalav">Crescita annua della retribuzione</div>
+    <div class="cella"><input type="text" inputmode="decimal" id="cresc0" value=""
+        placeholder="facoltativo">
+      <u class="hint" id="crescReale0">&nbsp;</u></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="cresc1" value=""
+        placeholder="facoltativo">
+      <u class="hint" id="crescReale1">&nbsp;</u></div>
+
+    <!-- Vuoto significa «fino alla propria pensione»: il caso base. Chi smette prima lo scrive,
+         ed è lì che si apre il buco fra la fine del lavoro e la decorrenza del trattamento. -->
+    <div class="voce rigalav">Ultimo anno di lavoro</div>
+    <div class="cella"><input type="text" inputmode="numeric" id="ultimo0" value=""
+        placeholder="alla pensione">
+      <u class="hint" id="ultimoNota0">&nbsp;</u></div>
+    <div class="cella p2"><input type="text" inputmode="numeric" id="ultimo1" value=""
+        placeholder="alla pensione">
+      <u class="hint" id="ultimoNota1">&nbsp;</u></div>
+  </div>
+  </details>
 
   <!-- Non sono fatti da scrivere ma decisioni: si prendono coi cursori qui sopra.
        Restano qui perché è da questi che leggono il modello e il salvataggio. -->
@@ -827,11 +891,27 @@ intero, e le segnalazioni sono le benvenute.
   <b>conti deposito</b> rientra la liquidità vincolata; nelle <b>obbligazioni</b>, sia i titoli
   di Stato sia quelle societarie. Da come è ripartito discende il rendimento, fra le ipotesi.</p>
 
-  <div class="gruppo largo">La spesa, e l'abitazione</div>
+  <div class="gruppo largo">La spesa</div>
   <div class="caselle">
     <div><label for="spesa">Spesa mensile, oggi</label>
       <input type="text" inputmode="decimal" id="spesa" value="">
       <u class="hint">quanto esce ogni mese, tutto compreso</u></div>
+  </div>
+  <p class="calcolato" id="calcolato"></p>
+  <p class="nota">Tutti i risultati sono in <b>euro di oggi</b>, confrontabili con la spesa
+  attuale.</p>
+
+  <!-- LA SECONDA SPESA E L'ABITAZIONE stanno chiuse per ragioni diverse, e tutt'e due buone: la
+       spesa in pensione ha un caso base che è quello di quasi tutti (la stessa di adesso), e
+       l'abitazione non entra nel conto finché non si prevede di cambiarla — era già dichiarata
+       facoltativa nel segnaposto.
+       LA NOTA SI È SPEZZATA CON LORO, e non è una limatura: «le due spese restano ferme dentro
+       la loro fase» parla di una seconda spesa che, a blocco chiuso, non esiste ancora. La metà
+       che vale sempre resta sopra, la metà che vale solo qui dentro è scesa qui. -->
+  <details class="strato" id="strSpesa">
+    <summary>La spesa in pensione e l'abitazione
+      <span class="assunto" id="assuntoSpesa"></span></summary>
+  <div class="caselle">
     <div><label for="spesaPens">Spesa mensile in pensione</label>
       <input type="text" inputmode="decimal" id="spesaPens" value="" placeholder="uguale a oggi">
       <u class="hint" id="spesaPensNota">se resta vuota, il conto tiene la stessa di adesso</u></div>
@@ -843,14 +923,21 @@ intero, e le segnalazioni sono le benvenute.
       <input type="text" inputmode="decimal" id="casaValore" value="" placeholder="facoltativo">
       <u class="hint">non entra nel patrimonio: serve solo se si prevede di cambiarla</u></div>
   </div>
-  <p class="calcolato" id="calcolato"></p>
-  <p class="nota">Tutti i risultati sono in <b>euro di oggi</b>, confrontabili con la spesa
-  attuale. Le due spese restano ferme dentro la loro fase: il conto passa dalla prima alla
-  seconda l'anno in cui si smette di lavorare.</p>
+  <p class="nota">Le due spese restano ferme dentro la loro fase: il conto passa dalla prima
+  alla seconda l'anno in cui si smette di lavorare.</p>
+  </details>
 </fieldset>
 
-<fieldset>
-  <legend>Le ipotesi</legend>
+<!-- LE IPOTESI SONO L'UNICO BLOCCO CHE ARRIVA GIÀ COMPILATO, ed è la ragione per cui sta chiuso:
+     qui dentro non manca niente: c'è un valore di partenza per ciascuna casella, e chi non ha
+     un'opinione sui rendimenti non ne ha bisogno. Il titolo porta le tre cifre che stanno
+     dentro, quindi restano leggibili senza aprire — che è la differenza fra nascondere una
+     scelta e ometterla.
+     È l'unico che tiene il riquadro: sta da solo in cima al modulo, non è una sezione dentro a
+     un altro riquadro, e la scheda è quello che era il suo `fieldset`. -->
+<details class="strato riquadro" id="strIpotesi">
+  <summary>Le ipotesi
+    <span class="assunto" id="assuntoIpotesi"></span></summary>
 
   <!-- IL RENDIMENTO NON SI CHIEDE, SI RICAVA, e la composizione da cui si ricava sta nel riquadro
        di sopra perché è un DATO e non un'ipotesi: uno ce l'ha davanti sull'estratto conto. Qui
@@ -920,7 +1007,7 @@ intero, e le segnalazioni sono le benvenute.
   il quindicesimo, fino a un minimo del {{aliqFondoMin}}</b>:
   per questo conta l'anno di
   iscrizione.</p>
-</fieldset>
+</details>
 
 
 <h2 class="sezione" id="risultato">Il risultato</h2>
@@ -937,6 +1024,13 @@ intero, e le segnalazioni sono le benvenute.
      verdetto lo userebbe lo stesso. Non è un difetto d'ordine, è di dichiarazione, e la cura è
      quella già usata altrove qui: si alza il FATTO e si lascia giù la decisione, con un rimando. -->
 <p class="nota" id="assunzioni"></p>
+<!-- QUELLO CHE IL CONTO NON STA CONTANDO, accanto al numero e non solo nel modulo. Il secondo
+     strato ha reso normale il caso che prima era l'eccezione — arrivare al verdetto senza aver
+     compilato TFR e contributi — e un piano più basso del vero senza avviso sarebbe la stessa
+     cosa del verdetto dato senza patrimonio. La frase la scrive `statoBlocchi`, cioè la stessa
+     funzione che intitola il blocco chiuso: due punti che dicono la stessa cosa con parole
+     diverse divergono al primo ritocco. -->
+<p class="nota" id="nonContato"></p>
 <!-- Il verdetto nasce da una traiettoria sola. Questa riga dice quanto dipende dall'ORDINE in
      cui arrivano i rendimenti, che una traiettoria sola non può mostrare. Nessuna classe nuova:
      `.nota` esiste già, e un nome in più è un nome che può collidere. -->
@@ -947,21 +1041,30 @@ intero, e le segnalazioni sono le benvenute.
 <p class="nota" id="superstite"></p>
 <p class="avviso" id="lasciato" hidden></p>
 
-<div class="grafico">
+<!-- I PEZZI CHE ESISTONO SOLO SE ESISTE UN PIANO, e nascono spenti. Fino al 07/08/2026 la
+     pagina appena aperta mostrava un grafico vuoto, la sua legenda, il titolo «Sviluppo del
+     piano» senza sviluppo sotto, e per intero la sezione delle scelte: sei cursori e due
+     schermate di decisioni su un piano che non c'è ancora. Il conto esce dai due `return`
+     anticipati di `calc()` PRIMA di chiamare `aggiornaDecisioni`, quindi restava in pagina
+     quello che `costruisciDecisioni` aveva appena disegnato — compresi i comandi del secondo,
+     che con «una persona» nessuno ha chiesto.
+     Li accende e li spegne `mostraIlPiano()`, da un punto solo: erano quattro elementi in tre
+     rami diversi, cioè il modo sicuro per dimenticarne uno. -->
+<div class="grafico" id="riquadroGrafico" hidden>
   <svg id="svg" viewBox="0 0 880 330" role="img" aria-label="Il patrimonio anno per anno"></svg>
 </div>
-<p class="legenda">
+<p class="legenda" id="legendaGrafico" hidden>
   <span><i class="chip" style="background:#cfe0d6"></i> il patrimonio investito</span>
   <span><i class="chip" style="background:#dfe6ef"></i> i fondi pensione, non ancora riscossi</span>
 </p>
 <p class="nota inflazione" id="inflazione">&nbsp;</p>
 
-<div class="fasi">
+<div class="fasi" id="riquadroFasi" hidden>
   <h2>Sviluppo del piano</h2>
   <div id="fasi"></div>
 </div>
 
-<div class="decisioni" id="decisioni">
+<div class="decisioni" id="decisioni" hidden>
   <h2>Le scelte da compiere</h2>
   <p class="premessa" id="premessaScelte">&nbsp;</p>
 
@@ -1039,7 +1142,9 @@ intero, e le segnalazioni sono le benvenute.
     Coi rendimenti indicati, <span id="doveRende"></span>.</p>
 </div>
 
-<details>
+<!-- Anche questo è un pezzo del piano: chiuso mostra il solo titolo, ma è un titolo che promette
+     una tabella, e a modulo vuoto la tabella è vuota. -->
+<details id="annoPerAnno" hidden>
   <summary>Anno per anno</summary>
   <p class="scelta">Mostra gli importi in
     <label><input type="radio" name="euro" id="euroOggi" checked> euro di oggi</label>
@@ -2333,7 +2438,13 @@ function richieste(s){
       voci.push({testo: "l'importo del trattamento INPS", manca: x.pensVuoto});
     return {di: x.di, voci};
   });
-  return {finePiano, comuni, dei,
+  // QUANTE NE MANCANO ESCE DA QUI, non da chi la mostra. È lo stesso numero che governa il
+  // verdetto — la guardia più sotto si ferma se non è zero — e la riga in cima al modulo lo
+  // annuncia mentre si compila: due conteggi separati sono la causa della frase «bastano tre
+  // dati» sopra un verdetto che ne pretendeva sei.
+  const quanteMancano = comuni.filter(o => o.manca).length
+    + dei.reduce((a, g) => a + g.voci.filter(o => o.manca).length, 0);
+  return {finePiano, comuni, dei, quanteMancano,
           quante: comuni.length + dei.reduce((a, g) => a + g.voci.length, 0)};
 }
 
@@ -2355,6 +2466,128 @@ function componi(comuni, dei){
   const pezzi = comuni.length ? [elenco(comuni), ...gruppi] : gruppi;
   return pezzi.length > 1 && pezzi.some(p => p.includes(' e '))
     ? pezzi.join('; ') : elenco([...comuni, ...gruppi]);
+}
+
+// QUELLO CHE ESISTE SOLO SE ESISTE UN PIANO. Il grafico e la sua legenda, lo sviluppo, le
+// scelte e la tabella non sono parti della pagina: sono parti del risultato, e senza risultato
+// mostrano il proprio contenitore vuoto. Un punto solo perché i rami che tolgono il verdetto
+// sono tre, e quattro elementi spenti a mano in tre rami sono tre occasioni di dimenticarne uno.
+const PEZZI_DEL_PIANO = ['riquadroGrafico', 'legendaGrafico', 'riquadroFasi', 'decisioni',
+                         'annoPerAnno'];
+const mostraIlPiano = si => PEZZI_DEL_PIANO.forEach(k => EL(k).hidden = !si);
+
+// ============================================================================
+//  COSA STA ASSUMENDO IL CONTO MENTRE UN BLOCCO È CHIUSO.
+//
+//  Dal 07/08/2026 il modulo ha due strati: aperto quello che il verdetto pretende, richiudibile
+//  il resto. Nascondere caselle è onesto A UNA CONDIZIONE SOLA — che il piano non risulti più
+//  basso del vero senza dirlo. Chi non apre «Il TFR e i contributi» ottiene un conto senza il
+//  pregresso e senza versamenti, che per un cinquantenne sono decine di migliaia di euro.
+//  Queste righe sono il prezzo di quel silenzio, e stanno nel TITOLO del blocco: si leggono
+//  senza aprirlo. La stessa frase va accanto al risultato, che è dove il numero si legge.
+//
+//  DUE REGOLE che le tengono vere:
+//   · si nomina solo quello che è VUOTO. Uno zero scritto è una risposta — «non verso niente» —
+//     e avvisare chi ha risposto sarebbe rimproverargli di aver compilato;
+//   · si nomina solo quello che il conto ASCOLTEREBBE. Le caselle del TFR e dei contributi si
+//     spengono da sé per chi ha smesso di lavorare, e un avviso su una casella disattivata
+//     manderebbe a compilare il vuoto.
+//  Legge lo stato di `leggi()` e non le caselle: un riassunto scritto da un'altra fonte diverge
+//  dal conto al primo cambio, come facevano le cifre prima di `regole.mjs`.
+// ============================================================================
+function statoBlocchi(s){
+  const pc = v => fmt(v, 1) + '%';
+  // Una frase che segue un punto comincia in maiuscolo anche se l'ha composta un elenco. Le
+  // prime versioni scrivevano «…nel conto. versamento 1,2% della RAL»: nessun controllo lo vede,
+  // perché è italiano valido per chi legge carattere per carattere.
+  const Su = t => t.replace(/^./, c => c.toUpperCase());
+  // due persone nella stessa situazione parlano con una frase sola; se divergono si nomina chi
+  // riguarda, o si attribuirebbe a uno quello che vale per l'altro
+  const pari = liste => liste.length === 1 || liste[0].join('|') === liste[1].join('|');
+  const insieme = liste => pari(liste)
+    ? (liste[0].length ? Su(elenco(liste[0])) + '.' : '')
+    : s.indici.map(i => liste[i].length ? `${s.p[i].nome}: ${elenco(liste[i])}` : '')
+              .filter(Boolean).map(Su).join('; ') + '.';
+
+  // --- il TFR e i contributi -------------------------------------------------
+  // LE VOCI CHE MANCANO PORTANO IL PROPRIO NUMERO GRAMMATICALE. Contare gli elementi non basta:
+  // una voce sola può essere plurale, e «Non è contato i contributi» è uscito al primo scenario.
+  const dentro = [], fuori = [];
+  s.p.forEach(x => {
+    const c = [], m = [];
+    // il pregresso si chiede a chi ha ancora esercizi di attività: chi ha smesso l'ha già
+    // incassato e sta nel patrimonio, ed è la stessa condizione con cui la casella si spegne
+    if (x.ultimo >= ANNO0){
+      if (x.tfrGiaVuoto) m.push({testo: 'il TFR già accantonato', pl: false});
+      else if (x.tfrGia > 0) c.push(`TFR accantonato ${E0(x.tfrGia)}`);
+    }
+    if (!x.giaInPens){
+      if (x.pcVoiVuoto) m.push({testo: 'i contributi', pl: true});
+      else {
+        // uno zero scritto è una risposta, e va detta come la direbbe chi l'ha scritta: «non
+        // verso niente». «Versamento 0,0% della RAL» è lo stesso fatto in forma di modulo.
+        c.push(x.pcVoi > 0 ? `versamento ${pc(x.pcVoi)} della RAL` : 'nessun versamento');
+        if (x.pcDatVuoto) m.push({testo: 'il contributo del datore', pl: false});
+        else if (x.pcDat > 0) c.push(`${pc(x.pcDat)} dal datore`);
+      }
+      // resta un sintagma e non una proposizione: dentro un elenco di cose («TFR accantonato
+      // 52.000 €, versamento 1,2%, e il TFR nuovo resta in azienda») una frase intera stona
+      if (!x.tfrAlFondo) c.push('TFR nuovo in azienda');
+    }
+    dentro.push(c); fuori.push(m);
+  });
+  const mancaQualcosa = fuori.some(m => m.length);
+  const testi = m => m.map(o => o.testo);
+  const verbo = m => m.length > 1 || m[0].pl ? 'sono contati' : 'è contato';
+  const nonContato = !mancaQualcosa ? '' : (pari(fuori.map(testi))
+    ? `Non ${verbo(fuori[0])} ${elenco(testi(fuori[0]))}`
+    : 'Non sono contati ' + s.indici.map(i => fuori[i].length
+        ? `${elenco(testi(fuori[i]))} ${s.p[i].di}` : '').filter(Boolean).join('; '))
+    + ': il piano risulta più basso del vero.';
+  // IL TFR CHE MATURA NON È UNA CASELLA: è una quota fissa della retribuzione e nel conto entra
+  // comunque. Si dice solo quando qualcosa manca davvero, perché serve a impedire la lettura
+  // peggiore di tutte — «il TFR non è contato» — che è falsa proprio nella direzione che allarma.
+  // A blocco compilato non aggiungerebbe niente e allungherebbe il titolo.
+  EL('assuntoFondo').innerHTML = [
+    mancaQualcosa && !s.tuttoInPens ? 'Il TFR che matura ogni anno entra comunque nel conto.' : '',
+    insieme(dentro),
+    nonContato
+  ].filter(Boolean).join(' ');
+  // ACCANTO AL RISULTATO, dove il numero si legge. Non dentro `assunzioni`, che dichiara un'altra
+  // cosa (come il fondo viene preso): due dichiarazioni diverse in una riga sola si leggono come
+  // una sola, e la seconda non si legge.
+  EL('nonContato').innerHTML = mancaQualcosa && !s.tuttoInPens
+    ? `<b>Quello che il conto non sta contando.</b> ${nonContato}
+       <a href="#strFondo">Aggiungere TFR e contributi →</a>` : '';
+
+  // --- nome, crescita, ultimo anno -------------------------------------------
+  const pers = s.p.map(x => {
+    const c = [];
+    if (x.crescNom !== null)
+      c.push(`retribuzione ${x.crescNom < 0 ? '−' : '+'}${pc(Math.abs(x.crescNom))} l'anno`);
+    if (x.ultimoScritto !== null) c.push(`ultimo anno di lavoro ${x.ultimo}`);
+    return c;
+  });
+  EL('assuntoPersone').innerHTML = pers.every(c => !c.length)
+    ? (s.tuttoInPens ? 'I nomi servono solo alle frasi del piano.'
+       : 'La retribuzione resta ferma in euro di oggi, e il lavoro prosegue fino alla decorrenza.')
+    : insieme(pers);
+
+  // --- la spesa in pensione e l'abitazione -----------------------------------
+  const sp = [];
+  if (s.spesaPens !== null) sp.push(`in pensione ${E0(s.spesaPens)} al mese`);
+  if (s.casa.valore > 0) sp.push(`abitazione ${E0(s.casa.valore)}`);
+  EL('assuntoSpesa').innerHTML = sp.length ? Su(elenco(sp)) + '.'
+    : s.tuttoInPens
+      ? "Il piano è già tutto in pensione: vale la spesa di oggi. L'abitazione non entra nel conto."
+      : "In pensione vale la stessa spesa di oggi, e l'abitazione non entra nel conto.";
+
+  // --- le ipotesi -------------------------------------------------------------
+  // Qui non manca mai niente: ogni casella arriva compilata. Il titolo porta le cifre, così
+  // restano leggibili senza aprire — nascondere una scelta non è ometterla.
+  EL('assuntoIpotesi').innerHTML = `Patrimonio ${pc(s.rendNom * 100)}, fondo
+    ${pc(s.rendFondoNom * 100)}, inflazione ${pc(s.infl * 100)}; il piano si ferma
+    a ${fmt(s.etaFine)} anni.`;
 }
 
 // L'ULTIMO CONTO FATTO, per chi lo vuole portare via. Non si ricalcola al momento dello
@@ -2401,7 +2634,8 @@ function calc(){
   // invece di scriverlo, perché cambia con «una persona / due persone». Sta qui, prima delle
   // uscite anticipate, perché è la frase che chi arriva sulla pagina vuota legge per prima.
   const req = richieste(s);
-  const PAROLA = {4:'quattro', 5:'cinque', 6:'sei', 7:'sette', 8:'otto', 9:'nove', 10:'dieci'};
+  const PAROLA = {1:'uno', 2:'due', 3:'tre', 4:'quattro', 5:'cinque', 6:'sei', 7:'sette',
+                  8:'otto', 9:'nove', 10:'dieci'};
   const voci = g => g.voci.map(v => v.testo);
   // «per ciascuno» si può dire solo se a ciascuno serve davvero lo stesso: in una coppia con uno
   // già in pensione le due liste sono diverse, e accorparle prometterebbe a uno una casella che
@@ -2420,9 +2654,24 @@ function calc(){
   // Quello che resta è l'unica cosa che non si scopre riempiendo: QUALI, fra una trentina di
   // caselle, sono il minimo. E resta perché la frase e la guardia devono chiedere le stesse
   // cose: `come-parla.mjs` conta le etichette nominate qui e le confronta con quelle pretese.
+  // A CHE PUNTO SI È, accanto alle caselle. Il risultato dice già quali mancano, ma sta una
+  // schermata più in basso: mentre si compila, l'unico riscontro vicino alle caselle è questo.
+  // Non si annuncia niente a modulo intatto (non è ancora un progresso, sarebbe la stessa cosa
+  // detta due volte) e quando ci sono tutte la riga cambia mestiere: dice che da lì in poi si
+  // affina, che è l'unico invito ad aprire i blocchi del secondo strato.
+  const avanzamento = req.quanteMancano === 0
+    ? ` <b>Ci sono tutti</b>: quello che resta affina il conto.`
+    : req.quanteMancano < req.quante
+      ? ` Ne ${req.quanteMancano === 1 ? 'manca uno'
+                                       : 'mancano ' + PAROLA[req.quanteMancano]}.`
+      : '';
   EL('bastano').innerHTML = `Per il verdetto bastano
     <b>${PAROLA[req.quante] || req.quante} dati</b>: ${elenco(req.comuni.map(v => v.testo))}${
-    uguali || s.N === 1 ? ', ' : '; '}${parte}.`;
+    uguali || s.N === 1 ? ', ' : '; '}${parte}.` + avanzamento;
+
+  // I TITOLI DEI BLOCCHI CHIUSI. Anche questo sta PRIMA delle uscite anticipate: a modulo
+  // incompleto i blocchi sono chiusi per tutti, ed è lì che dire cosa contengono serve di più.
+  statoBlocchi(s);
 
   // CHI HA UNA DECORRENZA GIÀ TRASCORSA: da lì in giù una parte del modulo non ha più oggetto.
   // Le caselle si DISATTIVANO invece di essere ignorate in silenzio: un valore che il conto
@@ -2728,7 +2977,9 @@ function calc(){
   const comuni = soloMancanti(req.comuni);
   const dei = req.dei.map(g => ({di: g.di, voci: soloMancanti(g.voci)}))
                      .filter(g => g.voci.length);
-  const quanteMancano = comuni.length + dei.reduce((a, g) => a + g.voci.length, 0);
+  // lo stesso numero che la riga in cima annuncia, e viene da `richieste()`: contarlo di nuovo
+  // qui vorrebbe dire tenere allineati due conti che nessuno confronta
+  const quanteMancano = req.quanteMancano;
   const frase = componi(comuni, dei);
   // Un orizzonte già superato (età 20 per un cinquantenne, o un anno di nascita di un secolo
   // fa) dà un piano di zero esercizi: prima la pagina annunciava serenamente che «il patrimonio
@@ -2742,8 +2993,9 @@ function calc(){
     EL('vuoto').hidden = false;
     ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
-    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni'].forEach(k => EL(k).innerHTML = '');
+    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni','nonContato'].forEach(k => EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
+    mostraIlPiano(false);
     aggiornaSommario('', '');
     return;
   }
@@ -2756,12 +3008,15 @@ function calc(){
       + (frase.startsWith(',') ? '' : ' ') + frase + '.';
     ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
-    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni'].forEach(k =>
+    ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni','nonContato'].forEach(k =>
       EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
+    mostraIlPiano(false);
     aggiornaSommario('', '');   // senza verdetto non c'è niente da tenere sott'occhio
     return;
   }
+
+  mostraIlPiano(true);
 
   // LA DOMANDA È «QUANTO DURA», NON «QUANTO NE RESTA». Il residuo è un'altra cosa e da solo
   // non risponde: 2,8 milioni alla fine possono voler dire «non l'avete mai toccato» oppure
@@ -4164,6 +4419,17 @@ function ripristina(){
   } catch(e){ return false; }
 }
 
+// UN RIMANDO A UN BLOCCO DEL SECONDO STRATO LO APRE, oltre a portarci. Il browser espande da sé
+// un <details> quando il frammento punta a qualcosa che sta DENTRO, ma qui il frammento è il
+// blocco stesso: senza questa riga «Aggiungere TFR e contributi →» atterra su un titolo chiuso,
+// cioè mantiene metà della promessa e lascia il lettore a cercare il clic che mancava.
+addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const t = document.getElementById(a.getAttribute('href').slice(1));
+  if (t && t.classList.contains('strato')) t.open = true;
+});
+
 document.querySelectorAll('input,select').forEach(e => e.addEventListener('input', calc));
 document.querySelectorAll('input[name=euro]').forEach(e => e.addEventListener('change', calc));
 
@@ -4388,7 +4654,28 @@ costruisciDecisioni();
 // PRIMA DEL RIPRISTINO, come le decisioni: `ripristina()` scorre le caselle che trova in
 // pagina, e quelle costruite dopo non le rivedrebbe mai più.
 costruisciComposizione();
+
+// COM'ERA IL MODULO APPENA COSTRUITO. Serve una riga dopo, per sapere quali blocchi del secondo
+// strato contengono qualcosa di scritto: senza questa fotografia il confronto sarebbe contro la
+// stringa vuota, e le caselle che nascono già compilate non si potrebbero distinguere.
+// Va presa dopo `costruisciComposizione`, che crea da sé le due tendine delle ipotesi.
+const COM_ERA = new Map([...document.querySelectorAll('.strato input, .strato select')]
+  .map(e => [e.id, e.value]));
 const avevaDati = ripristina();
+
+// UN BLOCCO CHE CONTIENE UN DATO SI APRE DA SÉ. Chi torna sul sito ha già compilato TFR,
+// contributi o spesa in pensione, e ritrovare i propri numeri dietro un titolo chiuso è
+// perderli: il secondo strato serve a non chiedere tutto subito, non a nascondere le risposte
+// già date.
+// LE IPOTESI RESTANO CHIUSE ANCHE COMPILATE, e non è un'eccezione arbitraria: il loro titolo
+// porta tutte e quattro le cifre, quindi lì non si perde niente. Sono anche l'unico blocco che
+// si riempie DA SÉ — il rendimento discende dalla composizione del patrimonio — e aprirlo a
+// chiunque abbia scritto quanto ha significherebbe tenerlo sempre aperto.
+document.querySelectorAll('.strato').forEach(d => {
+  if (d.id === 'strIpotesi') return;
+  if ([...d.querySelectorAll('input,select')].some(e => COM_ERA.get(e.id) !== e.value))
+    d.open = true;
+});
 // la tendina non viene salvata insieme al resto perché non ha niente di suo da salvare: si
 // ricava dal rendimento appena ripristinato, che è l'unica cosa che il conto legge davvero
 allineaComparto();

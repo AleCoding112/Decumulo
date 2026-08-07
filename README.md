@@ -256,6 +256,46 @@ La terza riga è costata cara: la quota in capitale partiva dal massimo — 0,6 
 il secondo, resti della pagina privata — e quella scelta mai presa **spostava anche il punto più
 alto della contribuzione**, che dipende da come il fondo verrà riscosso (31/07/2026).
 
+**4. Il modulo ha due strati, e nello strato aperto ci sta solo quello che il verdetto pretende
+più il fondo pensione.** (07/08/2026)
+
+Aperto: `quanti`, nascita, RAL, i due della pensione INPS, i due del fondo, le quattro classi del
+patrimonio, la spesa. **Dodici controlli.** Tutto il resto sta in quattro blocchi che si aprono
+con un clic: il TFR e i contributi, i dettagli sulle persone, la spesa in pensione e
+l'abitazione, le ipotesi.
+
+**Una casella non si aggiunge allo strato aperto senza toglierne un'altra.** Il tetto è misurato
+da `a-schermo.mjs` sull'assetto `apertura`, e `come-parla.mjs` controlla che ogni casella stia
+dalla parte giusta.
+
+Nasce da un riscontro esterno — *«troppo completo, strozzi il soggetto con le mille domande»* — e
+da una misura: **37 controlli visibili all'apertura, di cui sei necessari**, col risultato a
+2.784 px su desktop e **5,3 schermate su un telefono**. Dopo: **12 controlli**, risultato a
+1.881 px e **3,1 schermate**, pagina intera da 9,7 a 4,5 schermate. La seconda metà del riscontro
+è il vincolo che ha deciso la forma: *«tutte quelle cose serve saperle»*, quindi non si toglie
+niente, si mette in due tempi.
+
+**LA CONDIZIONE A CUI NASCONDERE È ONESTO, e senza questa il resto non va fatto:** ogni blocco
+chiuso dichiara nel titolo cosa il conto sta assumendo, e la stessa frase compare accanto al
+risultato (`statoBlocchi`, `#nonContato`). Chi non apre «Il TFR e i contributi» ottiene un piano
+**più basso del vero**, e deve leggerlo senza aprire niente. Due regole tengono vere quelle righe:
+si nomina solo quello che è **vuoto** (uno zero scritto è una risposta), e solo quello che il
+conto **ascolterebbe** (le caselle spente per chi è già in pensione non si chiedono).
+
+**Due difetti che il secondo strato ha chiuso**, e che stavano proprio dove guarda chi arriva:
+la sezione delle scelte era disegnata per intero sul modulo vuoto (sei cursori su un piano
+inesistente, compresi i comandi di un secondo che con «una persona» nessuno ha chiesto), e il
+grafico vuoto con la sua legenda. Ora sono pezzi del **risultato**: `mostraIlPiano()` li accende
+solo quando un verdetto c'è.
+
+**LA TRAPPOLA, misurata e non vista:** un `<details>` chiuso **non** nasconde un figlio a cui una
+classe dà un `display`. È lo stesso meccanismo che la regola di stampa sfrutta al contrario per
+aprirli tutti su carta. I figli qui dentro sono griglie (`.due`, `.caselle`), quindi i quattro
+blocchi erano chiusi e mostravano ugualmente tutte le loro caselle: 28 controlli invece di 12,
+con la pagina che sembrava a posto. Serve
+`.strato:not([open]) > *:not(summary){display:none}`, e i due controlli nuovi falliscono
+entrambi se sparisce.
+
 ---
 
 ## Cosa aggiornare a mano, e quando

@@ -61,7 +61,11 @@ const ASSETTI = {
   // e il riquadro dell'esito non venivano MAI disegnati, e nessuna delle quarantaquattro
   // combinazioni li avrebbe visti sbordare. Le caselle compaiono solo con la scelta compiuta.
   'cambio di abitazione': {...DATI, casaValore:320000, casaCosa:'affitto',
-                           casaAnno:2040, casaCanone:950}
+                           casaAnno:2040, casaCanone:950},
+  // IL MODULO COM'È QUANDO SI APRE, che è l'unico assetto che vede chiunque arrivi e l'unico
+  // che nessun altro controllo guardava: tutti gli altri iniettano dati. Da qui si conta quante
+  // caselle sono davvero in pagina, che è la misura da cui è nato il secondo strato.
+  apertura: {}
 };
 const pagine = readdirSync(SITO).filter(f => f.endsWith('.html'));
 const dir = mkdtempSync(join(tmpdir(), 'decumulo-schermo-'));
@@ -147,9 +151,17 @@ addEventListener('load', () => setTimeout(() => {
                  || e.closest('label') || e.title;
       if (!ha) senzaNome.push(e.id || e.name || e.type);
     }
+    // QUANTE CASELLE SONO DAVVERO IN PAGINA. Il conto va fatto qui e non sul sorgente: un blocco
+    // chiuso nasconde i propri figli con un meccanismo del browser, e basta un display scritto
+    // su una classe — le griglie qui dentro ce l'hanno — perché quel meccanismo non spenga
+    // niente. È già successo: i quattro blocchi erano chiusi e mostravano tutte le loro caselle.
+    // (Questo commento sta dentro un template literal: niente apici inversi, o la stringa muore.)
+    const campi = [...d.querySelectorAll('input, select')]
+      .filter(e => e.type !== 'hidden' && e.offsetParent !== null).map(e => e.id);
+
     out.push({p: i.dataset.p + (i.dataset.a ? ' (' + i.dataset.a + ')' : ''),
               w: +i.dataset.w, ecc: r.scrollWidth - r.clientWidth,
-              chi: [...new Set(chi)].slice(0, 3), senzaNome,
+              chi: [...new Set(chi)].slice(0, 3), senzaNome, campi,
               schiacciati: [...new Set(schiacciati)].slice(0, 5),
               fantasmi: [...new Set(visibiliMaNascosti)]});
   }
@@ -208,6 +220,23 @@ if (anonimi.length){
     const tutti = [...new Set(rotti.flatMap(x => x.fantasmi))];
     for (const f of tutti) console.log('      · ' + f);
   } else console.log('  ok  ogni elemento con «hidden» è davvero invisibile');
+}
+// --- quante caselle vede chi arriva ----------------------------------------
+// La misura da cui è nato il secondo strato: 37 controlli all'apertura, di cui sei necessari.
+// Il tetto è dodici, cioè lo strato aperto per una persona (`quanti`, nascita, RAL, i due della
+// pensione INPS, i due del fondo, le quattro classi del patrimonio, la spesa). Una casella in
+// più va tolta di lì o messa in un blocco: è la regola scritta nel README, e questo la misura.
+{
+  const TETTO = 12;
+  const ap = esiti.filter(x => /\(apertura\)/.test(x.p));
+  const troppi = ap.filter(x => x.campi.length > TETTO);
+  if (!ap.length){ ko++; console.log('  ✗ nessuna misura dell\'apertura: manca l\'assetto'); }
+  else if (troppi.length){
+    ko++;
+    console.log(`  ✗ all'apertura si vedono più di ${TETTO} caselle:`);
+    for (const x of troppi) console.log(`      a ${x.w} px ne mostra ${x.campi.length}: `
+      + x.campi.join(', '));
+  } else console.log(`  ok  all'apertura si vedono ${ap[0].campi.length} caselle, non più di ${TETTO}`);
 }
 // --- e la stampa: su carta il dettaglio è la parte verificabile -------------
 // Un <details> chiuso non si apre col CSS, e per mesi si è creduto di sì. Qui si stampa davvero

@@ -1197,5 +1197,58 @@ console.log('\n— chi è già in pensione —');
     !/locazione/.test(nudo(piccola)('fasi')));
 }
 
+// ============================================================================
+//  LO STRATO APERTO, e cosa ci può stare.
+//
+//  Dal 07/08/2026 il modulo ha due strati: aperto quello che il verdetto pretende più il fondo
+//  pensione, richiudibile tutto il resto. Nasce da un'osservazione esterna — «troppo completo,
+//  strozzi il soggetto con le mille domande» — e da una misura: 37 controlli visibili
+//  all'apertura, di cui sei necessari, col risultato a cinque schermate su un telefono.
+//
+//  UNO STRATO SI RIEMPIE DA SÉ, una casella alla volta, e nessun controllo se ne accorge: i test
+//  leggono numeri, `come-parla` legge frasi, `a-schermo` misura larghezze. Qui si guarda dove
+//  STANNO le caselle, che è l'unica cosa che quella misura può proteggere nel tempo.
+// ============================================================================
+{
+  console.log('\n— lo strato aperto del modulo —');
+  // i blocchi non si annidano: il primo `</details>` chiude quello aperto
+  const blocchi = [...PAGINA.matchAll(/<details[^>]*class="strato[^"]*"[\s\S]*?<\/details>/g)]
+    .map(m => [m.index, m.index + m[0].length]);
+  const dove = id => PAGINA.indexOf(`id="${id}"`);
+  const chiuso = id => dove(id) >= 0 && blocchi.some(([a, b]) => dove(id) > a && dove(id) < b);
+
+  // LE CASELLE DELLO STRATO APERTO, e non una di più. Le quattro classi del patrimonio
+  // (`cl0`-`cl3`) le costruisce il codice e nel sorgente non si vedono: stanno in `.caselle
+  // strette`, fuori da ogni blocco, e a contarle è l'apertura misurata in Chrome.
+  const APERTE = ['quanti', 'nascita0', 'ral0', 'pens0', 'annoPens0', 'fondo0', 'iscr0', 'spesa'];
+  const NELLO_STRATO = ['nome0', 'cresc0', 'ultimo0', 'tfrGia0', 'annoLav0', 'tfrDove0',
+                        'pcVoi0', 'pcDat0', 'spesaPens', 'casaValore',
+                        'rend', 'comparto', 'formaFondo', 'rendFondo', 'infl', 'etaFine'];
+  c('i quattro blocchi del secondo strato ci sono tutti', blocchi.length === 4,
+    `trovati ${blocchi.length}`);
+  c('quello che il verdetto pretende sta nello strato aperto',
+    APERTE.every(id => !chiuso(id)), APERTE.filter(chiuso).join(', ') || 'nessuna al chiuso');
+  c('e tutto il resto sta in un blocco che si apre',
+    NELLO_STRATO.every(chiuso), NELLO_STRATO.filter(id => !chiuso(id)).join(', ') || 'tutte dentro');
+
+  // LA CONDIZIONE A CUI NASCONDERE È ONESTO: ogni blocco dichiara cosa il conto sta assumendo
+  // mentre è chiuso. Senza quella riga il piano risulterebbe più basso del vero e la pagina non
+  // lo direbbe, che è il difetto che il secondo strato poteva introdurre.
+  const titoli = [...PAGINA.matchAll(/<details[^>]*class="strato[^"]*"[\s\S]*?<\/summary>/g)]
+    .map(m => m[0]);
+  c('ogni blocco dichiara nel titolo cosa il conto assume mentre è chiuso',
+    titoli.length === 4 && titoli.every(t => /class="assunto"/.test(t)),
+    `${titoli.filter(t => /class="assunto"/.test(t)).length}/4`);
+
+  // le decisioni sono parte del RISULTATO, non della pagina: disegnate sul modulo vuoto
+  // mostravano sei cursori e i comandi di un secondo che nessuno aveva chiesto
+  c('le scelte da compiere nascono spente',
+    /<div class="decisioni" id="decisioni" hidden>/.test(PAGINA));
+  // e il contenuto di un blocco chiuso non si vede: senza questa regola le griglie qui dentro
+  // hanno un `display` proprio, che riaccende quello che il browser aveva spento
+  c('e il contenuto dei blocchi chiusi resta chiuso',
+    /\.strato:not\(\[open\]\) > \*:not\(summary\)\{display:none\}/.test(PAGINA));
+}
+
 console.log(ko ? `\n✗ ${ko} controlli falliti` : '\n✓ il calcolatore parla come deve');
 if (ko) process.exitCode = 1;
