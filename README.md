@@ -256,6 +256,48 @@ La terza riga è costata cara: la quota in capitale partiva dal massimo — 0,6 
 il secondo, resti della pagina privata — e quella scelta mai presa **spostava anche il punto più
 alto della contribuzione**, che dipende da come il fondo verrà riscosso (31/07/2026).
 
+**6. Una pagina per ogni domanda che la gente digita, e la vetrina sta nella cornice.**
+(08/08/2026)
+
+**La cornice**, misurata su come un risultato di ricerca viene tagliato: **titolo ≤ 60
+caratteri, descrizione fra 135 e 158**, con le parole che si cercano davanti. Erano fuori misura
+**cinque titoli su dieci** (fino a 81) e **dieci descrizioni su dieci** (fino a 187): si erano
+allungate una parola alla volta, e nessun controllo le guardava. Adesso lo fa `anteprime.mjs`,
+che controlla anche che due pagine non portino la stessa vetrina.
+
+**Le parole sono quelle che si digitano, non quelle che suonano meglio.** `il-metodo.html` si
+intitolava «Come sono fatti i conti, e cosa non sanno»: una bella frase e una vetrina cieca,
+perché nessuno cerca quelle parole. E «TFR **in azienda o nel** fondo pensione» è l'ordine che
+usano tutti i primi risultati, cioè l'ordine in cui la frase viene pensata.
+
+**«Conviene» si può usare nel titolo, come domanda; mai nel testo, come verdetto.** È la parola
+che tutti cercano, e tenerla fuori significava competere su una formulazione che nessuno digita.
+Dentro, la risposta resta quella di sempre: *dipende da questi numeri, ed eccoli*.
+
+**Una pagina di ricerca deve chiudere con un numero**, e il numero deve passare da `regole.mjs`
+e farsi ricalcolare dal motore in `verifiche/esempi.mjs`. È la lezione di
+`tfr-fondo-o-azienda.html`: chi arriva da una ricerca e trova solo una spiegazione se ne va senza
+la cifra per cui era venuto. `fondo-pensione-o-etf.html` nasce così — `ESEMPIO_FONDO`, e quattro
+controlli che confrontano contributi, costo in busta e aliquota con quelli del calcolatore.
+
+**Il confronto fondo/ETF si fa a parità di rendimento.** Mettere il comparto al 3% e l'ETF al 7%
+direbbe qualcosa sui mercati, che nessuno sa. Tenendoli uguali resta sul tavolo solo ciò che si
+misura: quanto entra per ogni euro uscito dalla busta, l'imposta all'uscita, il costo della
+forma. È anche quello che fa il cursore del calcolatore, che quasi nessuno riconosce come il
+confronto fondo/ETF.
+
+**Cosa NON si fa**: dati strutturati `FAQPage` (sarebbero una seconda copia del testo, che
+diverge al primo ritocco); inseguire «calcolo pensione», che è un'altra domanda ed è presidiata;
+ripetere parole per compiacere un motore.
+
+**Restano scoperte due ricerche**, entrambe con volume e senza un presidio serio: «quanto si
+deduce / risparmio fiscale del fondo pensione» e «quanti soldi servono per smettere di lavorare»
+(la regola del 4%, dove nessuno tiene conto della pensione INPS). Si scrivono quando la prima
+porta avrà mostrato se funziona.
+
+**E il collo di bottiglia non è qui**: mancano i link in entrata. Tre pagine ben mirate valgono
+meno di un link da un sito che conta.
+
 **5. Il vestito ha tre regole, e stanno insieme.** (07/08/2026)
 
 **Due caratteri, e si dividono i mestieri.** `--voce` (Georgia) dove il sito *parla*: la testata,

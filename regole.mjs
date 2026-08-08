@@ -627,6 +627,65 @@ export const ESEMPIO_TFR = { anni: [10, 20, 35], base: 20, infl: 0.02 };
   }).filter(c => c.anni !== null);
 }
 
+// --- FONDO PENSIONE O ETF: gli stessi soldi, per due strade -----------------
+// La pagina `fondo-pensione-o-etf.html` risponde alla ricerca più frequente della materia, e
+// deve chiudere con un numero: chi ci arriva cercando «conviene?» e trova solo una spiegazione
+// se ne va senza la cifra per cui era venuto. È la lezione già pagata su
+// `tfr-fondo-o-azienda.html`.
+//
+// IL CONFRONTO È A PARITÀ DI RENDIMENTO, ed è la scelta che rende onesto il conto. Mettere il
+// comparto al 3% e l'ETF al 7% direbbe qualcosa sui mercati, che nessuno sa; tenendoli uguali
+// resta sul tavolo SOLO quello che si può misurare: quanti soldi entrano per ogni euro uscito
+// dalla busta, l'imposta all'uscita e il costo della forma pensionistica. Chi vuole spostare i
+// rendimenti lo fa nel calcolatore, dove sono due caselle.
+//
+// LA MISURA È «GLI STESSI SOLDI»: da una parte quello che entra nel fondo, dall'altra quello che
+// resta in busta e va nell'ETF. Non sono la stessa cifra, ed è esattamente il punto — il costo
+// netto è uno solo, ma nel fondo ci arriva anche la quota del datore e la parte che l'IRPEF non
+// prende. È lo stesso spostamento che fa il cursore del calcolatore.
+//
+// LA BASE IMPONIBILE DEL FONDO SONO I VERSAMENTI, non il montante: i rendimenti hanno già pagato
+// in capo al fondo, e i rendimenti dell'ETF sono già netti per come si chiedono nel calcolatore.
+// Stessa regola di ESEMPIO_TFR, e vale la stessa avvertenza: `verifiche/esempi.mjs` ricalcola
+// contributi, costo in busta e aliquota col motore vero, e fallisce se divergono di più di un euro.
+export const ESEMPIO_FONDO = { anni: 25, infl: 0.02 };
+{
+  const f = ESEMPIO_FONDO;
+  f.ral = ESEMPIO.ral; f.pcLav = ESEMPIO.pcLav; f.pcDat = ESEMPIO.pcDat;
+  f.lav = ESEMPIO.lav; f.dat = ESEMPIO.dat;
+  f.dentro = ESEMPIO.dentro;                  // quanto entra nel fondo ogni anno
+  f.costa  = ESEMPIO.costa;                   // quanto costa in busta, al netto dello sconto IRPEF
+  f.volte  = ESEMPIO.volte;
+
+  // il comparto è quello predefinito del calcolatore: se un giorno cambia, la pagina lo segue
+  const iBil = V('COMPARTI').findIndex(([n]) => n === 'Bilanciato');
+  f.comparto = V('COMPARTI')[iBil][0].toLowerCase();
+  f.rend = V('COMPARTI')[iBil][1];
+  // quanto costa in più la stessa gestione fuori da un fondo negoziale, sullo stesso comparto
+  f.piuAperto = V('FORME_FONDO').find(([n]) => n === 'aperto')[1][iBil];
+  f.piuPip    = V('FORME_FONDO').find(([n]) => n === 'PIP')[1][iBil];
+
+  const reale = r => (1 + r) / (1 + f.infl) - 1;
+  const montante = (a, r, n) => Math.abs(r) > 1e-9 ? a * ((1 + r) ** n - 1) / r : a * n;
+  f.aliquota = Math.max(V('ALIQ_FONDO_MIN'),
+    V('ALIQ_FONDO_MAX') - Math.max(0, f.anni - 15) * V('ALIQ_FONDO_PASSO'));
+
+  // un caso = quanto entra nel fondo, quanto esce dalla busta, e quanto costa in più la forma
+  f.caso = (dentro, costa, piu = 0) => {
+    const nel  = montante(dentro, reale(f.rend - piu), f.anni);
+    const base = dentro * f.anni;
+    const fondo = nel - base * f.aliquota;
+    const etf   = montante(costa, reale(f.rend), f.anni);
+    return { nel, base, imposta: base * f.aliquota, fondo, etf, diff: fondo - etf };
+  };
+  // 1. il caso base: fondo negoziale, col contributo del datore
+  Object.assign(f, f.caso(f.dentro, f.costa));
+  // 2. chi versa per conto proprio: stessa cifra dalla busta, ma nel fondo entra solo la sua
+  f.soli = f.caso(f.lav, f.costa);
+  // 3. ...e per giunta in un fondo aperto, che sullo stesso comparto costa di più ogni anno
+  f.soliAperto = f.caso(f.lav, f.costa, f.piuAperto);
+}
+
 export const TESTI = {
   tetto:            eur(V('TETTO_DEDUZIONE')),
   quota:            pc(V('QUOTA_ORDINARIA')),
@@ -743,6 +802,22 @@ export const TESTI = {
   // non resta un numero scritto a mano che nessuno ricalcola se il passo cambia.
   aliqFondoAnni: String(15 + Math.ceil(
     (V('ALIQ_FONDO_MAX') - V('ALIQ_FONDO_MIN')) / V('ALIQ_FONDO_PASSO'))),
+  // fondo pensione o ETF: le cifre della pagina, tutte da ESEMPIO_FONDO
+  exFoAnni:         String(ESEMPIO_FONDO.anni),
+  exFoComparto:     ESEMPIO_FONDO.comparto,
+  exFoRend:         pc(ESEMPIO_FONDO.rend),
+  exFoAliquota:     pc(ESEMPIO_FONDO.aliquota),
+  exFoNel:          eur(ESEMPIO_FONDO.nel),
+  exFoImposta:      eur(ESEMPIO_FONDO.imposta),
+  exFoFondo:        eur(ESEMPIO_FONDO.fondo),
+  exFoEtf:          eur(ESEMPIO_FONDO.etf),
+  exFoDiff:         eur(ESEMPIO_FONDO.diff),
+  exFoSoliFondo:    eur(ESEMPIO_FONDO.soli.fondo),
+  exFoSoliEtf:      eur(ESEMPIO_FONDO.soli.etf),
+  exFoSoliDiff:     eur(ESEMPIO_FONDO.soli.diff),
+  exFoApertoDiff:   eur(ESEMPIO_FONDO.soliAperto.diff),
+  costoAperto:      pc(ESEMPIO_FONDO.piuAperto, 2),
+  costoPip:         pc(ESEMPIO_FONDO.piuPip, 2),
   exTfrDoveGirano: ESEMPIO_TFR.doveGirano.length
     ? ESEMPIO_TFR.doveGirano.map(c => `${c.nome.toLowerCase()} (dal ${c.anni}&deg; anno)`).join(', ')
     : ''

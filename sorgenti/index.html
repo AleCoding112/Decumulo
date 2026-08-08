@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Decumulo — quanto durano i risparmi dopo la fine del lavoro</title>
-<meta name="description" content="Calcolatore del decumulo per lavoratori dipendenti privati: pensione INPS, fondo pensione, TFR e risparmi, anno per anno e in euro di oggi. I dati restano nel browser.">
+<meta name="description" content="Calcolatore del decumulo per dipendenti privati: pensione INPS, fondo pensione, TFR e risparmi, anno per anno in euro di oggi. I dati restano nel browser.">
 <link rel="canonical" href="https://decumulo.it/">
 <style>
   :root{
@@ -1119,7 +1119,8 @@ intero, e le segnalazioni sono le benvenute.
     <p class="spiega"><b>L'azienda versa la propria quota solo se la versa anche il lavoratore</b>,
     e non aumenta oltre il <b>minimo contrattuale</b>: fin lì si prende il contributo dell'azienda
     più lo sconto IRPEF, <b>quello che si versa in più vale il solo sconto</b>.
-    <a href="contributo-datore.html">Come funziona, coi conti →</a></p>
+    <a href="contributo-datore.html">Come funziona, coi conti →</a>
+    <a href="fondo-pensione-o-etf.html">Fondo pensione o ETF →</a></p>
     <div id="decVersare"></div>
   </div>
 
@@ -3126,9 +3127,9 @@ function calc(){
     t.innerHTML = `<u>Decumulo sostenibile</u>
       <em>Il patrimonio non si riduce</em> in nessuno dei
       ${r.annoFine - ANNO0 + 1} anni del piano.`;
-    sub.innerHTML = `Le entrate coprono la spesa e l'eccedenza si accumula: al
+    sub.innerHTML = `Le entrate coprono la spesa e l'eccedenza si accumula: nel
       ${r.annoFine} restano <b>${E0(r.finale)}</b>. ` + margine;
-    sommarioDelTitolo(`non si riduce mai: al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
+    sommarioDelTitolo(`non si riduce mai: nel ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
   } else {
     t.className = 'risposta su';
     const giu = cala[0].anno;
@@ -3137,7 +3138,7 @@ function calc(){
     const min = r.righe.filter(g => g.anno >= giu).reduce((a, b) => b.patr < a.patr ? b : a);
     t.innerHTML = `<u>Decumulo sostenibile</u>
       <em>Il patrimonio arriva al ${r.annoFine}</em> con un residuo di ${E0(r.finale)}.`;
-    sommarioDelTitolo(`al ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
+    sommarioDelTitolo(`nel ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
     sub.innerHTML = `Il patrimonio inizia a ridursi dal ${giu}. Il punto più basso è nel
       <b>${min.anno}</b>: ${E0(min.patr)}${min.anno < r.annoFine ? ', in ripresa negli anni successivi' : ''}. `
       + margine;
@@ -3317,7 +3318,7 @@ function calc(){
     } else if (r.annoZero === null){
       const q2 = spesaSostenibile(sotto);
       EL('tenuta').innerHTML = capo + `il piano regge lo stesso` + (q === null || q2 === null
-        ? `, e al ${r.annoFine} restano <b>${E0(p.finale)}</b>.`
+        ? `, e nel ${r.annoFine} restano <b>${E0(p.finale)}</b>.`
         : `: la spesa massima sostenibile passa da ${E50(q)} a <b>${E50(q2)}</b> al mese.`) + coda;
     } else if (p.annoZero < r.annoZero){
       EL('tenuta').innerHTML = capo + `il patrimonio si esaurisce nel

@@ -108,6 +108,39 @@ const attr = (h, re) => (h.match(re) || [, ''])[1];
   const divergono = pagine.filter(p =>
     attr(testo[p], /<title>([\s\S]*?)<\/title>/).trim() !== attr(testo[p], /property="og:title" content="([^"]*)"/));
   c('il titolo della scheda è quello della pagina', divergono.length === 0, divergono.join(', '));
+
+  // --- LA VETRINA STA DENTRO LA CORNICE ------------------------------------
+  // Un risultato di ricerca ha una misura, e chi la supera viene TAGLIATO: si perde sempre la
+  // coda, cioè la parte che convince a cliccare. L'08/08/2026 erano fuori misura cinque titoli su
+  // dieci (fino a 81 caratteri) e DIECI descrizioni su dieci (fino a 187) — allungate una parola
+  // alla volta, senza che nessun controllo le guardasse. Le due misure sono quelle pratiche di
+  // Google: ~60 caratteri per il titolo, ~158 per la descrizione.
+  // La banda ha anche un MINIMO: una descrizione di sessanta caratteri non è concisa, è una
+  // riga di spazio regalata a nessuno.
+  {
+    const testa = (p, re) => attr(testo[p], re).replace(/\s+/g, ' ').trim();
+    const TIT = 60, DES_MIN = 135, DES_MAX = 158;
+    const lunghi = pagine.map(p => [p, testa(p, /<title>([\s\S]*?)<\/title>/)])
+      .filter(([, t]) => t.length > TIT);
+    c(`ogni titolo sta in ${TIT} caratteri, o il risultato lo taglia`, lunghi.length === 0,
+      lunghi.map(([p, t]) => `${p}: ${t.length}`).join(' · '));
+
+    const fuori = pagine.map(p => [p, testa(p, /name="description" content="([^"]*)"/)])
+      .filter(([, d]) => d.length > DES_MAX || d.length < DES_MIN);
+    c(`e ogni descrizione sta fra ${DES_MIN} e ${DES_MAX}`, fuori.length === 0,
+      fuori.map(([p, d]) => `${p}: ${d.length}`).join(' · '));
+
+    // DUE PAGINE CON LA STESSA VETRINA competono fra loro per la stessa ricerca, e il motore ne
+    // sceglie una. Oggi sono tutte diverse: è una proprietà da mantenere, non da riconquistare.
+    const doppioni = (re, come) => {
+      const visti = new Map();
+      for (const p of pagine){ const k = testa(p, re); visti.set(k, [...(visti.get(k) || []), p]); }
+      return [...visti.values()].filter(v => v.length > 1).map(v => `${come}: ${v.join(' = ')}`);
+    };
+    const uguali = [...doppioni(/<title>([\s\S]*?)<\/title>/, 'titolo'),
+                    ...doppioni(/name="description" content="([^"]*)"/, 'descrizione')];
+    c('e nessuna pagina porta la vetrina di un\'altra', uguali.length === 0, uguali.join(' · '));
+  }
 }
 
 // --- 3. LE BRICIOLE DICHIARATE SONO QUELLE MOSTRATE -------------------------

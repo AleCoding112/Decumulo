@@ -27,7 +27,7 @@
 //  fixture scritto a mano proverebbe che il motore è coerente con sé stesso, che non è la domanda.
 // ============================================================================
 import fs from 'node:fs';
-import { REGOLE, TESTI, ESEMPIO_TFR, irpefNetta } from '../regole.mjs';
+import { REGOLE, TESTI, ESEMPIO_TFR, ESEMPIO_FONDO, irpefNetta } from '../regole.mjs';
 
 const V = k => REGOLE[k].val;
 
@@ -51,7 +51,11 @@ globalThis.document = {
   querySelectorAll: () => []
 };
 // `aliquota` e `aliquotaTfr` servono per il lato fondo, dove il confronto è sulla regola.
-const M = new Function(src + '\nreturn {leggi, simula, aliquota, aliquotaTfr, irpefNetta};')();
+// `contributi` e `costoAnnuo` servono a `fondo-pensione-o-etf.html`: sono le due regole da cui
+// dipende tutta la pagina — quanto entra nel fondo e quanto costa in busta — e in `regole.mjs`
+// esistono in una seconda stesura.
+const M = new Function(src +
+  '\nreturn {leggi, simula, aliquota, aliquotaTfr, irpefNetta, contributi, costoAnnuo};')();
 
 // --- i controlli ------------------------------------------------------------
 let ko = 0, n = 0;
@@ -169,6 +173,55 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
   t(`${k} arriva al motore da regole.mjs`,
     vicino(M.aliquota(prova), V(k), 1e-12),
     `il motore usa ${M.aliquota(prova)}, REGOLE dichiara ${V(k)}`);
+
+// --- 6. fondo pensione o ETF: le tre regole da cui dipende la pagina --------
+// `fondo-pensione-o-etf.html` chiude con una cifra, e quella cifra poggia su tre numeri soli:
+// quanto entra nel fondo versando la quota minima, quanto costa in busta farlo, e con quale
+// aliquota esce alla fine. La capitalizzazione che ci sta intorno è interesse composto, che non
+// può divergere; queste tre invece sono REGOLE, e in `regole.mjs` esistono in seconda stesura.
+//
+// PERCHÉ NON END-TO-END. Come per il lato «fondo» del TFR, il montante finale non è isolabile:
+// dentro il fondo i contributi si mescolano al TFR e nessuna voce dice quanto ne è venuto da
+// dove. Si controlla quindi la regola, che è la cosa che può cambiare sotto i piedi.
+{
+  const f = ESEMPIO_FONDO;
+  // la persona dell'esempio: versa ZERO oggi, e il confronto è «cosa succede se versa il minimo».
+  // Con `pcVoi0 = 0` il costo che il motore calcola è esattamente quello di passare da zero alla
+  // quota, che è la cifra che la pagina pubblica.
+  DATI = {
+    quanti: '1', nome0: 'A', nascita0: ANNO0 - 40,
+    ral0: f.ral, cresc0: '', ultimo0: ANNO0 + f.anni - 1,
+    pens0: 1500, annoPens0: ANNO0 + f.anni,
+    fondo0: '', pcVoi0: 0, pcDat0: f.pcDat, iscr0: ANNO0,
+    tfrDove0: 'fondo', tfrGia0: '', annoLav0: '',
+    forma0: 'vita', quotaCap0: 0, rita0: ANNO0 + f.anni,
+    cl3: 50000, spesa: 1500, spesaPens: '',
+    rend: f.rend * 100, infl: f.infl * 100, rendFondo: f.rend * 100, etaFine: 95
+  };
+  const x = M.leggi().p[0];
+
+  const dentro = M.contributi(x, f.pcLav).tot;
+  t('quanto entra nel fondo versando la quota minima',
+    vicino(dentro, f.dentro),
+    `motore ${eur(dentro)} · regole.mjs ${eur(f.dentro)}`);
+
+  const costa = M.costoAnnuo(x, f.pcLav);
+  t('quanto costa in busta, al netto dello sconto IRPEF',
+    vicino(costa, f.costa),
+    `motore ${eur(costa)} · regole.mjs ${eur(f.costa)}`);
+
+  t(`l'aliquota all'uscita dopo ${f.anni} anni di iscrizione`,
+    vicino(M.aliquota(f.anni), f.aliquota, 1e-12),
+    `motore ${(M.aliquota(f.anni) * 100).toFixed(2)}% · regole.mjs ${(f.aliquota * 100).toFixed(2)}%`);
+
+  // E IL VERSO DELLE TRE CIFRE PUBBLICATE, che è quello che la pagina afferma: il vantaggio si
+  // assottiglia togliendo il datore, e ancora di più pagando i costi di un fondo aperto. Se un
+  // domani un parametro si muovesse tanto da rovesciarne l'ordine, la pagina direbbe il falso
+  // con tutte le cifre giuste.
+  t('il vantaggio scende togliendo il datore, e ancora con un fondo aperto',
+    f.diff > f.soli.diff && f.soli.diff > f.soliAperto.diff,
+    `${eur(f.diff)} → ${eur(f.soli.diff)} → ${eur(f.soliAperto.diff)}`);
+}
 
 console.log(`\n${n - ko} su ${n}${ko ? `, ${ko} KO` : ', 0 KO'}`);
 process.exit(ko ? 1 : 0);

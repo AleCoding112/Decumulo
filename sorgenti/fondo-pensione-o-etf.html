@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fondo pensione o ETF: quando conviene l'uno, quando l'altro</title>
+<meta name="description" content="Il contributo del datore, la deduzione e l'imposta all'uscita contro la libertà dell'ETF. Cosa sposta davvero il confronto, e su quali numeri si decide.">
+<link rel="canonical" href="https://decumulo.it/fondo-pensione-o-etf.html">
+<!--@@INCLUDI _stile.html@@-->
+</head>
+<body>
+<div class="pagina">
+
+<p class="briciole"><a href="index.html">Decumulo</a> → fondo pensione o ETF</p>
+
+<h1>Fondo pensione o ETF, sugli stessi soldi</h1>
+
+<p class="occhiello">La domanda si pone quasi sempre come una scelta fra due prodotti, e messa
+così non ha risposta. Ne ha una se si guarda <b>quanto entra da una parte e dall'altra per ogni
+euro che esce dalla busta</b>: lì le differenze sono quattro, si contano, e cambiano da persona a
+persona.</p>
+
+<p class="legenda-fonti"><span class="marca m-legge">legge</span> disposizione normativa, con
+l'articolo · <span class="marca m-ccnl">CCNL</span> previsto dal contratto collettivo, varia per
+settore · <span class="marca m-stima">stima</span> valore approssimato, indicato come tale</p>
+
+<h2>Quattro differenze, e tre sono fiscali</h2>
+
+<p>Un fondo pensione e un ETF investono negli stessi mercati e non hanno niente di magico
+nell'uno né nell'altro. Quello che li separa non è il rendimento: è che sul fondo pensione
+intervengono il contratto di lavoro e il fisco, in tre punti diversi, e che i soldi ne escono più
+tardi.</p>
+
+<ul>
+  <li><b>Il contributo del datore di lavoro</b> <span class="marca m-ccnl">CCNL</span>, che nel
+    fondo entra e nell'ETF no.</li>
+  <li><b>La deduzione</b> <span class="marca m-legge">legge</span>, che riduce l'IRPEF dell'anno
+    in cui si versa.</li>
+  <li><b>L'imposta all'uscita</b> <span class="marca m-legge">legge</span>, che sul fondo è
+    sostitutiva e più bassa dell'IRPEF.</li>
+  <li><b>Il vincolo</b>: dal fondo i soldi escono alla pensione, salvo i casi previsti.</li>
+</ul>
+
+<p>Le prime tre spingono verso il fondo, la quarta verso l'ETF. Le prime tre si quantificano;
+la quarta no, e va pesata da chi decide.</p>
+
+<h2>Il contributo del datore è un gradino, non una pendenza</h2>
+
+<p><span class="marca m-ccnl">CCNL</span> Nei fondi negoziali l'azienda versa la propria quota
+<b>solo se versa anche il lavoratore</b>, almeno la percentuale minima prevista dal contratto. Chi
+è iscritto col solo TFR non la riceve affatto. E raggiunto quel minimo la quota <b>non cresce</b>:
+versando di più si prende lo sconto fiscale, non un euro in più dall'azienda.</p>
+
+<!-- NIENTE ARTICOLO DAVANTI A UNA PERCENTUALE CHE VIENE DA UN SEGNAPOSTO. «il 1,2%» non si dice
+     — 1 si legge «uno» e vuole l'elisione — e l'articolo giusto dipende dalla cifra, che qui è
+     un parametro e domani può cambiare. Nel calcolatore c'è `perc(n, prep)` che elide guardando
+     come il numero si LEGGE; in una pagina statica non c'è, quindi la frase si costruisce senza
+     articolo, che è l'unica forma vera per qualunque valore. -->
+<p>Su una retribuzione di <b>{{exRal}}</b>, con {{exPcLav}} a carico del lavoratore e {{exPcDat}}
+a carico dell'azienda, la prima percentuale versata costa <b>{{exCosta}} netti</b>
+l'anno e ne fa entrare nel fondo <b>{{exDentro}}</b>: <b>{{exVolte}}</b> per ogni euro uscito
+dalla busta. Nessun mercato produce quel rapporto, e non c'è ETF che lo pareggi.</p>
+
+<p>È anche la ragione per cui la domanda «fondo o ETF» ha una risposta diversa a seconda del punto
+in cui la si fa: fino al minimo contrattuale i due strumenti non sono confrontabili.
+<a href="contributo-datore.html">Come funziona il contributo del datore →</a></p>
+
+<h2>La deduzione, e quanto vale davvero</h2>
+
+<p><span class="marca m-legge">legge</span> Art. 8 c. 4 D.Lgs. 252/2005. I contributi si deducono
+dal reddito fino a <b>{{tetto}}</b> l'anno, il TFR conferito non consuma quel tetto. Dedurre non
+vuol dire risparmiare l'importo: vuol dire non pagarci l'imposta, quindi il vantaggio vale quanto
+la propria <b>aliquota marginale</b>. Sulla retribuzione dell'esempio è il
+<b>{{exAliquotaEff}}</b>, contando anche le detrazioni che si perdono man mano che il reddito
+sale.</p>
+
+<p>Chi ha redditi bassi deduce poco perché la sua aliquota è bassa; chi supera il tetto non deduce
+affatto la parte eccedente. Sono le due estremità in cui il vantaggio fiscale del fondo si
+assottiglia fino a sparire.</p>
+
+<div class="chiave">
+  <p><b>La parte non dedotta non si tassa all'uscita</b> <span class="marca m-legge">legge</span>
+  (art. 11 c. 6), ma solo se viene comunicata al fondo entro il 31 dicembre dell'anno successivo.
+  Senza quella comunicazione il fondo non può saperlo e la tassa lo stesso.</p>
+</div>
+
+<h2>All'uscita: dal {{aliqFondoMax}} al {{aliqFondoMin}}</h2>
+
+<p><span class="marca m-legge">legge</span> Art. 11 c. 6 D.Lgs. 252/2005. Quando il fondo viene
+riscosso, la parte corrispondente ai contributi dedotti sconta un'imposta sostitutiva del
+<b>{{aliqFondoMax}}</b>, che scende di <b>{{aliqFondoPunti}} punti</b> per ogni anno di iscrizione
+oltre il quindicesimo, fino a un minimo del <b>{{aliqFondoMin}}</b>. I rendimenti no: hanno già
+pagato in capo al fondo.</p>
+
+<p>Su un ETF l'imposta si paga al momento della vendita, sul guadagno, con l'aliquota ordinaria
+del <b>{{impostaRendite}}</b> (<b>{{impostaTitoli}}</b> sui titoli di Stato). Le due imposte non
+colpiscono la stessa cosa: sul fondo il capitale versato, sull'ETF il guadagno realizzato. È il
+motivo per cui il confronto non si fa con un rendimento, si fa con un conto.</p>
+
+<h2>I costi, e perché i rendimenti indicati sono già netti</h2>
+
+<p>Un ETF azionario globale costa poco più di zero l'anno; un fondo pensione costa di più, e
+quanto di più dipende dalla forma. <span class="marca m-stima">stima</span> Sullo stesso comparto
+{{exFoComparto}}, rispetto a un fondo negoziale, un <b>fondo aperto</b> costa in media
+<b>{{costoAperto}}</b> l'anno in più e un <b>PIP</b> <b>{{costoPip}}</b>: sono le differenze fra
+gli indicatori sintetici dei costi pubblicati dalla COVIP.</p>
+
+<p>Nel calcolatore quei costi <b>non vanno tolti a mano</b>: i rendimenti dei comparti sono
+indicati già al netto delle spese di gestione e dell'imposta che grava sul patrimonio del fondo,
+e la scelta della forma toglie da sé la differenza.
+<a href="il-metodo.html">Come sono determinati →</a></p>
+
+<h2>Il vincolo che l'ETF non ha</h2>
+
+<p>Dal fondo pensione i soldi escono alla pensione. Prima si può, ma solo nei casi previsti: le
+anticipazioni, il riscatto, e la <a href="rita.html">RITA</a>, che fa uscire il fondo a rate negli
+anni fra la fine del lavoro e la pensione. Un ETF si vende in un giorno, per qualunque motivo.</p>
+
+<p>È la differenza che nessun conto quantifica, e l'unica che dipende da come si vive: chi
+prevede di aver bisogno di quei soldi prima della pensione sta comprando un vincolo, non un
+vantaggio fiscale.</p>
+
+<h2>Gli stessi soldi, in cifre</h2>
+
+<p>Il conto qui sotto prende la retribuzione dell'esempio e <b>{{exFoAnni}} anni</b> davanti.
+Da una parte si versa la quota minima nel fondo, dall'altra si mette nell'ETF quello che quella
+quota è costata in busta. I due rendimenti sono <b>tenuti uguali</b>, al {{exFoRend}} del comparto
+{{exFoComparto}}: così sul tavolo resta soltanto quello che si può misurare, e non un'ipotesi sui
+mercati. Tutti gli importi sono in euro di oggi.</p>
+
+<div class="conto affianco">
+<table>
+  <thead><tr><th></th><th>Nel fondo pensione</th><th>In un ETF</th></tr></thead>
+  <tbody>
+    <tr><td>Esce dalla busta ogni anno</td><td>{{exCosta}}</td><td>{{exCosta}}</td></tr>
+    <tr><td>Entra ogni anno</td>
+        <td>{{exDentro}}<span class="sotto">col contributo del datore</span></td>
+        <td>{{exCosta}}</td></tr>
+    <tr><td>Montante dopo {{exFoAnni}} anni</td><td>{{exFoNel}}</td><td>{{exFoEtf}}</td></tr>
+    <tr><td>Imposta alla riscossione</td>
+        <td>&minus;{{exFoImposta}}<span class="sotto">{{exFoAliquota}}, sostitutiva</span></td>
+        <td>già compresa nel rendimento</td></tr>
+  </tbody>
+  <tfoot><tr><td>Resta in mano</td><td>{{exFoFondo}}</td><td>{{exFoEtf}}</td></tr></tfoot>
+</table>
+</div>
+
+<p>La differenza è <b>{{exFoDiff}}</b>, e quasi tutta viene dal contributo del datore: sono soldi
+che nell'ETF non arrivano mai, non un rendimento migliore.</p>
+
+<h2>Dove il confronto si rovescia</h2>
+
+<p>Tolto il contributo del datore, che è il caso di chi versa per conto proprio, restano solo la
+deduzione e l'imposta all'uscita. Sugli stessi
+{{exFoAnni}} anni e a parità di rendimento, nel fondo resterebbero <b>{{exFoSoliFondo}}</b> contro
+<b>{{exFoSoliEtf}}</b>: <b>{{exFoSoliDiff}}</b> di differenza invece di {{exFoDiff}}.</p>
+
+<p>E se quel fondo è un <b>fondo aperto</b>, che sullo stesso comparto costa {{costoAperto}}
+l'anno in più, la differenza scende a <b>{{exFoApertoDiff}}</b>. Il vantaggio non sparisce, ma
+diventa piccolo abbastanza da poter essere superato dal vincolo di non poterci accedere.</p>
+
+<p>Sopra il tetto di {{tetto}} la deduzione finisce, e da lì in avanti ogni euro versato in più
+nel fondo porta soltanto quello che porterebbe fuori, con il vincolo in aggiunta.</p>
+
+<div class="chiave">
+  <p><b>Le tre soglie che spostano la risposta</b>, e nessuna dipende dai mercati: la quota minima
+  del proprio contratto, il tetto di {{tetto}}, e la propria aliquota marginale. Il calcolatore le
+  attraversa tutte e tre muovendo un cursore, e mostra dove il conto smette di migliorare.</p>
+</div>
+
+<p><a class="torna" href="index.html">Al calcolatore, sui propri dati &rarr;</a></p>
+
+<h2>Cosa questo conto non sa</h2>
+
+<p>Il confronto qui sopra tiene i due rendimenti uguali. Nella realtà non lo sono quasi mai, e
+scegliere un comparto azionario o un ETF azionario è una decisione che pesa più di tutte quelle
+di questa pagina. Il calcolatore lascia i due rendimenti in due caselle separate, e chi vuole
+provare un'ipotesi diversa la scrive lì.</p>
+
+<p>Restano fuori dal conto: le anticipazioni prese prima della pensione, il caso di chi cambia
+lavoro e trasferisce la posizione, e la parte non dedotta di chi supera il tetto senza comunicarlo
+al fondo. <a href="il-metodo.html">L'elenco completo di cosa il modello non rappresenta →</a></p>
+
+<p>Sul TFR la scelta è un'altra, e ha un conto suo: quello non è denaro che si può mettere in un
+ETF, perché o va nel fondo o resta in azienda.
+<a href="tfr-fondo-o-azienda.html">TFR in azienda o nel fondo pensione →</a></p>
+
+<div class="fonti">
+  <p><b>Riferimenti normativi e limiti di questa pagina.</b></p>
+  <ul>
+    <li><span class="marca m-legge">legge</span> Deducibilità dei contributi e trattamento della
+      parte non dedotta: art. 8 c. 4 e art. 11 c. 6 D.Lgs. 252/2005.</li>
+    <li><span class="marca m-legge">legge</span> Imposta sostitutiva sulla prestazione, e sua
+      riduzione oltre il quindicesimo anno: art. 11 c. 6 D.Lgs. 252/2005.</li>
+    <li><span class="marca m-ccnl">CCNL</span> Il contributo del datore di lavoro, la sua
+      condizione e la sua misura discendono dalle fonti istitutive: il decreto vi rinvia e non le
+      fissa. Le percentuali variano per settore.</li>
+    <li><span class="marca m-stima">stima</span> Il costo in più delle forme diverse dal fondo
+      negoziale è la differenza fra gli indicatori sintetici dei costi mediani a 35 anni
+      pubblicati dalla COVIP. La dispersione dentro ciascuna forma è ampia quanto la distanza
+      fra le forme.</li>
+    <li><span class="marca m-stima">stima</span> Il confronto assume rendimenti uguali per il
+      comparto e per l'ETF, contribuzione costante e nessuna anticipazione.</li>
+    <li>Il contenuto ha finalità informativa e non costituisce consulenza previdenziale, fiscale
+      o in materia di investimenti.</li>
+  </ul>
+</div>
+
+<!--@@INCLUDI _pie.html@@-->
+</div>
+</body>
+</html>
