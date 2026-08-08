@@ -88,6 +88,22 @@ const SCENARI = {
   // col rendimento basso il pareggio capitale/rendita si rovescia: è il ramo in cui la frase
   // scrive «la rendita è già avanti» invece di una soglia
   'rendimento basso: la rendita si riprende': {...BASE, rend:1},
+  // IL RENDIMENTO REALE NEGATIVO, cioè lo scenario pessimista — che è il motivo per cui la
+  // casella resta scrivibile a mano. Mancava, e per questo nessuno vedeva che le fasi
+  // scrivevano «nessun rendimento: il patrimonio è nullo o negativo» con mezzo milione dentro,
+  // e che la colonna «Rendim.» della tabella metteva un trattino tutti gli anni. Il negativo
+  // era trattato come l'assenza in due punti diversi, e nessuno scenario ci passava.
+  'rendimento reale negativo': {...BASE, rend:1, rendFondo:1, infl:3},
+  // DUE PERSONE CON LO STESSO NOME. Un cognome nella casella basta, e i record del fondo si
+  // cercavano per nome: la seconda leggeva montante, aliquota e rate della prima. Il piano
+  // restava giusto, quindi nessun numero falliva — sbagliava solo quello che si legge.
+  'due persone con lo stesso nome': {...BASE, nome0:'Rossi', nome1:'Rossi',
+    rita0:2038, rita1:2040, fondo0:200000, fondo1:200000},
+  // LA RETRIBUZIONE BASSA, dove il trattamento integrativo morde e il cursore dei versamenti
+  // arriva a fondo scala: è l'unico caso in cui l'estremo destro scrive «è l'intera
+  // retribuzione lorda» invece di «oltre, il versamento supererebbe lo stipendio».
+  'retribuzione bassa: il cursore arriva a fondo scala': {...BASE, quanti:'1', nome1:'',
+    ral0:15000, pens0:900, cl3:60000, spesa:1100, pcDat0:4},
   // chi dal datore non riceve niente: la sezione 1 non deve parlare di un gradino che lì non c'è.
   // Erano due scenari sul fondo sottoscritto per conto proprio; il campo che li distingueva non
   // c'è più, e ne resta quello che descrive il fatto invece della forma del fondo.
@@ -1019,6 +1035,50 @@ console.log('\n— le caselle che il verdetto richiede —');
 // patrimonio è già in riduzione», e settecento pixel più sotto «il patrimonio non si riduce in
 // nessuno dei 28 esercizi». La prima leggeva le sole entrate ricorrenti, e un disavanzo di
 // flusso non è un patrimonio che cala: se il rendimento lo copre, il patrimonio sale.
+// --- IL NEGATIVO NON È L'ASSENZA ---------------------------------------------
+// Con un rendimento più basso dell'inflazione — cioè lo scenario pessimista, che è il motivo
+// per cui quella casella resta scrivibile — il rendimento reale è negativo. In due punti il
+// segno meno veniva letto come «non è successo niente»: le fasi scrivevano «nessun rendimento:
+// il patrimonio è nullo o negativo» con mezzo milione dentro, e la colonna «Rendim.» della
+// tabella metteva un trattino tutti gli anni. Proprio dove il patrimonio si stava consumando.
+// Nessuno scenario aveva un rendimento reale negativo: è la ragione per cui è durato.
+console.log('\n— un rendimento negativo non è un rendimento assente —');
+{
+  const pulito = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const giu = esegui({...BASE, rend:1, rendFondo:1, infl:3});
+  const fasi = pulito(giu.scritte.fasi), tab = pulito(giu.scritte.tabella);
+  c('le fasi non dichiarano nullo un patrimonio che non lo è',
+    !/patrimonio è nullo o negativo/.test(fasi),
+    (fasi.match(/(perdita|rendimento) media?o? [^·<]*al mese/) || ['—'])[0]);
+  c('e chiamano perdita quello che è una perdita', /perdita media/.test(fasi));
+  c('la colonna del rendimento porta il segno invece di sparire',
+    /−/.test(tab), tab.slice(0, 0) + `${(tab.match(/−[\d.]+/g) || []).length} celle col meno`);
+}
+
+// --- DOVE SI FERMA IL CURSORE DEI VERSAMENTI, e perché ci sono due frasi ------
+// Per un anno l'estremo destro ne ha scritta una sola: versando l'intera retribuzione la busta
+// andava sempre sotto zero. Il trattamento integrativo è una cifra FISSA che non scala col
+// versamento, e sulle retribuzioni basse copre il buco: lì il cursore arriva a fondo scala e si
+// ferma perché più della propria retribuzione non si versa, che è un'altra ragione.
+console.log('\n— i due vincoli del cursore dei versamenti —');
+{
+  const pulito = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const alta = pulito(esegui(BASE).scritte.cVers0Dx);
+  // LA FINESTRA È STRETTA E VA TENUTA A MENTE: il cursore arriva a fondo scala solo fra le
+  // ~14.000 e le ~16.000 € di RAL, dove il trattamento integrativo spetta (serve la capienza,
+  // cioè un reddito sopra gli 8.174 €) e i suoi 1.200 € fissi bastano ancora a coprire il buco.
+  // Sopra, l'IVS vince; sotto, la capienza non c'è. Se un giorno questo controllo cade, prima
+  // si guarda se il caso di prova è ancora dentro la finestra.
+  const bassa = pulito(esegui({...BASE, quanti:'1', nome1:'', ral0:15000, pens0:900,
+                               cl3:60000, spesa:1100, pcDat0:4}).scritte.cVers0Dx);
+  c('con una retribuzione ordinaria il vincolo è la busta',
+    /supererebbe lo stipendio/.test(alta), alta);
+  c('con una retribuzione bassa il vincolo è la retribuzione stessa',
+    /intera retribuzione lorda/.test(bassa), bassa);
+  c('e le due frasi non compaiono mai insieme',
+    /supererebbe/.test(alta) !== /supererebbe/.test(bassa));
+}
+
 // È la seconda volta che questo difetto si presenta, e la prima fu su «anni scoperti».
 console.log('\n— il disavanzo di flusso non è un patrimonio che cala —');
 {

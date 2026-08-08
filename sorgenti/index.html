@@ -1356,6 +1356,22 @@ const sommaCuneo = R => {
   for (const [fino, q] of SOMMA_CUNEO) if (R <= fino) return Math.max(0, R) * q;
   return 0;
 };
+// IL TRATTAMENTO INTEGRATIVO (art. 1 c. 1 D.L. 3/2020), che è l'ex bonus Renzi. Come la somma
+// del cuneo non è una detrazione: non tocca l'imposta e si aggiunge al netto.
+// DUE CONDIZIONI, e la seconda conta quanto la prima. Il tetto di reddito, e la CAPIENZA:
+// l'imposta lorda dev'essere superiore alla detrazione dell'art. 13 c. 1 diminuita di 75 €.
+// Senza quella, il conto lo regalerebbe a chi non paga imposta — cioè sotto gli 8.174 €, che è
+// l'area esente dei dipendenti — e lì la busta uscirebbe di 1.200 € più ricca del vero.
+// PERCHÉ SERVE ANCHE A CHI NON LO PRENDE: la detrazione dell'art. 13 c. 1 crolla da 3.100 a
+// 1.955 € scendendo sotto i 15.000 €, ed è il testo di legge. Nella realtà quel salto lo riempie
+// questo trattamento; senza, il modello mostrava una perdita secca di 1.145 € appena il reddito
+// scendeva sotto la soglia, e chi versa molto nel fondo ci arriva da qualunque RAL.
+// Il secondo periodo (15.001–28.000 €) non è rappresentato: dipende dalle detrazioni per carichi
+// di famiglia e dagli oneri per mutui, che questo modello non ha, e senza quelle vale zero.
+const trattIntegrativo = R => {
+  const [tetto, importo, sconto] = TRATT_INTEGRATIVO;
+  return R <= tetto && irpef(R) > detrazione(DETRAZIONE_LAV, R) - sconto ? importo : 0;
+};
 
 // QUANTO ENTRA NEL FONDO, data la percentuale scelta dal lavoratore.
 // Nei fondi negoziali il contributo del datore è dovuto SOLO se il lavoratore versa la sua quota,
@@ -1435,7 +1451,8 @@ function nettoAnnuo(x, pc){
   // il reddito complessivo è la retribuzione al netto di quello che va al fondo: i contributi
   // trattenuti in busta non formano reddito di lavoro dipendente (art. 51 c. 2 lett. h)
   const R = base - dedLav(c);
-  return base - c.lav - irpefNetta(R, false) + sommaCuneo(R);
+  // le due somme che non passano dall'imposta si aggiungono qui, tutte e due al netto
+  return base - c.lav - irpefNetta(R, false) + sommaCuneo(R) + trattIntegrativo(R);
 }
 const scontoIrpef = (x, pc) => {
   const base = Math.max(0, x.ral * (1 - IVS));
@@ -1838,10 +1855,18 @@ function simula(s, spesaMese){
   const rendFondoDi = anno => anno < fermi ? Math.min(0, s.rendFondo) : s.rendFondo;
   let patr = s.patrimonio, annoZero = null;
   const f = P.map(x => ({ montante: x.fondo, versati: x.fondo, rendita: 0, annoRendita: null,
-                          rata: null,
+                          // il record della RITA, tenuto per riferimento invece che cercato
+                          rita: null,
                           // le forme che consumano: quante rate mancano, con quale legge di
                           // aliquota, e da che anno. A zero finché non si sceglie una di quelle.
                           rate: 0, aliqCons: null, daCons: null, nCons: 0 }));
+  // OGNI RECORD PORTA `idx`, L'INDICE DELLA PERSONA, e chi lo cerca cerca quello. `chi` resta,
+  // ma serve solo a scriverlo: è un NOME, e due persone possono averne uno uguale — un cognome
+  // nella casella del nome basta. Cercando per nome, la seconda leggeva i numeri della prima:
+  // il montante, l'aliquota e la RITA del riquadro «come esce il fondo» erano quelli dell'altra,
+  // e il totale netto delle rate finiva tutto su una riga sola. Il piano restava giusto, quindi
+  // niente falliva: sbagliava soltanto quello che si legge, che è il modo peggiore.
+  // (`manca.chi` invece è già un indice: qui `chi` e `chi` volevano dire due cose diverse.)
   const incassi = [], rite = [], righe = [], liquidazioni = [];
   // rivalutazione reale del TFR in azienda, al netto del 17% di imposta sostitutiva.
   // STA PRIMA DEL SALVADANAIO perché il seme la usa: scomporre il montante già accantonato negli
@@ -1862,8 +1887,22 @@ function simula(s, spesaMese){
     // Con accantonamenti costanti e tasso r, montante = a·((1+r)^n − 1)/r e imponibile = a·n,
     // da cui la frazione qui sotto. A tasso nullo o senza anni vale 1, cioè tutto imponibile:
     // il ripiego cade dal lato prudente, che è quello giusto quando si aggiunge denaro al piano.
-    const quotaMessa = anni > 0 && rivTfr > 1e-9
-      ? anni * rivTfr / (Math.pow(1 + rivTfr, anni) - 1) : 1;
+    // E VA RIPORTATA A EURO DI OGGI ANCHE ALL'INDIETRO. Gli accantonamenti passati sono importi
+    // NOMINALI: sommarne venti senza sgonfiarli conta l'inflazione degli anni già trascorsi come
+    // se non fosse passata. Al posto del conteggio secco degli anni va quindi la loro somma
+    // scontata; a inflazione nulla le due coincidono, ed è il ripiego.
+    // Σ(1+infl)^−k per k da 0 a n−1, e lo ZERO CONTA: il denominatore qui sotto è
+    // Σ(1+r)^k dallo stesso zero, cioè l'accantonamento più recente non ha ancora reso nulla.
+    // Scontandone uno di troppo le due somme parlerebbero di anni diversi.
+    const scontati = Math.abs(s.infl) > 1e-9
+      ? (1 - Math.pow(1 + s.infl, -anni)) / s.infl * (1 + s.infl) : anni;
+    // il denominatore è il fattore di accumulo del montante, ((1+r)^n − 1)/r, che a tasso nullo
+    // vale gli anni. `Math.min(1, …)`: la base imponibile non supera mai il montante che c'è —
+    // è la stessa regola che il fondo applica con `Math.min(f[i].versati, f[i].montante)`.
+    const quotaMessa = anni > 0
+      ? Math.min(1, scontati / (Math.abs(rivTfr) > 1e-9
+          ? (Math.pow(1 + rivTfr, anni) - 1) / rivTfr : anni))
+      : 1;
     return x.tfrConta
       ? { pot: x.tfrGia, messo: x.tfrGia * quotaMessa, anni }
       : { pot: 0, messo: 0, anni: 0 };
@@ -1927,6 +1966,14 @@ function simula(s, spesaMese){
       // Ora solo l'ACCUMULO del flusso nuovo dipende dalla destinazione; la rivalutazione di
       // quello che c'è già e la sua liquidazione avvengono comunque.
       {
+        // LA BASE IMPONIBILE DEL TFR È NOMINALE ESATTAMENTE COME QUELLA DEL FONDO, e va sgonfiata
+        // con la stessa riga: l'art. 19 tassa gli accantonamenti in euro di allora. Tenendoli in
+        // euro di oggi l'imponibile a fine carriera arrivava al 75% sopra il vero — su quarant'anni
+        // al 3% sono undici punti del TFR lordo di imposta inventata. Due basi imponibili, una
+        // regola sola: se un giorno se ne aggiunge una terza, va sgonfiata anche quella.
+        // Vale anche per chi ha conferito il TFR al fondo: il pregresso resta in azienda, e resta
+        // nominale. Solo il flusso nuovo dipende dalla destinazione.
+        if (anno > ANNO0) tfr[i].messo /= (1 + s.infl);
         if (lavora[i]){
           if (!x.tfrAlFondo){ tfr[i].pot = tfr[i].pot * (1 + rivTfr) + tfrA;
                               tfr[i].messo += tfrA; tfr[i].anni++; }
@@ -1938,7 +1985,7 @@ function simula(s, spesaMese){
           const al = aliquotaTfr(tfr[i].messo, tfr[i].anni);
           const tasse = tfr[i].messo * al;
           daTfr += tfr[i].pot - tasse;
-          liquidazioni.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, lordo:tfr[i].pot, al, tasse,
+          liquidazioni.push({idx:i, chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, lordo:tfr[i].pot, al, tasse,
                              netto:tfr[i].pot - tasse, anni:tfr[i].anni});
           tfr[i].pot = 0;
         }
@@ -1950,11 +1997,14 @@ function simula(s, spesaMese){
       const daRita = Math.min(Math.max(x.rita || annoIncasso, ANNO0), annoIncasso);
       const nRate  = annoIncasso - daRita;
 
+      // L'imposta si paga su quello che è stato versato IN EURO DI ALLORA. Tenendo i conti in
+      // euro di oggi, la base imponibile va quindi sgonfiata di un anno di inflazione a ogni
+      // giro: un versamento del 2030 pesa meno, nel 2046, di uno del 2044.
+      // STA FUORI DALL'ACCUMULO, e prima ci stava dentro: una posizione che esce a rate resta
+      // aperta vent'anni DOPO la prestazione, e in quegli anni la base smetteva di sgonfiarsi
+      // mentre il montante continuava. La quota imponibile delle rate saliva per finta.
+      if (anno > ANNO0) f[i].versati /= (1 + s.infl);
       if (anno <= annoIncasso){
-        // L'imposta si paga su quello che è stato versato IN EURO DI ALLORA. Tenendo i conti in
-        // euro di oggi, la base imponibile va quindi sgonfiata di un anno di inflazione a ogni
-        // giro: un versamento del 2030 pesa meno, nel 2046, di uno del 2044.
-        if (anno > ANNO0) f[i].versati /= (1 + s.infl);
         // si versa anche nell'ultimo anno di lavoro, pure se è quello dell'incasso.
         // Il TFR conferito entra nel montante E nella base imponibile: reddito mai tassato,
         // quindi all'uscita paga — ma con l'aliquota agevolata del fondo, non con l'IRPEF.
@@ -1968,22 +2018,40 @@ function simula(s, spesaMese){
           f[i].versati += Math.min(cA.tot, TETTO_DEDUZIONE) + tfrDentro;
         }
 
+        // LA RATA SI RICALCOLA A OGNI SCADENZA: il montante disponibile diviso le rate che
+        // restano.
+        // ATTENZIONE ALLA FONTE, ed è una distinzione che questo progetto tiene ovunque: la
+        // LEGGE impone il frazionamento e nient'altro (art. 11 c. 4 D.Lgs. 252/2005, «erogazione
+        // frazionata di un capitale»), e non detta come si determini la singola rata. Il
+        // ricalcolo è PRASSI dei fondi, scritta nei loro regolamenti — «le rate verranno di volta
+        // in volta ricalcolate e terranno conto degli incrementi o decrementi derivanti dalla
+        // gestione» — e discende da un fatto che la legge invece dice: il capitale non ancora
+        // erogato resta investito nel comparto. È marcata `stima` in `rita.html`, non `legge`.
+        // È la stessa regola delle forme che consumano, più sotto — lì viene dalle Istruzioni
+        // COVIP — e ora i due blocchi la dicono allo stesso modo invece di divergere.
+        // PRIMA LA RATA SI FISSAVA ALLA PRIMA e restava uguale in euro DI OGGI, cioè cresceva
+        // ogni anno in euro veri: era l'unico punto in cui questo conto era ottimista. Con il
+        // ricalcolo il difetto non si corregge, sparisce — montante e rate stanno già dalla
+        // stessa parte dell'inflazione.
+        // E la posizione si esaurisce davvero: all'ultima rata il divisore vale 1.
         if (nRate > 0 && anno >= daRita && anno < annoIncasso && f[i].montante > 0){
-          // la rata si fissa il primo anno e resta uguale: quello che non è ancora uscito
-          // continua a rendere, quindi alla pensione avanza qualcosa
-          if (f[i].rata === null){
-            f[i].rata = f[i].montante / nRate;
-            rite.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), da:anno, a:annoIncasso-1, rata:f[i].rata, n:nRate,
-                       totale:f[i].montante, netto:0});
-          }
-          const lorda = Math.min(f[i].rata, f[i].montante);
+          const lorda = f[i].montante / (annoIncasso - anno);
           const quotaTass = Math.min(f[i].versati / f[i].montante, 1);
           const imponibile = lorda * quotaTass;
           const tasse = imponibile * aliquota(anno - x.iscr);
           f[i].montante -= lorda;
           f[i].versati  -= imponibile;
           daRata += lorda - tasse;
-          rite[rite.findIndex(t => t.chi === x.nome)].netto += lorda - tasse;
+          // il record si TIENE, invece di ricercarlo a ogni rata: la ricerca era per nome, e
+          // con due nomi uguali sommava le rate di tutti e due sulla stessa riga.
+          // `lordo` e `netto` si SOMMANO rata per rata. Prima «totale» era il montante alla prima
+          // rata, e con le rate ricalcolate quel numero è più piccolo di quello che esce davvero:
+          // il residuo continua a rendere mentre si svuota, e il netto lo superava.
+          if (f[i].rita === null)
+            rite.push(f[i].rita = {idx:i, chi:x.nome, di:(DI[i] || 'di ' + x.nome), da:anno,
+                                   a:annoIncasso-1, prima:lorda, n:nRate, lordo:0, netto:0});
+          f[i].rita.lordo += lorda;
+          f[i].rita.netto += lorda - tasse;
           rate[i] = true;
         }
         f[i].montante *= (1 + rendFondoDi(anno));
@@ -2049,7 +2117,7 @@ function simula(s, spesaMese){
         daFondo += capitale;
         // «di» + nome non si compone a pezzi: con i nomi vuoti veniva fuori «il fondo di il
         // primo». La forma articolata viaggia insieme al nome, come già fa il resto della pagina.
-        incassi.push({chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, montante:montanteAlla, base, al, tasse, capitale,
+        incassi.push({idx:i, chi:x.nome, di:(DI[i] || 'di ' + x.nome), anno, montante:montanteAlla, base, al, tasse, capitale,
                       assegno:f[i].rendita/12, quota, chiesta:x.quotaCap, max, coeff,
                       soglia: soglia(x.coeffEta), etaPens: x.etaPens, coeffEta: x.coeffEta,
                       netto, forma:x.forma, convertito: netto - capitale,
@@ -2221,8 +2289,16 @@ function scriviFasi(r){
       ? `accantonamento ${E0(f.flusso)} al mese`
       : `disavanzo ${E0(-f.flusso)} al mese`;
     const d = f.fine - f.righe[0].inizio;
-    const sotto = f.rendimento < 1
+    // UN RENDIMENTO NEGATIVO NON È UN RENDIMENTO ASSENTE, e qui erano la stessa cosa: chi scrive
+    // un rendimento più basso dell'inflazione — cioè chiunque provi lo scenario pessimista, che è
+    // il motivo per cui la casella è scrivibile — si sentiva dire «il patrimonio è nullo o
+    // negativo» con mezzo milione dentro, e la perdita, che era l'informazione, spariva.
+    // Il test giusto è sul PATRIMONIO, non sul segno dei soldi: senza patrimonio non si rende
+    // niente, con patrimonio e rendimento reale negativo si perde, e sono tre stati diversi.
+    const sotto = f.righe.every(g => g.inizio <= 0)
       ? 'nessun rendimento: il patrimonio è nullo o negativo'
+      : f.rendimento < 0
+      ? `perdita media ${E0(-f.rendimento)} al mese`
       : `rendimento medio ${E0(f.rendimento)} al mese`;
     h += `<div class="fase"><b>${seg}</b><div class="cosa">${f.cosa}</div>
       <div class="flusso ${cl}">${testo}<i>${sotto}</i></div>
@@ -2351,8 +2427,10 @@ function eventi(r, kOf = () => 1){
     `il TFR ${l.di} lasciato in azienda: ${E0(l.lordo * kOf(l.anno))} meno `
     + `${E0(l.tasse * kOf(l.anno))} di imposta (${fmt(l.al*100,1)}%, tassazione separata su `
     + `${l.anni} anni) → ${E0(l.netto * kOf(l.anno))}`, solo ? 'TFR' : `TFR ${l.chi}`);
+  // «la prima» e non «l'anno»: la rata si ricalcola a ogni scadenza sul montante che resta,
+  // quindi un importo solo non descriverebbe le altre
   for (const t of r.rite) fatto(t.da, `${t.chi} comincia a prendere il fondo a rate (RITA): `
-    + `${E0(t.rata * kOf(t.da))} lordi l'anno, ${t.n} rate fino al ${t.a}`,
+    + `${t.n} rate fino al ${t.a}, la prima di ${E0(t.prima * kOf(t.da))} lordi`,
     solo ? 'a rate' : `rate ${t.chi}`);
   for (const i of r.incassi) fatto(i.anno, `il fondo ${i.di}: ${E0(i.montante * kOf(i.anno))}`
     + ` meno ${E0(i.tasse * kOf(i.anno))} di imposta (${fmt(i.al*100,1)}%) → `
@@ -2418,12 +2496,16 @@ function tabella(r, s){
     // il ricavato può essere negativo, e allora va scritto col segno invece di sparire
     const cc = v => Math.abs(v * k) > 0.5
       ? (v < 0 ? '−' + fmt(-v * k) : fmt(v * k)) : '<span class="vuoto">—</span>';
+    // `cc` E NON `c` DOVE IL NUMERO PUÒ ESSERE NEGATIVO. Con un rendimento reale negativo la
+    // colonna «Rendim.» scriveva un trattino tutti gli anni — cioè «non è successo niente» —
+    // mentre era proprio lì che il patrimonio si stava consumando. Vale anche per il lavoro:
+    // oltre una certa percentuale il versamento supera quello che resta in busta.
     const cl = g.patr < 0 ? 'rossa' : (g.lavora.some(v=>v) ? '' : 'pens');
     h += `<tr class="${cl}"><td class="anno">${g.anno}<u>${g.eta.join('/')}</u></td>
-      <td>${c(g.daLavoro)}</td><td>${c(g.daPensioni)}</td><td>${c(g.daRendita)}</td>
+      <td>${cc(g.daLavoro)}</td><td>${c(g.daPensioni)}</td><td>${c(g.daRendita)}</td>
       <td>${c(g.daFondo + g.daRata + g.daTfr)}</td>
       ${conCasa ? `<td>${cc(g.daCasa || 0)}</td>` : ''}
-      <td>−${fmt(g.spesa * k)}</td><td>${c(g.rendimento)}</td>
+      <td>−${fmt(g.spesa * k)}</td><td>${cc(g.rendimento)}</td>
       <td><b>${fmt(g.patr * k)}</b></td></tr>`;
   }
   EL('tabella').innerHTML = h;
@@ -3156,8 +3238,14 @@ function calc(){
     const el = EL('superstite');
     if (s.N < 2 || r.righe.length === 0){ el.innerHTML = ''; }
     else {
+      // `daRata` STA DENTRO, e prima no: le rate di una forma che consuma arrivano ogni mese come
+      // la rendita, e `fasi()` le conta già fra i flussi ricorrenti. Erano due definizioni di
+      // «ricorrente» nella stessa pagina, e con l'erogazione frazionata la differenza vale dodici
+      // punti — 71% contro 83% — sopra una soglia di verdetto che sta a 66,7%.
+      // La RITA qui non c'entra: l'anno del confronto cade ben dopo la decorrenza, e a quel punto
+      // l'erogazione anticipata è finita da un pezzo.
       const entrate = (piano, anno) => { const g = piano.righe.find(v => v.anno === anno);
-        return g ? g.daLavoro + g.daPensioni + g.daRendita : 0; };
+        return g ? g.daLavoro + g.daPensioni + g.daRendita + g.daRata : 0; };
       // l'esercizio DOPO il decesso: nell'anno stesso le entrate sono ancora miste
       const quando = i => { const x = s.p[i];
         return x.nascita + Math.round(x.etaPens + speranzaVita(x.etaPens)) + 1; };
@@ -3385,7 +3473,14 @@ function calc(){
                  contro ${fmt(s.rendFondoNom*100,1)}%), quindi anticipare costa`
               : `fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}%
                  contro ${fmt(s.rendFondoNom*100,1)}%)`;
-  EL('regola').innerHTML = r.incassi.length === 0
+  // SI RACCONTA LA PERSONA, NON L'INCASSO. Chi prende il fondo a rate fino alla pensione
+  // ESAURISCE la posizione — le rate si ricalcolano sul montante che resta, e all'ultima il
+  // divisore vale uno — quindi un incasso alla pensione non c'è. Costruendo la frase sugli
+  // incassi, quel caso finiva nel ramo «il fondo non viene riscosso dentro il piano», che è il
+  // rovescio del vero: è uscito tutto, solo prima e a rate.
+  const conFondo = s.indici.filter(k =>
+    r.incassi.some(v => v.idx === k) || r.rite.some(v => v.idx === k));
+  EL('regola').innerHTML = conFondo.length === 0
     // Senza esercizi di attività la ragione l'ha già data l'avviso accanto alla decorrenza, e
     // ripeterla qui sarebbe un doppione sotto una sezione che non c'è più.
     // Chi non ha un fondo non ha un fondo che «non viene riscosso»: quella frase gliene
@@ -3395,15 +3490,19 @@ function calc(){
     ? (s.tuttoInPens || s.indici.every(i => !(s.p[i].fondo > 0)) ? ''
        : s.N === 1 ? 'Il fondo non viene riscosso dentro il piano.'
                    : 'Nessuno dei due fondi viene riscosso dentro il piano.')
-    : r.incassi.map(i => {
-        const t = r.rite.find(v => v.chi === i.chi);
+    : conFondo.map(k => {
+        const i = r.incassi.find(v => v.idx === k), t = r.rite.find(v => v.idx === k);
+        const aRate = t ? `${t.n} rate dal ${t.da} al ${t.a}, la prima di ${E0(t.prima)} lordi,
+             ${E0(t.lordo)} complessivi (<b>${E0(t.netto)} netti</b>)` : '';
+        // il fondo uscito INTERAMENTE a rate: alla pensione non resta posizione da riscuotere,
+        // quindi non c'è nessuna scelta fra capitale e rendita da raccontare
+        if (!i) return `<b>Il fondo ${s.p[k].di} esce tutto a rate</b>: ${aRate}. Alla pensione la
+             posizione è esaurita: non resta nulla da prendere in capitale né da convertire.`;
         // se il fondo è già uscito a rate va detto PRIMA, altrimenti «è piccolo» sembra
         // una buona notizia mentre è solo la conseguenza di averlo svuotato
         const rita = t
-          ? `<b>Il fondo ${i.di} esce a rate</b>: ${E0(t.rata)} lordi l'anno dal ${t.da} al
-             ${t.a}, ${E0(t.totale)} complessivi (${E0(t.netto)} netti). Alla pensione, nel
-             ${i.anno}, il residuo è di <b>${E0(i.montante)}</b>, cioè la sola rivalutazione
-             maturata nel frattempo: `
+          ? `<b>Il fondo ${i.di} esce a rate</b>: ${aRate}. Alla pensione, nel ${i.anno}, il
+             residuo è di <b>${E0(i.montante)}</b>: `
           : `Il fondo ${i.di} arriva a ${E0(i.montante)}: `;
         const consentito = `${fmt(i.max*100)}%`;
         // quello che la legge concede e quello che si è scelto sono due cose diverse: finché la
@@ -3466,7 +3565,7 @@ function conAlt(s, i, campo, valore){
 // di punto sbagliato: su un caso reale, 507 € lasciati lì.
 function pcSoglia(s, i, pcMax){
   const scarto = pc => {
-    const inc = conAlt(s, i, 'pc', pc).incassi.find(z => z.chi === s.p[i].nome);
+    const inc = conAlt(s, i, 'pc', pc).incassi.find(z => z.idx === i);
     return inc ? inc.montante - inc.soglia : null;
   };
   const sotto = scarto(0), sopra = scarto(pcMax);
@@ -3476,18 +3575,41 @@ function pcSoglia(s, i, pcMax){
   return [lo, hi];
 }
 
+// LA FRONTIERA DELLA TENUTA, ed è il vertice che nessuna tabella può dare. Gli altri candidati
+// sono punti in cui la spezzata cambia pendenza; questo è un VINCOLO: oltre una certa percentuale
+// il versamento toglie dalla busta più di quanto il piano possa reggere negli anni prima della
+// pensione, e il patrimonio si esaurisce. `meglioDi` mette la tenuta prima di tutto, quindi
+// l'ottimo cade sul bordo — e l'ottimo di una funzione crescente sotto vincolo sta sempre lì,
+// mai su un vertice della funzione. Restava solo la rete degli interi: su trecento piani
+// casuali, quarantasette consigli non ottimi, il peggiore da 136.840 €.
+// Stessa forma di `pcSoglia`, che biseziona sul cambio di segno di «montante − soglia»: si
+// guardano i due estremi e si bisezione solo se il segno cambia davvero.
+// AGGIUNGERE CANDIDATI NON PUÒ PEGGIORARE LA RISPOSTA — `migliore` li valuta comunque tutti con
+// lo stesso metro — quindi se la tenuta non fosse monotona ne esce uno dei bordi, mai un errore.
+function pcTenuta(s, i, pcMax){
+  const regge = pc => conAlt(s, i, 'pc', pc).annoZero === null;
+  if (!regge(0) || regge(pcMax)) return [];
+  let lo = 0, hi = pcMax;
+  for (let k = 0; k < 14; k++){ const m = (lo + hi) / 2; regge(m) ? lo = m : hi = m; }
+  return [lo, hi];
+}
+
 function candidatiVersamento(x, pcMax, altri = []){
   const base = Math.max(0, x.ral * (1 - IVS));
   // il gradino sta sulla SOGLIA, che da quando è una casella può non coincidere con `pcVoi`:
   // senza il suo vertice fra i candidati il massimo di una spezzata si cerca dove non c'è
   const notevoli = [0, x.pcVoi, x.pcVoi + 0.1, sogliaDatore(x), sogliaDatore(x) + 0.1,
                     pcTetto(x), pcMax, ...altri];
-  // LE SOGLIE DI REDDITO SONO VERTICI DELLA SPEZZATA, e vanno tutte: gli scaglioni IRPEF e ora
-  // anche quelle del cuneo (20.000, 32.000, 40.000), dove la pendenza cambia di dodici punti e
-  // mezzo. Cercare il massimo senza un vertice è la lezione già pagata col gradino del datore.
+  // LE SOGLIE DI REDDITO SONO VERTICI DELLA SPEZZATA, E VANNO TUTTE. Qui c'erano gli scaglioni
+  // IRPEF più tre numeri scritti a mano — 20.000, 32.000, 40.000 — che ricopiavano le bande
+  // dell'ulteriore detrazione. Ricopiati a mano, si erano fermati lì: mancavano gli spigoli della
+  // detrazione dell'art. 13 e della somma del cuneo, cioè 15.000 e 8.500, dove la busta fa un
+  // salto vero. Il massimo di una spezzata si cerca sui vertici, e due vertici non c'erano.
+  // Ora l'elenco lo genera `regole.mjs` dalle tabelle stesse: non può più restare indietro
+  // rispetto alle regole da cui nasce, che è la ragione per cui era rimasto indietro.
+  // Cercare il massimo senza un vertice è la lezione già pagata col gradino del datore.
   if (x.ral > 0)
-    for (const soglia of [...SCAGLIONI.map(([t]) => t), 20000, 32000, 40000])
-      if (soglia !== Infinity) notevoli.push((base - soglia) / x.ral * 100);
+    for (const soglia of SOGLIE_REDDITO) notevoli.push((base - soglia) / x.ral * 100);
   for (let v = 1; v <= pcMax; v++) notevoli.push(v);
   const passo = new Set();
   for (const v of notevoli){
@@ -3518,14 +3640,32 @@ const meglioDi = (a, b) =>
   : a.z !== b.z        ? a.z > b.z
   :                      a.f > b.f;
 
-function migliore(s, i, campo, valori){
-  let best = null;
+function migliore(s, i, campo, valori, best = null){
   for (const v of valori){
     const r = conAlt(s, i, campo, v);
     const c = {v, f: r.finale, z: r.annoZero, regge: r.annoZero === null};
     if (best === null || meglioDi(c, best)) best = c;
   }
   return best;
+}
+
+// L'ULTIMO GIRO, A PASSO DI CURSORE. I vertici coprono le pendenze che sappiamo NOMINARE — il
+// gradino del datore, il tetto, le soglie di reddito, la soglia del capitale, la frontiera della
+// tenuta — ma il modello ne ha altre, e non vale la pena inseguirle una per una: il minimo fra
+// versato e montante cambia pendenza dove le due curve si incrociano, e la tenuta può perdersi
+// e ritrovarsi più di una volta, cioè la bisezione ne trova UNA frontiera e non la più alta.
+// Enumerare a mano ogni spigolo è esattamente il modo in cui se ne sono dimenticati due.
+// Si spazzolano quindi i venti decimi intorno al vincitore, che è dove tutti i casi rimasti
+// cadevano: venti giri di motore, 0,4 ms sui 30 che si sentono. Il risultato non peggiora mai —
+// si parte dal vincitore di prima e si tiene il migliore fra lui e i venti.
+function affina(s, i, campo, best, pcMax){
+  if (best === null) return null;
+  const intorno = [];
+  for (let d = -10; d <= 10; d++){
+    const v = +(best.v + d / 10).toFixed(1);
+    if (d !== 0 && v >= 0 && v <= pcMax + 1e-9) intorno.push(v);
+  }
+  return migliore(s, i, campo, intorno, best);
 }
 
 // IL PAREGGIO FRA CAPITALE E RENDITA, e perché è espresso in RENDIMENTO e non in età.
@@ -3978,17 +4118,20 @@ function aggiornaDecisioni(s, r){
               : `dei ${E0(TETTO_DEDUZIONE)} che si deducono ne restano
                  ${E0(TETTO_DEDUZIONE - c.tot)}`}</i>`;
     EL('cVers'+i+'Sx').textContent = 'niente: 0 €';
-    // dire PERCHÉ il cursore si ferma lì, e il vincolo è UNO SOLO: il caso in cui arrivi a fondo
-    // scala non esiste. Versando il 100% della retribuzione il netto vale
-    // −RAL×IVS − irpefNetta(R) + sommaCuneo(R), dove l'imposta netta non è mai negativa e la
-    // somma del cuneo vale al più la sua aliquota più alta su un imponibile minore della RAL:
-    // con IVS al 9,19% contro il 7,1% la busta resta sotto zero per qualunque retribuzione, con
-    // due punti di margine. Una seconda frase per quel caso terrebbe in piedi un vincolo morto.
-    // Lo garantiscono due invarianti (`verifiche/invarianti.mjs`): la disuguaglianza fra le due
-    // cifre di legge, e la prova sui 4.000 piani che `pcSpendibile` resta sotto 100. Se una legge
-    // di bilancio le incrociasse, fallirebbero prima che la pagina scriva una frase sbagliata.
+    // DIRE PERCHÉ IL CURSORE SI FERMA LÌ, E I VINCOLI SONO DUE. Per un anno ce n'è stato uno
+    // solo: versando l'intera retribuzione la busta andava sempre sotto zero, perché l'IVS al
+    // 9,19% batteva la somma del cuneo al 7,1%, e una seconda frase avrebbe tenuto in piedi un
+    // vincolo morto. Un'invariante sui 4.000 piani lo garantiva, con questa nota accanto: «se una
+    // legge di bilancio le incrociasse, fallirebbe prima che la pagina scriva una frase sbagliata».
+    // È CADUTA COSÌ, e non per una legge di bilancio: il trattamento integrativo è una cifra
+    // FISSA che non scala col versamento, quindi sulle retribuzioni basse copre il buco e la busta
+    // resta positiva anche versando tutto. Lì il cursore si ferma perché più della propria
+    // retribuzione non si versa — non perché lo stipendio finisca — e sono due frasi diverse.
+    // L'invariante ha fatto esattamente il mestiere per cui era stata scritta.
     EL('cVers'+i+'Dx').innerHTML = !(x.ral > 0) ? ''
-      : `${E0(x.ral * pcTop / 100)}: oltre, il versamento supererebbe lo stipendio`;
+      : `${E0(x.ral * pcTop / 100)}: ` + (pcTop < 100 - 1e-9
+          ? 'oltre, il versamento supererebbe lo stipendio'
+          : 'è l\'intera retribuzione lorda');
 
     // il gradino, detto per esteso: è la cosa che questa pagina esiste per far vedere
     const perso = oggi.dat > 0.5 ? oggi.dat : quotaDatore(x);
@@ -4055,12 +4198,20 @@ function aggiornaDecisioni(s, r){
     if (x.ral > 0 && pcMax > 0.05){
       // si cerca su TUTTO il cursore, non solo da quello che si versa oggi in su: la frase dice
       // «il punto più alto», e se il punto più alto stesse più in basso lo direbbe lo stesso
-      const b = migliore(s, i, 'pc',
-        candidatiVersamento(x, pcMax, pcSoglia(s, i, pcMax)));
+      const b = affina(s, i, 'pc', migliore(s, i, 'pc',
+        candidatiVersamento(x, pcMax, [...pcSoglia(s, i, pcMax), ...pcTenuta(s, i, pcMax)])),
+        pcMax);
       const oggi = conAlt(s, i, 'pc', x.pcVoi);
       const base = oggi.finale;
+      // SUL BORDO DELLA TENUTA VA DETTO CHE È UN BORDO. Quando il punto migliore è l'ultimo che
+      // porta il piano fino in fondo, il decimo successivo lo fa esaurire: senza avvertirlo, chi
+      // sposta il cursore di un niente vede il verdetto in cima ribaltarsi e non sa perché.
+      // Si guarda il decimo dopo, che è il passo del cursore: un solo giro di motore in più.
+      const sulBordo = b.regge && b.v + 0.1 <= pcMax + 1e-9
+        && conAlt(s, i, 'pc', +(b.v + 0.1).toFixed(1)).annoZero !== null;
       // il perché del punto, quando ce n'è uno: altrimenti la percentuale finiva scritta due volte
-      const dove = Math.abs(b.v - pcTetto(x)) < 0.06 ? ' — dove finisce la deduzione'
+      const dove = sulBordo ? ' — oltre, il piano non arriva in fondo'
+                 : Math.abs(b.v - pcTetto(x)) < 0.06 ? ' — dove finisce la deduzione'
                  : b.v >= pcMax - 0.06 ? ' — il massimo che il cursore permette'
                  : b.v < 0.05 ? ' — nessun versamento'
                  : Math.abs(b.v - x.pcVoi) < 0.06 ? ' — quello che si versa oggi'
@@ -4116,18 +4267,25 @@ function aggiornaDecisioni(s, r){
             : '');
 
     // ===== 2. COME ESCE IL FONDO — tre passi in fila, e il primo cambia gli altri due =====
-    const inc  = r.incassi.find(v => v.chi === x.nome);
-    const rita = r.rite.find(v => v.chi === x.nome);
+    const inc  = r.incassi.find(v => v.idx === i);
+    const rita = r.rite.find(v => v.idx === i);
     const max  = inc ? inc.max : QUOTA_ORDINARIA;
     const netto = inc ? inc.montante - inc.tasse : 0;
 
     // Il capo della persona dice PRIMA la causa e poi la conseguenza: se il fondo alla pensione
     // è piccolo perché è già uscito a rate, quel «piccolo» non deve sembrare una buona notizia.
-    EL('fCapo'+i).innerHTML = !inc
+    // «il fondo non viene riscosso» va detto solo a chi davvero non lo riscuote: con l'erogazione
+    // anticipata portata fino alla pensione la posizione si esaurisce, quindi un incasso non c'è
+    // — ma il fondo è uscito tutto, e dirgli il contrario sarebbe la bugia più grossa del riquadro
+    EL('fCapo'+i).innerHTML = !inc && !rita
       ? 'il fondo non viene riscosso dentro il piano'
+      : !inc
+      ? `esce tutto a rate dal ${rita.da} al ${rita.a}: ${rita.n} rate, la prima di
+         ${E0(rita.prima)} lordi, <b>${E0(rita.netto)} netti in tutto</b>. Alla pensione la
+         posizione è esaurita.`
       : rita
-      ? `sta già uscendo a rate dal ${rita.da}: ${E0(rita.rata)} lordi l'anno, ${rita.n} rate,
-         <b>${E0(rita.netto)} netti in tutto</b>. Alla pensione ne restano
+      ? `sta già uscendo a rate dal ${rita.da}: ${rita.n} rate, la prima di ${E0(rita.prima)}
+         lordi, <b>${E0(rita.netto)} netti in tutto</b>. Alla pensione ne restano
          <b>${E0(inc.montante)}</b>, ed è poco <i>perché</i> è già stato preso, non perché il
          fondo fosse piccolo.`
       : `alla pensione, nel ${inc.anno}, vale <b>${E0(inc.montante)}</b>

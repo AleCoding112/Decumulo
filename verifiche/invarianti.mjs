@@ -32,7 +32,7 @@ globalThis.document={body:{classList:{toggle(){}}},
 const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quotaMax,SOGLIA_TUTTO,soglia,coeffEta,
   COEFF_RENDITA,QUOTA_ORDINARIA,ASSEGNO_SOCIALE,TETTO_DEDUZIONE,TFR_SU_RAL,spazioDeducibile,contributi,costoAnnuo,pcTetto,
   aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz,
-  pcSpendibile,nettoAnnuo,IVS,SOMMA_CUNEO,COMPARTI,FORME_FONDO,rendDiComparto,inCasella};`)();
+  pcSpendibile,pcMassimo,nettoAnnuo,IVS,SOMMA_CUNEO,COMPARTI,FORME_FONDO,rendDiComparto,inCasella};`)();
 
 let n=0; const rotte={};
 const ko=(k,d)=>{ (rotte[k]??=[]).push(d); };
@@ -60,7 +60,13 @@ for (let t=0; t<4000; t++){
     spesaPens: P(['', Math.round(R(0,9000))]),
     rend:+R(-2,12).toFixed(1), infl:+R(0,8).toFixed(1), rendFondo:+R(-2,12).toFixed(1),
     etaFine:I(70,105),
-    quanti: P(['1','2']), nome0:'Anna', nome1:'Bruno', forma0:P(['vita','rev','certa','durata','frazionata']), forma1:P(['vita','rev','certa','durata','frazionata']),
+    // I DUE NOMI POSSONO COINCIDERE, e devono poterlo fare qui dentro. Erano fissi ad
+    // «Anna»/«Bruno», e per questo quattromila piani non hanno mai visto che i record del fondo
+    // si cercavano PER NOME: con due nomi uguali la seconda persona leggeva i numeri della prima
+    // — montante, aliquota, rate — e il piano restava giusto, quindi niente falliva.
+    // Un cognome nella casella del nome basta a farlo capitare a qualcuno.
+    quanti: P(['1','2']), nome0:P(['Anna','Rossi']), nome1:P(['Bruno','Rossi','']),
+    forma0:P(['vita','rev','certa','durata','frazionata']), forma1:P(['vita','rev','certa','durata','frazionata']),
     anniFraz0:P(['', I(1,40)]), anniFraz1:P(['', I(1,40)]),
     cresc0: P(['', +R(0,6).toFixed(1)]), cresc1: P(['', +R(0,6).toFixed(1)]),
     nascita0:n0, ral0:Math.round(R(0,200000)),
@@ -112,16 +118,30 @@ for (let t=0; t<4000; t++){
     const q = g.inizio+g.rendimento+g.daLavoro+g.daPensioni+g.daRendita+g.daFondo+g.daRata+g.daTfr+g.daCasa-g.spesa-g.patr;
     if (Math.abs(q) > 1e-6*Math.max(1,Math.abs(g.patr))) ko('una riga non quadra', q);
   }
-  // --- IL CURSORE DEI VERSAMENTI NON ARRIVA MAI AL 100% -------------------------------
-  // Serve a tenere ferma una SEMPLIFICAZIONE, non a scoprire un errore: l'estremo destro del
-  // cursore diceva «oltre, il versamento supererebbe lo stipendio» oppure «il tot% della RAL»,
-  // e la seconda frase non è mai comparsa perché versando l'intera retribuzione lorda la busta
-  // va sempre sotto zero. Tolta la frase morta, questa invariante è ciò che autorizza a non
-  // riscriverla: se un giorno il netto al 100% tornasse positivo, fallisce qui e non in pagina.
+  // --- DOVE SI FERMA IL CURSORE DEI VERSAMENTI -----------------------------------------
+  // QUESTA INVARIANTE HA GIÀ FATTO IL SUO LAVORO, e la storia va tenuta. Diceva che il cursore
+  // non arriva mai al 100% della RAL, e serviva a tenere ferma una SEMPLIFICAZIONE: l'estremo
+  // destro scriveva una frase sola, perché versando l'intera retribuzione la busta andava sempre
+  // sotto zero (IVS 9,19% contro il 7,1% della somma del cuneo). Aveva accanto la nota «se un
+  // giorno il netto al 100% tornasse positivo, fallisce qui e non in pagina».
+  // È successo il 07/08/2026, aggiungendo il trattamento integrativo: è una cifra fissa che non
+  // scala col versamento, quindi sulle retribuzioni basse copre il buco. Quarantasei piani su
+  // quattromila l'hanno segnalato, e la pagina ha guadagnato la seconda frase invece di scrivere
+  // quella sbagliata. Al suo posto restano le due proprietà che valgono ancora.
   for (const i of s.indici){
     const x = s.p[i];
-    if (x.ral > 0 && M.pcSpendibile(x) >= 100)
-      ko('il cursore dei versamenti arriva al 100% della RAL', `RAL ${Math.round(x.ral)} €`);
+    if (!(x.ral > 0)) continue;
+    // più della propria retribuzione non si versa: il cursore non può proporlo
+    if (M.pcMassimo(x) > 100 + 1e-9)
+      ko('il cursore dei versamenti va oltre il 100% della RAL', M.pcMassimo(x));
+    // e non scende mai sotto quello che si versa già: sarebbe un cursore che non arriva a oggi
+    if (M.pcMassimo(x) < x.pcVoi - 1e-9)
+      ko('il cursore non arriva al versamento di oggi', `${M.pcMassimo(x)} < ${x.pcVoi}`);
+    // il vincolo dichiarato dev'essere quello vero: se si ferma prima del 100% è perché la busta
+    // finisce, e allora lì il netto è nullo o negativo. Le due frasi non possono scambiarsi.
+    if (M.pcMassimo(x) < 100 - 1e-9 && M.nettoAnnuo(x, Math.min(100, M.pcMassimo(x) + 0.5)) > 0)
+      ko('il cursore si ferma prima del 100% ma la busta regge ancora',
+         `RAL ${Math.round(x.ral)} € al ${M.pcMassimo(x).toFixed(1)}%`);
   }
 
   // --- L'ABITAZIONE ------------------------------------------------------------------
@@ -203,11 +223,41 @@ for (let t=0; t<4000; t++){
     // l'ultimo anno di lavoro è di ciascuno: il TFR di uno non può essere liquidato quando
     // smette l'altro. Prima questo controllo leggeva sempre `p[0]`, e reggeva solo perché il
     // motore imponeva la stessa data a tutti e due.
-    const suo = s.p.find(x => x.nome === l.chi);
+    // L'ATTRIBUZIONE SI LEGGE SU `idx`, NON SUL NOME: con due nomi uguali `find` restituiva
+    // sempre la prima persona, e questa invariante sarebbe passata su un record dell'altra.
+    const suo = s.p[l.idx];
     if (!suo) ko('liquidazione TFR senza una persona a cui attribuirla', l.chi);
     else if (l.anno !== suo.ultimo)
       ko('TFR liquidato in un anno che non è l\'ultimo di lavoro di quella persona',
          `${l.chi}: ${l.anno} invece di ${suo.ultimo}`);
+  }
+  // --- OGNI RECORD SA DI CHI È, e lo sa per indice. È il controllo che mancava: il piano restava
+  // giusto anche quando i record si scambiavano di persona, quindi nessun'altra invariante lo
+  // vedeva — sbagliava solo quello che si legge in pagina.
+  for (const [nome, elenco] of [['incasso', r.incassi], ['rate', r.rite],
+                                ['liquidazione TFR', r.liquidazioni]]){
+    for (const v of elenco){
+      if (!s.indici.includes(v.idx))
+        ko(`un ${nome} non è attribuito a nessuna persona del piano`, String(v.idx));
+      else if (v.chi !== s.p[v.idx].nome)
+        ko(`un ${nome} porta il nome di un'altra persona`, `${v.chi} su ${s.p[v.idx].nome}`);
+    }
+    // due record della stessa specie per la stessa persona vorrebbero dire che uno dei due è
+    // di qualcun altro: è la forma che prendeva il difetto quando i nomi coincidevano
+    const visti = elenco.map(v => v.idx);
+    if (new Set(visti).size !== visti.length)
+      ko(`due ${nome} per la stessa persona`, visti.join(','));
+  }
+  // un'erogazione anticipata che ha rate deve avere un netto suo: nel difetto vecchio il netto
+  // di tutti e due finiva su una riga sola e l'altra restava a zero
+  for (const t of r.rite){
+    if (!(t.n > 0)) ko('un\'erogazione anticipata senza nemmeno una rata', String(t.n));
+    if (!(t.netto > 0) || !(t.lordo >= t.netto - 1e-9))
+      ko('erogazione anticipata con lordo e netto incoerenti', `${t.lordo} / ${t.netto}`);
+    // portata fino alla decorrenza esaurisce la posizione: la rata si ricalcola sul montante
+    // che resta, quindi all'ultima esce tutto e nessun incasso può nascere per quella persona
+    if (r.incassi.some(v => v.idx === t.idx))
+      ko('rate fino alla pensione e per giunta un incasso alla pensione', String(t.idx));
   }
   // --- LEGGE: il tetto di deducibilità non lo tocca il TFR
   if (s.p.length !== s.N) ko('p e N non concordano','');
@@ -272,10 +322,10 @@ for (let t=0; t<4000; t++){
     if (!x.giaInPens) continue;
     if (x.fondo !== 0) ko('fondo non azzerato per chi è già in pensione', x.fondo);
     if (r.righe.some(g => g.fondi[i] !== 0)) ko('montante non nullo per chi è già in pensione','');
-    if (r.incassi.some(v => v.chi === x.nome)) ko('incasso dal fondo a chi è già in pensione','');
+    if (r.incassi.some(v => v.idx === i)) ko('incasso dal fondo a chi è già in pensione','');
     if (r.righe.some(g => g.rate[i])) ko('rate anticipate a chi è già in pensione','');
     if (r.righe.some(g => g.lavora[i])) ko('esercizio di attività a chi è già in pensione','');
-    if (r.liquidazioni.some(l => l.chi === x.nome)) ko('TFR liquidato a chi è già in pensione','');
+    if (r.liquidazioni.some(l => l.idx === i)) ko('TFR liquidato a chi è già in pensione','');
     // il piano principale non fa mancare nessuno, quindi il trattamento c'è in ogni esercizio
     if (!r.righe.every(g => g.inPens[i]))
       ko('un esercizio senza trattamento per chi è già in pensione', x.annoPens);
@@ -314,7 +364,7 @@ for (let t=0; t<4000; t++){
   for (const i of s.indici){
     const x = s.p[i];
     if (x.forma !== 'durata' && x.forma !== 'frazionata') continue;
-    const inc = r.incassi.find(v => v.chi === x.nome);
+    const inc = r.incassi.find(v => v.idx === i);
     if (!inc) continue;                        // fondo vuoto: niente da erogare
     if (!(inc.convertito > 1)) continue;       // preso tutto in capitale: nessun residuo
     if (!(inc.rate >= 1)) ko('forma che consuma senza nemmeno una rata', inc.rate);

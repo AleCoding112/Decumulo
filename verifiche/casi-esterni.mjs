@@ -74,7 +74,7 @@ globalThis.document = { body:{classList:{toggle(){}}}, querySelectorAll: () => [
 const M = new Function(src + `
   return {irpef, irpefNetta, nettoAnnuo, contributi, costoAnnuo, scontoIrpef, aliquota,
           aliquotaFraz, aliquotaTfr, aiSuperstiti, coeffEta, speranzaVita, soglia, quotaMax,
-          vitaIntera, simula,
+          vitaIntera, simula, trattIntegrativo, TRATT_INTEGRATIVO,
           IVS, TFR_SU_RAL, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, TETTO_DEDUZIONE,
           ASSEGNO_SOCIALE, QUOTA_ORDINARIA, REVERSIBILITA, TRATT_MINIMO_ANNO, BANDA_ALTA,
           BANDA_BASSA, MENS_PENS,
@@ -466,11 +466,15 @@ function riscontri(){
   // IPOTESI — comprese le due aliquote di addizionale, che sono l'unica differenza di perimetro
   // fra il loro conto e il nostro e che qui si tolgono con le loro stesse cifre.
   //
-  // IL RISULTATO VALE DUE VOLTE. Cinque retribuzioni su sei tornano a ZERO, il che riscontra
-  // scaglioni, detrazioni dell'art. 13, ulteriore detrazione e somma del cuneo tutti insieme.
-  // E la sesta si discosta di 1.200,00 € esatti: è il trattamento integrativo, che il modello
-  // dichiara di non rappresentare. **Un limite dichiarato diventa un limite misurato**, e se un
-  // giorno lo scarto cambiasse vorrebbe dire che si è mosso qualcos'altro.
+  // ORA TORNANO A ZERO TUTTE E SEI, e la sesta è la storia di questo controllo. Per giorni si è
+  // discostata di 1.200,00 € esatti: era il trattamento integrativo, che il modello dichiarava
+  // di non rappresentare, e il controllo pretendeva proprio quello scarto — un limite dichiarato
+  // trasformato in limite misurato. Poi il limite ha smesso di essere innocuo, perché la sua
+  // assenza fabbricava a 15.000 € uno scalino che la legge non ha, e il ricercatore del punto
+  // più alto ci si aggrappava. Rappresentandolo, la riga si è chiusa da sé: la misura dello
+  // scarto era già la prova che mancava esattamente quello e nient'altro.
+  // Sei retribuzioni su sei riscontrano ora, tutte insieme, scaglioni, detrazioni dell'art. 13,
+  // ulteriore detrazione, somma del cuneo e trattamento integrativo.
   console.log('\n  Il netto in busta, contro una tabella pubblicata');
   const FONTE_BUSTA = 'Commercialista Telematico, «Tabella completa da RAL a netto», '
     + 'aggiornata al 24/07/2026 — ipotesi dichiarate: contributi 9,19%, addizionale regionale '
@@ -484,14 +488,20 @@ function riscontri(){
   };
   for (const [ral, loro] of NETTI){
     const d = nostroNetto(ral) - loro;
-    if (ral === 15000){
-      // l'unica riga sotto la soglia del trattamento integrativo
-      c(`  ${eur(ral)}: lo scarto è il trattamento integrativo, e vale 1.200 € esatti`,
-        Math.abs(d + 1200) < 1, `scarto ${eur(d)} · ${FONTE_BUSTA}`);
-    } else {
-      c(`  ${eur(ral)}: netto annuo identico`, Math.abs(d) < 1,
-        `nostro ${eur(nostroNetto(ral))} · loro ${eur(loro)} · scarto ${eur(d)}`);
-    }
+    c(`  ${eur(ral)}: netto annuo identico`, Math.abs(d) < 1,
+      `nostro ${eur(nostroNetto(ral))} · loro ${eur(loro)} · scarto ${eur(d)}`);
+  }
+  // e che la riga da 15.000 € torni PER LA RAGIONE GIUSTA, non per compensazione: senza il
+  // trattamento integrativo dev'essere più bassa esattamente del suo importo. Un riscontro che
+  // torna può tornare per due errori che si elidono, e questo è il caso in cui saperlo costa
+  // una riga: qui sotto la soglia c'è anche il salto della detrazione dell'art. 13.
+  {
+    const [tetto, importo] = M.TRATT_INTEGRATIVO;
+    const senza = M.nettoAnnuo({ral:15000, pcVoi:0, pcDat:0, pcMin:null}, 0)
+                - M.trattIntegrativo(15000 * (1 - M.IVS));
+    c(`  ed è il trattamento integrativo a chiuderla, per ${eur(importo)} esatti`,
+      Math.abs(nostroNetto(15000) - (senza - 15000 * (1 - M.IVS) * ADDIZIONALI) - importo) < 1e-6,
+      `sotto ${eur(tetto)} di reddito complessivo, con la capienza verificata`);
   }
 
   // --- 5. la Tabella F, letta sul testo della legge -------------------------

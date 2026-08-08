@@ -24,6 +24,10 @@ const passi = [
   ['verifiche/seconda-implementazione.mjs','confronto con un motore riscritto dalle regole'],
   ['verifiche/coppie.mjs',                 'due piani che cambiano per una cosa sola, col verso dichiarato prima'],
   ['verifiche/invarianti.mjs',             'invarianti su piani casuali'],
+  // l'unico controllo che non crede all'elenco dei punti notevoli: spazzola il cursore a passo
+  // 0,1 e pretende che la ricerca rapida valga quanto quella lenta. Costa un secondo, e il
+  // difetto che ha misurato valeva 136.840 € su un piano solo.
+  ['verifiche/il-punto-piu-alto.mjs',      'il versamento consigliato, contro la forza bruta'],
   ['verifiche/schermi.mjs',                'che niente esca dallo schermo di un telefono'],
   ['verifiche/coerenza.mjs',               'che le pagine dicano quello che il conto fa'],
   ['verifiche/esempi.mjs',                 'gli esempi delle pagine, ricalcolati col motore vero'],

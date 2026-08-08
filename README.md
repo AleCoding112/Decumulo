@@ -18,8 +18,8 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 326 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su ventisei scenari e legge le frasi che scrive: 401 controlli sul testo |
+| `node test.mjs` | 344 controlli sul motore, letto da `sito/index.html` |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 442 controlli sul testo |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
@@ -27,6 +27,7 @@ lancia da solo:
 | `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
 | `node verifiche/coppie.mjs` | 23 coppie × 12 basi + 11 sulle funzioni: due piani che cambiano per **una cosa sola**, e il verso è dichiarato prima di lanciare |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali **seminati** + le funzioni di legge ai punti esatti. `SEME=<n>` per cambiare popolazione |
+| `node verifiche/il-punto-piu-alto.mjs` | l'unico che **non crede all'elenco dei punti notevoli**: spazzola il cursore a passo 0,1 su 40 piani e pretende che la ricerca rapida valga quanto la forza bruta. Nel percorso caldo la spazzolata è impraticabile — settecento giri di motore per persona — qui costa un secondo |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
 | `node verifiche/coerenza.mjs` | che le pagine dicano quello che il conto fa |
 | `node verifiche/esempi.mjs` | i numeri d'esempio delle pagine (`ESEMPIO`, `ESEMPIO_TFR`) **ricalcolati col motore vero**: erano l'unica seconda implementazione senza rete |
@@ -796,10 +797,17 @@ calcolatore per la stessa ragione dei progetti esemplificativi: **dichiara le pr
 comprese le due aliquote di addizionale, che sono l'unica differenza di perimetro col nostro conto
 e che si tolgono con le loro stesse cifre.
 
-**Sei retribuzioni, cinque a scarto ZERO** (18.000, 20.000, 30.000, 40.000, 50.000 €), il che
-riscontra in un colpo scaglioni, detrazione dell'art. 13, ulteriore detrazione del cuneo e somma
-del comma 4. **E la sesta si discosta di 1.200,00 € esatti**: è il trattamento integrativo, che il
-modello dichiara di non rappresentare.
+**Sei retribuzioni su sei a scarto ZERO** (15.000, 18.000, 20.000, 30.000, 40.000, 50.000 €), il
+che riscontra in un colpo scaglioni, detrazione dell'art. 13, ulteriore detrazione del cuneo, somma
+del comma 4 e trattamento integrativo.
+
+**Per giorni la riga da 15.000 € si è discostata di 1.200,00 € esatti**, ed era il trattamento
+integrativo, che il modello dichiarava di non rappresentare. Il **07/08/2026** è stato
+rappresentato e la riga si è chiusa da sé: *la misura dello scarto era già la prova che mancava
+quello e nient'altro*. Il controllo ora pretende anche che torni **per la ragione giusta** —
+togliendo il trattamento la riga dev'essere più bassa esattamente del suo importo — perché un
+riscontro che torna può tornare per due errori che si elidono, e proprio sotto quella soglia c'è
+anche il salto della detrazione dell'art. 13.
 
 **Un limite dichiarato è diventato un limite misurato**, ed è il guadagno vero: `il-metodo.html`
 non dice più «il risultato è conseguentemente prudenziale» ma *di quanto*. Se un giorno quello
@@ -912,6 +920,148 @@ Da notare: `coerenza.mjs` dichiarava «nessun parametro è cablato anche nel mot
 — cercava le cifre nella forma in cui stanno in `REGOLE`, non nella forma decimale con cui erano
 scritte nel codice.
 
+## 2026-08-08 — il controllo a tappeto della matematica: sette difetti, e nessuno nelle norme
+
+Revisione certosina di tutto il motore. **Le regole di legge erano giuste** — IRPEF, detrazioni
+dell'art. 13, cuneo, art. 19 sul TFR, art. 11 sul fondo, soglia del «tutto in capitale»,
+reversibilità con salvaguardia e Corte cost. 162/2022, ricontrollate una per una. I difetti stavano
+tutti nell'impianto attorno, e nessuno faceva fallire niente: **è la categoria dei difetti che
+lasciano la catena verde.**
+
+### Tre cambiavano un numero che si legge in pagina
+
+**1. Il «punto più alto» non cercava dove il piano smette di reggere.** `candidatiVersamento`
+prova i vertici della spezzata, e `meglioDi` mette la tenuta prima del finale — ma **l'ottimo di
+una funzione crescente sotto vincolo sta sul vincolo**, che non è un vertice della funzione.
+Restava la sola rete degli interi. Misurato con la forza bruta a passo 0,1 su 300 piani:
+**80 consigli non ottimi, il peggiore da 136.840 €** (35% invece di 35,9%).
+Tre cause, e tutte e tre chiuse:
+- la **frontiera della tenuta** → `pcTenuta`, gemella di `pcSoglia`: si guardano i due estremi e
+  si biseziona solo se il segno cambia. *Aggiungere candidati non può peggiorare la risposta*,
+  quindi anche una tenuta non monotona restituisce un bordo, mai un errore;
+- gli **spigoli di reddito mancanti** (15.000 e 8.500 €). L'elenco era scritto a mano e ricopiava
+  `ULTERIORE_DETRAZIONE`; ora lo genera `regole.mjs` dalle tabelle stesse (`SOGLIE_REDDITO`).
+  **Tre cifre a mano in meno, non una in più**;
+- gli **spigoli che non vale la pena nominare** — il minimo fra versato e montante, e la tenuta che
+  può perdersi e ritrovarsi più volte → `affina`, venti decimi intorno al vincitore. **0,8 ms**
+  sui 30 in cui il ricalcolo si sente (misurato: 14,4 → 15,2 ms).
+
+**Risultato: 0 su 300.** E sul bordo la pagina ora lo dice: *«— oltre, il piano non arriva in fondo»*.
+
+**2. Il nome era usato come identità della persona.** Cinque `find(v => v.chi === x.nome)`. Con
+due nomi uguali — un cognome nella casella basta — la seconda persona leggeva montante, aliquota e
+rate della prima, e il netto delle rate finiva tutto su una riga sola. **Il piano restava giusto,
+quindi niente falliva.** Ogni record porta ora `idx`. I 4.000 piani non lo vedevano perché i nomi
+erano fissi ad `Anna`/`Bruno`: ora possono coincidere, **e il cambio ha scoperto lo stesso difetto
+dentro le verifiche**, che attribuivano per nome pure loro.
+
+**3. Un rendimento reale negativo era scritto come «nessun rendimento».** Chi prova lo scenario
+pessimista — il motivo per cui quella casella è scrivibile a mano — leggeva *«nessun rendimento: il
+patrimonio è nullo o negativo»* con 537.157 € dentro, e la colonna «Rendim.» della tabella metteva
+un trattino tutti gli anni. Il test giusto è sul **patrimonio**, non sul segno dei soldi; e `cc()`,
+che il segno lo guarda, esisteva già due righe più in là. **Nessuno scenario aveva un rendimento
+reale negativo: è la ragione per cui è durato.**
+
+### Tre erano due convenzioni per la stessa grandezza
+
+`f[i].versati /= (1 + s.infl)` dice che il modello la regola la conosce: una base imponibile è
+**nominale** e va riportata a euro di oggi. Non era applicata dappertutto.
+
+**4. La base imponibile del TFR non si sgonfiava affatto.** Su quarant'anni al 3% usciva **il 75%
+sopra il vero**, cioè undici punti del TFR lordo di imposta inventata. Una riga nel ciclo, gemella
+di quella del fondo, e la somma scontata al posto del conteggio secco degli anni nel seme —
+**attenzione**: Σ(1+i)^−k **da k=0**, perché il fattore di accumulo parte da (1+r)^0. Scontarne uno
+di troppo farebbe parlare le due somme di anni diversi.
+
+**5. `versati` smetteva di sgonfiarsi durante l'erogazione a rate**, che tiene la posizione aperta
+vent'anni dopo la prestazione. La riga è uscita dall'accumulo.
+
+**6. La rata della RITA cresceva in euro nominali** — l'unico punto in cui il conto era ottimista.
+La norma e i fondi dicono che **la rata si ricalcola** a ogni scadenza sul montante che resta,
+perché il capitale non erogato continua a stare nel comparto. È la stessa legge delle forme che
+consumano: ora i due blocchi la dicono allo stesso modo. **Conseguenza da gestire, non da scoprire
+dopo**: una RITA portata fino alla pensione *esaurisce* la posizione, quindi non nasce più alcun
+incasso, e tre frasi che davano per scontato un residuo dicevano il contrario del vero.
+
+### E una disuguaglianza fra due punti che descrivono lo stesso flusso
+
+**7. Lo scenario del superstite escludeva `daRata`** mentre `fasi()` la conta fra i flussi
+ricorrenti. Con l'erogazione frazionata la percentuale mostrata era 71% invece di 83% — dodici
+punti, sopra una soglia di verdetto che sta a 66,7%.
+
+### Il trattamento integrativo, e perché un limite dichiarato ha smesso di bastare
+
+Era dichiarato e **misurato al centesimo**. Ha smesso di essere innocuo non per la fascia che ne
+beneficia, ma per tutte le altre: senza, il modello esponeva a 15.000 € di reddito una **perdita
+secca di 1.145 €** che la disciplina non ha (la detrazione dell'art. 13 c. 1 scende lì da 3.100 a
+1.955 €, e nella realtà quel salto lo colma proprio il trattamento) — e il ricercatore del punto
+più alto ci si aggrappava, consigliando di fermarsi appena sopra la soglia per una ragione
+inesistente. **Correggere il punto 1 senza questo avrebbe peggiorato le cose.**
+Il riscontro era già in casa e ha chiuso da sé: la riga da 15.000 € è passata da −1.200 € esatti a
+zero, come le altre cinque.
+
+### Il ricontrollo, e i tre difetti che stavano nella prosa
+
+La catena era verde e la matematica reggeva, ma **una frase di accompagnamento citava la norma
+sbagliata**. Il ricontrollo che ne è seguito ha trovato tre cose, nessuna nel motore.
+
+**La diagnosi vale più dei difetti**: tutte le cifre erano state verificate sul testo prima di
+essere scritte. La citazione sbagliata sta in un paragrafo di **prosa** aggiunto alla fine, mentre
+si documentava un limite che *non* si stava correggendo. **La prosa che accompagna un limite
+dichiarato va verificata come il codice che lo produce** — anzi di più, perché nessun controllo la
+esegue.
+
+1. **La quota del datore non sta nell'art. 51 c. 2 lett. h TUIR.** Quella lettera copre le sole
+   somme *trattenute al dipendente*, e la circolare 70/E del 18 dicembre 2007 lo dice alla lettera:
+   «non concorrono a formare il reddito *(e, pertanto, il datore di lavoro deve escluderli
+   direttamente dal reddito di lavoro dipendente)* gli oneri di cui all'articolo 10 … **se
+   trattenuti dal datore di lavoro**». La quota del datore sta nell'**art. 8 c. 4 D.Lgs.
+   252/2005**. Il commento che stava già nel motore era corretto: era la frase nuova a usare la
+   norma giusta per il soggetto sbagliato.
+2. **La verifica che poteva essere una catastrofe, ed è venuta pulita.** Se la quota del datore
+   entrasse nel *reddito complessivo*, sarebbero sbagliate le detrazioni dell'art. 13 di
+   **chiunque**, non solo di chi supera i 265.000 € di RAL. Verificato: il punto 1 della
+   Certificazione Unica è già al netto (la quota è certificata a parte, al punto 412). Il motore è
+   giusto. *Quando si scopre un errore in una frase, si chiede subito se la stessa confusione stia
+   anche nel conto.*
+3. **Il ricalcolo della rata RITA era spacciato per legge.** L'art. 11 c. 4 impone il solo
+   frazionamento; il ricalcolo è **prassi dei fondi**, e ora è marcato `stima`.
+4. **Il buco vero: `rita.html` dichiarava un residuo che non esiste più** — due sezioni intere.
+   `coerenza.mjs` aveva fatto il suo dovere, stampando i 29 limiti dichiarati perché venissero
+   riletti; a non rileggerli è stata una persona.
+
+**Il rimedio meccanico**, in `verifiche/esempi.mjs`: **«le affermazioni delle pagine, provate sul
+motore»**. Ci si mette una frase solo se il motore può contraddirla senza interpretazioni — «il
+fondo è un buon investimento» no, «la posizione si esaurisce» sì. **E vale nei due versi: anche un
+limite dichiarato è un'affermazione**, quindi correggendo il limite il controllo fallisce e obbliga
+a riscrivere la pagina che lo dichiarava.
+
+**Il riaudit numerico**, da principi primi e senza richiamare le funzioni del motore: 21 riscontri
+su TFR, trattamento integrativo, RITA e base imponibile del fondo. Tutti tornano. Il primo giro
+accusava 1.177 € di scarto: era un **off-by-one nel controllo**, non nel motore — nel primo
+esercizio il seme non si sgonfia, perché è già in euro di quell'anno come l'accantonamento.
+*Quando un riaudit accusa il motore, il primo sospettato è il riaudit.*
+
+### Le regole che ne escono
+
+- **Un ottimo vincolato non sta su un vertice della funzione, sta sul vincolo.** Nessun elenco di
+  punti notevoli lo contiene, per quanto lo si completi.
+- **Un elenco di soglie scritto a mano si scolla dalle tabelle da cui nasce.** Va generato.
+- **Il nome di una persona non è la sua identità.** Se due record si cercano per nome, il difetto
+  non tocca i totali e nessun controllo sui numeri lo vede.
+- **Il segno meno non è l'assenza.** Ogni frase che dice «non è successo niente» va provata su uno
+  scenario in cui il numero è negativo.
+- **Una base imponibile è nominale.** In un conto tenuto in euro di oggi va sgonfiata *ovunque*: se
+  in un punto lo si fa e in un altro no, il secondo è sbagliato.
+- **Un limite dichiarato smette di bastare quando qualcosa comincia a ottimizzarci sopra.**
+- **Un'invariante scritta per autorizzare una semplificazione fa il suo mestiere quando cade.**
+  Quella sul cursore al 100% della RAL diceva «se un giorno il netto tornasse positivo, fallisce
+  qui e non in pagina»: è successo, e la pagina ha guadagnato la seconda frase invece di scriverne
+  una sbagliata.
+- **Un test può codificare il difetto.** Tre lo facevano — «alla pensione avanza qualcosa», «quel
+  che avanza sta sotto soglia», e due soglie tarate sull'imponibile gonfiato. Riscritti sul fatto,
+  non ritarati sul caso.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -926,7 +1076,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | L'oggetto finto delle armature è **copiato in otto file** (era sei; `esempi.mjs` l'ha portato a otto il 06/08/2026) | un modulo solo, importato da tutti | ogni volta che manca un metodo costano otto modifiche invece di una: è successo con `setAttribute`. Il conto si rifà con `grep -c 'const finto = ()' verifiche/*.mjs test.mjs`, non a memoria |
 | Chi ha usato il sito prima del 3 agosto ha in memoria un **tipo di fondo** che non esiste più, e se aveva scelto «scelto da sé» con una percentuale scritta ora quella quota **viene conteggiata** | niente: `ripristina()` scorre le caselle che trova in pagina, quindi la chiave vecchia è ignorata e sparisce al primo salvataggio | è il comportamento voluto — la percentuale scritta vale — e non è silenzioso: `notaDatore` compare proprio perché una percentuale c'è, e dice la condizione |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
-| Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato | la condizione di capienza letta sul D.L. 3/2020 come modificato | **ora è misurato, non solo dichiarato**: il riscontro sulla tabella da RAL a netto dà scarto nullo fra 18.000 e 50.000 € e **esattamente −1.200 €** a 15.000. Sotto quella soglia il destinatario tipo di questo conto non c'è, e lo scostamento è noto al centesimo |
+| ~~Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato~~ **— chiuso il 07/08/2026** | — | era dichiarato e misurato (−1.200 € esatti a RAL 15.000). È stato rappresentato non per la fascia che ne beneficia ma per l'effetto sugli altri: la detrazione dell'art. 13 c. 1 **scende da 3.100 a 1.955 €** sotto i 15.000 € di reddito, e nella disciplina vigente quel salto lo colma proprio quel trattamento. Senza, il modello esponeva una perdita secca di 1.145 € che la legge non ha — e il ricercatore del punto più alto ci si aggrappava. **Non è rappresentato il secondo periodo** (15.001–28.000 €), che dipende dalle detrazioni dell'art. 12 e dagli oneri dell'art. 15: senza quelle vale zero per costruzione |
 | La **perequazione a fasce** delle pensioni non è modellata | le tre percentuali e le soglie lette sulla norma, non sul commento: il DM 19/11/2025 le applica *per scaglioni* | l'errore è nullo sotto 4 volte il minimo (2.447 €/mese) e piccolo sopra: 2,8% su trent'anni a 3.500 €/mese. Ora è dichiarato con la sua misura |
 | Il TFR già accantonato è un **montante**, e l'imponibile va separato dalle rivalutazioni: la scomposizione usa il tasso del modello, non quelli storici | i tassi ISTAT degli anni trascorsi, per persona | opera su una frazione contenuta del montante (~6% su venticinque anni), e il ripiego cade dal lato prudente: senza anni vale 1, cioè tutto imponibile. È dichiarato in `il-metodo.html` e in `tfr-fondo-o-azienda.html` |
 | Il **garantito dei PIP** è quasi sempre una gestione separata di **ramo I**: non si valuta a mercato e non ha il sottostante di un garantito negoziale. Togliergli il solo differenziale di costo presuppone un'identità che non c'è | un modello del ramo I, oppure una rilevazione dei rendimenti effettivi di quelle gestioni | è **una casella su dodici**, e ne esce 0,07% — basso ma non assurdo per un prodotto garantito e caro. Dichiarato in `il-metodo.html`; le altre undici reggono |

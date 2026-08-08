@@ -17,7 +17,7 @@
 // Si scrive in forma ISO ed è l'unica da cambiare: la stringa in italiano si genera da questa,
 // e due date scritte a mano divergerebbero al primo aggiornamento. La forma confrontabile serve
 // alla guardia in `verifiche/scadenze.mjs`.
-export const REVISIONE_ISO = '2026-08-02';
+export const REVISIONE_ISO = '2026-08-08';
 export const REVISIONE = new Date(REVISIONE_ISO + 'T00:00:00Z')
   .toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'});
 
@@ -102,6 +102,32 @@ export const REGOLE = {
     come: 'detrazione', riscontro: 'verifiche/riscontri-esterni.mjs',
     val: [[20000, 0, 0, 0], [32000, 1000, 0, 0], [40000, 0, 1000, 8000]],
     fonte: 'art. 1 c. 6 L. 207/2024, testo riportato dalla circolare Agenzia delle Entrate 4/E del 16 maggio 2025: «1.000 euro se il reddito complessivo è superiore a 20.000 euro ma non a 32.000 euro; al prodotto tra 1.000 euro e l\'importo corrispondente al rapporto tra 40.000 euro, diminuito del reddito complessivo, e 8.000 euro». Esclusi i titolari di redditi di pensione',
+    verificata: true },
+
+  // IL TRATTAMENTO INTEGRATIVO, cioè l'ex bonus Renzi. Fino al 07/08/2026 era un limite
+  // DICHIARATO: «non rappresentato, e lo scostamento è misurato, 1.200 € l'anno esatti».
+  // Dichiararlo non bastava più, e non per la fascia che ne beneficia — per tutti gli altri.
+  // La sua assenza fabbricava uno SCALINO che la legge non ha: sotto i 15.000 € di reddito
+  // complessivo la detrazione dell'art. 13 c. 1 crolla da 3.100 a 1.955 € (è il testo), e nella
+  // realtà il salto lo riempiono questi 1.200. Senza, il conto mostrava una perdita secca di
+  // 1.145 € appena il reddito scendeva sotto quella soglia — e il ricercatore del «punto più
+  // alto» ci si aggrappava, consigliando di fermarsi APPENA SOPRA i 15.000 per una ragione che
+  // non esiste. Un versamento alto ci porta chiunque, non solo i redditi bassi.
+  // IL RISCONTRO ERA GIÀ IN CASA: la riga da 15.000 € della tabella pubblicata si discostava di
+  // 1.200 € esatti mentre le altre cinque tornavano a zero. Ora torna a zero anche quella.
+  //
+  // IL SECONDO PERIODO (15.001–28.000 €) NON VA RAPPRESENTATO, e la ragione è di perimetro, non
+  // di pigrizia: lì l'importo è la differenza fra la SOMMA delle detrazioni — art. 12 per i
+  // carichi di famiglia, art. 13, e gli oneri dell'art. 15 c. 1 lett. a) e b) per i mutui — e
+  // l'imposta lorda. Di quelle il modello ha solo l'art. 13, e con la sola art. 13 la differenza
+  // è sempre negativa (a 15.001 € l'imposta lorda è 3.450 contro 3.100 di detrazione). Dentro
+  // questo perimetro il secondo periodo vale zero per costruzione: rappresentarlo con i soli
+  // dati che abbiamo darebbe zero e prometterebbe una regola che non stiamo applicando.
+  TRATT_INTEGRATIVO: { nome: "Trattamento integrativo dei redditi di lavoro dipendente",
+    come: 'trattamento', riscontro: 'verifiche/casi-esterni.mjs',
+    // [tetto di reddito, importo, sconto sulla detrazione nella condizione di capienza]
+    val: [15000, 1200, 75],
+    fonte: 'art. 1 c. 1 D.L. 3/2020 conv. L. 21/2020, testo vigente su Normattiva: 1.200 € dal 2021 «se il reddito complessivo non è superiore a 15.000 euro» e «qualora l\'imposta lorda determinata sui redditi di cui agli articoli 49 e 50 ... sia di ammontare superiore alla detrazione spettante ai sensi dell\'articolo 13, comma 1, del citato testo unico, diminuita dell\'importo di 75 euro rapportato al periodo di lavoro nell\'anno». La condizione di capienza si azzera intorno agli 8.174 € di reddito, che è l\'area esente dei dipendenti. Non è rappresentato il secondo periodo (15.001-28.000 €), che dipende dalle detrazioni dell\'art. 12 e dagli oneri dell\'art. 15: senza quelle la differenza è sempre negativa, quindi dentro questo perimetro vale zero. Come la somma del cuneo NON è una detrazione: non concorre al reddito e si aggiunge al netto. Spetta ai soli titolari di reddito di lavoro dipendente',
     verificata: true },
 
   // NON è tutta IVS, e il nome lo diceva male: 9,19 = 8,89 al Fondo pensioni + 0,30 alla CIG
@@ -536,6 +562,27 @@ export const irpefNetta = (reddito, pensione) => {
   return Math.max(0, irpef(R)
     - detrazione(pensione ? V('DETRAZIONE_PENS') : V('DETRAZIONE_LAV'), R) - piu - cuneo);
 };
+// I REDDITI DOVE LA BUSTA CAMBIA PENDENZA O FA UN SALTO, ricavati dalle tabelle invece che
+// scritti a mano. Servono al calcolatore per cercare il versamento migliore: fra un vertice e
+// l'altro il patrimonio finale è lineare nella percentuale versata, quindi il massimo sta su un
+// vertice — ma un vertice dimenticato è un massimo mancato, ed è successo.
+// Gli spigoli delle bande si leggono dalle tabelle; la CAPIENZA del trattamento integrativo no,
+// perché non è lo spigolo di una banda: è il reddito in cui l'imposta lorda raggiunge la
+// detrazione dell'art. 13 meno lo sconto. Si risolve per bisezione una volta sola, qui, invece
+// di ricavare a mano un numero che si scollerebbe alla prima correzione delle tabelle.
+function sogliaRedditi(){
+  const [tetto, , sconto] = V('TRATT_INTEGRATIVO');
+  const capiente = R => irpef(R) > detrazione(V('DETRAZIONE_LAV'), R) - sconto;
+  let lo = 0, hi = tetto;
+  if (capiente(lo) === capiente(hi)) hi = lo;          // nessun passaggio: niente da aggiungere
+  else for (let k = 0; k < 40; k++){ const m = (lo + hi) / 2; capiente(m) ? hi = m : lo = m; }
+  const bande = [V('SCAGLIONI'), V('DETRAZIONE_LAV'), V('ULTERIORE_DETRAZIONE'),
+                 V('SOMMA_CUNEO')].flatMap(t => t.map(b => b[0]));
+  return [...new Set([...bande, tetto, ...(hi > lo ? [hi] : [])])]
+    .filter(v => Number.isFinite(v) && v > 0).sort((a, b) => a - b)
+    .map(v => +v.toFixed(2));
+}
+
 {
   const e = ESEMPIO;
   e.lav = e.ral * e.pcLav / 100;
@@ -597,8 +644,15 @@ export const ESEMPIO_TFR = { anni: [10, 20, 35], base: 20, infl: 0.02 };
     V('ALIQ_FONDO_MAX') - Math.max(0, n - 15) * V('ALIQ_FONDO_PASSO'));
 
   // un caso = una destinazione, un rendimento, un orizzonte. `messo` è la base imponibile.
+  // LA BASE IMPONIBILE È NOMINALE E IL CONTO STA IN EURO DI OGGI: gli accantonamenti vanno
+  // riportati all'anno in cui si paga l'imposta, uno per uno, e non sommati secchi. Vale tanto
+  // per l'art. 19 sul TFR quanto per l'art. 11 c. 6 sul fondo — è la stessa grandezza, e il
+  // motore la sgonfia in tutti e due i posti. Sommandoli secchi, a trentacinque anni la base
+  // usciva quasi il doppio del vero e l'imposta con lei.
+  const scontati = n => Math.abs(t.infl) > 1e-9
+    ? (1 - (1 + t.infl) ** -n) / t.infl * (1 + t.infl) : n;
   t.caso = (rendNominale, n) => {
-    const messo = t.annuo * n;
+    const messo = t.annuo * scontati(n);
     const rReale = (1 + rendNominale) / (1 + t.infl) - 1;
     const az = montante(t.annuo, t.rivReale, n), alAz = aliqSeparata(messo, n);
     const fo = montante(t.annuo, rReale, n),     alFo = aliqFondo(n);
@@ -688,6 +742,10 @@ export const ESEMPIO_FONDO = { anni: 25, infl: 0.02 };
 
 export const TESTI = {
   tetto:            eur(V('TETTO_DEDUZIONE')),
+  // le tre cifre del trattamento integrativo, dalla stessa voce che le porta al motore
+  trattIntegrativo:       eur(V('TRATT_INTEGRATIVO')[1]),
+  trattIntegrativoTetto:  eur(V('TRATT_INTEGRATIVO')[0]),
+  trattIntegrativoSconto: eur(V('TRATT_INTEGRATIVO')[2]),
   quota:            pc(V('QUOTA_ORDINARIA')),
   assegnoSociale:   eur(V('ASSEGNO_SOCIALE')),
   soglia:           eur(soglia(COEFF_67)),
@@ -846,6 +904,17 @@ const DETRAZIONE_PENS = [${V('DETRAZIONE_PENS').map(b => `[${b.join(',')}]`).joi
 const DETRAZIONE_PENS_PIU = ${V('DETRAZIONE_PENS_PIU')};
 const SOMMA_CUNEO = [${V('SOMMA_CUNEO').map(b => `[${b.join(',')}]`).join(', ')}];
 const ULTERIORE_DETRAZIONE = [${V('ULTERIORE_DETRAZIONE').map(b => `[${b.join(',')}]`).join(', ')}];
+// [tetto di reddito, importo, sconto sulla detrazione nella condizione di capienza]
+const TRATT_INTEGRATIVO = [${V('TRATT_INTEGRATIVO').join(', ')}];
+// I VERTICI DELLA BUSTA PAGA, cioè i redditi dove il netto cambia pendenza o fa un salto.
+// Generati dalle tabelle qui sopra e non scritti a mano: prima nel calcolatore c'erano tre
+// numeri battuti a macchina (20.000, 32.000, 40.000) che ricopiavano ULTERIORE_DETRAZIONE, e
+// mancavano proprio gli spigoli di DETRAZIONE_LAV e SOMMA_CUNEO — 15.000 e 8.500. Il ricercatore
+// del punto più alto cercava il massimo di una spezzata senza due dei suoi vertici, e lo mancava.
+// Un elenco che si scrive da sé non può più rimanere indietro rispetto alle tabelle da cui nasce.
+// L'ultimo è la CAPIENZA del trattamento integrativo, che non è lo spigolo di una banda ma la
+// soluzione di imposta lorda = detrazione − sconto: si trova per bisezione, una volta, qui.
+const SOGLIE_REDDITO = [${sogliaRedditi().join(', ')}];
 const MENS_PENS = ${V('MENSILITA_PENSIONE')};
 const PROVA_ANNI = ${V('PROVA_ANNI')};
 const REVERSIBILITA = ${V('REVERSIBILITA')};
@@ -893,6 +962,12 @@ const mostra = r => Array.isArray(r.val)
   // 15.000 €». Il numero era giusto e la frase assurda: se ne accorge solo chi guarda la pagina.
   : r.come === 'cuneo' ? r.val.map(([fino, q]) =>
       `${pc(q, 1)} del reddito da lavoro fino a ${eur(fino)}`).join(' · ') + ' · nulla oltre'
+  // il trattamento integrativo è una cifra sola con due condizioni, non una scala di bande:
+  // il tetto di reddito e la capienza. Senza un formato suo cadeva nel ramo del cuneo, che
+  // pretende coppie, e faceva morire il build — meglio che scrivere una riga assurda.
+  : r.come === 'trattamento' ? (([tetto, imp, sconto]) =>
+      `${eur(imp)} l'anno fino a ${eur(tetto)} di reddito complessivo, se l'imposta lorda `
+      + `supera la detrazione dell'art. 13 c. 1 diminuita di ${eur(sconto)}`)(r.val)
   : r.come === 'detrazione' ? r.val.map(([fino, base, quota, den]) =>
       (base ? eur(base) : '')
       + (quota ? (base ? ' + ' : '') + `${eur(quota)} × (${eur(fino)} − reddito) / `

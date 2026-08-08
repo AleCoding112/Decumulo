@@ -47,6 +47,12 @@ const sommaCuneo = R => {
   for (const [fino, q] of V('SOMMA_CUNEO')) if (R <= fino) return Math.max(0, R) * q;
   return 0;
 };
+// il trattamento integrativo, riscritto dalla regola: stessa natura della somma del cuneo — non
+// tocca l'imposta — più la condizione di capienza, che è quella che ne decide la spettanza
+const trattIntegrativo = R => {
+  const [tetto, importo, sconto] = V('TRATT_INTEGRATIVO');
+  return R <= tetto && irpef(R) > detrazione(V('DETRAZIONE_LAV'), R) - sconto ? importo : 0;
+};
 const aliqFondo = anni => Math.min(V('ALIQ_FONDO_MAX'),
   Math.max(V('ALIQ_FONDO_MIN'), V('ALIQ_FONDO_MAX') - V('ALIQ_FONDO_PASSO') * (anni - 15)));
 const coeffEta = eta => {
@@ -144,9 +150,16 @@ function piano(D){
   const T = D.p.map((x, i) => {
     const conta = x.tfrGia > 0 && x.annoLav != null && ult[i] >= V('ANNO0');
     const anni  = conta ? Math.max(0, Math.min(V('ANNO0') - x.annoLav, 60)) : 0;
-    // montante = a·((1+r)^n − 1)/r, imponibile = a·n: la frazione scompone l'uno nell'altro
-    const q = anni > 0 && rTfr > 1e-9
-      ? anni * rTfr / (Math.pow(1 + rTfr, anni) - 1) : 1;
+    // montante = a·((1+r)^n − 1)/r; imponibile = la somma degli accantonamenti riportata a euro
+    // di oggi, cioè a·Σ(1+infl)^−k e non a·n — sono importi nominali anche all'indietro.
+    // La frazione scompone l'uno nell'altro; non supera mai 1, come la base del fondo.
+    // Σ(1+infl)^−k da k=0, come il denominatore parte da (1+r)^0: stessi anni da tutt'e due i lati
+    const scont = Math.abs(infl) > 1e-9
+      ? (1 - Math.pow(1 + infl, -anni)) / infl * (1 + infl) : anni;
+    const q = anni > 0
+      ? Math.min(1, scont / (Math.abs(rTfr) > 1e-9
+          ? (Math.pow(1 + rTfr, anni) - 1) / rTfr : anni))
+      : 1;
     return conta ? {pot: x.tfrGia, messo: x.tfrGia * q, anni} : {pot: 0, messo: 0, anni: 0};
   });
   const righe = [], inc = [], liq = [];
@@ -181,7 +194,7 @@ function piano(D){
         const base = Math.max(0, ral * (1 - V('IVS')));
         const ded  = c => Math.min(c.lav, Math.max(0, V('TETTO_DEDUZIONE') - c.dat));
         const R = base - ded(q);
-        E += base - q.lav - irpefNetta(R, false) + sommaCuneo(R);
+        E += base - q.lav - irpefNetta(R, false) + sommaCuneo(R) + trattIntegrativo(R);
       }
       if (inPens && !(manca !== null && a >= manca.anno && i === resta))
         E += x.pens * V('MENSILITA_PENSIONE')
@@ -191,6 +204,9 @@ function piano(D){
       // nuovo dipende dalla destinazione — quello già accantonato resta in azienda e si liquida
       // comunque, anche per chi da un certo anno ha conferito al fondo.
       {
+        // l'imponibile dell'art. 19 è NOMINALE e il conto sta in euro di oggi: si sgonfia di un
+        // anno di inflazione a ogni giro, come la base imponibile del fondo qui sotto
+        if (a > V('ANNO0')) T[i].messo /= (1 + infl);
         if (lavora){
           if (!x.tfrAlFondo){ T[i].pot = T[i].pot * (1 + rTfr) + tfrA;
                               T[i].messo += tfrA; T[i].anni++; }
@@ -213,17 +229,20 @@ function piano(D){
       const AI = Math.max(x.annoPens, V('ANNO0'));
       const daRita = Math.min(Math.max(x.rita || AI, V('ANNO0')), AI);
       const nRate  = AI - daRita;
+      // fuori dall'accumulo: una posizione che esce a rate resta aperta anche dopo la
+      // prestazione, e la sua base imponibile è nominale in tutti quegli anni
+      if (a > V('ANNO0')) F[i].v /= (1 + infl);
       if (a <= AI){
-        if (a > V('ANNO0')) F[i].v /= (1 + infl);
         if (lavora){
           const tfrDentro = x.tfrAlFondo ? tfrA : 0;
           F[i].m += vers + tfrDentro;
           // art. 11 c. 6: quello che non si è dedotto non rientra nella base imponibile
           F[i].v += Math.min(vers, V('TETTO_DEDUZIONE')) + tfrDentro;
         }
+        // la rata dell'erogazione anticipata si RICALCOLA a ogni scadenza sul montante che
+        // resta: il capitale non ancora erogato continua a stare nel comparto
         if (nRate > 0 && a >= daRita && a < AI && F[i].m > 0){
-          if (F[i].rata === null) F[i].rata = F[i].m / nRate;
-          const lorda = Math.min(F[i].rata, F[i].m);
+          const lorda = F[i].m / (AI - a);
           const imponibile = lorda * Math.min(F[i].v / F[i].m, 1);
           F[i].m -= lorda; F[i].v -= imponibile;
           E += lorda - imponibile * aliqFondo(a - x.iscr);

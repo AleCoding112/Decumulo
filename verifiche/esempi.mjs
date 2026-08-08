@@ -55,7 +55,7 @@ globalThis.document = {
 // dipende tutta la pagina — quanto entra nel fondo e quanto costa in busta — e in `regole.mjs`
 // esistono in una seconda stesura.
 const M = new Function(src +
-  '\nreturn {leggi, simula, aliquota, aliquotaTfr, irpefNetta, contributi, costoAnnuo};')();
+  '\nreturn {leggi, simula, aliquota, aliquotaTfr, irpefNetta, contributi, costoAnnuo, nettoAnnuo};')();
 
 // --- i controlli ------------------------------------------------------------
 let ko = 0, n = 0;
@@ -65,7 +65,7 @@ const eur = x => Math.round(x).toLocaleString('it-IT', {useGrouping:'always'}) +
 const vicino = (a, b, tol = 1) => Math.abs(a - b) <= tol;
 const t = (nome, ok, detta) => {
   n++;
-  if (ok) return;
+  if (ok) { if (process.env.MOSTRA) console.log(`  ok  ${nome}\n      ${detta}`); return; }
   ko++;
   console.log(`  ✗ ${nome}\n    ${detta}`);
 };
@@ -221,6 +221,78 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
   t('il vantaggio scende togliendo il datore, e ancora con un fondo aperto',
     f.diff > f.soli.diff && f.soli.diff > f.soliAperto.diff,
     `${eur(f.diff)} → ${eur(f.soli.diff)} → ${eur(f.soliAperto.diff)}`);
+}
+
+// --- 5. LE AFFERMAZIONI DELLE PAGINE CHE IL MOTORE PUÒ SMENTIRE ------------
+// PERCHÉ ESISTE QUESTO GRUPPO, e da quale errore nasce. Il 08/08/2026 la rata della RITA è
+// passata da fissa a ricalcolata a ogni scadenza. Il motore, i test, le invarianti e la seconda
+// implementazione erano tutti verdi — ma `rita.html` continuava a dire «destinandovi l'intero
+// fondo, alla pensione avanza solo quello che nel frattempo è cresciuto», e aveva una sezione
+// intera sul residuo che da quel momento vale zero. **Nessun controllo ha protestato**, perché
+// nessuno lega una FRASE al comportamento che descrive.
+//
+// `coerenza.mjs` stampa i limiti dichiarati perché vengano riletti, e li aveva stampati: la rete
+// c'era, ma chiede a una persona di guardarla. Qui invece le affermazioni che il motore SA
+// rispondere diventano asserzioni, e cadono da sole quando il comportamento cambia.
+//
+// LA REGOLA PER AGGIUNGERNE: si mette qui una frase di una pagina solo se il motore può
+// contraddirla senza interpretazioni. «Il fondo è un buon investimento» non entra; «la posizione
+// si esaurisce» sì. E vale in tutte e due le direzioni — anche un LIMITE DICHIARATO è
+// un'affermazione, e quando si corregge il limite questo controllo fallisce e obbliga a
+// riscrivere la pagina che lo dichiarava. È esattamente il servizio che è mancato.
+console.log('\n  — le affermazioni delle pagine, provate sul motore —');
+{
+  const leggiCon = d => { DATI = d; return M.leggi(); };
+  const BASE = {quanti:'1', cl3:100000, spesa:1500, spesaPens:'', rend:4, infl:2, rendFondo:3,
+    etaFine:95, nome0:'Anna', nascita0:1975, ral0:40000, pens0:1500, annoPens0:2042,
+    fondo0:200000, pcVoi0:1.2, pcDat0:2, pcMin0:'', tfrDove0:'fondo', iscr0:2005,
+    quotaCap0:0.5, forma0:'vita', anniFraz0:'', ultimo0:'', cresc0:'', tfrGia0:'', annoLav0:'',
+    casaCosa:'resto', casaAnno:'', casaValore:'', casaNuova:'', casaCanone:'', rita0:2042};
+
+  // rita.html: «destinando alla RITA l'intero fondo e portandola fino alla pensione, la
+  // posizione si esaurisce: all'ultima rata il divisore vale uno, e non avanza nulla»
+  const conRita = M.simula(leggiCon({...BASE, rita0:2036}));
+  t('rita.html — la RITA fino alla pensione esaurisce la posizione',
+    conRita.rite.length === 1 && conRita.incassi.length === 0,
+    `${conRita.rite[0] ? conRita.rite[0].n + ' rate' : 'nessuna rata'}, `
+    + `${conRita.incassi.length} incassi alla pensione`);
+
+  // rita.html: «le rate non sono tutte uguali — salgono se il comparto rende»
+  const rate = conRita.righe.filter(g => g.daRata > 0).map(g => g.daRata);
+  t('rita.html — le rate non sono tutte uguali, e col comparto che rende crescono',
+    rate.length > 1 && rate.every((v, i) => i === 0 || v > rate[i-1]),
+    `${rate.length} rate, dalla prima all'ultima ${eur(rate[0])} → ${eur(rate.at(-1))}`);
+
+  // il-metodo.html, LIMITE DICHIARATO: «per la quota del datore non la riprende: continua a
+  // tenerla fuori dalla retribuzione a qualunque importo». Il giorno in cui lo si correggesse,
+  // questo controllo fallisce e la pagina va riscritta.
+  {
+    const tetto = V('TETTO_DEDUZIONE');
+    // una RAL abbastanza alta perché la sola quota del datore superi il tetto. Il gradino va
+    // fatto scattare: sotto la soglia contrattuale il datore non versa, e il caso non esisterebbe.
+    const x = {ral: 400000, pcVoi: 1, pcDat: 2, pcMin: null};
+    const c = M.contributi(x, x.pcVoi);
+    const eccedenza = c.dat - tetto;
+    // il netto in busta NON cambia togliendo l'eccedenza dal reddito: prova che non ci entra mai
+    const senzaEccedenza = M.nettoAnnuo({...x, pcDat: tetto / x.ral * 100}, x.pcVoi);
+    t('il-metodo.html — la quota del datore oltre il tetto non rientra nel netto (limite dichiarato)',
+      eccedenza > 0 && Math.abs(M.nettoAnnuo(x, x.pcVoi) - senzaEccedenza) < 1e-9,
+      `quota datore ${eur(c.dat)}, eccedenza ${eur(eccedenza)} che la busta ignora`);
+  }
+
+  // il-metodo.html: «quelle somme non entrano nel reddito complessivo, ed è la ragione per cui
+  // qui abbassano anche il parametro su cui si calcolano le detrazioni dell'art. 13».
+  // Si prova sul FATTO: versare abbassa il netto MENO di quanto si versa, perché la detrazione
+  // risale. Se un domani il reddito complessivo smettesse di scendere, il costo eguaglierebbe
+  // il versamento e la frase della pagina diventerebbe falsa.
+  {
+    const x = {ral: 38000, pcVoi: 0, pcDat: 0, pcMin: null};
+    const versa = 38000 * 0.02;
+    const costo = M.costoAnnuo(x, 2);
+    t('il-metodo.html — i contributi abbassano il reddito complessivo, non solo l\'imponibile',
+      costo > 0 && costo < versa,
+      `versa ${eur(versa)}, la busta cala di ${eur(costo)}: ${eur(versa - costo)} di sconto`);
+  }
 }
 
 console.log(`\n${n - ko} su ${n}${ko ? `, ${ko} KO` : ', 0 KO'}`);

@@ -481,15 +481,19 @@ t('il fondo del primo è sopra la soglia: chiedere tutto viene tagliato', (() =>
   `montante ${eur(r.incassi[0].montante)} €`);
 // LE DUE DECISIONI SI PARLANO, ed è l'effetto di confine che la pagina dichiara: chi aspetta la
 // pensione si trova il montante sopra la soglia e «tutto in contanti» negato; chi lo prende a
-// rate arriva alla pensione con un residuo sotto soglia, e glielo concedono.
+// rate non arriva alla soglia perché non arriva alla pensione con una posizione da riscuotere.
 t('chi aspetta: il fondo supera la soglia e «tutto» viene tagliato alla quota ordinaria',
   r.incassi[1].limitata && r.incassi[1].chiesta === 1 &&
   Math.abs(r.incassi[1].quota - M.QUOTA_ORDINARIA) < 1e-12 && r.incassi[1].montante > r.incassi[1].soglia,
   `montante ${eur(r.incassi[1].montante)} € contro una soglia di ${eur(r.incassi[1].soglia)} €`);
-t('chi prende a rate: quel che avanza sta sotto soglia e «tutto» si può', (() => {
-    const c = M.conAlt(s, 1, 'rita', DATI.annoPens1 - 8).incassi[1];
-    return !c.limitata && c.quota === 1 && c.montante < c.soglia; })(),
-  `avanzano ${eur(M.conAlt(s, 1, 'rita', DATI.annoPens1 - 8).incassi[1].montante)} €`);
+// QUI PRIMA SI DICEVA «quel che avanza sta sotto soglia e tutto si può», e non avanza niente: la
+// rata si ricalcola sul montante che resta, quindi all'ultima esce tutto. La soglia del «tutto in
+// contanti» non è una leva dell'erogazione anticipata — chi la prende per intero non ci arriva
+// nemmeno, alla scelta fra capitale e rendita.
+t('chi prende a rate fino alla pensione non ha nessuna quota da scegliere', (() => {
+    const v = M.conAlt(s, 1, 'rita', DATI.annoPens1 - 8);
+    return v.incassi.every(z => z.idx !== 1) && v.rite.some(z => z.idx === 1); })(),
+  'la posizione si esaurisce con l\'ultima rata');
 // «tutto» viene comunque tagliato al massimo di legge: il confronto va fatto con METÀ di quel
 // massimo, non con 0,5 fisso — che dal 1° luglio 2026 è il massimo stesso, e il test confrontava
 // il taglio con sé stesso.
@@ -994,17 +998,33 @@ t('con la RITA le rate partono nell\'anno scelto, non prima',
 t('le rate finiscono l\'anno prima della pensione',
   rr.rite[0].a === DATI.annoPens1 - 1 && ra(DATI.annoPens1 - 1).daRata > 0
   && ra(DATI.annoPens1).daRata === 0);
-t(`sono ${RATE} rate uguali al lordo`, rr.rite[0].n === RATE);
-t('quello che resta continua a rendere, quindi alla pensione avanza qualcosa',
-  rr.incassi[1].montante > 0 && rr.incassi[1].montante < r.incassi[1].montante,
-  `${eur(rr.incassi[1].montante)} € invece di ${eur(r.incassi[1].montante)} €`);
+t(`sono ${RATE} rate`, rr.rite[0].n === RATE);
+// LA RATA NON È FISSA: si ricalcola a ogni scadenza sul montante che resta, perché il capitale
+// non ancora erogato continua a stare nel comparto — «le rate verranno di volta in volta
+// ricalcolate e terranno conto degli incrementi o decrementi derivanti dalla gestione».
+// Col fondo che rende, le rate dopo sono più alte della prima.
+const rateNette = Array.from({length: RATE}, (_, k) => ra(daRita + k).daRata);
+t('la rata si ricalcola a ogni scadenza, non resta quella della prima',
+  rateNette.every((v, i) => i === 0 || v > rateNette[i-1]),
+  rateNette.map(v => eur(v)).join(' → '));
+// QUI PRIMA C'ERA IL CONTRARIO — «alla pensione avanza qualcosa» — ed era l'artefatto della rata
+// fissata alla prima e mai più toccata: quello che avanzava era il rendimento che la rata non
+// aveva inseguito. Con le rate ricalcolate all'ultima il divisore vale uno, e non avanza nulla.
+t('portata fino alla pensione, l\'erogazione anticipata esaurisce la posizione',
+  rr.incassi.filter(z => z.idx === 1).length === 0
+  && ra(DATI.annoPens1).fondi[1] === 0 && rr.rite[0].netto > 0,
+  `${eur(rr.rite[0].lordo)} € lordi in ${RATE} rate, ${eur(rr.rite[0].netto)} € netti`);
+// e ne esce più di quanto ne uscirebbe a rate tutte uguali, perché il residuo rende svuotandosi
+t('il lordo complessivo supera la prima rata moltiplicata per il numero delle rate',
+  rr.rite[0].lordo > rr.rite[0].prima * RATE,
+  `${eur(rr.rite[0].lordo)} € contro ${eur(rr.rite[0].prima * RATE)} €`);
 // tre momenti dentro la finestra delle rate, presi in proporzione invece che a mano
 const durante = [daRita + 1, daRita + Math.floor(RATE/2), DATI.annoPens1 - 1];
 t('il fondo cala mentre si prendono le rate',
   durante.every((a, i) => i === 0 || ra(a).fondi[1] < ra(durante[i-1]).fondi[1]));
 t('le rate arrivano al netto dell\'imposta',
-  ra(daRita).daRata < rr.rite[0].rata && ra(daRita).daRata > rr.rite[0].rata * 0.85,
-  `lorda ${eur(rr.rite[0].rata)} € → netta ${eur(ra(daRita).daRata)} €`);
+  ra(daRita).daRata < rr.rite[0].prima && ra(daRita).daRata > rr.rite[0].prima * 0.85,
+  `lorda ${eur(rr.rite[0].prima)} € → netta ${eur(ra(daRita).daRata)} €`);
 t('le rate stanno nel flusso ricorrente, non fra le una-tantum',
   M.fasi(rr).filter(x => x.da >= daRita && x.a <= DATI.annoPens1 - 1)
             .every(x => x.unaTantum === 0));
@@ -1085,8 +1105,17 @@ t('più inflazione, più rivalutazione nominale — ma in euro di oggi ci perde 
     const su = M.simula({...s, infl:0.06, p:s.p.map(x=>({...x, tfrAlFondo:false}))});
     return su.liquidazioni[0].lordo < inAzienda.liquidazioni[0].lordo; })(),
   `2%: ${eur(inAzienda.liquidazioni[0].lordo)} € · 6%: ${eur(M.simula({...s, infl:0.06, p:s.p.map(x=>({...x, tfrAlFondo:false}))}).liquidazioni[0].lordo)} €`);
+// L'IMPONIBILE DELL'ART. 19 È NOMINALE, e il piano sta in euro di oggi: ogni accantonamento va
+// riportato all'anno della liquidazione, esattamente come la base imponibile del fondo. Sommarli
+// secchi — che è quello che questo controllo pretendeva prima — tassa un importo che a fine
+// carriera arriva molto sopra il vero, e l'aliquota media ne segue.
+const imponibilePrimo = Array.from({length: eserPrimo},
+  (_, k) => tfrPrimo / Math.pow(1 + s.infl, k)).reduce((a, b) => a + b, 0);
+t('l\'imponibile è la somma degli accantonamenti riportata a euro di oggi, non la somma secca',
+  Math.abs(inAzienda.liquidazioni[0].tasse / inAzienda.liquidazioni[0].al - imponibilePrimo) < 1e-6,
+  `${eur(imponibilePrimo)} € invece dei ${eur(tfrPrimo*eserPrimo)} € della somma secca`);
 t('l\'aliquota della liquidazione è la media sul reddito di riferimento (art. 19 TUIR), non la marginale',
-  Math.abs(inAzienda.liquidazioni[0].al - M.aliquotaTfr(tfrPrimo*eserPrimo, eserPrimo)) < 1e-9 &&
+  Math.abs(inAzienda.liquidazioni[0].al - M.aliquotaTfr(imponibilePrimo, eserPrimo)) < 1e-9 &&
   inAzienda.liquidazioni[0].al < marginale,
   `${(inAzienda.liquidazioni[0].al*100).toFixed(1)}% invece del ${fmt((marginale*100).toFixed(0))}% marginale`);
 t('l\'imposta si paga sugli accantonamenti, non sulla rivalutazione già tassata al 17%',
@@ -1153,8 +1182,12 @@ console.log('\n— il TFR già accantonato —');
     // l'anno. Il montante è lo stesso, l'imposta no.
     const imponibile = l.tasse / l.al;
     const alCieco = M.aliquotaTfr(imponibile, eserPrimo);
+    // LE SOGLIE DICONO QUELLO CHE DICE LA FRASE, e non un centesimo di più: erano 0,08 e 8.000 €,
+    // tarate sull'imponibile di prima. Da quando la base si sgonfia con l'inflazione il difetto
+    // evitato resta lo stesso fenomeno e vale qualche migliaio di euro invece di ottomila — se il
+    // controllo si ritara a ogni correzione giusta, misura il proprio caso di prova e non la regola.
     t('senza gli anni pregressi l\'imposta sarebbe migliaia di euro più alta',
-      alCieco > l.al + 0.08 && imponibile * (alCieco - l.al) > 8000,
+      alCieco > l.al + 0.02 && imponibile * (alCieco - l.al) > 2000,
       `${(l.al*100).toFixed(1)}% invece di ${(alCieco*100).toFixed(1)}%: `
       + `${eur(imponibile*(alCieco-l.al))} € d'imposta che non esistono`);
   }
