@@ -109,14 +109,46 @@ for (let t=0; t<4000; t++){
   try { s=M.leggi(); r=M.simula(s); } catch(e){ ko('il motore va in errore', e.message); continue; }
   n++;
   // --- niente NaN, niente infiniti, da nessuna parte
+  // `tfrAzienda` sta in QUESTA lista e non in quella qui sotto, ed è la distinzione che conta:
+  // un valore non finito lì dentro non lo vedrebbe nessun altro controllo, perché quel numero
+  // non entra in nessun conto — esce solo dal disegno, e una banda alta NaN semplicemente non
+  // si disegna, in silenzio.
   if (!r.righe.every(g=>[g.patr,g.inizio,g.rendimento,g.daLavoro,g.daPensioni,g.daRendita,
-      g.daFondo,g.daRata,g.daTfr,g.daCasa].every(Number.isFinite))) ko('NaN o Infinity in una riga','');
+      g.daFondo,g.daRata,g.daTfr,g.daCasa,g.tfrAzienda].every(Number.isFinite))) ko('NaN o Infinity in una riga','');
   // --- CONTABILITÀ: ogni riga deve quadrare. `daCasa` ci sta dentro perché è una voce di
   // flusso come le altre: se un giorno entrasse nel patrimonio senza passare di qui, la riga
   // smetterebbe di essere rifacibile a mano ed è quello che la tabella promette.
+  // `tfrAzienda` invece NON ci sta, e non è una dimenticanza: è una GIACENZA, non un movimento.
+  // Sommarlo qui farebbe fallire ogni riga in cui c'è del TFR fermo in azienda, cioè quasi
+  // tutte quelle di chi lavora — e la tentazione di aggiungerlo «per completezza» è esattamente
+  // l'errore che questa riga di commento esiste per fermare.
   for (const g of r.righe){
     const q = g.inizio+g.rendimento+g.daLavoro+g.daPensioni+g.daRendita+g.daFondo+g.daRata+g.daTfr+g.daCasa-g.spesa-g.patr;
     if (Math.abs(q) > 1e-6*Math.max(1,Math.abs(g.patr))) ko('una riga non quadra', q);
+  }
+  // --- LA GIACENZA DEL TFR IN AZIENDA, che è l'unica grandezza del piano a esistere solo per
+  // essere guardata. Tre proprietà, e ciascuna ha già un modo noto di rompersi:
+  //  · non è mai negativa — un salvadanaio non va in rosso;
+  //  · è spenta DALL'ultimo esercizio di lavoro in poi, quello compreso. Il «compreso» è tutta
+  //    la forza di questa riga: la liquidazione avviene DENTRO il ciclo delle persone, quindi
+  //    nell'anno in cui si smette la giacenza di fine esercizio è già zero e quei soldi stanno
+  //    nel patrimonio. Chiedendo solo «dall'anno dopo» l'invariante resterebbe vera anche
+  //    leggendo la giacenza a INIZIO esercizio invece che a fine — che è l'errore più probabile
+  //    di tutta questa faccenda, e in quell'anno gli stessi soldi si vedrebbero due volte sul
+  //    grafico: dentro la banda e già dentro il patrimonio. Provato rompendolo apposta;
+  //  · non cresce mai in un esercizio in cui non lavora nessuno: la rivalutazione è agganciata
+  //    all'accantonamento, e una banda che sale a carriera finita sarebbe denaro dal nulla.
+  {
+    const ultimoLav = Math.max(...s.p.map(x => x.ultimo));
+    let prima = null;
+    for (const g of r.righe){
+      if (g.tfrAzienda < -1e-9) ko('la giacenza del TFR va sotto zero', g.tfrAzienda);
+      if (g.anno >= ultimoLav && g.tfrAzienda > 1e-6)
+        ko('la giacenza del TFR sopravvive all\'ultimo anno di lavoro', `${g.anno}: ${g.tfrAzienda}`);
+      if (prima !== null && !g.lavora.some(v => v) && g.tfrAzienda > prima + 1e-6)
+        ko('la giacenza del TFR cresce senza che lavori nessuno', `${g.anno}: ${prima} → ${g.tfrAzienda}`);
+      prima = g.tfrAzienda;
+    }
   }
   // --- DOVE SI FERMA IL CURSORE DEI VERSAMENTI -----------------------------------------
   // QUESTA INVARIANTE HA GIÀ FATTO IL SUO LAVORO, e la storia va tenuta. Diceva che il cursore

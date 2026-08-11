@@ -315,7 +315,13 @@ function piano(D){
                       * (manca !== null && a >= manca.anno ? manca.equiv : 1)
                       + (casa !== null && a >= casa.anno ? casa.canoneAnno : 0);
     patr = ini + Math.max(ini, 0) * (fermo(a) ? Math.min(0, r) : r) + E - spesaAnno;
-    righe.push({a, patr});
+    // LA GIACENZA DEL TFR IN AZIENDA VIAGGIA COL PIANO, e prima non usciva di qui: era già
+    // modellata — `T[i].pot`, poco sopra — ma non la guardava nessuno. Da quando il grafico la
+    // DISEGNA, un numero mai confrontato è un numero che può sbagliare in silenzio, e questo
+    // file esiste per non lasciarne. Si legge DOPO il ciclo delle persone, quindi la
+    // liquidazione ha già azzerato quello di chi ha smesso quest'anno: è la stessa mezza riga
+    // di differenza che il calcolatore deve rispettare, e il confronto anno per anno la prende.
+    righe.push({a, patr, tfrAz: T.reduce((s, y) => s + y.pot, 0)});
   }
   return {righe, fine, finale: patr, inc, liq, ultimo};
 }
@@ -528,6 +534,20 @@ for (const [nome, over, prova, manca] of tutti){
   R.liquidazioni.forEach((v, k) => {
     const w = P.liq[k]; if (!w) return;
     if (Math.abs(v.netto - w.netto) > 1e-6) guai.push(`TFR ${k}: ${Math.round(v.netto)} contro ${Math.round(w.netto)}`);
+  });
+  // LA GIACENZA DEL TFR, ESERCIZIO PER ESERCIZIO. È l'unico confronto di questo file che guarda
+  // dentro le righe invece che il risultato: gli altri numeri sfociano tutti nel `finale`, e
+  // sbagliarli lo sposta. Questo no — non entra in nessun conto, esce solo dal disegno — quindi
+  // un errore qui non muove un euro e nessun altro controllo lo vedrebbe.
+  // L'errore che sta a guardia è preciso: leggere la giacenza PRIMA della liquidazione invece
+  // che dopo. Sposta la banda di un anno solo, e in quell'anno gli stessi soldi comparirebbero
+  // due volte sul grafico — dentro la banda e già dentro il patrimonio.
+  R.righe.forEach((g, k) => {
+    const w = P.righe[k]; if (!w) return;
+    if (!Number.isFinite(g.tfrAzienda))
+      guai.push(`giacenza TFR non finita nel ${g.anno}: ${g.tfrAzienda}`);
+    else if (Math.abs(g.tfrAzienda - w.tfrAz) > 1e-6)
+      guai.push(`giacenza TFR ${g.anno}: ${Math.round(g.tfrAzienda)} contro ${Math.round(w.tfrAz)}`);
   });
 
   if (rel > peggio){ peggio = rel; nomePeggio = nome; }

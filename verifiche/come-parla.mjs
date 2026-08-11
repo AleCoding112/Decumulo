@@ -949,6 +949,62 @@ console.log('\n— chi sta fisso sullo schermo —');
   }
 }
 
+// --- la legenda del grafico dichiara le bande che ci sono, e nessun'altra ---
+// LA LEGENDA È L'UNICO PEZZO DELLA PAGINA CHE PARLA DI COLORI, e i colori nessun controllo li
+// giudica. Quello che si può tenere fermo è più modesto e vale lo stesso: che ogni quadratino
+// corrisponda a una banda esistente in QUESTO piano, e che le tinte scritte siano le stesse che
+// il disegno usa davvero.
+// Nasce da due difetti veri, tutti e due invisibili a ogni altra verifica. Il primo: finché la
+// legenda era scritta a mano nell'HTML ha continuato a mostrare i colori di PRIMA dello
+// schiarimento delle aree — due tinte che nel disegno non esistevano più. Il secondo: annunciava
+// «i fondi pensione» a chi è già in pensione, per ventidue anni in cui di fondi non ce n'era per
+// nessuno, cioè mandava a cercare sul grafico un colore assente.
+console.log('\n— la legenda del grafico —');
+{
+  const BASE = {quanti:'1', nascita0:1986, ral0:35000, pens0:1500, annoPens0:2053, iscr0:2012,
+                fondo0:30000, annoLav0:2012, cl0:15000, cl1:10000, cl2:25000, cl3:100000,
+                spesa:1800, pcVoi0:1.2, pcDat0:2};
+  // le voci si leggono da quello che finisce in pagina, non dal codice che le genera
+  const voci = r => [...(r.scritte.legendaGrafico || '').matchAll(/<\/i>\s*([^<]+)</g)]
+    .map(m => m[1].trim());
+  const tinte = r => [...(r.scritte.legendaGrafico || '')
+    .matchAll(/background:(#[0-9a-f]{6})/gi)].map(m => m[1].toLowerCase());
+
+  // I QUATTRO STATI, e il terzo e il quarto sono quelli per cui questo blocco esiste.
+  // Attenzione al terzo: per non avere TFR non basta azzerare il pregresso, va anche mandato al
+  // fondo — chi lo lascia in azienda ne matura di nuovo ogni anno che lavora. Provandolo con una
+  // casella sola lo scatto mostrava il quadratino e sembrava un difetto del codice: era la prova
+  // a non descrivere il caso che diceva di descrivere.
+  const azienda  = esegui({...BASE, tfrDove0:'azienda', tfrGia0:25000});
+  const alFondo  = esegui({...BASE, tfrDove0:'fondo',   tfrGia0:25000});
+  const senzaTfr = esegui({...BASE, tfrDove0:'fondo',   tfrGia0:'', annoLav0:''});
+  const inPens   = esegui({quanti:'1', nascita0:1950, pens0:1900, annoPens0:2015, iscr0:2000,
+                           cl0:30000, cl1:40000, cl2:80000, cl3:200000, spesa:2000});
+
+  c('col TFR in azienda la legenda dichiara tutte e tre le bande',
+    voci(azienda).length === 3, voci(azienda).join(' · '));
+  c('e col TFR al fondo resta lo stesso, perché il pregresso non segue la scelta',
+    voci(alFondo).length === 3, voci(alFondo).join(' · '));
+  c('senza TFR di nessun genere la terza voce sparisce',
+    voci(senzaTfr).length === 2 && !voci(senzaTfr).some(v => /TFR/.test(v)),
+    voci(senzaTfr).join(' · '));
+  // chi è già in pensione non ha né fondo né TFR da riscuotere: gli resta la sola curva
+  c('a chi è già in pensione resta il solo patrimonio, senza fondi né TFR',
+    voci(inPens).length === 1 && /patrimonio/.test(voci(inPens)[0] || ''),
+    voci(inPens).join(' · '));
+
+  // LE TINTE SONO QUELLE DEL DISEGNO, e non una seconda copia: si rileggono dal codice del
+  // motore, cioè dalla stessa costante da cui escono i riempimenti. È il controllo che la
+  // divergenza di prima non poteva avere, perché allora le due liste erano scritte in due posti.
+  const dichiarate = (src.match(/const TINTE_GRAFICO = \{([^}]*)\}/) || [, ''])[1];
+  const usate = [...dichiarate.matchAll(/#[0-9a-f]{6}/gi)].map(s => s[0].toLowerCase());
+  c('le tinte della legenda escono dalla stessa costante dei riempimenti',
+    tinte(azienda).length === 3 && tinte(azienda).every(t => usate.includes(t)),
+    tinte(azienda).join(' '));
+  c('e non se ne ripete una: tre bande, tre colori diversi',
+    new Set(tinte(azienda)).size === 3);
+}
+
 // --- le caselle da cui il verdetto dipende, e la frase che le promette ---
 // Se la frase promette meno caselle di quante ne pretenda la guardia, chi si ferma alla promessa
 // riceve un verdetto pieno calcolato con patrimonio zero e nessuna entrata, cioè «non

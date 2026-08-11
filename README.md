@@ -1062,6 +1062,72 @@ esercizio il seme non si sgonfia, perché è già in euro di quell'anno come l'a
   che avanza sta sotto soglia», e due soglie tarate sull'imponibile gonfiato. Riscritti sul fatto,
   non ritarati sul caso.
 
+## 2026-08-11 — la terza banda: il TFR fermo in azienda, che nessuno vedeva
+
+La domanda era se aggiungere un **secondo grafico** con patrimonio, liquidità, fondo e TFR.
+Studiando il codice la domanda si è spostata: **due di quelle serie c'erano già** (il grafico non
+traccia una curva, ne impila due), **una non esiste** — la «liquidità» sarebbe una seconda via
+della composizione fino al conto, e il commento accanto a `rendDaComposizione` la vieta da sempre
+— **e una mancava davvero.**
+
+`tfr[i].pot` si rivaluta anno per anno ma **non entrava in `righe`**: non stava nel grafico, non
+nella tabella, e compariva solo come `daTfr`, un lampo in un anno solo. Misurata su undici
+scenari, quella giacenza vale **8,9-26,5% del patrimonio totale** e resta accesa 26 anni su 56.
+Il patrimonio saltava di ottantatremila euro senza che niente, prima, dicesse che stavano
+arrivando.
+
+**Il guadagno che vale più della percentuale**: il grafico non sapeva mostrare la differenza fra
+«TFR al fondo» e «TFR in azienda», che è una decisione che il modulo chiede e a cui è dedicata una
+pagina intera. Ora si vede, e si vede anche il caso sottile — chi ha conferito al fondo tiene
+comunque il **pregresso** in azienda, che è il punto su cui il codice diceva «la pagina era più
+precisa del conto».
+
+**Il secondo grafico dei flussi è stato progettato e scartato, sui numeri**, e la decisione va
+tenuta perché è costata: le una tantum valgono **0,86-9,72×** i flussi ordinari e schiaccerebbero
+l'asse; i piani hanno **1-3 fasi**, quindi «Sviluppo del piano» racconta già la storia dei flussi
+con le cifre; servirebbero fino a cinque tinte nuove contro la regola «nessun colore d'accento
+nuovo»; e a 390 px un `font-size="11"` dentro il `viewBox` **rende 4,3 px**.
+
+### Cosa se n'è imparato
+
+- **La giacenza è uno STOCK, e va tenuta fuori dalla quadratura della riga.** `invarianti.mjs`
+  verifica che ogni riga si rifaccia a mano (`inizio + rendimento + entrate − spesa`): aggiungerci
+  `tfrAzienda` «per completezza» farebbe fallire ogni esercizio di chi lavora. C'è un commento che
+  lo dice, accanto alla somma.
+- **Il campo si legge DOPO la liquidazione, e la mezza riga di differenza vale un anno di doppio
+  conteggio.** Leggendolo a inizio esercizio la banda si spegne un anno tardi, e in quell'anno gli
+  stessi soldi si vedono due volte: dentro la banda e già dentro il patrimonio. **Provato
+  rompendolo apposta**: la seconda implementazione lo prende su 4 casi su 62, e l'invariante —
+  dopo averla resa più forte, «spenta *dall'*ultimo anno di lavoro» invece che «dall'anno dopo» —
+  su **1.169 piani su 4.000**. Prima di irrobustirla non lo vedeva.
+- **Un numero che non entra in nessun conto non ha rete.** Tutti gli altri valori sfociano nel
+  `finale` e sbagliarli lo sposta; questo esce solo dal disegno. Per questo la seconda
+  implementazione ha **il suo primo confronto dentro le righe** invece che sul risultato.
+- **La legenda la scrive chi disegna.** Erano due copie dei colori — gli esadecimali nelle `<path>`
+  e quelli a mano nei quadratini — e **divergevano da mesi**: dallo schiarimento delle aree la
+  legenda mostrava due tinte (`#cfe0d6`, `#dfe6ef`) che nel disegno non esistevano più. Nessuna
+  verifica poteva vederlo. Ora c'è `TINTE_GRAFICO`, e i quadratini si costruiscono da lì.
+- **E un quadratino dichiara una banda solo se quella banda c'è.** Con «già in pensione» la
+  legenda annunciava «i fondi pensione» per **ventidue anni in cui di fondi non ce n'era per
+  nessuno**. Difetto vecchio, che la terza banda avrebbe triplicato. Ora `come-parla.mjs` tiene
+  fermi i **quattro stati** della legenda (TFR in azienda · al fondo · nessuno · già in pensione)
+  e rilegge le tinte **dalla stessa costante** da cui escono i riempimenti: è il controllo che la
+  divergenza di prima non poteva avere, perché allora le due liste stavano in due posti.
+- **Il grafico non era fotografato da nessuno.** È il pezzo che si giudica solo guardandolo, ed è
+  la quarta volta che questo progetto lo impara. Ora `occhi.mjs` ne fa sei scatti: le due scelte
+  del TFR, le due legende, e il telefono.
+- **Una prova sullo stato «assente» va guardata, non dedotta.** Lo scatto «senza TFR» mostrava il
+  quadratino, e sembrava un difetto del codice: era la prova a non descrivere il caso che diceva
+  di descrivere — avevo azzerato il pregresso ma lasciato il TFR destinato in azienda, dove ne
+  matura di nuovo ogni anno. Due caselle, non una.
+- **`#riquadroGrafico + .legenda` prende solo la legenda.** Il `+` è il fratello, non i due
+  insieme: lo scatto era sbagliato e nessuno se ne accorge finché non si apre il file che è uscito.
+
+**Resta dichiarato, e non è stato affrontato qui**: il grafico ha ora **due gradini**. Quello
+nuovo è l'imposta dell'art. 19 sul TFR (14.681 € sul caso base), ed è vero e informativo. Quello
+vecchio è il fondo che diventa rendita e sparisce dallo stock senza che il patrimonio salga — un
+−28% che non è una perdita. La legenda dice «non ancora riscossi», che è onesto ma non lo spiega.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.

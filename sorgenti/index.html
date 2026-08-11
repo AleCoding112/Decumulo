@@ -1096,10 +1096,12 @@ intero, e le segnalazioni sono le benvenute.
 <div class="grafico" id="riquadroGrafico" hidden>
   <svg id="svg" viewBox="0 0 880 330" role="img" aria-label="Il patrimonio anno per anno"></svg>
 </div>
-<p class="legenda" id="legendaGrafico" hidden>
-  <span><i class="chip" style="background:#cfe0d6"></i> il patrimonio investito</span>
-  <span><i class="chip" style="background:#dfe6ef"></i> i fondi pensione, non ancora riscossi</span>
-</p>
+<!-- LA LEGENDA LA SCRIVE `disegna()`, e nasce vuota. Scritta a mano qui dentro aveva due
+     difetti che nessuna verifica poteva vedere: i quadratini portavano i colori di PRIMA dello
+     schiarimento delle aree, cioè dichiaravano due tinte che nel disegno non esistevano più; e
+     annunciavano bande che in certi piani non ci sono — con «già in pensione» prometteva «i
+     fondi pensione» per ventidue anni in cui di fondi non ce n'era per nessuno. -->
+<p class="legenda" id="legendaGrafico" hidden></p>
 <p class="nota inflazione" id="inflazione">&nbsp;</p>
 
 <div class="fasi" id="riquadroFasi" hidden>
@@ -2187,6 +2189,18 @@ function simula(s, spesaMese){
     righe.push({anno, eta: P.map(x => anno - x.nascita), inizio, rendimento, spesa,
       daLavoro, daPensioni, daRendita, daFondo, daRata, daTfr, daCasa, patr,
       fondi: f.map(y => y.montante), lavora, inPens, rate, consumo,
+      // LA GIACENZA DEL TFR RIMASTO IN AZIENDA, ed è uno STOCK come `fondi`, non un flusso.
+      // NON entra nella quadratura della riga (`inizio + rendimento + entrate − spesa`) e non
+      // va sommato a `daTfr`, che è il netto incassato l'anno della liquidazione: sono due
+      // grandezze diverse dello stesso denaro, una prima e una dopo l'imposta dell'art. 19.
+      // Sta qui perché fino all'11/08/2026 era l'unica ricchezza del piano che non compariva
+      // da nessuna parte finché non atterrava — sul grafico il patrimonio saltava di
+      // ottantatremila euro senza che niente, prima, dicesse che stavano arrivando.
+      // IL PUNTO IN CUI SI LEGGE È LA MEZZA RIGA CHE CONTA: la liquidazione azzera `tfr[i].pot`
+      // dentro il ciclo qui sopra, quindi qui il valore è già la giacenza di FINE esercizio.
+      // Leggerlo prima darebbe una banda che si spegne un anno tardi, e il patrimonio salirebbe
+      // mentre il TFR è ancora disegnato: gli stessi soldi contati due volte, per un anno.
+      tfrAzienda: tfr.reduce((a, y) => a + y.pot, 0),
       // se da quest'anno si paga un affitto: serve alla fase, che altrimenti terrebbe insieme
       // gli anni prima e dopo il cambio e ne medierebbe il flusso
       inAffitto: casa !== null && casa.spesaAnnua > 0 && anno >= casa.anno,
@@ -2321,18 +2335,33 @@ function scriviFasi(r){
   EL('fasi').innerHTML = h;
 }
 
+// I COLORI DEL GRAFICO, IN UN POSTO SOLO. Stanno qui e non in `regole.mjs` per la stessa
+// ragione di `TINTE`: non sono un parametro del modello, nessun conto li usa, cambiarli non
+// sposta un euro. Ma stanno insieme perché la LEGENDA li rilegge, e finché erano due copie —
+// gli esadecimali nelle `<path>` e quelli scritti a mano nei quadratini — hanno finito per
+// divergere in silenzio: dallo schiarimento qui sotto fino all'11/08/2026 la legenda ha mostrato
+// due tinte (`#cfe0d6`, `#dfe6ef`) che nel disegno non esistevano più. Nessuna verifica lo
+// vedeva, perché i controlli automatici leggono le frasi e i numeri, non i colori.
+const TINTE_GRAFICO = {patr: '#dde9e1', fondi: '#e9edf4', tfr: '#f0ebe0', buco: '#f0dad5'};
+
 function disegna(r){
   const W = 880, H = 330, L = 68, R = 16, T = 58, B = 26;
   const xs = W - L - R, ys = H - T - B;
   const g0 = r.righe;
-  const tot = g0.map(g => g.patr + g.fondi.reduce((a,b)=>a+b,0));
+  // le tre grandezze si impilano, e l'ordine è «dal più disponibile al meno»: il patrimonio
+  // investito, i fondi non ancora riscossi, il TFR ancora fermo in azienda. La banda nuova sta
+  // all'ESTERNO perché così il grafico di prima resta un sottoinsieme esatto di questo, e
+  // nessuno dei due confini che la gente già leggeva si sposta di un pixel.
+  const conFondi = g => g.patr + g.fondi.reduce((a,b)=>a+b,0);
+  const tot = g0.map(g => conFondi(g) + g.tfrAzienda);
   const max = Math.max(...tot, 1);
   const min = Math.min(...g0.map(g => g.patr), 0);
   const y = v => T + ys * (max - v) / (max - min);
   const x = i => L + xs * i / Math.max(g0.length - 1, 1);
   const via = a => a.map((p,i) => (i?'L':'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
   const pP = g0.map((g,i) => [x(i), y(g.patr)]);
-  const pT = g0.map((g,i) => [x(i), y(g.patr + g.fondi.reduce((a,b)=>a+b,0))]);
+  const pT = g0.map((g,i) => [x(i), y(conFondi(g))]);
+  const pTot = g0.map((g,i) => [x(i), y(conFondi(g) + g.tfrAzienda)]);
   const base = y(0), fin = x(g0.length-1).toFixed(1);
 
   let h = '';
@@ -2355,10 +2384,15 @@ function disegna(r){
   // #dfe6ef → #e9edf4) e linea da 2 a 2,5, il grafico si legge come su un giornale: la curva
   // prima, il volume dopo. L'area sotto lo zero resta più satura delle altre due, perché lì il
   // riempimento È la notizia.
+  // DALLA PIÙ GRANDE ALLA PIÙ PICCOLA, e ciascuna colonna riempita una volta sola: sono aree
+  // sovrapposte, non impilate per segmento. Riempire segmento per segmento fa sovrapporre i
+  // rettangoli adiacenti di un pixel, e si vedono strisce verticali — è la lezione imparata
+  // disegnando l'anteprima, e vale per qualunque grafica generata.
   const area = p => `${via(p)} L ${fin} ${base.toFixed(1)} L ${L} ${base.toFixed(1)} Z`;
-  h += `<path d="${area(pT)}" fill="#e9edf4" clip-path="url(#sopra)"/>`;
-  h += `<path d="${area(pP)}" fill="#dde9e1" clip-path="url(#sopra)"/>`;
-  h += `<path d="${area(pP)}" fill="#f0dad5" clip-path="url(#sotto)"/>`;
+  h += `<path d="${area(pTot)}" fill="${TINTE_GRAFICO.tfr}" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pT)}" fill="${TINTE_GRAFICO.fondi}" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pP)}" fill="${TINTE_GRAFICO.patr}" clip-path="url(#sopra)"/>`;
+  h += `<path d="${area(pP)}" fill="${TINTE_GRAFICO.buco}" clip-path="url(#sotto)"/>`;
   h += `<path d="${via(pP)}" fill="none" stroke="#2f6f4e" stroke-width="2.5" clip-path="url(#sopra)"/>`;
   h += `<path d="${via(pP)}" fill="none" stroke="#a33a2a" stroke-width="2.5" clip-path="url(#sotto)"/>`;
 
@@ -2388,6 +2422,24 @@ function disegna(r){
     h += `<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#8a857a"
       text-anchor="middle">${v.anno}</text>`; });
   EL('svg').innerHTML = h;
+
+  // LA LEGENDA ESCE DA QUI, e non è una comodità: i colori hanno così una sorgente sola, e un
+  // quadratino dichiara una banda soltanto se quella banda esiste in QUESTO piano. Il
+  // patrimonio investito c'è sempre — è la curva —, gli altri due no: chi è già in pensione non
+  // ha né fondo né TFR da riscuotere, e chi non ha mai lasciato il TFR in azienda ha la terza
+  // banda identicamente a zero. Una legenda che nomina una banda invisibile manda a cercare
+  // sul disegno un colore che non c'è.
+  const voci = [
+    [TINTE_GRAFICO.patr,  'il patrimonio investito', true],
+    [TINTE_GRAFICO.fondi, 'i fondi pensione, non ancora riscossi',
+                          g0.some(g => g.fondi.some(v => v > 0.5))],
+    // «lasciato in azienda» è la stessa formula che `eventi()` scrive per esteso: il TFR di chi
+    // non l'ha conferito, più il pregresso di chi l'ha conferito dopo — perché le quote già
+    // accantonate non seguono la scelta successiva e restano dove sono.
+    [TINTE_GRAFICO.tfr,   'il TFR lasciato in azienda', g0.some(g => g.tfrAzienda > 0.5)],
+  ];
+  EL('legendaGrafico').innerHTML = voci.filter(v => v[2])
+    .map(([c, t]) => `<span><i class="chip" style="background:${c}"></i> ${t}</span>`).join('');
 }
 
 // kOf(anno) converte gli importi: 1 in euro di oggi, (1+infl)^n in euro di quell'anno.
@@ -3126,7 +3178,7 @@ function calc(){
       chiuderebbe nel ${finePiano}: prima dell'anno in corso. Il piano non ha anni da
       calcolare.`;
     EL('vuoto').hidden = false;
-    ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
+    ['fasi','tabella','legendaGrafico'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
     ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni','nonContato'].forEach(k => EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
@@ -3141,7 +3193,7 @@ function calc(){
     t.innerHTML = 'Dati incompleti.';
     sub.innerHTML = 'Per il calcolo ' + (quanteMancano === 1 ? 'serve' : 'servono')
       + (frase.startsWith(',') ? '' : ' ') + frase + '.';
-    ['fasi','tabella'].forEach(k => EL(k).innerHTML = '');
+    ['fasi','tabella','legendaGrafico'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
     ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni','nonContato'].forEach(k =>
       EL(k).innerHTML = '');

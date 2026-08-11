@@ -192,6 +192,34 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     fatti.push(await b.scatta('ipotesi', '.caselle:has(#comparto)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
 
+    // IL GRAFICO, che fino all'11/08/2026 non era fotografato da nessuno — ed è il pezzo della
+    // pagina che si giudica SOLO guardandolo: nessuna verifica sa dire se due tinte pallide si
+    // distinguono, se una banda sottile sparisce sul bianco del riquadro, se un gradino si legge
+    // come una perdita. Si scatta insieme alla legenda perché è lì che i colori si confrontano:
+    // i quadratini e le aree sono divergiuti per mesi senza che niente lo vedesse.
+    // DUE SCATTI, PERCHÉ SONO DUE DISEGNI DIVERSI. Con il TFR al fondo — la scelta di partenza —
+    // resta la sola banda del pregresso, che è sottile: è il caso in cui una tinta troppo chiara
+    // sparirebbe. Portandolo in azienda la banda diventa un quinto del totale, e lì si guarda
+    // l'altra cosa: che alla liquidazione si spenga di colpo mentre il patrimonio sale di meno,
+    // perché in mezzo c'è l'imposta dell'art. 19.
+    // il riquadro e la legenda sono due FRATELLI, e si scattano separatamente: `#riquadroGrafico
+    // + .legenda` sembra prenderli tutti e due e prende solo il secondo. Sbagliato la prima
+    // volta, e non se ne accorge nessuno finché non si guarda il file che è uscito.
+    fatti.push(await b.scatta('grafico-col-pregresso', '#riquadroGrafico'));
+    await b.js(`document.getElementById('tfrDove0').value = 'azienda'; calc();`);
+    fatti.push(await b.scatta('grafico-tfr-in-azienda', '#riquadroGrafico'));
+    fatti.push(await b.scatta('grafico-legenda', '#legendaGrafico'));
+    // E SENZA TFR DI NESSUN GENERE, che è il caso in cui la terza voce deve SPARIRE invece di
+    // indicare un colore che nel disegno non c'è. Ci vogliono DUE caselle, e la prima volta ne
+    // avevo cambiata una sola: azzerare il pregresso non basta se il TFR va comunque in azienda,
+    // perché ne matura di nuovo ogni anno che si lavora. Lo scatto mostrava il quadratino e
+    // sembrava un difetto del codice: era la prova a non descrivere il caso che diceva di
+    // descrivere. Vale in generale — una prova sullo stato «assente» va guardata, non dedotta.
+    await b.js(`document.getElementById('tfrGia0').value = '';
+                document.getElementById('tfrDove0').value = 'fondo'; calc();`);
+    fatti.push(await b.scatta('grafico-legenda-senza-tfr', '#legendaGrafico'));
+    await b.js(`document.getElementById('tfrGia0').value = '52000'; calc();`);
+
     // LA COMPOSIZIONE E LA SUA BARRA. Nessuna misura sa dire se quattro segmenti si distinguono,
     // se la legenda va a capo in un punto stupido, se il gradino più chiaro sparisce sul bianco:
     // sono esattamente i difetti per cui questo file esiste. Gli importi sono squilibrati apposta
@@ -210,6 +238,12 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // in mano le quattro caselle si impilano e la legenda deve spezzarsi bene: è la larghezza
     // in cui una legenda a quattro voci si sfascia, se si sfascia
     fatti.push(await b.scatta('telefono-composizione', 'fieldset:has(#composizione)'));
+    // e il grafico in mano, che è dove le bande si assottigliano: a 390 px l'SVG rende a poco
+    // più di un terzo, quindi una banda da quindici unità di `viewBox` diventa sei pixel veri.
+    // È la larghezza in cui una terza banda smette di essere una banda, se smette.
+    await b.js(`document.getElementById('tfrDove0').value = 'azienda'; calc();`);
+    fatti.push(await b.scatta('telefono-grafico', '#riquadroGrafico'));
+    fatti.push(await b.scatta('telefono-grafico-legenda', '#legendaGrafico'));
 
     console.log('  ' + fatti.length + ' scatti in verifiche/scatti/');
     for (const f of fatti) console.log('      · ' + f.split('/').slice(-1)[0]);
