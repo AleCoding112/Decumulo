@@ -64,15 +64,23 @@ node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con 
                                 più può cambiare il numero di colonne), il risultato, il
                                 cursore portato sotto quello che si versa, e i due pezzi a
                                 390 px. Afferma una cosa sola, che la console sia pulita
+
+node verifiche/senza-scatti.mjs  prende ogni cursore, lo trascina avanti e indietro due volte e
+                                misura quanto si sposta la pagina sotto le dita. Da lanciare
+                                quando si tocca la prosa intorno ai cursori — quella che REAGISCE
+                                a dove sta il cursore — perché è lì che il difetto nasce
 ```
 
-**I due si dividono il lavoro, e la divisione va tenuta.** `a-schermo.mjs` **misura** e dà un
-verdetto; `occhi.mjs` **guarda** e non afferma quasi niente. Serve perché esiste una classe di
-difetti che nessuna misura vede — non sbordano, la pagina resta larga uguale, sono solo brutti.
-Il giorno che è stato scritto ne ha trovati due nel giro di dieci minuti: «niente: 0 €» spezzato
-fra la cifra e il simbolo, e il riquadro dei contributi che su un telefono era **l'unico del
-modulo a non impilarsi**, perché un `grid-column:1/3` gli fabbricava una colonna che non c'era.
-Tutte e due con `a-schermo.mjs` verde.
+**I tre si dividono il lavoro, e la divisione va tenuta.** `a-schermo.mjs` **misura la pagina
+ferma** e dà un verdetto; `occhi.mjs` **guarda** e non afferma quasi niente; `senza-scatti.mjs`
+**misura la pagina mentre la si usa**, che è l'unica cosa che richiede di pilotare il browser e
+per cui prende da `occhi.mjs` il modo di aprirlo. Servono perché esiste una classe di difetti che
+nessuna misura statica vede — non sbordano, la pagina resta larga uguale, le frasi sono giuste.
+Il giorno che `occhi.mjs` è stato scritto ne ha trovati due in dieci minuti: «niente: 0 €»
+spezzato fra la cifra e il simbolo, e il riquadro dei contributi che su un telefono era **l'unico
+del modulo a non impilarsi**, perché un `grid-column:1/3` gli fabbricava una colonna che non
+c'era. `senza-scatti.mjs` ne ha misurato uno che durava da mesi: **188 px di sussulti in un solo
+trascinamento**. Tutti e tre con `a-schermo.mjs` verde.
 
 `sito/` **non si modifica a mano**: si rigenera. Oltre alle pagine il build scrive `sitemap.xml`
 e `robots.txt`, e mette in ogni testa i metadati per le anteprime — **ricavandoli dal titolo,
@@ -431,7 +439,7 @@ verifica.mjs    un comando solo per tutto
 test.mjs        i controlli sul motore
 verifiche/      come parla · valori ostili · tavole dei fondi · riscontri esterni ·
                 seconda implementazione · invarianti · schermi · coerenza · consenso ·
-                anteprime · scarica · scadenze · a-schermo · occhi
+                anteprime · scarica · scadenze · a-schermo · occhi · senza-scatti
 sorgenti/       index.html + le pagine; i file con _ sono pezzi da includere
 sito/           quello che si pubblica
 ```

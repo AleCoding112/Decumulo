@@ -147,8 +147,11 @@
   /* stessa ragione di `.sommario[hidden]`: con una persona sola, o per chi è già in pensione,
      `riga.hidden = true` non spegneva niente e il cursore dell'altro restava in pagina. */
   .cur[hidden]{display:none}
+  /* `align-content:start` non si vede a pagina ferma — l'avanzo non c'è — e serve solo quando
+     `fermaIlSaltoDeiCursori` tiene alta la griglia mentre si trascina: senza, l'avanzo si
+     spartirebbe fra le righe e il blocco starebbe fermo di fuori muovendosi di dentro. */
   .cur{display:grid;grid-template-columns:74px 1fr 250px;gap:6px 18px;align-items:center;
-    padding:12px 0;border-top:1px solid var(--line)}
+    align-content:start;padding:12px 0;border-top:1px solid var(--line)}
   .cur:first-child{border-top:0;padding-top:2px}
   .cur .chi{font-weight:600;font-size:14px}
   .cur .barra,.passo .barra{display:flex;flex-direction:column;gap:3px}
@@ -4054,6 +4057,71 @@ function costruisciDecisioni(){
   });
 }
 
+// ============================================================================
+//  TRASCINARE UN CURSORE NON DEVE SPOSTARE LA PAGINA SOTTO LE DITA.
+//
+//  Intorno a ogni cursore c'è prosa che REAGISCE a dove sta: la riga sopra, i
+//  due «picco» sotto, l'esito a destra, i pulsanti «torna al …» e «vai al …»,
+//  la domanda sulla quota minima. Misurate su otto scenari e sull'intera corsa
+//  di ogni cursore, quelle righe non sono stabili di un pixel: `Picco` passa da
+//  2 a 3 righe, `Piu` da nessuna a 3, la domanda sul minimo compare e sparisce,
+//  i pulsanti pure. In una sola corsa il riquadro cambia altezza di oltre cento
+//  pixel, e tutto quello che gli sta sotto — l'altro cursore, i tre passi del
+//  fondo, la tabella — sussulta a ogni scatto del dito.
+//
+//  NON SI RISERVA LO SPAZIO DEL CASO PEGGIORE. Costerebbe un centinaio di pixel
+//  di vuoto sotto ogni cursore anche a pagina ferma, cioè si guasterebbe lo
+//  stato in cui la pagina si legge per riparare quello in cui si trascina.
+//
+//  Si toglie invece il movimento SOLO MENTRE si trascina: preso il cursore, i
+//  blocchi che respirano non si restringono più. Crescere possono ancora — una
+//  frase che ha bisogno di una riga in più deve poterla prendere, l'alternativa
+//  sarebbe nascondere del testo — ma non tornano indietro, e sono i ritorni a
+//  fare la vibrazione: una frase che perde una riga e la riprende trenta volte
+//  al secondo è la vibrazione. Lasciato il cursore, tutto si rilassa una volta.
+//
+//  L'ELENCO DEI BLOCCHI NON È A OCCHIO: sono quelli che una misura ha visto
+//  cambiare altezza durante una corsa del cursore. `.cur` e `.fondoP` perché la
+//  prosa reattiva sta lì dentro; `.ora` e `.esito` per la ragione opposta, detta
+//  sotto; `#regola` e `#fasi` perché cambiano righe anche loro — l'ancoraggio
+//  dello scorrimento del browser li assorbe finché il cursore sta in mezzo allo
+//  schermo, ma non quando si guarda il risultato mentre si trascina.
+//
+//  VALE ANCHE PER LA TASTIERA: sul cursore le frecce sono il modo in cui ci si
+//  muove di un decimo per volta, e producono la stessa raffica.
+//
+//  `align-content:start` su `.cur` è la metà mancante: è l'unico blocco tenuto
+//  alto che sia anche una griglia, e senza quella riga l'avanzo si spartirebbe
+//  fra le righe — starebbe fermo di fuori muovendosi di dentro.
+// ============================================================================
+function fermaIlSaltoDeiCursori(){
+  // `.ora` e `.esito` sono nell'elenco per una ragione diversa dagli altri, e senza di loro il
+  // rimedio lascia fuori proprio il pezzo che dà più fastidio: stanno SOPRA e ACCANTO al
+  // cursore, non sotto. La riga sopra che passa da tre righe a quattro spinge giù il cursore
+  // stesso; l'esito che cresce alza la riga della griglia, e `align-items:center` ricentra la
+  // barra — cioè sposta il pallino da sotto il dito mentre lo si trascina. Tenere fermo il
+  // riquadro intero non basta: bisogna tenere ferme anche le due cose che gli stanno intorno.
+  const blocchi = () => document.querySelectorAll(
+    '.cur, .fondoP, .cur .ora, .cur .esito, .passo .ora, .passo .esito, #regola, #fasi');
+  let tenuti = [];
+  const tieni = () => {
+    if (!tenuti.length) tenuti = [...blocchi()];
+    for (const e of tenuti){
+      const h = e.getBoundingClientRect().height;
+      if (h > parseFloat(e.style.minHeight) || !e.style.minHeight) e.style.minHeight = h + 'px';
+    }
+  };
+  const lascia = () => { for (const e of tenuti) e.style.minHeight = ''; tenuti = []; };
+  for (const el of document.querySelectorAll('input[type=range]')){
+    el.addEventListener('pointerdown', tieni);
+    el.addEventListener('keydown', tieni);
+    // dopo `calc()`, non prima: gli ascoltatori si aggiungono in ordine e questo è l'ultimo,
+    // quindi qui le frasi nuove sono già scritte e l'altezza da tenere è quella vera
+    el.addEventListener('input', () => { if (tenuti.length) tieni(); });
+    for (const q of ['pointerup', 'pointercancel', 'keyup', 'blur']) el.addEventListener(q, lascia);
+  }
+}
+
 // Le forme di rendita più diffuse. `fatt` è quanto resta dell'assegno rispetto alla vitalizia
 // semplice: più la rendita protegge qualcuno, meno paga al mese.
 //
@@ -4914,6 +4982,7 @@ EL('azzera').addEventListener('click', () => {
 });
 
 costruisciDecisioni();
+fermaIlSaltoDeiCursori();
 // PRIMA DEL RIPRISTINO, come le decisioni: `ripristina()` scorre le caselle che trova in
 // pagina, e quelle costruite dopo non le rivedrebbe mai più.
 costruisciComposizione();
