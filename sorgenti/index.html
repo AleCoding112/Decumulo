@@ -8,7 +8,12 @@
 <link rel="canonical" href="https://decumulo.it/">
 <style>
   :root{
-    --ink:#1a1a1a; --soft:#6b6b6b; --tenue:#8a857a; --line:#e0ddd6; --bg:#faf9f6;
+    /* `--tenue` È IL COLORE DEI CORPI PIÙ PICCOLI — hint, estremi dei cursori, legende,
+       intestazioni di tabella — cioè proprio dove il contrasto serve di più. Era #8a857a e
+       faceva 3,49:1 sul fondo: sotto il 4,5:1 che il testo normale pretende (WCAG AA), e
+       misurato, non guardato a occhio, come i gradini della barra di composizione. #767166 è
+       la stessa famiglia calda e fa 4,58:1 sul fondo, 4,86:1 sul bianco dei riquadri. */
+    --ink:#1a1a1a; --soft:#6b6b6b; --tenue:#767166; --line:#e0ddd6; --bg:#faf9f6;
     --card:#fff; --su:#2f6f4e; --giu:#a33a2a; --acc:#3b6ea5;
     /* DUE CARATTERI, E SI DIVIDONO I MESTIERI. Fino al 07/08/2026 ce n'era uno solo — il sans
        di sistema — in ogni ruolo: testata, verdetto, prosa, cifre, micro-etichette. Ma quello
@@ -2368,13 +2373,17 @@ function disegna(r){
   const base = y(0), fin = x(g0.length-1).toFixed(1);
 
   let h = '';
+  // LE ETICHETTE DEGLI ASSI PORTANO LA TINTA DI `--tenue` SCRITTA PER ESTESO (#767166): dentro
+  // un attributo SVG `var()` non vale, e le tre andrebbero comunque aggiornate insieme alla
+  // variabile — erano rimaste al grigio vecchio, sotto il contrasto minimo, proprio perché
+  // cablate qui. Se `--tenue` cambia ancora, si cambia anche qui, ed è scritto in tutti e due i posti.
   // il passo va preso sull'ESCURSIONE, non sul massimo: se il patrimonio è sempre sotto zero
   // il massimo vale 1, il passo diventa 0,5 e la griglia prova a disegnare milioni di righe
   const passo = Math.pow(10, Math.floor(Math.log10(Math.max(max - min, 1)))) / 2;
   for (let v = Math.ceil(min/passo)*passo; v <= max; v += passo){
     h += `<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"
       stroke="${v===0?'#c9c4b8':'#eeebe4'}"/>`;
-    h += `<text x="${L-8}" y="${(y(v)+4).toFixed(1)}" font-size="11" fill="#8a857a"
+    h += `<text x="${L-8}" y="${(y(v)+4).toFixed(1)}" font-size="11" fill="#767166"
       text-anchor="end">${v===0?'0':Math.round(v/1000)+'k'}</text>`;
   }
   // sopra lo zero è patrimonio, sotto è un buco: due colori, non uno
@@ -2419,10 +2428,10 @@ function disegna(r){
     if (riga < 0) continue;
     bordo[riga] = sx + largh;
     h += `<text x="${(px + dx).toFixed(1)}" y="${T - 38 + riga*13}" font-size="10.5"
-      fill="#8a857a" text-anchor="${dx < 0 ? 'end' : 'start'}">${testo}</text>`;
+      fill="#767166" text-anchor="${dx < 0 ? 'end' : 'start'}">${testo}</text>`;
   }
   g0.forEach((v,i) => { if (v.anno % 10 === 0)
-    h += `<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#8a857a"
+    h += `<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#767166"
       text-anchor="middle">${v.anno}</text>`; });
   EL('svg').innerHTML = h;
 

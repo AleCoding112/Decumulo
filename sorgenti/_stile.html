@@ -1,5 +1,8 @@
 <style>
-  :root{--bg:#faf8f4;--card:#fff;--ink:#26241f;--soft:#5f5b52;--tenue:#8a857a;
+  /* `--tenue` COME NEL CALCOLATORE, e per la stessa ragione: è il colore dei corpi piccoli
+     (briciole, legende, intestazioni di tabella). #8a857a faceva 3,49:1 su questo fondo, sotto
+     il 4,5:1 del testo normale (WCAG AA); #767166 fa 4,58:1, misurato come tutto il resto. */
+  :root{--bg:#faf8f4;--card:#fff;--ink:#26241f;--soft:#5f5b52;--tenue:#767166;
     --line:#e4e0d7;--su:#2f6f4e;--giu:#a33a2a;--acc:#2f6f4e;
     /* GLI STESSI DUE CARATTERI DEL CALCOLATORE, e la stessa divisione dei mestieri: `--voce`
        dove il sito parla (qui i titoli), `--dati` dove misura (prosa, tabelle, etichette).

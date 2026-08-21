@@ -12,8 +12,8 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TESTI, REVISIONE, REVISIONE_ISO, blocco, daConfermare, tabellaRegole, statoParametri,
-         tabellaSoglie, tabellaPareggi, tabellaTfr, intestazioneTfr } from './regole.mjs';
+import { TESTI, REGOLE, REVISIONE, REVISIONE_ISO, blocco, daConfermare, tabellaRegole,
+         statoParametri, tabellaSoglie, tabellaPareggi, tabellaTfr, intestazioneTfr } from './regole.mjs';
 import { anteprima, icona, ico } from './anteprima.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -22,13 +22,25 @@ const A   = join(QUI, 'sito');
 if (!existsSync(A)) mkdirSync(A);
 
 // le cifre che, se compaiono scritte a mano in una pagina, quasi sicuramente
-// dovevano essere un segnaposto
+// dovevano essere un segnaposto.
+// SI RICAVANO DALLE REGOLE, NON SI BATTONO: scritte a mano restavano a guardia dei valori
+// vecchi — al primo cambio del tetto la sentinella «5.300 €» avrebbe continuato a cercare una
+// cifra che non esiste più, cioè niente, senza che nessuno se ne accorgesse. Era la stessa
+// divergenza che questo build esiste per impedire, annidata nel build stesso.
+// (`coerenza.mjs` confronta già TUTTI i parametri scalari con le pagine: qui restano le forme
+// che quel confronto non vede — la cifra nuda senza simbolo, il valore coi decimali, le soglie
+// DERIVATE che non sono un parametro e quindi in REGOLE non stanno.)
+const senzaUnita = t => t.replace(/\s?[€%]/g, '');
 const SOSPETTE = [
-  ['5.300 €',   'tetto'], ['5300',      'tetto'],
-  ['123.002',   'soglia'], ['7.101,12',  'assegnoSociale'],
-  ['101.654',   'sogliaChiunque'], ['159.742', 'sogliaNessuno'],
-  ['6,9074',    'tfrSuRal'],
-  ['9,19',      'ivs']
+  [TESTI.tetto, 'tetto'], [String(REGOLE.TETTO_DEDUZIONE.val), 'tetto'],
+  [senzaUnita(TESTI.soglia), 'soglia'],
+  // `useGrouping:'always'` come in `eur()`: in italiano toLocaleString non raggruppa i numeri
+  // a quattro cifre, e «7101,12» non è la forma in cui una pagina scriverebbe la cifra
+  [REGOLE.ASSEGNO_SOCIALE.val.toLocaleString('it-IT', {useGrouping: 'always', minimumFractionDigits: 2}), 'assegnoSociale'],
+  [senzaUnita(TESTI.sogliaChiunque), 'sogliaChiunque'],
+  [senzaUnita(TESTI.sogliaNessuno), 'sogliaNessuno'],
+  [senzaUnita(TESTI.tfrSuRal), 'tfrSuRal'],
+  [senzaUnita(TESTI.ivs), 'ivs']
 ];
 
 // La favicon in SVG: la curva del decumulo, disegnata qui. Sta in linea perché a questa misura
@@ -329,13 +341,22 @@ ${briciole(html, url)}${applicazione(html, url)}</head>`;
   });
   for (const k of mancanti) { console.log(`  ✗ ${nome}: {{${k}}} non esiste in regole.mjs`); avvisi++; }
 
-  // 5. le cifre scritte a mano: non è un errore, ma va visto
-  for (const [cifra, chiave] of SOSPETTE) {
-    const sorgente = readFileSync(join(DA, nome), 'utf8');
-    if (sorgente.includes(cifra) && !sorgente.includes(`{{${chiave}}}`)) {
-      console.log(`  ! ${nome}: c'è «${cifra}» scritto a mano — forse voleva essere {{${chiave}}}`);
-      avvisi++;
-    }
+  // 5. le cifre scritte a mano: non è un errore, ma va visto.
+  //    SI GUARDA QUELLO CHE SI PUBBLICA. I commenti non escono dal build, e una cifra citata in
+  //    un ragionamento non è una cifra esposta: l'avviso che scattava su un commento («9,19» in
+  //    una nota del motore) usciva a OGNI build, e un avviso fisso insegna a ignorare gli
+  //    avvisi — che è il modo in cui poi si perde quello vero. Si tolgono le stesse tre forme
+  //    che il build toglie dalle pagine.
+  {
+    const sorgente = readFileSync(join(DA, nome), 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const [cifra, chiave] of SOSPETTE)
+      if (sorgente.includes(cifra) && !sorgente.includes(`{{${chiave}}}`)) {
+        console.log(`  ! ${nome}: c'è «${cifra}» scritto a mano — forse voleva essere {{${chiave}}}`);
+        avvisi++;
+      }
   }
 
   // 6. i commenti restano di qua: quello che si pubblica è la pagina, non il ragionamento
