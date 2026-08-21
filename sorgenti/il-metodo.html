@@ -91,7 +91,7 @@ nominali.</p>
 
 <h2>Prova di tenuta</h2>
 
-<p>La proiezione applica lo stesso rendimento a ogni esercizio. Nel decumulo rileva per&ograve; la
+<p>La proiezione applica lo stesso rendimento a ogni esercizio. Nel decumulo conta per&ograve; la
 <b>sequenza</b> dei rendimenti e non solo la loro media: quanto non &egrave; stato conseguito nei
 primi esercizi non concorre ai rendimenti successivi, e due successioni di pari media danno esiti
 diversi.</p>
@@ -115,7 +115,7 @@ risultato il calcolatore espone un <b>secondo calcolo sugli stessi dati</b>, nel
 viene a mancare: non cambia il giudizio di sostenibilit&agrave;, che risponde a un'ipotesi
 diversa.</p>
 
-<p><b>L'epoca del decesso</b> &egrave; posta alla speranza di vita ISTAT alla decorrenza del
+<p><b>L'anno del decesso</b> &egrave; posto alla speranza di vita ISTAT alla decorrenza del
 trattamento, la stessa tavola da cui discendono i coefficienti di conversione. Non &egrave; una
 previsione: &egrave; il riferimento che consente di collocare lo scenario senza chiedere la data a
 chi compila.</p>
@@ -155,7 +155,7 @@ l'ammontare dei redditi che la determinano.</p>
      21/08/2026: la somma IRPEF è fatta per pensione propria + superstiti, non per retribuzione
      + superstiti. Il caso richiede che il decesso — collocato alla speranza di vita — preceda
      la cessazione dell'attività di chi resta, cioè un divario d'età ampio fra i due. -->
-<p><b>L'imposta sul cumulo.</b> Pensione propria e pensione ai superstiti fanno capo al medesimo
+<p><b>L'imposta sul cumulo.</b> Pensione propria e pensione ai superstiti fanno capo allo stesso
 contribuente: l'IRPEF &egrave; determinata sulla loro somma, con la detrazione da pensione. Se chi
 resta percepisce invece ancora una <b>retribuzione</b>, il calcolo tassa retribuzione e pensione
 ai superstiti come redditi separati, ciascuno con la propria detrazione, mentre l'imposta
@@ -185,10 +185,10 @@ patrimonio in misura maggiore.</p>
   del trattamento, perch&eacute; dipende dalla posizione contributiva e non &egrave; ricavabile
   dai dati richiesti; in tale ipotesi lo scenario risulta <b>prudenziale</b>. <b>Non rappresenta
   le maggiorazioni per figli a carico</b>, che il modello non contempla.
-  <span class="marca m-legge">legge</span> Con essi viene meno anche la riduzione per redditi
-  propri, che l'art. 1 c. 41 della L. 335/1995 esclude quando il nucleo comprende figli minori,
-  studenti o inabili: il calcolo la applica comunque, e per quei nuclei lo scenario risulta
-  parimenti prudenziale.</p>
+  <span class="marca m-legge">legge</span> In presenza di figli a carico viene meno anche la
+  riduzione per redditi propri, che l'art. 1 c. 41 della L. 335/1995 esclude quando il nucleo
+  comprende figli minori, studenti o inabili: il calcolo la applica comunque, e anche per quei
+  nuclei lo scenario risulta prudenziale.</p>
 </div>
 
 <h2>Come &egrave; calcolata l'imposta</h2>
@@ -200,10 +200,10 @@ stanno nella tabella dei parametri). <b>La retribuzione netta non si chiede: si 
 sottraendo dalla RAL la contribuzione obbligatoria, la quota versata al fondo e l'IRPEF che ne
 residua.</p>
 
-<p><b>Sul lato della deduzione la detrazione non entra come un livello ma come una pendenza.</b>
-Decrescendo al crescere del reddito, ogni euro dedotto ne fa risalire una quota e l'aliquota
-marginale effettiva supera quella di scaglione: con una RAL di 35.000 &euro; il beneficio &egrave;
-di circa {{exAliquotaEff}} e non del {{exAliquota}}. <span class="marca m-legge">legge</span>
+<p><b>Nel calcolo del beneficio della deduzione conta anche la pendenza della detrazione.</b>
+Poich&eacute; la detrazione decresce al crescere del reddito, ogni euro dedotto ne fa risalire
+una quota e l'aliquota marginale effettiva supera quella di scaglione: con una RAL di
+35.000 &euro; il beneficio &egrave; di circa {{exAliquotaEff}} e non del {{exAliquota}}. <span class="marca m-legge">legge</span>
 Ci&ograve; presuppone contributi <b>trattenuti in busta paga</b>, che non concorrono a formare il
 reddito di lavoro dipendente (art. 51 c. 2 lett. h TUIR); per un versamento eseguito
 dall'aderente e dedotto come onere l'effetto non si produce, e il modello non distingue i due
@@ -236,15 +236,15 @@ dell'art. 15: senza quelle voci, che il modello non ha, la differenza rispetto a
   <b>1.200 &euro; esatti su 15.000 &euro;</b>. Il limite &egrave; stato rappresentato non per la
   fascia che ne beneficia, ma per l'effetto che la sua assenza produceva su tutte le altre: la
   detrazione dell'art. 13 c. 1 <b>scende da 3.100 a 1.955 &euro;</b> passando sotto i
-  15.000 &euro; di reddito &mdash; &egrave; il testo &mdash; e nella disciplina vigente quel salto
+  15.000 &euro; di reddito, come dispone il testo, e nella disciplina vigente quel salto
   &egrave; colmato proprio da questi 1.200. Senza, il modello esponeva a quella soglia una perdita
   secca che la disciplina non prevede. La misura dello scostamento era gi&agrave; la prova che
   mancava quello e nient'altro: <b>ora tutte e sei le retribuzioni riscontrate danno scarto
   nullo</b>.</p>
 </div>
 
-<p>Restano non rappresentate le <b>addizionali regionale e comunale</b>, parimenti
-risparmiate; la maggiorazione di 65 &euro; del comma 1.1 e gli aumenti del comma 2; il ragguaglio
+<p>Restano non rappresentati le <b>addizionali regionale e comunale</b>; la maggiorazione di
+65 &euro; del comma 1.1 e gli aumenti del comma 2; il ragguaglio
 della detrazione ai giorni, non applicabile a esercizi interi; e gli <b>altri redditi</b> che
 concorrono al reddito complessivo. <b>Il beneficio della contribuzione resta perci&ograve;
 sottostimato.</b></p>
@@ -281,7 +281,7 @@ l'imposizione &egrave; rappresentata in senso favorevole a chi compila.</p>
 l'imposta si determina sul totale annuo. La <b>rendita del fondo</b> segue invece la
 periodicit&agrave; contrattuale ed &egrave; rappresentata su dodici rate, essendo un contratto di
 rendita e non un trattamento previdenziale. La RAL comprende per definizione tutte le
-mensilit&agrave;, e l'imposta si determina su base annua: il procedimento non richiede di
+mensilit&agrave;, e l'imposta si determina su base annua: il calcolo non richiede di
 conoscerne il numero.</p>
 
 <div class="chiave">
@@ -338,8 +338,8 @@ raggiunge.</p>
             sottrae il solo maggior costo, misurato sugli ISC mediani a 35 anni
             <span class="marca m-stima">stima</span>. La mediana descrive la forma, non il singolo
             fondo: fra i comparti azionari dei fondi aperti l'ISC va da 0,76% a 2,31%. Il comparto
-            garantito dei PIP &egrave; l'eccezione, essendo di norma una gestione separata di
-            ramo I.</td>
+            garantito dei PIP &egrave; l'eccezione, perch&eacute; di norma &egrave; una gestione
+            separata di ramo I.</td>
         <td>indicativo per il singolo fondo</td></tr>
     <tr><td><b>Prelievi liberi</b><br>
             <a href="come-prendere-il-fondo.html">Capitale o rendita &rarr;</a></td>
@@ -365,7 +365,7 @@ raggiunge.</p>
     <tr><td><b>TFR</b><br>
             <a href="tfr-fondo-o-azienda.html">Il TFR &rarr;</a></td>
         <td>Il TFR maturando &egrave; una quota fissa della RAL, mentre la retribuzione utile
-            esclude talune voci. Quello <b>gi&agrave; accantonato</b> &egrave; un dato dichiarato
+            esclude alcune voci. Quello <b>gi&agrave; accantonato</b> &egrave; un dato dichiarato
             e concorre in ogni caso, purch&eacute; sia indicato l'anno di prima assunzione: senza,
             il reddito di riferimento e quindi l'imposta risulterebbero molto superiori al vero.
             <span class="marca m-stima">stima</span> La scomposizione fra accantonamenti e
@@ -447,7 +447,7 @@ si aggiornano insieme.</p>
 <p><b>Fra i fondi la dispersione &egrave; ampia.</b> A parit&agrave; di et&agrave; i coefficienti
 pubblicati differiscono di circa un terzo fra l'ipotesi pi&ugrave; e meno favorevole, per quattro
 fattori che non dipendono dall'aderente: la tavola demografica adottata (circa 10%), il sesso
-(circa 15%, poich&eacute; l'indifferenziazione delle tariffe non si applica ai regimi
+(circa 15%, perch&eacute; l'indifferenziazione delle tariffe non si applica ai regimi
 professionali), la periodicit&agrave; delle rate (circa 3%) e l'anno di nascita. Il calcolatore
 adotta un valore unico, al centro dei valori pubblicati.</p>
 
@@ -471,10 +471,11 @@ confrontata con la nostra a ogni compilazione, e una divergenza interrompe la pu
 oggi <b>{{riscontrate}} su {{regoleTutte}}</b>. Le altre non sono meno esatte: sono verificate una
 volta e non sottoposte a un controllo ricorrente.</p>
 
-<p>La distinzione non &egrave; teorica. Il modello ha ignorato per mesi le detrazioni dell'art. 13
-TUIR e ha computato in dodici rate un trattamento che se ne paga tredici: nessun controllo interno
-poteva rilevarlo, perch&eacute; <b>un istituto mai rappresentato non contraddice
-alcunch&eacute;</b>. Entrambe le omissioni sono emerse dal confronto con cifre esterne.</p>
+<p>La distinzione nasce da due casi concreti. Il modello ha ignorato per mesi le detrazioni
+dell'art. 13 TUIR e ha computato in dodici rate un trattamento che se ne paga tredici: nessun
+controllo interno poteva rilevarlo, perch&eacute; <b>un istituto mai rappresentato non
+contraddice nessun controllo</b>. Entrambe le omissioni sono emerse dal confronto con cifre
+esterne.</p>
 
 <div class="scorre">
 <table>

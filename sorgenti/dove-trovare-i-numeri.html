@@ -15,21 +15,21 @@
 
 <h1>Dove si ricava ciascun dato</h1>
 
-<p class="occhiello">Il calcolo richiede pochi dati, ma vanno presi dal documento giusto: due di
-essi sono comunemente confusi con grandezze simili, e l&rsquo;errore si propaga a tutto il
+<p class="occhiello">Il calcolo richiede pochi dati, ma vanno presi dal documento giusto: due
+si confondono facilmente con grandezze simili, e l&rsquo;errore si propaga a tutto il
 risultato. Per ciascuna casella, la fonte e l&rsquo;equivoco da evitare.</p>
 
 <!--@@INDICE@@-->
 
 <h2>La pensione attesa</h2>
 
-<p>&Egrave; il dato da cui dipende tutto il resto, ed &egrave; l&rsquo;unico che non si pu&ograve;
-ricavare da un documento gi&agrave; in possesso: va richiesto.</p>
+<p>&Egrave; il dato da cui dipende tutto il resto, ed &egrave; l&rsquo;unico che non si ricava
+da un documento che si ha gi&agrave;: va richiesto.</p>
 
-<p><b>Per chi il trattamento lo percepisce gi&agrave;</b> non occorre alcuna simulazione:
-l&rsquo;importo &egrave; quello <b>lordo</b> del cedolino mensile e la decorrenza &egrave; quella
-effettiva, anche se collocata molti anni addietro. In tal caso il calcolo non richiede alcun dato
-relativo all&rsquo;attivit&agrave; lavorativa, e le sezioni che seguono non servono.</p>
+<p><b>Chi la pensione la riceve gi&agrave;</b> non ha bisogno di simulazioni: l&rsquo;importo
+&egrave; quello <b>lordo</b> del cedolino mensile e la decorrenza &egrave; quella effettiva,
+anche se di molti anni fa. In questo caso il calcolo non chiede dati sul lavoro, e le sezioni
+che seguono non servono.</p>
 
 <p><b>Dove.</b> Sito INPS, servizio <b>&laquo;La mia pensione futura&raquo;</b>, accessibile con
 SPID, CIE o CNS. Il simulatore restituisce la data di decorrenza stimata e l&rsquo;importo
@@ -43,9 +43,8 @@ mensile.</p>
 </div>
 
 <p><b>La simulazione pu&ograve; non essere disponibile</b>: il servizio la fornisce solo a chi ha
-gi&agrave; abbastanza contributi versati. In quel caso il dato non pu&ograve; essere stimato
-attendibilmente da questo strumento, e conviene saperlo prima: una proiezione fondata su un
-importo inventato non &egrave; una proiezione.</p>
+gi&agrave; abbastanza contributi versati. In quel caso questo strumento non pu&ograve; stimare il
+dato in modo attendibile, e conviene saperlo prima di compilare il resto.</p>
 
 <h2>La retribuzione annua lorda</h2>
 
@@ -56,16 +55,16 @@ quattordicesima comprese.</p>
 <div class="chiave allarme">
   <p><b>Non si trascrive il punto 1 della Certificazione Unica.</b> Quel campo espone
   l&rsquo;imponibile fiscale, gi&agrave; al netto dei contributi previdenziali a carico del
-  lavoratore ({{ivs}} della retribuzione). Utilizzarlo comporta una sottostima della retribuzione
-  di circa un decimo, con effetto su TFR, contributi e aliquota IRPEF applicata.</p>
+  lavoratore ({{ivs}} della retribuzione). Usarlo sottostima la retribuzione di circa un
+  decimo, con effetto su TFR, contributi e aliquota IRPEF.</p>
   <p>La retribuzione annua lorda &egrave; quella <b>precedente</b> la trattenuta previdenziale.</p>
 </div>
 
-<p><b>A cosa serve.</b> Da essa discendono il TFR maturando ({{tfrSuRal}} della retribuzione), le
-percentuali di contribuzione, l&rsquo;aliquota IRPEF con cui si determina il costo effettivo di un
-versamento aggiuntivo e <b>la retribuzione netta</b>, che il calcolatore non chiede ma determina.
-<b>Per questo le mensilit&agrave; aggiuntive vanno comprese</b>: se ne restassero fuori, resterebbe
-fuori anche la parte di reddito che ne discende.</p>
+<p><b>A cosa serve.</b> Dalla retribuzione lorda derivano il TFR maturando ({{tfrSuRal}} della
+retribuzione), le percentuali di contribuzione, l&rsquo;aliquota IRPEF con cui si determina il
+costo effettivo di un versamento aggiuntivo e <b>la retribuzione netta</b>, che il calcolatore
+non chiede ma ricava. <b>Per questo le mensilit&agrave; aggiuntive vanno incluse</b>: lasciarle
+fuori escluderebbe anche la parte di reddito che ne deriva.</p>
 
 <h2>Il fondo pensione: consistenza e anzianit&agrave;</h2>
 
@@ -73,11 +72,11 @@ fuori anche la parte di reddito che ne discende.</p>
 riservata del sito del fondo, che espone il valore aggiornato della posizione individuale.</p>
 
 <p><b>L&rsquo;anno di iscrizione</b> &egrave; quello di prima adesione alla previdenza
-complementare, non quello di adesione al fondo attuale. Rileva perch&eacute; determina
+complementare, non quello di adesione al fondo attuale. Conta perch&eacute; determina
 l&rsquo;aliquota sulla prestazione, che scende di {{aliqFondoPunti}} punti per ogni anno oltre il
 quindicesimo. <span class="marca m-legge">legge</span> I periodi di partecipazione presso forme
-diverse <b>si cumulano</b>, se la posizione non &egrave; stata riscattata: va indicato pertanto
-l&rsquo;anno pi&ugrave; remoto.</p>
+diverse <b>si cumulano</b>, se la posizione non &egrave; stata riscattata: va indicato quindi
+l&rsquo;anno pi&ugrave; lontano.</p>
 
 <div class="chiave">
   <p><b>Con pi&ugrave; posizioni</b> si sommano le consistenze e si indica l&rsquo;iscrizione
@@ -93,8 +92,8 @@ l&rsquo;anno pi&ugrave; remoto.</p>
 <i>accantonamento TFR</i>, che espone il totale progressivo. Per i dipendenti di datori di lavoro
 con almeno cinquanta addetti il trattamento non conferito &egrave; versato al <b>Fondo di
 Tesoreria INPS</b>, e l&rsquo;importo si legge nell&rsquo;area riservata del sito
-dell&rsquo;Istituto: il regime &egrave; il medesimo &mdash; stessa rivalutazione, stessa
-tassazione &mdash; e cambia soltanto chi lo eroga.</p>
+dell&rsquo;Istituto: il regime &egrave; lo stesso, stessa rivalutazione e stessa tassazione,
+e cambia soltanto chi lo eroga.</p>
 
 <div class="chiave">
   <p><b>Va indicato il solo TFR rimasto presso il datore di lavoro o l&rsquo;INPS.</b> Quello
@@ -103,15 +102,15 @@ tassazione &mdash; e cambia soltanto chi lo eroga.</p>
   errore di compilazione che rende il piano <b>migliore</b> del vero.</p>
 </div>
 
-<p><b>L&rsquo;anno di prima assunzione</b> si accompagna necessariamente all&rsquo;importo:
+<p>Insieme all&rsquo;importo va indicato <b>l&rsquo;anno di prima assunzione</b>:
 <span class="marca m-legge">legge</span> l&rsquo;art. 19 TUIR determina
-l&rsquo;aliquota dividendo il trattamento per gli anni di servizio, sicch&eacute; senza di esso
-l&rsquo;imposta risulterebbe assai superiore al vero. In sua mancanza l&rsquo;importo non &egrave;
-computato, e il calcolatore lo segnala.</p>
+l&rsquo;aliquota dividendo il trattamento per gli anni di servizio, e senza quell&rsquo;anno
+l&rsquo;imposta risulterebbe molto pi&ugrave; alta del vero. Se manca, l&rsquo;importo non viene
+contato, e il calcolatore lo segnala.</p>
 
-<p>Chi ha <b>cessato l&rsquo;attivit&agrave; prima dell&rsquo;anno in corso</b> non compila queste
-caselle, che risultano disattivate: il trattamento gli &egrave; gi&agrave; stato liquidato, e
-rientra nel patrimonio.</p>
+<p>Chi ha <b>smesso di lavorare prima dell&rsquo;anno in corso</b> trova queste caselle
+disattivate: il trattamento gli &egrave; gi&agrave; stato liquidato, e rientra nel
+patrimonio.</p>
 
 <h2>Le percentuali di contribuzione</h2>
 
@@ -130,7 +129,7 @@ rientra nel patrimonio.</p>
 <div class="chiave allarme">
   <p><b>La quota del datore va indicata anche se oggi non viene percepita</b>, purch&eacute; il
   contratto la preveda. Serve a quantificare l&rsquo;importo cui si sta rinunciando: il
-  contributo dell&rsquo;azienda &egrave; dovuto <b>solo a fronte</b> di quello del lavoratore, e
+  contributo dell&rsquo;azienda &egrave; dovuto <b>solo se versa anche il lavoratore</b>, e
   chi ha aderito con il solo TFR non lo riceve.
   <a href="contributo-datore.html">Quando spetta e quanto vale</a>.</p>
   <p>Chi non versa alcuna quota indica <b>0</b>, non lascia la casella vuota: sono due
@@ -150,26 +149,26 @@ spetta sulle forme sottoscritte individualmente.</p>
 <h2>Il patrimonio investito e la spesa</h2>
 
 <p><b>Il patrimonio</b> comprende quanto &egrave; investito e disponibile: depositi, strumenti
-finanziari, polizze riscattabili. Non comprende l&rsquo;abitazione di residenza, che non produce
-reddito disponibile e non &egrave; liquidabile senza mutare le condizioni di vita.</p>
+finanziari, polizze riscattabili. Non comprende la casa in cui si vive, che non produce
+reddito e non si pu&ograve; vendere senza cambiare abitazione.</p>
 
-<p>Non si indica per intero, ma <b>ripartito in quattro classi</b> &mdash; conto corrente e
-contanti, conti deposito, obbligazioni, azioni ed ETF &mdash; e il totale ne discende. Gli
-estratti conto e il rendiconto del deposito titoli riportano le quattro voci separatamente,
-sicch&eacute; la ripartizione non richiede alcun calcolo preliminare. Da essa il calcolatore
-ricava il rendimento, che non &egrave; quindi un dato da reperire.</p>
+<p>Si indica <b>ripartito in quattro classi</b> (conto corrente e contanti, conti deposito,
+obbligazioni, azioni ed ETF); il totale lo somma il calcolatore. Gli estratti conto e il
+rendiconto del deposito titoli riportano le quattro voci separatamente, quindi la ripartizione
+non richiede calcoli. Dalla ripartizione il calcolatore ricava il rendimento, che quindi non
+&egrave; un dato da cercare.</p>
 
 <p><b>La spesa mensile</b> &egrave; la media delle uscite complessive, non il solo costo della
 vita corrente: vi rientrano imposte, premi assicurativi, manutenzioni e spese annuali,
-ripartite su dodici mesi. La rilevazione pi&ugrave; semplice &egrave; la variazione dei saldi in
-un anno, confrontata con le entrate del medesimo periodo.</p>
+ripartite su dodici mesi. Il modo pi&ugrave; semplice per stimarla &egrave; confrontare la
+variazione dei saldi in un anno con le entrate dello stesso periodo.</p>
 
 <h2>Il comparto si trova su un documento, il rendimento no</h2>
 
 <p><b>Il comparto del fondo pensione</b> &egrave; un dato, e sta sulla comunicazione
 periodica annuale che il fondo invia a ciascun iscritto, dove la linea di investimento &egrave;
-indicata per nome. I fondi la chiamano in modi propri &mdash; prudente, crescita, dinamica &mdash;
-e va ricondotta a una delle quattro forme fra cui il calcolatore fa scegliere.</p>
+indicata per nome. I fondi la chiamano con nomi propri (prudente, crescita, dinamica): va
+ricondotta a una delle quattro linee fra cui il calcolatore fa scegliere.</p>
 
 <p><b>Anche il tipo di fondo &egrave; un dato</b>, e di solito sta nel nome: i fondi
 <i>negoziali</i> nascono dal contratto collettivo di un settore, i fondi <i>aperti</i> sono
@@ -179,22 +178,22 @@ costo annuo &egrave; un rendimento in meno: sui comparti azionari un fondo apert
 1,4 punti l&rsquo;anno pi&ugrave; di un negoziale, un PIP 2,0.</p>
 
 <div class="chiave">
-  <p><b>Chi conosce l&rsquo;ISC del proprio fondo pu&ograve; fare di meglio.</b> L&rsquo;indicatore
+  <p><b>Chi conosce l&rsquo;ISC del proprio fondo pu&ograve; usare un dato pi&ugrave; preciso.</b> L&rsquo;indicatore
   sintetico dei costi &egrave; esposto nella <b>scheda dei costi</b> del fondo e nel comparatore
   pubblicato dalla COVIP. Le cifre proposte dal calcolatore sono <b>mediane</b>, e all&rsquo;interno
   di ciascuna forma la distanza fra il fondo pi&ugrave; economico e il pi&ugrave; caro &egrave;
-  ampia quanto quella fra le forme: chi ha il proprio numero scriva direttamente il rendimento, e
-  le due scelte si dispongono di conseguenza.</p>
+  ampia quanto quella fra le forme: chi conosce il proprio valore pu&ograve; scrivere
+  direttamente il rendimento, senza passare dalle mediane.</p>
 </div>
 
-<p><b>Quanto render&agrave;</b> non &egrave; un dato e non si reperisce in alcun documento. I
+<p><b>Quanto render&agrave;</b> non &egrave; un dato e non si trova su alcun documento. I
 rendimenti passati non misurano quelli futuri.
 Il calcolatore adotta quindi valori dichiarati, prudenti e arrotondati, distinti per classe di
 attivo e per comparto: sono convenzioni, esposte come tali nella
 <a href="il-metodo.html">documentazione del modello</a> insieme al procedimento con cui ne sono
 state ricavate le cifre al netto dell&rsquo;imposizione.</p>
 
-<p>Restano da scegliere l&rsquo;inflazione, l&rsquo;orizzonte del piano e, per chi preferisca
+<p>Restano da scegliere l&rsquo;inflazione, l&rsquo;orizzonte del piano e, per chi preferisce
 scrivere il proprio, il rendimento: sono ipotesi, non dati, e conviene provare a cambiarle per
 vedere quanto ne dipende il risultato.</p>
 
