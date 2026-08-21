@@ -1,16 +1,12 @@
 // Controlli sul motore di decumulo.it (index.html).
 // Legge lo <script> direttamente dall'HTML con un DOM finto: non c'è una copia del modello
 // da tenere allineata. Si lancia con:  node test.mjs
-import fs from 'fs';
+// Il DOM finto sta in `verifiche/_armatura.mjs`, uno per tutti i controlli: qui si dichiara
+// solo il caso di prova, e una casella non dichiarata fa cadere il controllo per nome.
+import { sorgente, documento, dichiarate, prepara, controllaChiavi }
+  from './verifiche/_armatura.mjs';
 
-const PAGINA = new URL('./sito/index.html', import.meta.url).pathname;
-// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
-// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
-// posto del motore, e l'armatura falliva su un codice giusto.
-// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
-// dell'ordine in cui il build monta i pezzi.
-const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
+const src = sorgente();
 
 // UN CASO DI PROVA INVENTATO: cifre costruite, tonde e riconoscibili come tali. Nessun dato di
 // persone vere, nemmeno ereditato dal progetto da cui questo è stato staccato.
@@ -29,7 +25,13 @@ const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/s
 // `spesaPens` vuota: in pensione si spende come adesso — vuoto e 0 qui vogliono dire cose diverse.
 // `rita` è messo alla propria decorrenza (niente erogazione anticipata) per avere un punto di
 // partenza pulito: la RITA si prova nel suo gruppo.
-const DATI = {cl3:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
+// `quanti` era assente e valeva '0', che non è nessuna delle due opzioni: leggeva «due persone»
+// per la via sbagliata. Il caso È a due persone, e adesso lo dice.
+// Le classi del patrimonio non compilate si scrivono vuote — il patrimonio del caso è tutto in
+// azioni — e gli anni della frazionata pure: vuoto vale il minimo di legge, che è il caso base.
+const DATI = {quanti:'2', cl0:'', cl1:'', cl2:'', cl3:120000, spesa:2600, spesaPens:'',
+  cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
+  anniFraz0:'', anniFraz1:'',
   forma0:'vita', forma1:'vita', nome0:'Anna', nome1:'Bruno', pc0:'', pc1:'',
   nascita0:1975, ral0:58000, pens0:2600, annoPens0:2042,
   // vuoto = fino alla propria pensione. Assente varrebbe '0', cioè «non lavora da sempre»
@@ -55,30 +57,12 @@ const DATI = {cl3:120000, spesa:2600, spesaPens:'', cresc0:'', cresc1:'', rend:5
   // illeggibile senza che nulla fallisca. Settima volta che questa regola serve.
   casaCosa:'resto', casaAnno:'', casaValore:'', casaNuova:'', casaCanone:''};
 
-// Il DOM finto deve esporre tutto quello che la pagina tocca, o lo script non arriva in fondo:
-// oltre a value/innerHTML servono textContent, checked, addEventListener e — da quando i
-// cursori senza scelta si nascondono — anche style e nextElementSibling. E `dataset`, da quando
-// il pulsante del punto più alto ci tiene la percentuale a cui deve portare il cursore.
-const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, hidden:false, style:{}, dataset:{}, addEventListener(){},
-  // I NOMI ACCESSIBILI SI SCRIVONO CON `setAttribute`, e senza questo la pagina cadeva qui: è
-  // la settima volta che un'armatura incompleta fa cadere codice buono. Si completa l'armatura.
-  setAttribute(){}, getAttribute(){ return null; },
-  closest(){ return finto(); }, classList:{toggle(){}, add(){}, remove(){}},
-  get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
-// `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della
-// stampa. Nei DOM finti non esiste, ed è la quinta volta che un'armatura incompleta fa
-// cadere codice buono: si completa l'armatura, non si indebolisce la pagina.
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-// `window` esiste sempre in un browser, e la pagina lo nomina per l'evento della misurazione.
-// Nei DOM finti non c'era: sesta volta che un'armatura incompleta fa cadere codice buono.
-// Puntato a `globalThis`, così `window.gtag` resta indefinito e l'evento non parte mai qui.
-globalThis.window = globalThis;
-globalThis.document = {
-  body: {classList:{toggle(){}}},
-  getElementById: id => Object.assign(finto(), {value: String(DATI[id] ?? 0)}),
-  querySelectorAll: () => []
-};
+// L'armatura pretende che il caso dichiari caselle vere e tutte quelle che il motore legge:
+// un campo assente non vale più '0' — che è la regola costata otto cacce — e un campo che la
+// pagina non ha più fa cadere il controllo invece di provare il nulla.
+controllaChiavi(DATI, 'il caso di prova di test.mjs');
+prepara();
+globalThis.document = documento(dichiarate(DATI));
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE, sommaCuneo, ULTERIORE_DETRAZIONE,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, nettoAnnuo, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
@@ -107,6 +91,27 @@ const leggiCon = o => {
 const r = M.simula(s);
 const g = r.righe;
 const anno = a => g.find(x => x.anno === a);
+
+// LE GUARDIE DELL'ARMATURA SI PROVANO DA SÉ, come la guardia delle scadenze e quella sui NaN
+// della seconda implementazione: una guardia mai esercitata è verde perché non guarda. Qui le
+// si dà in pasto esattamente quello che devono fermare, e si pretende che lo fermino per nome.
+console.log('\n— l\'armatura, provata su quello che deve fermare —');
+{
+  const doc = documento(dichiarate({c_e: '7'}));
+  t('la casella dichiarata si legge', doc.getElementById('c_e').value === '7');
+  let detto = '';
+  try { void doc.getElementById('manca_questa').value; }
+  catch (e){ detto = e.message; }
+  t('la casella non dichiarata fa cadere il controllo, e dice quale',
+    detto.includes('#manca_questa'), detto.slice(0, 60));
+  let chiavi = '';
+  try { controllaChiavi({tipoFondo0: 'x'}); } catch (e){ chiavi = e.message; }
+  t('una chiave che la pagina non ha viene respinta, per nome',
+    chiavi.includes('tipoFondo0'), chiavi.slice(0, 60));
+  t('e una casella fabbricata a runtime (cl3, pcMin1) è riconosciuta',
+    (() => { try { controllaChiavi({cl3: 1, pcMin1: ''}); return true; }
+             catch { return false; } })());
+}
 
 // COME SI LEGGE UN NUMERO SCRITTO IN ITALIANO. Le caselle non sono più `type="number"`, che
 // accettava solo il punto e restituiva stringa vuota su tutto il resto: adesso la conversione

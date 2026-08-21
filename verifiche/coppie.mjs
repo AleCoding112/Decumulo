@@ -35,28 +35,16 @@
 //
 //  node verifiche/coppie.mjs
 // ============================================================================
-import fs from 'fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const QUI = dirname(fileURLToPath(import.meta.url));
-const src = [...fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
-  .matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
-
-let DATI = {};
-const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){},
-  setAttribute(){}, getAttribute(){ return null; },
-  get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-globalThis.window = globalThis;
-globalThis.document = {body:{classList:{toggle(){}}}, querySelectorAll: () => [],
-  // LA CASELLA ASSENTE È VUOTA, NON ZERO. È la lezione appena imparata sulle invarianti:
-  // riempire i buchi con un valore di comodo significa provare il valore di comodo. Qui
-  // «non l'ho scritto» deve arrivare al motore come stringa vuota, che per certi campi
-  // (il minimo del contratto, la crescita, la spesa in pensione) vuol dire un'altra cosa.
-  getElementById: id => Object.assign(finto(), {value: String(DATI[id] ?? '')})};
+// L'armatura sta in `_armatura.mjs`, una per tutti i controlli. La lezione «la casella assente
+// è vuota, non zero» è diventata la regola dell'armatura, in forma più dura: la casella assente
+// non è NIENTE, e leggerla fa cadere il controllo per nome. Ogni base parte dal modulo appena
+// aperto e dichiara il resto.
+import { sorgente, documento, prepara, controllaChiavi, moduloIniziale } from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
+let DATI = MODULO;
+prepara();
+globalThis.document = documento(id => DATI[id] === undefined ? undefined : String(DATI[id]));
 const M = new Function(src + `\nreturn {leggi, simula, spesaSostenibile, contributi,
   costoAnnuo, aiSuperstiti, coeffEta, soglia, irpef, irpefNetta, nettoAnnuo, aliquota};`)();
 
@@ -133,7 +121,8 @@ const BASI = {
     tfrDove0:'fondo'}
 };
 
-const gira = dati => { DATI = dati; const s = M.leggi(); return {s, r: M.simula(s)}; };
+const gira = dati => { controllaChiavi(dati, 'una base delle coppie');
+  DATI = {...MODULO, ...dati}; const s = M.leggi(); return {s, r: M.simula(s)}; };
 
 // --- le metriche che le coppie guardano ------------------------------------
 // `annoZero` è `null` quando il patrimonio non si esaurisce mai: per confrontarlo si

@@ -30,26 +30,14 @@
 //
 //  node verifiche/il-punto-piu-alto.mjs
 // ============================================================================
-import fs from 'fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const QUI = dirname(fileURLToPath(import.meta.url));
-const src = [...fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
-  .matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1])
-  .find(t => /function simula\(/.test(t));
-
-let DATI = {};
-const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, hidden:false, style:{}, dataset:{}, addEventListener(){},
-  setAttribute(){}, getAttribute(){ return null; },
-  closest(){ return finto(); }, classList:{toggle(){}, add(){}, remove(){}},
-  get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-globalThis.window = globalThis;
-globalThis.document = { body:{classList:{toggle(){}}},
-  getElementById: id => Object.assign(finto(), {value: String(DATI[id] ?? 0)}),
-  querySelectorAll: () => [] };
+// L'armatura sta in `_armatura.mjs`, una per tutti i controlli. `DATI` è riassegnato a ogni
+// piano: il risolutore legge il binding, e ogni piano parte dal modulo appena aperto.
+import { sorgente, documento, prepara, controllaChiavi, moduloIniziale } from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
+let DATI = MODULO;
+prepara();
+globalThis.document = documento(id => DATI[id] === undefined ? undefined : String(DATI[id]));
 const M = new Function(src + `\nreturn {leggi, simula, conAlt, migliore, affina,
   candidatiVersamento, pcSoglia, pcTenuta, pcMassimo, meglioDi};`)();
 
@@ -77,7 +65,7 @@ const PIANI = 40;
 let peggio = 0, peggioCaso = null, guardati = 0, mancati = 0;
 for (let n = 0; n < PIANI; n++){
   const nascita0 = I(1960, 2000);
-  DATI = {quanti:'1', cl3:Math.round(R(0,400000)), spesa:Math.round(R(500,4000)), spesaPens:'',
+  DATI = {...MODULO, quanti:'1', cl3:Math.round(R(0,400000)), spesa:Math.round(R(500,4000)), spesaPens:'',
     rend:+R(0,8).toFixed(1), infl:+R(0,4).toFixed(1), rendFondo:+R(0,8).toFixed(1),
     etaFine:I(80,100), nascita0, ral0:Math.round(R(8000,90000)),
     pens0:Math.round(R(500,3000)), annoPens0:nascita0 + I(62,70),
@@ -87,6 +75,8 @@ for (let n = 0; n < PIANI; n++){
     anniFraz0:P(['', I(5,25)]), rita0:'', ultimo0:'', cresc0:P(['', +R(0,3).toFixed(1)]),
     tfrGia0:P(['', '', Math.round(R(0,150000))]), annoLav0:P(['', I(1985,2020)]),
     casaCosa:'resto', casaAnno:'', casaValore:'', casaNuova:'', casaCanone:'', nome0:'Anna'};
+  // le chiavi del generatore sono sempre le stesse: si confrontano con le caselle vere una volta
+  if (n === 0) controllaChiavi(DATI, 'il generatore del punto più alto');
 
   let s, x, pcMax, b;
   try {

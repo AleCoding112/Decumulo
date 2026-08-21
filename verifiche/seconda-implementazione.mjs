@@ -10,7 +10,6 @@
 //
 //  node verifiche/seconda-implementazione.mjs
 // ============================================================================
-import fs from 'fs';
 import { REGOLE } from '../regole.mjs';
 
 const V = k => REGOLE[k].val;
@@ -327,32 +326,14 @@ function piano(D){
 }
 
 // --------------------------------------------------- il motore della pagina
-const PAGINA = new URL('../sito/index.html', import.meta.url).pathname;
-// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
-// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
-// posto del motore, e l'armatura falliva su un codice giusto.
-// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
-// dell'ordine in cui il build monta i pezzi.
-const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
-let DATI = {};
-const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, hidden:false, style:{}, addEventListener(){}, setAttribute(){},
-  closest(){ return finto(); }, classList:{toggle(){}, add(){}, remove(){}},
-  get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
-// `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della
-// stampa. Nei DOM finti non esiste, ed è la quinta volta che un'armatura incompleta fa
-// cadere codice buono: si completa l'armatura, non si indebolisce la pagina.
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-// `window` esiste sempre in un browser, e la pagina lo nomina per l'evento della misurazione.
-// Nei DOM finti non c'era: sesta volta che un'armatura incompleta fa cadere codice buono.
-// Puntato a `globalThis`, così `window.gtag` resta indefinito e l'evento non parte mai qui.
-globalThis.window = globalThis;
-globalThis.document = {
-  body: {classList: {toggle(){}}},
-  getElementById: id => Object.assign(finto(), {value: String(DATI[id] ?? 0)}),
-  querySelectorAll: () => []
-};
+// L'armatura sta in `_armatura.mjs`, una per tutti i controlli. `DATI` è riassegnato caso per
+// caso: il risolutore legge il binding, e ogni caso parte dal modulo appena aperto.
+import { sorgente, documento, prepara, controllaChiavi, moduloIniziale } from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
+let DATI = MODULO;
+prepara();
+globalThis.document = documento(id => DATI[id] === undefined ? undefined : String(DATI[id]));
 const M = new Function(src + '\nreturn {leggi, simula};')();
 
 // ------------------------------------------------------------------- i casi
@@ -480,7 +461,8 @@ const tutti = [...Object.entries(casi).map(([n,o]) => [n, o, 0, null]),
                ...Object.entries(PROVE).map(([n,[pr,o]]) => [n, o, pr, null]),
                ...Object.entries(SUP).map(([n,m]) => [n, m.o || {}, 0, m])];
 for (const [nome, over, prova, manca] of tutti){
-  DATI = {...base, ...over};
+  DATI = {...MODULO, ...base, ...over};
+  controllaChiavi({...base, ...over}, `il caso «${nome}»`);
   const s0 = M.leggi();
   const s = {...s0, ...(prova ? {prova} : {}),
              ...(manca ? {manca: {chi: manca.chi, anno: manca.anno, equiv: manca.equiv}} : {})};

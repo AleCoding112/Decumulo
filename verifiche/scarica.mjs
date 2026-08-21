@@ -14,14 +14,13 @@
 //      a quarant'anni, riaperto fra sei mesi senza sapere con quali rendimenti
 //      è stato fatto, è un foglio che mente.
 // ============================================================================
-import fs from 'fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const QUI = dirname(fileURLToPath(import.meta.url));
-const PAGINA = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8');
-const src = [...PAGINA.matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
+// L'armatura sta in `_armatura.mjs`, e la lezione nata qui — `textContent` deve seguire
+// `innerHTML` come in un browser, o il controllo dichiara buono un foglio col risultato in
+// bianco — adesso vale per tutti i controlli, perché sta nell'elemento condiviso.
+import { sorgente, documento, dichiarate, prepara, controllaChiavi, moduloIniziale }
+  from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
 
 const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1980,
   ral0:58000, ral1:36000, pens0:2600, pens1:1700,
@@ -32,29 +31,12 @@ const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1
   rita0:2042, rita1:2050, quotaCap0:0.6, quotaCap1:1, forma0:'vita', forma1:'vita',
   spesaPens:'', cresc0:'', cresc1:'', pc0:'', pc1:''};
 
-// IL DOM FINTO DEVE FAR SEGUIRE `textContent` A `innerHTML`, come fa un browser vero. Il file
-// prende il verdetto da lì — deve contenere quello che si legge in pagina, non una frase
-// ricostruita — e con `textContent` sempre vuoto il controllo avrebbe dichiarato buono un file
-// col risultato in bianco. Settima volta che un'armatura incompleta mente sul codice buono.
-const finto = () => {
-  const o = {value:'', className:'', checked:false, min:'', max:'', disabled:false,
-    style:{}, dataset:{}, addEventListener(){}, setAttribute(){}, closest:() => null, hidden:false,
-    get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }};
-  let html = '', testo = '';
-  Object.defineProperty(o, 'innerHTML', {
-    get: () => html,
-    set: v => { html = String(v); testo = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); }
-  });
-  Object.defineProperty(o, 'textContent', {get: () => testo, set: v => { testo = String(v); }});
-  return o;
-};
-const elementi = {};
+controllaChiavi(DATI, 'il caso di prova di scarica.mjs');
 globalThis.IntersectionObserver = class { constructor(c){ this.cb = c; } observe(){} };
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-globalThis.window = globalThis;
-globalThis.document = {body:{classList:{toggle(){}}}, querySelectorAll: () => [],
-  getElementById: id => elementi[id] ??= Object.assign(finto(),
-    {value: DATI[id] === undefined ? '' : String(DATI[id])})};
+prepara();
+const doc = documento(dichiarate(DATI, MODULO), {memoizza: true});
+globalThis.document = doc;
+const elementi = doc.elementi;
 
 const M = new Function(src + '\nreturn {calc, leggi, simula, pianoInFoglio};')();
 M.calc();

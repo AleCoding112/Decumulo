@@ -19,35 +19,17 @@
 import fs from 'fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// L'armatura sta in `_armatura.mjs`, una per tutti i controlli, e con lei le due idee nate qui:
+// i valori di partenza stanno nell'HTML, non negli scenari (`moduloIniziale`), e uno scenario
+// è il modulo appena aperto più le sole caselle che compila. In più adesso è severa: una
+// casella letta che né lo scenario né il modulo dichiarano fa cadere il controllo per nome.
+import { pagina, sorgente, documento, dichiarate, prepara, controllaChiavi, moduloIniziale }
+  from './_armatura.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-const PAGINA = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8');
-// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
-// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
-// posto del motore, e l'armatura falliva su un codice giusto.
-// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
-// dell'ordine in cui il build monta i pezzi.
-const src = [...PAGINA.matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
-
-// I VALORI DI PARTENZA STANNO NELL'HTML, NON NEGLI SCENARI. Rendimenti, inflazione e orizzonte
-// hanno un `value` scritto nel modulo: uno scenario che non li nomina deve vedere quelli, non
-// lo zero. Senza, «modulo vuoto» non era il modulo che si apre davvero, e un fixture che
-// dimenticava l'orizzonte finiva nel ramo «orizzonte già superato» invece che dove doveva.
-const DEFAULT = {};
-for (const m of PAGINA.matchAll(/<input\b[^>]*\bid="(\w+)"[^>]*>/g))
-  DEFAULT[m[1]] = (m[0].match(/\bvalue="([^"]*)"/) || [, ''])[1];
-for (const m of PAGINA.matchAll(/<select\b[^>]*\bid="(\w+)"[\s\S]*?<\/select>/g)){
-  // senza `selected` vale la prima opzione, come nel browser
-  const s = m[0].match(/<option[^>]*\bselected\b[^>]*>/);
-  // UNA TENDINA COSTRUITA A RUNTIME QUI DENTRO NON HA OPZIONI, e prenderne «la prima» faceva
-  // morire l'armatura su un markup giusto. Il suo valore di partenza non è nessuna delle sue
-  // voci: la tendina del comparto è una veduta del rendimento scritto accanto, e finché la
-  // pagina non gira vale la stringa vuota — che è esattamente quello che riporta il browser
-  // per un select senza opzioni. Nessuna scorciatoia: è il valore vero.
-  const prima = s ? s[0] : (m[0].match(/<option[^>]*>/) || [''])[0];
-  DEFAULT[m[1]] = (prima.match(/\bvalue="([^"]*)"/) || [, ''])[1];
-}
+const PAGINA = pagina();
+const src = sorgente();
+const DEFAULT = moduloIniziale();
 
 // --- gli scenari: coprono i rami che scrivono frasi diverse ------------------
 const BASE = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1977,
@@ -55,7 +37,10 @@ const BASE = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1
   annoPens0:2042, annoPens1:2044, pcVoi0:1.2, pcVoi1:1.5, pcDat0:2, pcDat1:2,
   iscr0:2005, iscr1:2007, cl3:200000, spesa:2500, rend:4, infl:2, rendFondo:3,
   cresc0:'', cresc1:'', spesaPens:'',
-  tipoFondo0:'collettiva', tipoFondo1:'collettiva', ultimo0:'', ultimo1:'',
+  // Qui c'era `tipoFondo0/1:'collettiva'`, rimasto per settimane dopo che il menù era sparito
+  // dalla pagina (03/08/2026): un valore che non arrivava da nessuna parte. L'ha trovato
+  // `controllaChiavi` il giorno in cui è nata: un caso di prova invecchia come una cifra.
+  ultimo0:'', ultimo1:'',
   etaFine:95, fondo0:60000, fondo1:120000, quotaCap0:0.5, quotaCap1:1,
   forma0:'vita', forma1:'rev', tfrDove0:'fondo', tfrDove1:'azienda', tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:'', rita0:2042, rita1:2044};
 
@@ -170,34 +155,16 @@ const SCENARI = {
 function esegui(DATI){
   const scritte = {}, avvisi = [];
   const osservatori = {};
-  const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-    min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){}, closest:() => null,
-    // stessa ragione dell'armatura in test.mjs: i nomi accessibili si scrivono con `setAttribute`
-    setAttribute(){}, getAttribute(){ return null; },
-    hidden:false, get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
-  const elementi = {};
+  controllaChiavi(DATI, 'lo scenario');
   globalThis.IntersectionObserver = class {
     constructor(cb){ this.cb = cb; }
     observe(el){ osservatori[el.__id] = this.cb; }
   };
-// `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della
-// stampa. Nei DOM finti non esiste, ed è la quinta volta che un'armatura incompleta fa
-// cadere codice buono: si completa l'armatura, non si indebolisce la pagina.
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-// `window` esiste sempre in un browser, e la pagina lo nomina per l'evento della misurazione.
-// Nei DOM finti non c'era: sesta volta che un'armatura incompleta fa cadere codice buono.
-// Puntato a `globalThis`, così `window.gtag` resta indefinito e l'evento non parte mai qui.
-globalThis.window = globalThis;
-  globalThis.document = {
-    body:{classList:{toggle(){}}}, querySelectorAll: () => [],
-    getElementById: id => elementi[id] ??= new Proxy(
-      Object.assign(finto(), {__id: id,
-        value: DATI[id] === undefined ? (DEFAULT[id] ?? '') : String(DATI[id])}),
-      {set(t, k, v){
-        if ((k === 'textContent' || k === 'innerHTML') && String(v).trim()) scritte[id] = String(v);
-        t[k] = v; return true;
-      }})
-  };
+  prepara();
+  const doc = documento(dichiarate(DATI, DEFAULT),
+    {memoizza: true, suScrittura: (id, via, testo) => { scritte[id] = testo; }});
+  globalThis.document = doc;
+  const elementi = doc.elementi;
   const warn = console.warn, err = console.error;
   console.warn = (...a) => avvisi.push(a.join(' '));
   console.error = (...a) => avvisi.push(a.join(' '));

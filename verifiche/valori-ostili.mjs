@@ -16,23 +16,24 @@
 //  Non si cercano risultati giusti — su questi dati non esistono. Si cerca che
 //  la pagina resti in piedi e continui a dire cose sensate.
 // ============================================================================
-import fs from 'fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { sorgente, documento, dichiarate, prepara, controllaChiavi, moduloIniziale }
+  from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
 
-const QUI = dirname(fileURLToPath(import.meta.url));
-const src = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8')
-  .match(/<script>([\s\S]*?)<\/script>/g)
-  .map(t => t.replace(/<\/?script>/g, '')).find(t => /function simula\(/.test(t));
-
+// QUI C'ERA «patrimonio», la casella di prima che le quattro classi la sostituissero: i duemila
+// moduli ostili bombardavano un campo che non arrivava da nessuna parte, quindi giravano quasi
+// tutti SENZA patrimonio — cioè senza mai raggiungere il verdetto, che è la metà del percorso
+// che questo controllo esiste per stressare. L'ha trovato `controllaChiavi` al primo giro.
 const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','ral0','ral1',
   'pens0','pens1','annoPens0','annoPens1','fondo0','fondo1','iscr0','iscr1','pcVoi0','pcVoi1',
   'pcDat0','pcDat1','cresc0','cresc1','tfrDove0','tfrDove1','tfrGia0','tfrGia1',
   'annoLav0','annoLav1',
   'ultimo0','ultimo1',
-  'patrimonio','spesa','spesaPens',
+  'cl0','cl1','cl2','cl3','spesa','spesaPens',
   'rend','rendFondo','infl','etaFine','quotaCap0','quotaCap1','forma0','forma1','rita0','rita1',
   'pc0','pc1'];
+controllaChiavi(Object.fromEntries(CAMPI.map(k => [k, ''])), 'l\'elenco dei campi ostili');
 // i valori che fanno male: quelli fuori scala, quelli che non sono numeri, e il vuoto
 const OSTILI = ['', '0', '-1', '-999999', '999999999', '1e308', 'abc', ' ', '.', '-', '1,5',
   '0.0000001', '2100', '1900', 'NaN', 'Infinity', '99999999999999999999', '50%',
@@ -51,29 +52,16 @@ const NOMI_CATTIVI = ['<img src=x onerror="alert(1)">', '<script>alert(1)</scrip
 
 const scelta = a => a[Math.floor(Math.random() * a.length)];
 
-// esegue il calcolatore su un modulo qualunque e riferisce cosa ne è uscito
+// esegue il calcolatore su un modulo qualunque e riferisce cosa ne è uscito.
+// L'armatura sta in `_armatura.mjs`: qui restano il modulo ostile e la raccolta di quello che
+// la pagina scrive. Le caselle che il modulo non tocca valgono quelle della pagina appena
+// aperta; una casella che non esiste in nessuno dei due fa cadere il controllo per nome.
 function prova(DATI){
-  const scritte = {}, avvisi = [], el = {};
-  const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-    min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){}, setAttribute(){},
-    closest:() => null, hidden:false,
-    get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
+  const scritte = {}, avvisi = [];
   globalThis.IntersectionObserver = class { constructor(){} observe(){} };
-// `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della
-// stampa. Nei DOM finti non esiste, ed è la quinta volta che un'armatura incompleta fa
-// cadere codice buono: si completa l'armatura, non si indebolisce la pagina.
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-// `window` esiste sempre in un browser, e la pagina lo nomina per l'evento della misurazione.
-// Nei DOM finti non c'era: sesta volta che un'armatura incompleta fa cadere codice buono.
-// Puntato a `globalThis`, così `window.gtag` resta indefinito e l'evento non parte mai qui.
-globalThis.window = globalThis;
-  globalThis.document = {body:{classList:{toggle(){}}}, querySelectorAll: () => [],
-    getElementById: id => el[id] ??= new Proxy(Object.assign(finto(), {value: DATI[id] ?? ''}),
-      {set(o, k, v){
-        if ((k === 'textContent' || k === 'innerHTML') && String(v).trim())
-          scritte[id] = {via: k, testo: String(v)};
-        o[k] = v; return true;
-      }})};
+  prepara();
+  globalThis.document = documento(dichiarate(DATI, MODULO),
+    {memoizza: true, suScrittura: (id, via, testo) => { scritte[id] = {via, testo}; }});
   const w = console.warn, e = console.error;
   console.warn = (...a) => avvisi.push(a.join(' '));
   console.error = (...a) => avvisi.push(a.join(' '));

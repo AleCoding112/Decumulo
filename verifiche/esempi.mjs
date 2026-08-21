@@ -26,30 +26,21 @@
 //  IL CASO NON È INVENTATO QUI: è quello che le pagine pubblicano, letto da `regole.mjs`. Un
 //  fixture scritto a mano proverebbe che il motore è coerente con sé stesso, che non è la domanda.
 // ============================================================================
-import fs from 'node:fs';
 import { REGOLE, TESTI, ESEMPIO_TFR, ESEMPIO_FONDO, irpefNetta } from '../regole.mjs';
 
 const V = k => REGOLE[k].val;
 
 // --- il motore, dalla pagina costruita --------------------------------------
-// Stessa armatura di `verifiche/seconda-implementazione.mjs`: si sceglie il blocco <script>
-// dicendo cosa si vuole (quello che contiene `simula`), non fidandosi dell'ordine.
-const PAGINA = new URL('../sito/index.html', import.meta.url).pathname;
-const src = [...fs.readFileSync(PAGINA, 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
-
-let DATI = {};
-const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, hidden:false, style:{}, addEventListener(){}, setAttribute(){},
-  closest(){ return finto(); }, classList:{toggle(){}, add(){}, remove(){}},
-  get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-globalThis.window = globalThis;
-globalThis.document = {
-  body: {classList: {toggle(){}}},
-  getElementById: id => Object.assign(finto(), {value: String(DATI[id] ?? 0)}),
-  querySelectorAll: () => []
-};
+// L'armatura sta in `_armatura.mjs`, una per tutti i controlli. I casi qui sotto sono MINIMI
+// per costruzione («tutto il resto è rumore»): ogni caso è il modulo appena aperto più le sole
+// caselle che l'esempio compila, e le chiavi si controllano contro le caselle vere della pagina.
+import { sorgente, documento, prepara, controllaChiavi, moduloIniziale } from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
+let DATI = MODULO;
+const conModulo = o => { controllaChiavi(o, 'un caso di esempi.mjs'); return {...MODULO, ...o}; };
+prepara();
+globalThis.document = documento(id => DATI[id] === undefined ? undefined : String(DATI[id]));
 // `aliquota` e `aliquotaTfr` servono per il lato fondo, dove il confronto è sulla regola.
 // `contributi` e `costoAnnuo` servono a `fondo-pensione-o-etf.html`: sono le due regole da cui
 // dipende tutta la pagina — quanto entra nel fondo e quanto costa in busta — e in `regole.mjs`
@@ -91,7 +82,7 @@ const casoTfr = (anni, dove) => ({
   etaFine: 95
 });
 
-const simulaCon = o => { DATI = o; return M.simula(M.leggi()); };
+const simulaCon = o => { DATI = conModulo(o); return M.simula(M.leggi()); };
 
 console.log('Gli esempi delle pagine, ricalcolati col motore\n');
 
@@ -188,7 +179,7 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
   // la persona dell'esempio: versa ZERO oggi, e il confronto è «cosa succede se versa il minimo».
   // Con `pcVoi0 = 0` il costo che il motore calcola è esattamente quello di passare da zero alla
   // quota, che è la cifra che la pagina pubblica.
-  DATI = {
+  DATI = conModulo({
     quanti: '1', nome0: 'A', nascita0: ANNO0 - 40,
     ral0: f.ral, cresc0: '', ultimo0: ANNO0 + f.anni - 1,
     pens0: 1500, annoPens0: ANNO0 + f.anni,
@@ -197,7 +188,7 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
     forma0: 'vita', quotaCap0: 0, rita0: ANNO0 + f.anni,
     cl3: 50000, spesa: 1500, spesaPens: '',
     rend: f.rend * 100, infl: f.infl * 100, rendFondo: f.rend * 100, etaFine: 95
-  };
+  });
   const x = M.leggi().p[0];
 
   const dentro = M.contributi(x, f.pcLav).tot;
@@ -242,7 +233,7 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
 // riscrivere la pagina che lo dichiarava. È esattamente il servizio che è mancato.
 console.log('\n  — le affermazioni delle pagine, provate sul motore —');
 {
-  const leggiCon = d => { DATI = d; return M.leggi(); };
+  const leggiCon = d => { DATI = conModulo(d); return M.leggi(); };
   const BASE = {quanti:'1', cl3:100000, spesa:1500, spesaPens:'', rend:4, infl:2, rendFondo:3,
     etaFine:95, nome0:'Anna', nascita0:1975, ral0:40000, pens0:1500, annoPens0:2042,
     fondo0:200000, pcVoi0:1.2, pcDat0:2, pcMin0:'', tfrDove0:'fondo', iscr0:2005,

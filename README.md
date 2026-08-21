@@ -18,14 +18,14 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 344 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 442 controlli sul testo |
+| `node test.mjs` | 348 controlli sul motore, letto da `sito/index.html` |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 448 controlli sul testo |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
 | `node verifiche/casi-esterni.mjs` | i venti casi sulle discontinuità della legge, e il confronto col progetto esemplificativo COVIP di un fondo |
 | `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
-| `node verifiche/coppie.mjs` | 23 coppie × 12 basi + 11 sulle funzioni: due piani che cambiano per **una cosa sola**, e il verso è dichiarato prima di lanciare |
+| `node verifiche/coppie.mjs` | 25 coppie × 12 basi + 11 sulle funzioni: due piani che cambiano per **una cosa sola**, e il verso è dichiarato prima di lanciare |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali **seminati** + le funzioni di legge ai punti esatti. `SEME=<n>` per cambiare popolazione |
 | `node verifiche/il-punto-piu-alto.mjs` | l'unico che **non crede all'elenco dei punti notevoli**: spazzola il cursore a passo 0,1 su 40 piani e pretende che la ricerca rapida valga quanto la forza bruta. Nel percorso caldo la spazzolata è impraticabile — settecento giri di motore per persona — qui costa un secondo |
 | `node verifiche/schermi.mjs` | che nessuna griglia esca dallo schermo di un telefono |
@@ -98,6 +98,14 @@ statico: non c'è un server da mantenere, e `sito/` si può servire da qualunque
 se un controllo fallisce, **online resta la versione buona**. `sito/` non sta nel repository
 (`.gitignore`), proprio perché non possa finire online una cartella costruita a mano che i
 controlli non hanno visto.
+
+**E i controlli girano anche senza push.** La guardia delle scadenze scatta solo se qualcuno la
+lancia: un repository fermo per mesi attraverserebbe il 1° gennaio senza che nessuno la eserciti,
+e il sito resterebbe online con le cifre dell'anno prima. `.github/workflows/controllo.yml`
+esegue `node verifica.mjs` **una volta a settimana**, senza pubblicare niente: se un passo
+fallisce, GitHub lo scrive per posta. Un limite da sapere: su un repository pubblico GitHub
+**sospende i lavori a orario dopo 60 giorni senza attività**, avvisando prima per posta —
+quell'avviso va trattato come un controllo fallito, e si riattiva dal pannello Actions.
 
 **Il dominio non si riscrive**: sta nei `canonical` delle pagine, e da lì il build ricava
 `robots.txt` e il file `CNAME` che serve a GitHub per rispondere su `decumulo.it`.
@@ -422,11 +430,16 @@ casi a ogni esecuzione prima di dare il verdetto vero.
 La **seconda implementazione** va tenuta al passo del modello. Una che resta indietro è peggio di
 nessuna: dà un falso «scarto zero» mentre calcola un'altra cosa (successo il 31/07/2026).
 
-**Quando si aggiunge una casella in cui vuoto e zero dicono cose diverse, il primo posto da
-toccare sono i fixture.** Nei DOM finti un campo assente vale `'0'`, non stringa vuota: la
-casella nuova legge zero, e cinque casi diversi finiscono sullo stesso numero senza che nessun
-controllo fallisca. È successo tre volte (spesa in pensione, crescita della retribuzione, ultimo
-anno di lavoro). Si scrive `campo: ''` esplicitamente in ogni armatura.
+**Quando si aggiunge una casella, i fixture si aggiornano da soli — nel senso che falliscono.**
+La regola era di disciplina: nei DOM finti un campo assente valeva `'0'`, la casella nuova
+leggeva zero, e cinque casi diversi finivano sullo stesso numero senza che nessun controllo
+fallisse — successo otto volte, e la difesa era «si scrive `campo: ''` esplicitamente», cioè la
+memoria. Dal 21/08/2026 la pretende `verifiche/_armatura.mjs`: **leggere il `value` di una
+casella che il caso di prova non dichiara fa cadere il controllo, per nome**
+(`ARMATURA_ELENCA=1` le elenca tutte in un giro), e una chiave che la pagina **non ha più** viene
+respinta da `controllaChiavi` — che al primo giro ha trovato due morti veri: `tipoFondo` nei
+casi di come-parla e `patrimonio` nei moduli ostili. I casi partono dal **modulo appena
+aperto** (`moduloIniziale()`, coi valori che l'HTML dichiara) e dichiarano il resto.
 
 ---
 
@@ -440,6 +453,8 @@ test.mjs        i controlli sul motore
 verifiche/      come parla · valori ostili · tavole dei fondi · riscontri esterni ·
                 seconda implementazione · invarianti · schermi · coerenza · consenso ·
                 anteprime · scarica · scadenze · a-schermo · occhi · senza-scatti
+                _armatura.mjs è il DOM finto di tutti, come i file con _ fra i sorgenti:
+                un pezzo, non un controllo
 sorgenti/       index.html + le pagine; i file con _ sono pezzi da includere
 sito/           quello che si pubblica
 ```
@@ -1136,6 +1151,41 @@ nuovo è l'imposta dell'art. 19 sul TFR (14.681 € sul caso base), ed è vero e
 vecchio è il fondo che diventa rendita e sparisce dallo stock senza che il patrimonio salga — un
 −28% che non è una perdita. La legenda dice «non ancora riscossi», che è onesto ma non lo spiega.
 
+## 2026-08-21 — l'armatura che pretende, e la guardia che girava solo se spinta
+
+Una rilettura completa dall'esterno — regole, motore, testi — **non ha trovato errori nelle
+cifre né nella matematica**: tutte le costanti riscontrate di nuovo su fonti esterne (IRPEF al
+33% con la sterilizzazione dichiarata, tetto 5.300, capitale al 50%, frazionata al 31 ottobre,
+assegno sociale e le tre soglie della Tabella F tornate all'euro). Quello che ha trovato è
+roba d'impianto, e sono sei interventi:
+
+1. **`controllo.yml`** — la guardia delle scadenze scattava solo su push: un repository fermo
+   avrebbe attraversato il capodanno con le cifre vecchie online. Ora `verifica.mjs` gira
+   **ogni settimana** anche da fermo, senza pubblicare. (Vedi *Pubblicare* per il limite dei
+   60 giorni di GitHub.)
+2. **`verifiche/_armatura.mjs`** — il DOM finto in un posto solo, e severo: la casella non
+   dichiarata non vale più `'0'`, fa cadere il controllo per nome; `controllaChiavi` respinge
+   le chiavi che la pagina non ha più; i casi partono dal **modulo appena aperto**. Al primo
+   giro ha trovato `tipoFondo` e `patrimonio` morti nei fixture — coi moduli ostili che, senza
+   patrimonio, non arrivavano quasi mai al verdetto. **Un caso di prova invecchia come una
+   cifra**, e adesso c'è una guardia che se ne accorge (e si prova da sé, in `test.mjs`).
+3. **`--tenue` da 3,49:1 a 4,58:1** (#8a857a → #767166) — il colore dei corpi più piccoli stava
+   sotto il 4,5:1 del testo normale, misurato come i gradini della barra. Corrette anche le tre
+   etichette SVG del grafico, rimaste al grigio **cablato**: un colore scritto in due posti è
+   una divergenza come le altre.
+4. **Le sentinelle di `build.mjs` si generano dalle regole** — scritte a mano sarebbero rimaste
+   a guardia dei valori vecchi al primo cambio di parametro: la divergenza di sempre, dentro il
+   file che esiste per impedirla. E la scansione ora guarda **quello che si pubblica**: l'avviso
+   che scattava a ogni build su un commento è sparito, perché **un avviso fisso insegna a
+   ignorare gli avvisi**.
+5. **Il superstite che lavora è dichiarato** in `il-metodo.html`: retribuzione e pensione ai
+   superstiti sono tassate separate mentre l'imposta vera si fa sul cumulo — netto sovrastimato,
+   caso raro (serve un ampio divario d'età). Era l'unico scostamento del motore non scritto da
+   nessuna parte. E la fonte del trattamento integrativo non chiama più «area esente» la soglia
+   di capienza: 8.174 è la capienza, l'esenzione arriva a 8.500.
+6. **`LICENSE`** — riserva dei diritti esplicita: un repository pubblico senza licenza è
+   un'ambiguità, non un permesso.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -1147,7 +1197,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: `notaDatore` parla di quello che il *contratto* riconosce, non di liberalità |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
 | **41 regole su 48 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano**: lo dà `quanteRiscontrate()` in `regole.mjs`, ed era rimasto a «37 su 41» mentre le regole diventavano 48 |
-| L'oggetto finto delle armature è **copiato in otto file** (era sei; `esempi.mjs` l'ha portato a otto il 06/08/2026) | un modulo solo, importato da tutti | ogni volta che manca un metodo costano otto modifiche invece di una: è successo con `setAttribute`. Il conto si rifà con `grep -c 'const finto = ()' verifiche/*.mjs test.mjs`, non a memoria |
+| ~~L'oggetto finto delle armature è **copiato in otto file**~~ **— chiuso il 21/08/2026** | — | ora è `verifiche/_armatura.mjs`, importato da tutti — e severo: la casella non dichiarata non vale più un ripiego, fa cadere il controllo per nome, e `controllaChiavi` respinge le chiavi che la pagina non ha più. Al primo giro ha trovato `tipoFondo` (morto dal 03/08) nei casi di come-parla e `patrimonio` (morto con le quattro classi) nei moduli ostili: i duemila moduli giravano quasi tutti **senza patrimonio**, cioè senza mai raggiungere il verdetto |
 | Chi ha usato il sito prima del 3 agosto ha in memoria un **tipo di fondo** che non esiste più, e se aveva scelto «scelto da sé» con una percentuale scritta ora quella quota **viene conteggiata** | niente: `ripristina()` scorre le caselle che trova in pagina, quindi la chiave vecchia è ignorata e sparisce al primo salvataggio | è il comportamento voluto — la percentuale scritta vale — e non è silenzioso: `notaDatore` compare proprio perché una percentuale c'è, e dice la condizione |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |
 | ~~Il **trattamento integrativo** (1.200 € sotto i 15.000 €) non è modellato~~ **— chiuso il 07/08/2026** | — | era dichiarato e misurato (−1.200 € esatti a RAL 15.000). È stato rappresentato non per la fascia che ne beneficia ma per l'effetto sugli altri: la detrazione dell'art. 13 c. 1 **scende da 3.100 a 1.955 €** sotto i 15.000 € di reddito, e nella disciplina vigente quel salto lo colma proprio quel trattamento. Senza, il modello esponeva una perdita secca di 1.145 € che la legge non ha — e il ricercatore del punto più alto ci si aggrappava. **Non è rappresentato il secondo periodo** (15.001–28.000 €), che dipende dalle detrazioni dell'art. 12 e dagli oneri dell'art. 15: senza quelle vale zero per costruzione |

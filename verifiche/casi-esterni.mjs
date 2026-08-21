@@ -50,26 +50,16 @@
 //
 //  node verifiche/casi-esterni.mjs
 // ============================================================================
-import fs from 'fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const QUI = dirname(fileURLToPath(import.meta.url));
-const PAGINA = fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8');
-// dalla pagina COSTRUITA, non dal sorgente: le costanti di legge le inietta il build
-const src = [...PAGINA.matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
-
-// il motore nomina `document` mentre si carica: gli si dà un guscio, come in come-parla.mjs
-const finto = () => ({value:'', innerHTML:'', className:'', textContent:'', checked:false,
-  min:'', max:'', disabled:false, style:{}, dataset:{}, addEventListener(){}, closest:() => null,
-  setAttribute(){}, getAttribute(){ return null; }, hidden:false,
-  get nextElementSibling(){ return finto(); }, get parentElement(){ return finto(); }});
+// dalla pagina COSTRUITA, non dal sorgente: le costanti di legge le inietta il build.
+// L'armatura sta in `_armatura.mjs`. Questo controllo non compila mai il modulo — esercita le
+// funzioni pure sui casi di legge — quindi al motore, mentre si carica, si dà il modulo appena
+// aperto: è l'unico file in cui il risolutore non è severo, perché non c'è un caso da dichiarare.
+import { sorgente, documento, prepara, moduloIniziale } from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
 globalThis.IntersectionObserver = class { constructor(cb){ this.cb = cb; } observe(){} };
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-globalThis.window = globalThis;
-globalThis.document = { body:{classList:{toggle(){}}}, querySelectorAll: () => [],
-  getElementById: () => finto() };
+prepara();
+globalThis.document = documento(id => String(MODULO[id] ?? ''));
 
 const M = new Function(src + `
   return {irpef, irpefNetta, nettoAnnuo, contributi, costoAnnuo, scontoIrpef, aliquota,

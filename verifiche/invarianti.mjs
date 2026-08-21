@@ -1,34 +1,14 @@
-import fs from 'fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-// PERCORSO RELATIVO, come le altre verifiche. Qui c'era un percorso assoluto con la cartella
-// personale di chi l'ha scritto: funzionava solo su quella macchina, e avrebbe fatto fallire la
-// pubblicazione automatica al primo tentativo. Un percorso assoluto in un progetto che vive in
-// un repository è un errore che si scopre soltanto altrove.
-const QUI = dirname(fileURLToPath(import.meta.url));
-// LA PAGINA HA PIÙ DI UNO <script>. Da quando il piè di pagina porta con sé il banner del
-// consenso, il primo è quello: prendere «il primo» faceva caricare quaranta righe di banner al
-// posto del motore, e l'armatura falliva su un codice giusto.
-// Si sceglie dicendo COSA si vuole — il blocco che contiene il motore — invece di fidarsi
-// dell'ordine in cui il build monta i pezzi.
-const src = [...fs.readFileSync(join(QUI, '..', 'sito', 'index.html'), 'utf8').matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map(m => m[1]).find(t => /function simula\(/.test(t));
-let DATI={};
-const finto=()=>({value:'',innerHTML:'',className:'',textContent:'',checked:false,min:'',max:'',disabled:false,style:{},dataset:{},addEventListener(){},get nextElementSibling(){return finto()},get parentElement(){return finto()}});
-// `body` serve perché la pagina, appena caricata, spegne la seconda colonna quando la persona
-// è una sola: è l'unica cosa che `calc()` fa PRIMA di accorgersi che il modulo è incompleto.
-// Era l'unica delle cinque armature a non averlo, e finché quella riga stava in fondo non si
-// vedeva. Un DOM finto incompleto non dice «manca un pezzo qui»: fa fallire il codice buono.
-// `addEventListener` sulla finestra: la pagina lo usa per aprire il dettaglio prima della
-// stampa. Nei DOM finti non esiste, ed è la quinta volta che un'armatura incompleta fa
-// cadere codice buono: si completa l'armatura, non si indebolisce la pagina.
-globalThis.addEventListener = globalThis.addEventListener || (() => {});
-// `window` esiste sempre in un browser, e la pagina lo nomina per l'evento della misurazione.
-// Nei DOM finti non c'era: sesta volta che un'armatura incompleta fa cadere codice buono.
-// Puntato a `globalThis`, così `window.gtag` resta indefinito e l'evento non parte mai qui.
-globalThis.window = globalThis;
-globalThis.document={body:{classList:{toggle(){}}},
-  getElementById:id=>Object.assign(finto(),{value:String(DATI[id]??0)}),querySelectorAll:()=>[]};
+// L'armatura sta in `_armatura.mjs`, una per tutti i controlli: qui si genera il piano e basta.
+// `DATI` viene RIASSEGNATO a ogni piano, quindi il risolutore legge il binding e non l'oggetto:
+// passare l'oggetto a `dichiarate()` avrebbe congelato il primo piano per tutti e quattromila.
+// Si parte dal MODULO APPENA APERTO, che è anche lo stato su cui gira il caricamento della
+// pagina dentro `new Function`; ogni piano casuale è quel modulo più i valori estratti.
+import { sorgente, documento, prepara, controllaChiavi, moduloIniziale } from './_armatura.mjs';
+const src = sorgente();
+const MODULO = moduloIniziale();
+let DATI = MODULO;
+prepara();
+globalThis.document = documento(id => DATI[id] === undefined ? undefined : String(DATI[id]));
 const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quotaMax,SOGLIA_TUTTO,soglia,coeffEta,
   COEFF_RENDITA,QUOTA_ORDINARIA,ASSEGNO_SOCIALE,TETTO_DEDUZIONE,TFR_SU_RAL,spazioDeducibile,contributi,costoAnnuo,pcTetto,
   aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz,
@@ -56,7 +36,7 @@ const R=(a,b)=>a+casuale()*(b-a), I=(a,b)=>Math.floor(R(a,b+1)), P=l=>l[I(0,l.le
 
 for (let t=0; t<4000; t++){
   const n0=I(1950,1990), n1=I(1950,1990);
-  DATI={cl3:Math.round(R(0,900000)), spesa:Math.round(R(0,9000)),
+  DATI={...MODULO, cl3:Math.round(R(0,900000)), spesa:Math.round(R(0,9000)),
     spesaPens: P(['', Math.round(R(0,9000))]),
     rend:+R(-2,12).toFixed(1), infl:+R(0,8).toFixed(1), rendFondo:+R(-2,12).toFixed(1),
     etaFine:I(70,105),
@@ -105,6 +85,9 @@ for (let t=0; t<4000; t++){
   DATI.casaValore = P(['', Math.round(R(0,700000))]);
   DATI.casaNuova  = P(['', Math.round(R(0,700000))]);
   DATI.casaCanone = P(['', Math.round(R(0,3000))]);
+  // le chiavi del generatore sono le stesse a ogni giro: si confrontano con le caselle vere
+  // della pagina una volta sola, sul primo piano
+  if (t === 0) controllaChiavi(DATI, 'il generatore delle invarianti');
   let s,r;
   try { s=M.leggi(); r=M.simula(s); } catch(e){ ko('il motore va in errore', e.message); continue; }
   n++;
