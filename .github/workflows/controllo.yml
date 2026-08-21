@@ -1,0 +1,37 @@
+# LA GUARDIA DELLE SCADENZE SCATTA SOLO SE QUALCUNO LA LANCIA. `pubblica.yml` gira sui push:
+# un repository fermo per mesi attraverserebbe il 1° gennaio senza che nessuno esegua i
+# controlli, e il sito resterebbe online con le cifre dell'anno prima — dichiarando in fondo a
+# ogni pagina una data di revisione che gli dà l'aria di essere aggiornato. È esattamente lo
+# scenario per cui `verifiche/scadenze.mjs` esiste, e nessun push lo esercita da sé.
+#
+# Questo lavoro esegue gli stessi controlli una volta a settimana, SENZA pubblicare niente:
+# quando un passo fallisce, GitHub lo scrive per posta a chi mantiene il progetto. Online resta
+# quello che c'è — che è giusto: una cifra scaduta si corregge, non si spegne il sito.
+#
+# UN LIMITE DA SAPERE: su un repository pubblico GitHub sospende i lavori a orario dopo 60
+# giorni senza attività, avvisando per posta prima di farlo. Quell'avviso va trattato come un
+# controllo fallito: si riattiva dal pannello Actions, o la guardia torna a dormire.
+name: controllo
+
+on:
+  schedule:
+    # il lunedì mattina: se scatta, c'è la settimana per rimediare
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # nessuna dipendenza da installare, come in `pubblica.yml`: il progetto è Node puro
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: i controlli, tutti
+        run: node verifica.mjs
