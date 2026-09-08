@@ -18,13 +18,13 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 348 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 448 controlli sul testo |
+| `node test.mjs` | 354 controlli sul motore, letto da `sito/index.html` |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 454 controlli sul testo |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
 | `node verifiche/casi-esterni.mjs` | i venti casi sulle discontinuità della legge, e il confronto col progetto esemplificativo COVIP di un fondo |
-| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 60 casi |
+| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 64 casi |
 | `node verifiche/coppie.mjs` | 25 coppie × 12 basi + 11 sulle funzioni: due piani che cambiano per **una cosa sola**, e il verso è dichiarato prima di lanciare |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali **seminati** + le funzioni di legge ai punti esatti. `SEME=<n>` per cambiare popolazione |
 | `node verifiche/il-punto-piu-alto.mjs` | l'unico che **non crede all'elenco dei punti notevoli**: spazzola il cursore a passo 0,1 su 40 piani e pretende che la ricerca rapida valga quanto la forza bruta. Nel percorso caldo la spazzolata è impraticabile — settecento giri di motore per persona — qui costa un secondo |
@@ -34,7 +34,7 @@ lancia da solo:
 | `node verifiche/consenso.mjs` | che il tag di misurazione non parta senza consenso |
 | `node verifiche/anteprime.mjs` | la scheda che si vede condividendo il link, e le briciole dichiarate |
 | `node verifiche/scarica.mjs` | il piano portato via: che il foglio di calcolo sia un file valido e dica quello che si vede |
-| `node verifiche/scadenze.mjs` | se i parametri sono ancora quelli correnti |
+| `node verifiche/scadenze.mjs` | se i parametri sono ancora quelli correnti, e se la prosa al futuro sull'erogazione frazionata è ancora al futuro |
 
 Fuori dalla catena perché **non afferma niente**: stampa un rapporto da leggere.
 
@@ -51,8 +51,9 @@ Fuori dalla catena, perché apre Chrome e va lanciato quando si tocca il layout 
 una casella:
 
 ```
-node verifiche/a-schermo.mjs     nove pagine × quattro larghezze in due assetti del modulo:
-                                niente sborda, ogni campo ha un nome, la stampa contiene il
+node verifiche/a-schermo.mjs     undici pagine (dieci più il 404) × quattro larghezze, e il
+                                calcolatore in cinque assetti del modulo: niente sborda, ogni
+                                campo ha un nome, la stampa contiene il
                                 dettaglio anno per anno. E il CONSENSO provato cliccando davvero:
                                 è l'unico posto dove si può vedere che il tag non parte prima
 
@@ -90,7 +91,8 @@ a nessuno**, che è la promessa scritta in `privacy.html`.
 
 ## Pubblicare
 
-Nove pagine, un 404, tre file di servizio (`sitemap.xml`, `robots.txt`, `CNAME`). Il sito è
+Dieci pagine, un 404, e i file di servizio che il build riscrive da sé (`sitemap.xml`,
+`robots.txt`, `CNAME`, `BingSiteAuth.xml`, la favicon e le due immagini). Il sito è
 statico: non c'è un server da mantenere, e `sito/` si può servire da qualunque parte.
 
 **Pubblica GitHub, e solo se i controlli passano.** `.github/workflows/pubblica.yml` esegue
@@ -416,7 +418,11 @@ che gli dà l'aria di essere aggiornato.
 | **ogni gennaio** | `ASSEGNO_SOCIALE` **e `TRATT_MINIMO`**, rivalutati | la stessa circolare INPS di dicembre |
 | **dopo la legge di bilancio** | `SCAGLIONI` (IRPEF), `TETTO_DEDUZIONE`, `QUOTA_ORDINARIA` | testo della legge, non una notizia |
 | **quando esce una tavola ISTAT** | `SPERANZA_VITA` **insieme a** `MARGINE_RENDITA` | poi `verifiche/tavole-dei-fondi.mjs` |
-| a ogni modifica di un parametro | `REVISIONE_ISO` | — |
+| **ogni gennaio** | `ANNO0`: è «l'anno in corso» da cui parte il conto | — |
+| **quando cambia il decreto sui coefficienti di trasformazione** (biennale; il prossimo, per il 2027-2028, è atteso a fine 2026) | `VITA_INTERA`, che segue la tavola ISTAT di quel decreto: i fondi la pubblicano «per le prestazioni richieste fino al 31/12/2026» | `demo.istat.it`, e le informative dei fondi che espongono la tavola in anni interi |
+| **il 31 ottobre 2026** | la prosa al futuro sull'erogazione frazionata (`{{frazDal}}` in due pagine) si toglie; `FRAZ_DECORRENZA` resta come data storica | `verifiche/scadenze.mjs` lo pretende da quel giorno, e si spegne da sé quando è fatto |
+| **il 1° gennaio 2027** | le **citazioni** delle norme fiscali, non le cifre: il D.Lgs. 117/2026 (testo unico delle imposte sui redditi) le riordina, e Normattiva mostra già i vecchi articoli come abrogati da quella data | la tavola di corrispondenza nella sezione del 2026-09-08 |
+| a ogni modifica di un parametro, e a ogni rilettura completa delle fonti | `REVISIONE_ISO` | — |
 
 Sull'ultima riga della tabella: speranza di vita e margine **si aggiornano insieme, o non si
 aggiornano**. Il margine è calibrato su quella tavola: muovendone una sola il coefficiente si
@@ -485,9 +491,11 @@ muove. Si aggiornano insieme, o non si aggiornano.
 |---|---|
 | `index.html` | il calcolatore |
 | `contributo-datore.html` | quando spetta il contributo dell'azienda e quanto vale |
+| `fondo-pensione-o-etf.html` | le quattro differenze, e il confronto in cifre a parità di rendimento |
 | `come-prendere-il-fondo.html` | capitale o rendita, la soglia che cambia con l'età |
 | `rita.html` | requisiti e tassazione dell'erogazione anticipata |
 | `tfr-fondo-o-azienda.html` | dove conviene il TFR, e perché la scelta non è simmetrica |
+| `casa-e-decumulo.html` | quanto resta di una vendita, come cambia la spesa, e le due strade per restare |
 | `dove-trovare-i-numeri.html` | da quale documento si ricava ciascun dato |
 | `il-metodo.html` | procedimento, limiti, stato di verifica dei parametri |
 | `privacy.html` | dove finiscono i dati inseriti |
@@ -1186,6 +1194,117 @@ roba d'impianto, e sono sei interventi:
 6. **`LICENSE`** — riserva dei diritti esplicita: un repository pubblico senza licenza è
    un'ambiguità, non un permesso.
 
+## 2026-09-08 — la rilettura di settembre: un ripiego dal lato sbagliato, e il testo unico del 2027
+
+Rilettura completa dopo diciotto giorni di fermo, con **tutti i parametri riscontrati di nuovo
+sulle fonti** — Normattiva, la circolare INPS 153/2025 coi suoi allegati, la deliberazione COVIP
+del 25 giugno 2026, la Relazione COVIP per l'anno 2025, Eurostat e ISTAT — e con la cronaca
+normativa di agosto e settembre letta per intero (D.Lgs. 141/2026, D.Lgs. 148/2026, D.L. 144/2026,
+prassi INPS e COVIP: nessuno tocca una cifra del sito). **Nessuna cifra è cambiata**; quattro fonti
+sono state precisate e la revisione è portata a oggi. Quello che la rilettura ha trovato:
+
+**1. L'anno di iscrizione lasciato vuoto valeva 1900, cioè il 9% a chiunque.** La casella passava
+dal taglio `numFra(…, 1900, …)`: vuota diventava 1900, centoventi anni di iscrizione e l'aliquota
+sulla prestazione al pavimento. Era l'**unico ripiego di tutta la pagina dal lato ottimista**, su
+una casella dello strato aperto che nessuna guardia pretende, e mentre si scrive «2» e «20»
+valevano lo stesso 1900. Misurato sul caso a una persona con 90.000 € di fondo e decorrenza 2042:
+9,0% invece di 14,7%, **6.700 € di imposta in meno** e un finale migliore del vero di 8.000 €.
+Nessun controllo lo vedeva perché **ogni caso di prova l'anno lo scriveva**, e i tre che lo
+lasciavano vuoto non avevano un fondo. Ora vuoto vale l'anno in corso — l'anzianità *minore*
+compatibile coi dati, quindi l'imposta più alta — e la regola delle quattro cifre vale anche qui.
+**La casella ha guadagnato la riga sotto**: vuota dice «iscrizione dal 2026, l'ipotesi meno
+favorevole», scritta dice l'aliquota che ne esce alla decorrenza, e segue la forma scelta (la
+frazionata parte dal 20%). Il foglio di calcolo scrive «non indicato: si conta dal 2026» invece di
+un anno che nessuno ha scritto. La seconda implementazione riceve il valore *scritto* e rifà il
+ripiego da sé; i 4.000 piani casuali ora estraggono anche il vuoto, e un'invariante pretende che
+lì l'aliquota sia quella di chi si iscrive oggi; `come-parla.mjs` legge la riga nuova in sei
+stati. `il-metodo.html` e `dove-trovare-i-numeri.html` lo dichiarano.
+**Regola: un ripiego si guarda dal lato in cui cade.** Ogni casella che può restare vuota ha un
+valore di ripiego, e il taglio agli estremi è un ripiego anche quando nessuno l'ha scelto.
+
+**2. Dal 1° gennaio 2027 le citazioni fiscali cambiano numero.** Il **D.Lgs. 19 giugno 2026,
+n. 117** — testo unico delle disposizioni legislative in materia di imposte sui redditi, GU n. 152
+del 3 luglio 2026, S.O. n. 26 — è in vigore dal 4 luglio e **si applica dal 1° gennaio 2027**
+(art. 377). Riordina a legislazione vigente le norme che il sito cita: l'art. 376 abroga da quella
+data gli artt. 1-191 del vecchio TUIR e, del D.Lgs. 252/2005, l'art. 10 c. 1, l'art. 11 c. 4-ter,
+4-quater, 4-quinquies, 6, 6-bis, 6-ter, 7 e 8, l'art. 14 c. 4, 5 e 7 e l'art. 17 c. 1-9 — e
+Normattiva li mostra già come «abrogati dal D.Lgs. 117/2026» nella versione vigente dal 2027. Il
+tetto di 5.300 € **resta** nell'art. 8 c. 4 del D.Lgs. 252/2005, e restano fuori dal testo unico il
+trattamento integrativo (D.L. 3/2020), la somma del cuneo (L. 207/2024 c. 4) e le imposte sulle
+rendite finanziarie (D.L. 66/2014). **Le cifre non cambiano per questo**: cambiano i numeri degli
+articoli, cioè le fonti che `regole.mjs` e le pagine dichiarano. La guardia delle scadenze, che il
+1° gennaio scatta comunque, ora lo dice per esteso — e con lei `ANNO0`, `TRATT_MINIMO` e
+`VITA_INTERA`, che mancavano dal suo elenco. La tavola di corrispondenza è qui sotto.
+
+**La tavola di corrispondenza**, letta sul testo integrale del decreto (GU 3/7/2026, S.O. 26/L,
+364 pagine: ogni articolo porta in sotto-rubrica la norma che assorbe, ed è quella la concordanza
+ufficiale — un allegato separato non esiste) e confrontata parola per parola. Attenzione: la
+numerazione dello schema di decreto (AG 398) **non coincide** con quella pubblicata dalla Parte II
+in avanti; vale solo la numerazione della Gazzetta, che è questa.
+
+| oggi | dal 1° gennaio 2027 | sostanza |
+|---|---|---|
+| TUIR art. 11 (scaglioni e aliquote) | D.Lgs. 117/2026 art. 11 c. 1 | uguale: 23% fino a 28.000, 33% fino a 50.000, 43% oltre |
+| TUIR art. 13 c. 1, 1.1, 3, 3-bis (detrazioni lavoro e pensione) | art. 13 c. 1, 2, 3, 4 | uguale, importi identici; i rinvii al lavoro dipendente passano dall'art. 49 all'art. 51 |
+| L. 207/2024 art. 1 c. 6 (ulteriore detrazione 20.000-40.000) | art. 13 c. 10 | uguale; il c. 6 della legge è abrogato (art. 376 lett. pppppp) |
+| L. 207/2024 art. 1 c. 4 (somma per i redditi fino a 20.000) | **resta** nella L. 207/2024 | non abrogato, e delle sue percentuali non c'è traccia nel testo unico |
+| D.L. 3/2020 art. 1 (trattamento integrativo) | **resta** nel D.L. 3/2020 | non abrogato; i suoi rinvii agli artt. 11 e 13 TUIR si leggono col rinvio mobile dell'art. 376 c. 2 |
+| TUIR art. 16-ter c. 5-bis (i 440 € sopra 200.000) | art. 18 c. 6 | uguale |
+| TUIR art. 17 e 19 (tassazione separata, TFR) | art. 19 e 21 | uguale: reddito di riferimento, anni di servizio, ×12 |
+| TUIR art. 51 c. 2 lett. h (contributi trattenuti in busta) | art. 53 c. 2 lett. **m** | uguale (artt. 49-51 → 51-53; cambia anche la lettera) |
+| TUIR art. 10 c. 1 lett. e-bis (deduzione dei contributi) | art. 10 c. 1 lett. h, che rinvia all'art. 8 D.Lgs. 252/2005 | il **tetto di 5.300 € resta nell'art. 8 c. 4 D.Lgs. 252/2005**, non abrogato: la deduzione diventa un rinvio |
+| TUIR art. 67 c. 1 lett. b (plusvalenze immobiliari, i cinque anni e l'abitazione principale) | art. 76 c. 1 lett. b | uguale |
+| D.Lgs. 252/2005 art. 11 c. 4-ter (RITA, 15%→9%, opzione ordinaria) | art. 258 c. 1 | uguale; il comma è abrogato (art. 376 lett. lll) |
+| D.Lgs. 252/2005 art. 11 c. 6 (prestazioni, 15%→9%) | art. 258 c. 4 | uguale, testo identico |
+| D.Lgs. 252/2005 art. 11 c. 6-bis (durata definita e prelievi) | art. 258 c. 5 | uguale |
+| D.Lgs. 252/2005 art. 11 c. 6-ter (frazionata, 20%→15%) | art. 258 c. 6 | uguale |
+| D.Lgs. 252/2005 art. 11 c. 7 (anticipazioni) e art. 14 c. 4-5 (riscatti) | art. 258 c. 7-8 e art. 259 | uguale |
+| D.Lgs. 252/2005 art. 17 c. 1-9 (20% sui rendimenti) | art. 257 c. 1; i titoli di Stato al c. 10, col rapporto fra le due aliquote | uguale |
+| D.Lgs. 47/2000 art. 11 c. 3 (17% sulla rivalutazione del TFR) | **non nel 117/2026**: D.Lgs. 33/2025 art. 36 (testo unico su versamenti e riscossione), anch'esso dal 1° gennaio 2027 | uguale |
+| D.L. 66/2014 art. 3 (26% e 12,5% sulle rendite finanziarie) | **resta** nel D.L. 66/2014, che il testo unico richiama come vigente; il 26% sui redditi diversi sta anche nell'art. 304 | uguale |
+
+L'art. 376 c. 2 dispone che i rinvii alle norme abrogate «si intendono» alle corrispondenti
+disposizioni del testo unico: le citazioni vecchie non diventano false, diventano indirette. Il
+dossier del Servizio Studi conferma che le disposizioni «sono state trasfuse senza modificarne la
+formulazione». Il D.Lgs. 5 agosto 2026 n. 141 (testo unico su adempimenti e accertamento, GU
+6/8/2026) e il D.Lgs. 7 agosto 2026 n. 148 (correttivo, GU 11/8/2026) non toccano nessuna cifra
+del sito. **Le fonti in `regole.mjs` portano già il riferimento dal 2027 accanto a quello di
+oggi**: a gennaio si toglie il primo, non si cerca il secondo.
+
+**3. La prosa al futuro sull'erogazione frazionata ha una scadenza, e ora una guardia.** Due
+pagine dicono che la frazionata «si può chiedere dal 31 ottobre 2026» e che «fino a quella data il
+fondo non la eroga»: frasi vere oggi e stantie dopo, che nessun controllo sulle cifre vede.
+`FRAZ_DECORRENZA_ISO` è ora una data confrontabile e `scadenze.mjs` pretende, da quel giorno, che
+il segnaposto `{{frazDal}}` sparisca dalle pagine: un criterio meccanico che si spegne da sé una
+volta riscritte, con `transitoria()` provata su sei casi come `verdetto()`.
+
+**4. Quattro fonti precisate, nessun valore toccato.** La RITA è tassata dall'art. 11 **c. 4-ter**,
+non dal c. 6 — che detta le stesse aliquote per le altre prestazioni; ed è nel 4-ter la facoltà di
+tassazione ordinaria — la stessa svista già corretta su `ALIQ_FRAZ_*`. Il tetto di 5.300 € vale «a
+decorrere dal periodo d'imposta 2026», cioè sull'intero anno, non dal 1° luglio. La
+«sterilizzazione» sopra 200.000 € è un taglio di 440 € alle detrazioni del 19% (art. 16-ter
+c. 5-bis TUIR), senza effetto sull'aliquota marginale: `il-metodo.html` non dice più «beneficio
+sovrastimato» ma «imposta sottostimata di al più 440 €». Il bollo dello 0,2% dal 2026 sta nell'art.
+9 della Tariffa allegata al D.Lgs. 123/2025, e il D.L. 38/2026 ha toccato il solo bollo fisso dei
+soggetti diversi dalle persone fisiche. Aggiornata anche l'esposizione azionaria dei bilanciati che
+fonda il 3% del comparto: **35,4%** a fine 2025 (Relazione COVIP 2025, Tav. 1.52) invece di 33,7% —
+0,35 × 5% + 0,65 × 2% = 3,05%, che nella rotondità voluta del listino resta 3%. E `il-metodo.html`
+attribuiva a «ISTAT» una speranza di vita che è la serie **Eurostat** costruita sui dati ISTAT (la
+tavola nazionale dà 0,2 anni in meno): ora lo dice.
+
+**5. Roba d'impianto.** La 404 elencava sette pagine su dieci — mancavano il TFR, l'abitazione e
+dove trovare i numeri, nate dopo — e `anteprime.mjs` ora pretende che ci siano tutte. GitHub
+avvisava dal run del 7 settembre che `checkout@v4` e `setup-node@v4` girano su Node 20 deprecato:
+tutte e cinque le azioni sono all'ultima maggiore. Il README diceva «nove pagine» in due punti, la
+sua tabella delle pagine ne aveva otto, e tre conteggi di controlli erano fermi.
+
+**Cosa NON è cambiato, e perché**: `SPERANZA_VITA` resta sul 2023 anche se Eurostat pubblica 2024 e
+2025 (+0,3 anni a 67): si aggiorna insieme al margine, o il coefficiente si sposta due volte.
+`VITA_INTERA` resta sul 2023 perché è la tavola dei coefficienti 2025-2026, e i fondi la pubblicano
+«per le prestazioni richieste fino al 31 dicembre 2026»: cambierà coi coefficienti 2027-2028, e la
+guardia di gennaio lo elenca. Le mediane ISC di `FORME_FONDO` sono ancora quelle al 31/12/2025,
+l'ultimo dato COVIP.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -1194,7 +1313,9 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 
 | dubbio | cosa servirebbe | perché non è urgente |
 |---|---|---|
-| L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo | leggere il comma sul testo | nessuna frase del sito ci si appoggia: `notaDatore` parla di quello che il *contratto* riconosce, non di liberalità |
+| ~~L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo~~ **— chiuso l'08/09/2026** | — | letto su Normattiva: «i contributi versati dal lavoratore e dal datore di lavoro o committente, *sia volontari sia dovuti in base a contratti o accordi collettivi, anche aziendali*»: li comprende. Nessuna frase del sito ci si appoggiava, e nessuna va cambiata |
+| `SPERANZA_VITA` e `VITA_INTERA` sono sul 2023 mentre ISTAT ed Eurostat hanno pubblicato il 2024 e il 2025 | il decreto sui coefficienti 2027-2028, atteso a fine 2026, dice quale tavola vale per la durata definita; la speranza di vita si aggiorna insieme al margine | la prassi dei fondi usa la 2023 «fino al 31/12/2026», e la guardia di gennaio elenca tutte e due |
+| La pagina privacy indica la **durata di conservazione** dei dati Analytics rinviando alle impostazioni della proprietà, senza il numero di mesi | leggere il valore nella proprietà GA4 (2 o 14 mesi) e scriverlo | l'art. 13 par. 2 lett. a chiede il periodo «o i criteri», e il criterio c'è; il numero lo sa solo chi ha accesso alla proprietà |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
 | **41 regole su 48 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano**: lo dà `quanteRiscontrate()` in `regole.mjs`, ed era rimasto a «37 su 41» mentre le regole diventavano 48 |
 | ~~L'oggetto finto delle armature è **copiato in otto file**~~ **— chiuso il 21/08/2026** | — | ora è `verifiche/_armatura.mjs`, importato da tutti — e severo: la casella non dichiarata non vale più un ripiego, fa cadere il controllo per nome, e `controllaChiavi` respinge le chiavi che la pagina non ha più. Al primo giro ha trovato `tipoFondo` (morto dal 03/08) nei casi di come-parla e `patrimonio` (morto con le quattro classi) nei moduli ostili: i duemila moduli giravano quasi tutti **senza patrimonio**, cioè senza mai raggiungere il verdetto |

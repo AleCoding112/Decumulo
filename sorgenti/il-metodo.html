@@ -271,10 +271,12 @@ del 2% servono oltre 265.000 &euro; di RAL. In quel caso il netto in busta risul
 l'eccedenza &egrave; invece gi&agrave; esclusa, come dev'essere.</p>
 
 <p><span class="marca m-legge">legge</span> La seconda aliquota &egrave; del <b>33%</b> e non del
-35%: la legge di bilancio 2026 l'ha ridotta dal 1&deg; gennaio 2026. La riduzione &egrave;
-sterilizzata sopra i 200.000 &euro; e il modello non lo rappresenta: oltre quella soglia il
-beneficio della contribuzione risulta <b>sovrastimato</b>. &Egrave; l'unico punto in cui
-l'imposizione &egrave; rappresentata in senso favorevole a chi compila.</p>
+35%: la legge di bilancio 2026 l'ha ridotta dal 1&deg; gennaio 2026. Sopra i 200.000 &euro; di
+reddito complessivo la riduzione &egrave; compensata da un taglio di 440 &euro; alle detrazioni
+del 19% (art. 16-ter c. 5-bis TUIR), che il modello non rappresenta: oltre quella soglia
+l'imposta risulta <b>sottostimata</b> di al pi&ugrave; 440 &euro; l'anno, senza effetto
+sull'aliquota marginale. &Egrave; l'unico punto in cui l'imposizione &egrave; rappresentata in
+senso favorevole a chi compila.</p>
 
 <p><span class="marca m-legge">legge</span> Il trattamento INPS &egrave; corrisposto in
 <b>{{mensPensione}} rate</b> annue: l'importo mensile indicato &egrave; quello di una rata e
@@ -360,7 +362,9 @@ raggiunge.</p>
     <tr><td><b>Base imponibile<br>della prestazione</b></td>
         <td>L'imposta grava sui contributi dedotti e non sui rendimenti. Il modello assume che
             l'intera posizione iniziale sia costituita da contributi, non disponendo della
-            scomposizione.</td>
+            scomposizione. <b>Se l'anno di iscrizione non &egrave; indicato</b>, l'anzianit&agrave;
+            si conta dall'anno in corso, cio&egrave; la minore compatibile con i dati: l'aliquota
+            &egrave; la pi&ugrave; alta, e la casella lo segnala.</td>
         <td>imposta <b>superiore</b> a quella dovuta</td></tr>
     <tr><td><b>TFR</b><br>
             <a href="tfr-fondo-o-azienda.html">Il TFR &rarr;</a></td>
@@ -425,8 +429,15 @@ elementi:</p>
 <p><b>coefficiente = 1 / (anni di vita attesi &times; {{margine}})</b></p>
 </div>
 
-<p>Gli anni sono la <b>speranza di vita residua ISTAT</b>, a sessi congiunti, rilevazione 2023: a
-67 anni sono {{anni67}}. <span class="marca m-legge">legge</span> Che sia questo il riferimento
+<!-- LA SERIE È QUELLA DI EUROSTAT, e va detto: `SPERANZA_VITA` è riscontrata su demo_mlexpec
+     (Eurostat, Italia 2023), costruita sui dati ISTAT ma con un metodo suo, che dà circa 0,2 anni
+     in più della tavola nazionale. Scrivere «ISTAT» e basta mandava a cercare 19,4 su una tavola
+     che dice 19,2: una fonte imprecisa non si vede finché non la si apre. Il margine è calibrato
+     su questa serie, e le due grandezze si aggiornano insieme. -->
+<p>Gli anni sono la <b>speranza di vita residua</b> in Italia, a sessi congiunti, anno 2023,
+nella serie che Eurostat costruisce sui dati ISTAT: a 67 anni sono {{anni67}}. La tavola
+nazionale ISTAT d&agrave; circa 0,2 anni in meno, e il margine qui sotto &egrave; calibrato su
+questa serie. <span class="marca m-legge">legge</span> Che sia questo il riferimento
 corretto lo conferma l'art. 11 c. 3-ter D.Lgs. 252/2005, che per la durata della rendita a durata
 definita impone la speranza di vita ISTAT.</p>
 
@@ -470,6 +481,19 @@ altri</b> &mdash; tenuta fuori dal calcolo e citata con la propria provenienza &
 confrontata con la nostra a ogni compilazione, e una divergenza interrompe la pubblicazione. Sono
 oggi <b>{{riscontrate}} su {{regoleTutte}}</b>. Le altre non sono meno esatte: sono verificate una
 volta e non sottoposte a un controllo ricorrente.</p>
+
+<!-- IL TESTO UNICO DEL 2027, dichiarato prima che arrivi. Trovato su Normattiva l'08/09/2026:
+     nella versione «vigente al 1-1-2027» l'art. 13 TUIR e i commi fiscali dell'art. 11 D.Lgs.
+     252/2005 compaiono già come abrogati dal D.Lgs. 117/2026. Una pagina che espone le fonti deve
+     dire che i numeri degli articoli stanno per cambiare, o il 2 gennaio sembrerà scritta da chi
+     non lo sa. Le cifre non si muovono; la guardia delle scadenze elenca i riferimenti da rifare. -->
+<p><span class="marca m-legge">legge</span> <b>Dal 1&deg; gennaio 2027 i riferimenti fiscali di
+questa pagina cambiano numero.</b> Il D.Lgs. 19 giugno 2026, n. 117 &mdash; testo unico delle
+disposizioni legislative in materia di imposte sui redditi &mdash; riordina, a legislazione vigente
+e con applicazione dal 1&deg; gennaio 2027, le norme qui richiamate: fra le altre le detrazioni
+dell'art. 13 TUIR, la tassazione separata del TFR e i commi dell'art. 11 D.Lgs. 252/2005
+sull'imposta della prestazione. Le cifre non cambiano; i riferimenti saranno riletti su quel testo
+alla revisione di gennaio, e fino ad allora restano quelli in vigore.</p>
 
 <p>La distinzione nasce da due casi concreti. Il modello ha ignorato per mesi le detrazioni
 dell'art. 13 TUIR e ha computato in dodici rate un trattamento che se ne paga tredici: nessun

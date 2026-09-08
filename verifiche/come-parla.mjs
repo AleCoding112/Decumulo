@@ -615,6 +615,35 @@ for (const [nome, DATI, atteso] of [
     elementi.tfrGia0.disabled === false && elementi.annoLav0.disabled === false);
 }
 
+// --- L'ANNO DI ISCRIZIONE: la nota sotto la casella ------------------------
+// La casella vuota valeva 1900, e nessuna frase lo diceva: l'aliquota al 9% arrivava in silenzio
+// a chi non l'aveva compilata. Ora vale l'anno in corso — l'ipotesi meno favorevole — e la riga
+// sotto la casella lo dice a chi ha un fondo; scritta, dice l'aliquota che ne esce, che è il
+// numero per cui la casella esiste.
+console.log('\n— l\'anno di iscrizione: quello che la pagina dice —');
+{
+  const nota = D => (esegui(D).scritte.iscrNota0 || '').replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const vuota = nota({...BASE, quanti:'1', iscr0:''});
+  c('vuota, con un fondo: dice da quando conta e che è l\'ipotesi meno favorevole',
+    /iscrizione dal \d{4}/.test(vuota) && /meno favorevole/.test(vuota), vuota);
+  c('e non lascia trapelare il 1900 di prima', !/1900/.test(vuota));
+  const senza = nota({...BASE, quanti:'1', iscr0:'', fondo0:'', pcVoi0:0, pcDat0:0,
+                      tfrDove0:'azienda'});
+  c('vuota, senza niente da riscuotere: tace', senza === '', senza);
+  const scritta = nota({...BASE, quanti:'1'});
+  c('scritta: porta l\'aliquota alla prestazione e gli anni',
+    /imposta è dell?'?\s?\d+(,\d)?%/.test(scritta) && /\d+ anni di iscrizione/.test(scritta),
+    scritta);
+  // l'aliquota segue la forma: la frazionata parte dal 20% e non scende sotto il 15%, quindi su
+  // trentasette anni di iscrizione dice 15% dove la vitalizia dice 9%
+  const fraz = nota({...BASE, quanti:'1', forma0:'frazionata'});
+  c('con l\'erogazione frazionata dice l\'aliquota della frazionata',
+    /15%/.test(fraz) && /9%/.test(scritta), `${scritta.slice(0, 44)} · ${fraz.slice(0, 44)}`);
+  const gia = nota({...BASE, quanti:'1', annoPens0:2015, ral0:'', rita0:0});
+  c('a chi è già in pensione tace: la casella è spenta', gia === '', gia);
+}
+
 // --- la prova di tenuta, nei suoi tre rami ---------------------------------
 // I tre rami dicono cose opposte. Quello che conta è che «regge lo stesso» non compaia mai su un
 // piano che alla prova non regge: sarebbe la peggiore delle rassicurazioni. Gli scenari sono

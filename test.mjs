@@ -66,7 +66,7 @@ globalThis.document = documento(dichiarate(DATI));
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE, sommaCuneo, ULTERIORE_DETRAZIONE,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, nettoAnnuo, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
-  numero, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
+  numero, ANNO0, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
 const s = M.leggi();
 
 let ok = 0, ko = 0;
@@ -1141,6 +1141,35 @@ t('la liquidazione è una una-tantum: sta nel riquadro della fase, non nel fluss
 t('ogni riga quadra anche col TFR dentro',
   inAzienda.righe.every(x => Math.abs(x.inizio + x.rendimento + x.daLavoro + x.daPensioni
     + x.daRendita + x.daFondo + x.daRata + x.daTfr - x.spesa - x.patr) < 1e-6));
+
+// --- L'ANNO DI ISCRIZIONE LASCIATO VUOTO -------------------------------------
+// Fino all'08/09/2026 la casella vuota passava dal taglio e valeva 1900: centoventi anni di
+// iscrizione e l'aliquota al pavimento, il 9% a chiunque non la compilasse. Era l'unico ripiego
+// della pagina dal lato ottimista, e nessun controllo lo vedeva perché ogni caso di prova l'anno
+// lo scriveva. Ora vuoto vale l'anno in corso — l'anzianità minore compatibile coi dati — e la
+// regola delle quattro cifre vale anche qui.
+console.log('\n— l\'anno di iscrizione lasciato vuoto —');
+{
+  const vuoto = leggiCon({iscr0: ''}), meta = leggiCon({iscr0: '20'}), pieno = leggiCon({iscr0: 2005});
+  t('vuoto vale l\'anno in corso, non il 1900 del taglio',
+    vuoto.p[0].iscr === M.ANNO0 && vuoto.p[0].iscrVuoto === true && vuoto.p[0].iscrScritto === null,
+    `iscr ${vuoto.p[0].iscr}`);
+  t('e scritto a metà pure: «20» non è ancora un anno',
+    meta.p[0].iscr === M.ANNO0 && meta.p[0].iscrVuoto === true);
+  t('scritto per intero si legge com\'è',
+    pieno.p[0].iscr === 2005 && pieno.p[0].iscrVuoto === false && pieno.p[0].iscrScritto === 2005);
+  t('e la casella dell\'altra persona resta quella scritta', vuoto.p[1].iscr === DATI.iscr1);
+  // IL RIPIEGO CADE DAL LATO PRUDENTE, e si misura: l'aliquota alla prestazione col vuoto è
+  // quella di chi si iscrive oggi, e nessun anno scritto fino a oggi può pagare di più.
+  const al = st => M.simula(st).incassi.find(v => v.idx === 0).al;
+  const alVuoto = al(vuoto);
+  t('col vuoto l\'aliquota è quella di chi si iscrive oggi',
+    Math.abs(alVuoto - M.aliquota(vuoto.p[0].annoPens - M.ANNO0)) < 1e-12,
+    `${(alVuoto * 100).toFixed(1)}%`);
+  t('e nessun anno scritto fino a oggi paga di più',
+    [1990, 2005, 2018, 2025, M.ANNO0].every(a => al(leggiCon({iscr0: a})) <= alVuoto + 1e-12),
+    'contro il 9,0% che il 1900 regalava a chiunque');
+}
 
 // --- IL TFR GIÀ ACCANTONATO ------------------------------------------------
 // Fino al 03/08/2026 il motore faceva partire il TFR da zero oggi: chi aveva vent'anni di

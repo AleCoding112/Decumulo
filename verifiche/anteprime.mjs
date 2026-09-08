@@ -229,6 +229,18 @@ const attr = (h, re) => (h.match(re) || [, ''])[1];
   }
 }
 
+// --- 3-quater. LA 404 ELENCA TUTTE LE PAGINE ---------------------------------
+// «Il sito è fatto di poche pagine», dice la 404, e poi le elenca: un elenco scritto a mano
+// diverge come le cifre, e infatti ne mancavano tre — il TFR, l'abitazione, dove trovare i
+// numeri — aggiunte al sito dopo che la 404 era stata scritta. Chi arriva da un collegamento
+// rotto è l'unico lettore di quella pagina, e vedeva un sito più piccolo del vero.
+{
+  const h = testo['404.html'] || '';
+  const mancano = pagine.filter(p => p !== '404.html' && !h.includes(`href="${p}"`));
+  c('la 404 elenca ogni pagina del sito', mancano.length === 0,
+    mancano.join(', ') || `${pagine.length - 1} pagine`);
+}
+
 // --- 4. LA SITEMAP DICE QUANDO IL CONTENUTO È STATO VERIFICATO --------------
 {
   const sm = fs.readFileSync(join(SITO, 'sitemap.xml'), 'utf8');

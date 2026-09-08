@@ -12,7 +12,7 @@ globalThis.document = documento(id => DATI[id] === undefined ? undefined : Strin
 const M=new Function(src+`\nreturn {leggi,simula,irpef,aliquota,aliquotaTfr,quotaMax,SOGLIA_TUTTO,soglia,coeffEta,
   COEFF_RENDITA,QUOTA_ORDINARIA,ASSEGNO_SOCIALE,TETTO_DEDUZIONE,TFR_SU_RAL,spazioDeducibile,contributi,costoAnnuo,pcTetto,
   aiSuperstiti,TRATT_MINIMO_ANNO,REVERSIBILITA,vitaIntera,FRAZ_ANNI_MIN,aliquotaFraz,
-  pcSpendibile,pcMassimo,nettoAnnuo,IVS,SOMMA_CUNEO,COMPARTI,FORME_FONDO,rendDiComparto,inCasella};`)();
+  pcSpendibile,pcMassimo,nettoAnnuo,IVS,SOMMA_CUNEO,COMPARTI,FORME_FONDO,rendDiComparto,inCasella,ANNO0};`)();
 
 let n=0; const rotte={};
 const ko=(k,d)=>{ (rotte[k]??=[]).push(d); };
@@ -57,7 +57,11 @@ for (let t=0; t<4000; t++){
     pens0:Math.round(R(0,6000)), annoPens0:I(1995,2055),
     fondo0:Math.round(R(0,600000)), pcVoi0:+R(0,4).toFixed(1), pcDat0:+R(0,4).toFixed(1), pc0:'',
     pcMin0: P(['', 0, +R(0,4).toFixed(1)]),
-    tfrDove0:P(['fondo','azienda']), iscr0:I(1980,2030),
+    // L'ISCRIZIONE PUÒ MANCARE, e deve poter mancare qui dentro: finché il generatore la
+    // scriveva sempre, il ramo «casella vuota» — che valeva 1900, cioè il 9% a chiunque — non
+    // era percorso da nessuno dei 4.000 piani. Un ramo che nessuno scenario percorre non è
+    // coperto, per quanto verde sia il resto.
+    tfrDove0:P(['fondo','azienda']), iscr0:P(['', I(1980,2030)]),
     // IL TFR GIÀ ACCANTONATO, e le sue tre combinazioni che contano: niente, importo senza anno
     // (non si conta), importo con anno (si conta). Senza il caso vuoto fra i tiri, il ramo che
     // NON conta non verrebbe mai percorso; senza l'anno sciolto dall'importo, la coppia
@@ -68,7 +72,7 @@ for (let t=0; t<4000; t++){
     pens1:Math.round(R(0,6000)), annoPens1:I(1995,2055),
     fondo1:Math.round(R(0,600000)), pcVoi1:+R(0,4).toFixed(1), pcDat1:+R(0,4).toFixed(1), pc1:'',
     pcMin1: P(['', 0, +R(0,4).toFixed(1)]),
-    tfrDove1:P(['fondo','azienda']), iscr1:I(1980,2030),
+    tfrDove1:P(['fondo','azienda']), iscr1:P(['', I(1980,2030)]),
     tfrGia1: P(['', '', Math.round(R(0,300000))]), annoLav1: P(['', I(1970,2030)]),
     quotaCap1:+R(0,1).toFixed(2)};
   DATI.rita0=I(2026,DATI.annoPens0); DATI.rita1=I(2026,DATI.annoPens1);
@@ -222,6 +226,13 @@ for (let t=0; t<4000; t++){
     if (i.quota > i.max + 1e-12) ko('capitale oltre il massimo di legge', i.quota+'>'+i.max);
     if (i.quota < -1e-12) ko('quota negativa', i.quota);
     if (i.al < 0.09-1e-12 || i.al > 0.15+1e-12) ko('aliquota fondo fuori dal 9–15%', i.al);
+    // L'ISCRIZIONE VUOTA VALE L'ANNO IN CORSO — l'anzianità minore compatibile coi dati, quindi
+    // l'aliquota più alta. Il ripiego deve cadere da questo lato, e si controlla perché fino
+    // all'08/09/2026 cadeva dall'altro: 1900, cioè il 9% a chiunque lasciasse la casella vuota.
+    { const suo = s.p[i.idx];
+      if (suo && suo.iscrVuoto && Math.abs(i.al - M.aliquota(i.anno - M.ANNO0)) > 1e-12)
+        ko('con l\'iscrizione vuota l\'aliquota non è quella di chi si iscrive oggi',
+           `${i.al} nel ${i.anno}`); }
     if (i.base > i.montante + 1e-6) ko('base imponibile sopra il montante', i.base-i.montante);
     if (i.base < -1e-9) ko('base imponibile negativa', i.base);
     if (i.tasse > i.montante + 1e-6) ko('imposta sopra il montante','');

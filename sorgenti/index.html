@@ -721,9 +721,16 @@ intero, e le segnalazioni sono le benvenute.
     <div class="cella"><input type="text" inputmode="decimal" id="fondo0" value=""></div>
     <div class="cella p2"><input type="text" inputmode="decimal" id="fondo1" value=""></div>
 
+    <!-- LA CASELLA PORTA SOTTO DI SÉ COSA NE FA IL CONTO. È quella da cui dipende l'imposta sulla
+         prestazione — la nota fra le ipotesi lo dice, «per questo conta l'anno di iscrizione» —
+         ed era l'unica dello strato aperto senza una riga che dicesse l'effetto. Lasciata vuota
+         valeva 1900, cioè l'aliquota al pavimento del 9% a chiunque: il ripiego cadeva dal lato
+         ottimista. Ora vale l'anno in corso, e la riga lo dice a chi ha un fondo. -->
     <div class="voce rigalav">Anno di iscrizione</div>
-    <div class="cella"><input type="text" inputmode="numeric" id="iscr0" value=""></div>
-    <div class="cella p2"><input type="text" inputmode="numeric" id="iscr1" value=""></div>
+    <div class="cella"><input type="text" inputmode="numeric" id="iscr0" value="">
+      <u class="hint" id="iscrNota0">&nbsp;</u></div>
+    <div class="cella p2"><input type="text" inputmode="numeric" id="iscr1" value="">
+      <u class="hint" id="iscrNota1">&nbsp;</u></div>
 
   </div>
 
@@ -1636,7 +1643,19 @@ function leggi(){
     tfrGia:      numFra('tfrGia'+i, 0, 1e9),
     tfrGiaVuoto: EL('tfrGia'+i).value.trim() === '',
     annoLav:     annoOpt('annoLav'+i),
-    iscr:     numFra('iscr'+i, 1900, ANNO0 + 80),
+    // L'ANNO DI ISCRIZIONE SEGUE LA REGOLA DELLE QUATTRO CIFRE, E VUOTO VALE L'ANNO IN CORSO.
+    // Fino all'08/09/2026 la casella vuota passava dal taglio e valeva 1900: centoventi anni di
+    // iscrizione, cioè l'aliquota al pavimento del 9% — l'unico ripiego di tutta la pagina che
+    // cadeva dal lato OTTIMISTA, su una casella dello strato aperto che nessuna guardia pretende.
+    // E mentre si scrive «2» e «20» valevano lo stesso 1900, come gli altri anni prima della
+    // regola delle quattro cifre. Chi ha un montante oggi si è iscritto prima di oggi: contare
+    // dall'anno in corso è l'anzianità MINORE compatibile coi dati, quindi l'imposta più alta.
+    // Il ripiego torna dal lato prudente, e la nota sotto la casella lo dice a chi riguarda.
+    // `iscrScritto` resta `null` se vuota: la seconda implementazione riceve quello, e riapplica
+    // la regola per conto suo invece di ereditare la decisione.
+    iscrScritto: annoOpt('iscr'+i),
+    iscrVuoto:   annoOpt('iscr'+i) === null,
+    iscr:        annoOpt('iscr'+i) === null ? ANNO0 : numFra('iscr'+i, 1900, ANNO0 + 80),
     rita:     annoScritto('rita'+i) ? numFra('rita'+i, 0, ANNO0 + 80) : 0,
     quotaCap: numFra('quotaCap'+i, 0, 1),
     // gli anni dell'erogazione frazionata: la legge ne impone almeno cinque, e non c'è un
@@ -3039,6 +3058,22 @@ function calc(){
     H('tfrAnno'+i, x.tfrAnno < 0.5 ? '&nbsp;'
       : E0(x.tfrAnno) + " l'anno" + (x.tfrAlFondo
           ? ' · non consuma il tetto' : ' · non entra nel fondo'));
+
+    // L'ANNO DI ISCRIZIONE: cosa ne fa il conto. Vuoto, si conta dall'anno in corso, ed è la
+    // lettura meno favorevole — va detto a chi un fondo ce l'ha o lo sta alimentando, perché è
+    // lui che ci perde a lasciarla in bianco; a chi non ha niente da riscuotere non si dice
+    // niente. Scritto, si dice l'aliquota che ne esce alla decorrenza, che è il numero per cui
+    // la casella esiste: segue la forma scelta, perché l'erogazione frazionata ha la sua.
+    {
+      const conFondo = x.fondo > 0 || contributi(x, x.pcVoi).tot > 0.5
+                       || (x.tfrAlFondo && x.tfrAnno > 0.5);
+      const al = (x.forma === 'frazionata' ? aliquotaFraz : aliquota)(x.annoPens - x.iscr);
+      H('iscrNota'+i, x.giaInPens || x.annoPensVuoto ? '&nbsp;'
+        : x.iscrVuoto
+          ? (conFondo ? `vuoto: iscrizione dal ${ANNO0}, l'ipotesi meno favorevole` : '&nbsp;')
+          : `alla prestazione l'imposta è ${perc(al * 100, 'del')}
+             · ${fmt(Math.max(0, x.annoPens - x.iscr))} anni di iscrizione`);
+    }
 
     const dentro = co.tot + (x.tfrAlFondo ? x.tfrAnno : 0);
     H('totFondo'+i, dentro < 0.5 ? '—' : E0(dentro) + " l'anno");
@@ -4907,7 +4942,10 @@ function pianoInFoglio(s, r){
     perPersona('Retribuzione annua lorda', x => x.ral),
     perPersona('Ultimo anno di lavoro', x => x.ultimo),
     perPersona('Fondo pensione, quanto c\'è oggi', x => x.fondoScritto),
-    perPersona('Anno di iscrizione al fondo', x => x.iscr),
+    // vuota, il foglio dice cosa ha assunto il conto: un anno che nessuno ha scritto, messo lì
+    // come numero, sembrerebbe un dato di chi compila
+    perPersona('Anno di iscrizione al fondo',
+      x => x.iscrVuoto ? `non indicato: si conta dal ${ANNO0}` : x.iscr),
     // IL VALORE SCRITTO, non quello già filtrato da `tfrConta`: il foglio esiste per essere
     // rifatto a mano, e chi lo rifà deve vedere cosa ha dichiarato — anche quando il conto non
     // l'ha usato. Se mancasse l'anno, la riga sotto direbbe da sé perché la cifra non torna.

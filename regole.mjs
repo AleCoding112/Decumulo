@@ -17,9 +17,17 @@
 // Si scrive in forma ISO ed è l'unica da cambiare: la stringa in italiano si genera da questa,
 // e due date scritte a mano divergerebbero al primo aggiornamento. La forma confrontabile serve
 // alla guardia in `verifiche/scadenze.mjs`.
-export const REVISIONE_ISO = '2026-08-08';
-export const REVISIONE = new Date(REVISIONE_ISO + 'T00:00:00Z')
+export const REVISIONE_ISO = '2026-09-08';
+// una data ISO scritta come si scrive in italiano. Serve alla revisione e alla decorrenza
+// dell'erogazione frazionata: due copie della stessa conversione divergerebbero, come le date.
+const inItaliano = iso => new Date(iso + 'T00:00:00Z')
   .toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'});
+export const REVISIONE = inItaliano(REVISIONE_ISO);
+// LA DECORRENZA DELL'EROGAZIONE FRAZIONATA, in forma confrontabile. Le pagine ne parlano al
+// futuro — «si può chiedere dal…», «fino a quella data il fondo non la eroga» — e sono frasi
+// che scadono: passata la data, la guardia in `verifiche/scadenze.mjs` pretende che vengano
+// tolte, e per confrontare con oggi serve la data in una forma che REGOLE, in italiano, non ha.
+export const FRAZ_DECORRENZA_ISO = '2026-10-31';
 
 // Recapito e titolare compaiono in due punti (piè di pagina e pagina privacy): scritti qui una
 // volta sola, come la revisione, non possono divergere al primo cambio.
@@ -51,7 +59,7 @@ export const REGOLE = {
   // confermare un valore che sembrava sbagliato — l'aliquota storica è 35%.
   SCAGLIONI: { nome: "Aliquote IRPEF",
     val: [[28000, 0.23], [50000, 0.33], [Infinity, 0.43]],
-    fonte: 'aliquote 2026: la legge di bilancio 199/2025 ha ridotto la seconda dal 35% al 33% dal 1° gennaio 2026, confermato sul sito del MEF. La riduzione è sterilizzata sopra i 200.000 € di reddito, e il modello non lo rappresenta',
+    fonte: 'art. 11 c. 1 TUIR, aliquote 2026: la legge di bilancio 199/2025 (art. 1 c. 3) ha ridotto la seconda dal 35% al 33% dal 1° gennaio 2026, confermato sul sito del MEF; dal 1° gennaio 2027 art. 11 c. 1 D.Lgs. 117/2026, testo identico. Sopra i 200.000 € di reddito complessivo la riduzione è compensata da un taglio di 440 € alle detrazioni del 19% (art. 16-ter c. 5-bis TUIR, dal 2027 art. 18 c. 6): il modello non lo rappresenta — non tocca l\'aliquota marginale e vale al più 440 € l\'anno, per pochissimi dipendenti',
     verificata: true
   },
   // LE DETRAZIONI DELL'ART. 13, e perché la forma delle bande è quella.
@@ -67,15 +75,15 @@ export const REGOLE = {
   DETRAZIONE_LAV: { nome: "Detrazione per redditi di lavoro dipendente", come: 'detrazione',
     val: [[15000, 1955, 0, 0], [28000, 1910, 1190, 13000], [50000, 0, 1910, 22000]],
     riscontro: 'verifiche/riscontri-esterni.mjs',
-    fonte: 'art. 13 c. 1 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 15.000; 1.910 + 1.190 × (28.000 − reddito) / 13.000 fino a 28.000; 1.910 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre. NON è rappresentata la maggiorazione di 65 € del c. 1.1 (redditi fra 25.000 e 35.000), che entrerebbe nel beneficio MARGINALE della deduzione rendendolo discontinuo: il beneficio resta per quella parte sottostimato',
+    fonte: 'art. 13 c. 1 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 15.000; 1.910 + 1.190 × (28.000 − reddito) / 13.000 fino a 28.000; 1.910 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre; dal 1° gennaio 2027 art. 13 c. 1 D.Lgs. 117/2026, importi identici. NON è rappresentata la maggiorazione di 65 € del c. 1.1 (dal 2027 c. 2; redditi fra 25.000 e 35.000), che entrerebbe nel beneficio MARGINALE della deduzione rendendolo discontinuo: il beneficio resta per quella parte sottostimato',
     verificata: true },
   DETRAZIONE_PENS: { nome: "Detrazione per redditi di pensione", come: 'detrazione',
     val: [[8500, 1955, 0, 0], [28000, 700, 1255, 19500], [50000, 0, 700, 22000]],
     riscontro: 'verifiche/riscontri-esterni.mjs',
-    fonte: 'art. 13 c. 3 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 8.500; 700 + 1.255 × (28.000 − reddito) / 19.500 fino a 28.000; 700 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre',
+    fonte: 'art. 13 c. 3 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 8.500; 700 + 1.255 × (28.000 − reddito) / 19.500 fino a 28.000; 700 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre; dal 1° gennaio 2027 art. 13 c. 3 D.Lgs. 117/2026, importi identici',
     verificata: true },
   DETRAZIONE_PENS_PIU: { nome: "Maggiorazione della detrazione da pensione", val: 50, come: 'secco',
-    fonte: 'art. 13 c. 3-bis TUIR: «aumentata di un importo pari a 50 euro, se il reddito complessivo è superiore a 25.000 euro ma non a 29.000 euro»',
+    fonte: 'art. 13 c. 3-bis TUIR: «aumentata di un importo pari a 50 euro, se il reddito complessivo è superiore a 25.000 euro ma non a 29.000 euro»; dal 1° gennaio 2027 art. 13 c. 4 D.Lgs. 117/2026',
     verificata: true },
 
   // IL TAGLIO DEL CUNEO, che sono DUE istituti e vanno insieme.
@@ -101,7 +109,7 @@ export const REGOLE = {
   ULTERIORE_DETRAZIONE: { nome: "Ulteriore detrazione per i redditi da lavoro 20.000-40.000 €",
     come: 'detrazione', riscontro: 'verifiche/riscontri-esterni.mjs',
     val: [[20000, 0, 0, 0], [32000, 1000, 0, 0], [40000, 0, 1000, 8000]],
-    fonte: 'art. 1 c. 6 L. 207/2024, testo riportato dalla circolare Agenzia delle Entrate 4/E del 16 maggio 2025: «1.000 euro se il reddito complessivo è superiore a 20.000 euro ma non a 32.000 euro; al prodotto tra 1.000 euro e l\'importo corrispondente al rapporto tra 40.000 euro, diminuito del reddito complessivo, e 8.000 euro». Esclusi i titolari di redditi di pensione',
+    fonte: 'art. 1 c. 6 L. 207/2024, testo riportato dalla circolare Agenzia delle Entrate 4/E del 16 maggio 2025: «1.000 euro se il reddito complessivo è superiore a 20.000 euro ma non a 32.000 euro; al prodotto tra 1.000 euro e l\'importo corrispondente al rapporto tra 40.000 euro, diminuito del reddito complessivo, e 8.000 euro». Esclusi i titolari di redditi di pensione. Dal 1° gennaio 2027 art. 13 c. 10 D.Lgs. 117/2026, testo identico (il c. 6 della legge è abrogato; il c. 4, la somma qui sopra, resta dov\'è)',
     verificata: true },
 
   // IL TRATTAMENTO INTEGRATIVO, cioè l'ex bonus Renzi. Fino al 07/08/2026 era un limite
@@ -145,12 +153,16 @@ export const REGOLE = {
   // --- previdenza complementare ------------------------------------------
   // Riscontrate sul testo della legge, non su una notizia: L. 199/2025 art. 1
   // c. 201 lett. a) n. 1 e lett. b) n. 1.1, che modificano il D.Lgs. 252/2005.
-  // In vigore dal 1° luglio 2026. Attenzione: parecchi fondi hanno documenti
-  // aggiornati a quella legge che continuano a scrivere le cifre vecchie —
-  // vale il testo.
+  // Il c. 202 fa decorrere tutto dal 1° luglio 2026 — quota in capitale, forme
+  // nuove, e la stessa disposizione sul tetto — ma il limite che quella
+  // disposizione scrive vale «a decorrere dal periodo d'imposta 2026», cioè
+  // sull'intero anno: è il testo dell'art. 8 c. 4, riletto l'08/09/2026, e qui
+  // stava scritto solo «dal 1° luglio». Attenzione: parecchi fondi hanno
+  // documenti aggiornati a quella legge che continuano a scrivere le cifre
+  // vecchie — vale il testo.
   TETTO_DEDUZIONE: { nome: "Tetto di deducibilità dei contributi",
     val: 5300,
-    fonte: 'art. 8 c. 4 D.Lgs. 252/2005, come modificato dalla L. 199/2025 art. 1 c. 201: era 5.164,57 €',
+    fonte: 'art. 8 c. 4 D.Lgs. 252/2005, come modificato dalla L. 199/2025 art. 1 c. 201: «a decorrere dal periodo d\'imposta 2026, il limite […] è innalzato a euro 5.300», era 5.164,57 €. Il comma resta nel D.Lgs. 252/2005 anche dopo il testo unico del 2027',
     verificata: true
   },
   // LA CIFRA CHE È ANDATA E TORNATA, ed è il motivo per cui le fonti si rileggono invece di
@@ -181,12 +193,12 @@ export const REGOLE = {
     fonte: '546,24 € × 13 mensilità — circolare INPS 153 del 19 dicembre 2025, rivalutazione 2026 dell\'1,4%',
     verificata: true
   },
-  ALIQ_FONDO_MAX: { nome: "Imposta sulla prestazione, massimo", val: 0.15, fonte: 'art. 11 c. 6 D.Lgs. 252/2005', verificata: true },
-  ALIQ_FONDO_MIN: { nome: "Imposta sulla prestazione, minimo", val: 0.09, fonte: 'art. 11 c. 6 D.Lgs. 252/2005', verificata: true },
+  ALIQ_FONDO_MAX: { nome: "Imposta sulla prestazione, massimo", val: 0.15, fonte: 'art. 11 c. 6 D.Lgs. 252/2005; dal 1° gennaio 2027 art. 258 c. 4 D.Lgs. 117/2026, testo identico', verificata: true },
+  ALIQ_FONDO_MIN: { nome: "Imposta sulla prestazione, minimo", val: 0.09, fonte: 'art. 11 c. 6 D.Lgs. 252/2005: «con un limite massimo di riduzione di 6 punti percentuali»; dal 1° gennaio 2027 art. 258 c. 4 D.Lgs. 117/2026', verificata: true },
   // PUNTI, NON PER CENTO. Scritta «0,3%» questa riga dice una cosa falsa e già sbagliata una
   // volta: lo 0,3% di 15 è 0,045, mentre l'aliquota scende di 0,30 PUNTI l'anno. La distinzione
   // vive nel formato, non nella fonte: `come: 'punti'` è l'unico modo perché non torni.
-  ALIQ_FONDO_PASSO: { nome: "Riduzione per ogni anno oltre il quindicesimo", val: 0.003, come: 'punti', fonte: '0,30 punti per ogni anno oltre il quindicesimo', verificata: true },
+  ALIQ_FONDO_PASSO: { nome: "Riduzione per ogni anno oltre il quindicesimo", val: 0.003, come: 'punti', fonte: 'art. 11 c. 6 D.Lgs. 252/2005: «ridotta di una quota pari a 0,30 punti percentuali per ogni anno eccedente il quindicesimo anno di partecipazione»; dal 1° gennaio 2027 art. 258 c. 4 D.Lgs. 117/2026', verificata: true },
 
   // L'EROGAZIONE FRAZIONATA HA UNA TASSAZIONE PROPRIA, ed è peggiore: si parte dal 20% invece
   // che dal 15%, e la riduzione è di 0,25 punti invece di 0,30, per un massimo di 5 punti.
@@ -199,11 +211,11 @@ export const REGOLE = {
   // un'altra cosa (rendita a durata definita e prelievi seguono il regime del comma 6), e
   // citarlo qui avrebbe mandato a leggere il pezzo giusto sotto il nome sbagliato.
   ALIQ_FRAZ_MAX: { nome: "Imposta sull'erogazione frazionata, massimo", val: 0.20,
-    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005, introdotto dalla L. 199/2025 art. 1 c. 201 lett. b) n. 4: «una ritenuta a titolo d\'imposta con l\'aliquota del 20 per cento»', verificata: true },
+    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005, introdotto dalla L. 199/2025 art. 1 c. 201 lett. b) n. 4: «una ritenuta a titolo d\'imposta con l\'aliquota del 20 per cento»; dal 1° gennaio 2027 art. 258 c. 6 D.Lgs. 117/2026, testo identico', verificata: true },
   ALIQ_FRAZ_MIN: { nome: "Imposta sull'erogazione frazionata, minimo", val: 0.15,
-    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «con un limite massimo di riduzione di 5 punti percentuali», raggiunto a 35 anni di partecipazione', verificata: true },
+    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «con un limite massimo di riduzione di 5 punti percentuali», raggiunto a 35 anni di partecipazione; dal 1° gennaio 2027 art. 258 c. 6 D.Lgs. 117/2026', verificata: true },
   ALIQ_FRAZ_PASSO: { nome: "Riduzione dell'imposta sull'erogazione frazionata", val: 0.0025, come: 'punti',
-    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «ridotta di una quota pari a 0,25 punti percentuali per ogni anno eccedente il quindicesimo anno di partecipazione»', verificata: true },
+    fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «ridotta di una quota pari a 0,25 punti percentuali per ogni anno eccedente il quindicesimo anno di partecipazione»; dal 1° gennaio 2027 art. 258 c. 6 D.Lgs. 117/2026', verificata: true },
   FRAZ_ANNI_MIN: { nome: "Durata minima dell'erogazione frazionata", val: 5, come: 'anni',
     fonte: 'art. 11 c. 3-bis D.Lgs. 252/2005: «per un periodo non inferiore a cinque anni»', verificata: true },
   // LE TRE FORME NUOVE NON SONO PARTITE INSIEME. Rendita a durata definita e prelievi si possono
@@ -211,7 +223,7 @@ export const REGOLE = {
   // che ha riportato la quota in capitale al 50%. Fino a quella data il calcolatore la calcola
   // ma nessun fondo la eroga, e dirlo è più utile che nasconderla.
   FRAZ_DECORRENZA: { nome: "Erogazione frazionata, da quando si può chiedere",
-    val: '31 ottobre 2026', come: 'secco',
+    val: inItaliano(FRAZ_DECORRENZA_ISO), come: 'secco',
     fonte: 'art. 16-ter c. 2 del D.L. 62/2026 conv. L. 112/2026, che differisce la sola erogazione frazionata: la rendita a durata definita e i prelievi valgono dal 1° luglio 2026',
     verificata: true },
 
@@ -234,7 +246,7 @@ export const REGOLE = {
           [70,16],[71,15],[72,15],[73,14],[74,13],[75,12],[76,12],[77,11],[78,10],[79,10],
           [80,9],[81,8],[82,8],[83,7],[84,7],[85,6],[86,6],[87,5],[88,5],[89,4],[90,4]],
     come: 'anni',
-    fonte: 'art. 11 c. 3-ter D.Lgs. 252/2005, che rinvia alla tavola di mortalità ISTAT della popolazione generale usata per i coefficienti di trasformazione della tabella A della L. 335/1995; l\'arrotondamento per difetto è nelle Istruzioni COVIP del 25 giugno 2026. Riscontrata su tutte e 41 le età contro le tavole di mortalità ISTAT 2023, Italia, maschi e femmine', verificata: true },
+    fonte: 'art. 11 c. 3-ter D.Lgs. 252/2005, che rinvia alla tavola di mortalità ISTAT della popolazione generale usata per i coefficienti di trasformazione della tabella A della L. 335/1995; l\'arrotondamento per difetto è nelle Istruzioni COVIP del 25 giugno 2026. Riscontrata su tutte e 41 le età contro le tavole di mortalità ISTAT 2023, Italia, maschi e femmine, che è la tavola dei coefficienti 2025-2026: i fondi la pubblicano «per le prestazioni richieste fino al 31 dicembre 2026» (Fon.Te., informativa di luglio 2026). Dal 1° gennaio 2027 segue i coefficienti 2027-2028 e va riscontrata di nuovo — con le tavole 2024 e 2025, già pubblicate, a 65 anni la durata passa da 20 a 21', verificata: true },
 
   // --- TFR ---------------------------------------------------------------
   // LO 0,50% NON STA NELL'ART. 2120, e la fonte lo diceva: il codice civile dà solo il divisore
@@ -253,7 +265,7 @@ export const REGOLE = {
     fonte: 'art. 2120 c. 4 c.c.: «e dal 75 per cento dell\'aumento dell\'indice dei prezzi al consumo per le famiglie di operai ed impiegati, accertato dall\'ISTAT»',
     verificata: true },
   TFR_IMPOSTA_RIV: { nome: "Imposta sostitutiva sulla rivalutazione del TFR", val: 0.17,
-    fonte: 'art. 11 c. 3 D.Lgs. 47/2000: «l\'imposta sostitutiva delle imposte sui redditi nella misura del 17 per cento», aliquota elevata dalla L. 190/2014 per le rivalutazioni dal 1° gennaio 2015',
+    fonte: 'art. 11 c. 3 D.Lgs. 47/2000: «l\'imposta sostitutiva delle imposte sui redditi nella misura del 17 per cento», aliquota elevata dalla L. 190/2014 per le rivalutazioni dal 1° gennaio 2015; dal 1° gennaio 2027 art. 36 D.Lgs. 33/2025 (testo unico su versamenti e riscossione), testo identico',
     verificata: true },
 
   // --- imposte sugli investimenti liberi ----------------------------------
@@ -278,7 +290,7 @@ export const REGOLE = {
     fonte: 'art. 3 c. 2 lett. a) D.L. 66/2014, che rinvia al D.Lgs. 239/1996: resta il 12,5% sui titoli di Stato italiani, su quelli dei Paesi white list e sui titoli di organismi sovranazionali',
     verificata: true },
   BOLLO_TITOLI: { nome: "Imposta di bollo sul dossier titoli", val: 0.002,
-    fonte: 'art. 13 c. 2-ter Tariffa parte I DPR 642/1972: 0,2% annuo del valore, senza franchigia per le persone fisiche. Il D.L. 38/2026 ha alzato il bollo per i soli soggetti diversi dalle persone fisiche, quindi qui non cambia nulla',
+    fonte: '0,2% annuo del valore, senza franchigia per le persone fisiche: in origine art. 13 c. 2-ter della Tariffa, parte I, DPR 642/1972; dal 1° gennaio 2026 trasfuso, a legislazione vigente, nell\'art. 9 della Tariffa, parte I, allegato 3 al D.Lgs. 123/2025 (testo unico dei tributi indiretti). Il D.L. 38/2026 ha alzato il solo bollo fisso su estratti conto e rendiconti dei soggetti diversi dalle persone fisiche, da 100 a 118 €: qui non cambia nulla',
     verificata: true },
   // IL BOLLO FISSO DEL CONTO CORRENTE — 34,20 € sopra i 5.000 € di giacenza — NON sta qui, e
   // per una ragione di metodo: nessuna cifra del listino lo deriva. Il conto corrente rende 0%
@@ -304,7 +316,7 @@ export const REGOLE = {
   SPERANZA_VITA: { nome: "Speranza di vita residua, per età",
     val: ANNI_ISTAT,
     come: 'anni',
-    fonte: 'Eurostat demo_mlexpec, Italia 2023, sessi congiunti: valori riscontrati uno per uno. La tavola nazionale ISTAT per lo stesso anno dà circa 0,2 anni in meno a ogni età, e il margine qui sotto è calibrato su questa',
+    fonte: 'Eurostat demo_mlexpec, Italia 2023, sessi congiunti: valori riscontrati uno per uno (di nuovo l\'08/09/2026). La tavola nazionale ISTAT per lo stesso anno dà circa 0,2 anni in meno a ogni età, e il margine qui sotto è calibrato su questa. Le serie 2024 e 2025 sono pubblicate e danno circa 0,3 anni in più a 67 anni: si aggiornano insieme al margine, non da sole',
     verificata: true
   },
   MARGINE_RENDITA: { riscontro: 'verifiche/tavole-dei-fondi.mjs', nome: "Anni che la compagnia conta in più dell'ISTAT",
@@ -450,15 +462,17 @@ export const REGOLE = {
     verificata: true },
   // IL BILANCIATO NON È SCELTO, DISCENDE. Gli altri tre sono una decisione; questo è il conto
   // che ne segue, e la differenza va tenuta visibile perché è quella fra un'opinione e una sua
-  // conseguenza. La COVIP rileva nei comparti bilanciati un'esposizione azionaria del 33,7%:
-  // 0,34 × 5% + 0,66 × 2% = 3,0%. Che sia anche il valore già proposto oggi dalla casella non
-  // è una coincidenza cercata, ma è la ragione per cui questa modifica non sposta di una virgola
-  // il piano di chi la tendina non la tocca.
+  // conseguenza. La COVIP rileva nei comparti bilanciati dei fondi negoziali un'esposizione
+  // azionaria del 35,4% a fine 2025 (Relazione per l'anno 2025, Tav. 1.52; qui c'era scritto
+  // 33,7%, il dato precedente): 0,35 × 5% + 0,65 × 2% = 3,05%, che nella rotondità voluta del
+  // listino è 3%. Che sia anche il valore già proposto oggi dalla casella non è una coincidenza
+  // cercata, ma è la ragione per cui questa modifica non sposta di una virgola il piano di chi
+  // la tendina non la tocca.
   COMPARTI: { nome: "Comparti del fondo pensione, rendimento nominale netto atteso",
     val: [['Garantito', 0.01], ['Obbligazionario', 0.02],
           ['Bilanciato', 0.03], ['Azionario', 0.05]],
     come: 'listino',
-    fonte: 'convenzione: rendimenti nominali nella stessa forma in cui li pubblica la COVIP, cioè al netto dei costi di gestione e degli oneri fiscali — quindi anche del 20% che grava sul patrimonio del comparto. Sono i rendimenti di un FONDO NEGOZIALE: le altre forme costano di più, e il di più lo toglie FORME_FONDO. Garantito, obbligazionario e azionario sono scelti; il bilanciato ne discende applicando il 33,7% di esposizione azionaria rilevato dalla COVIP. Ordine di grandezza riscontrato sulla Tav. 4 di «La previdenza complementare, principali dati statistici, dicembre 2025», dove i dieci anni a fine 2025 danno 4,8-5,1% agli azionari e 2,7-2,9% ai bilanciati',
+    fonte: 'convenzione: rendimenti nominali nella stessa forma in cui li pubblica la COVIP, cioè al netto dei costi di gestione e degli oneri fiscali — quindi anche del 20% che grava sul patrimonio del comparto. Sono i rendimenti di un FONDO NEGOZIALE: le altre forme costano di più, e il di più lo toglie FORME_FONDO. Garantito, obbligazionario e azionario sono scelti; il bilanciato ne discende applicando il 35,4% di esposizione azionaria che la COVIP rileva nei bilanciati dei fondi negoziali a fine 2025 (Relazione per l\'anno 2025, Tav. 1.52), arrotondato. Ordine di grandezza riscontrato sulla Tav. 4 di «La previdenza complementare, principali dati statistici», edizioni di dicembre 2025 e giugno 2026: i dieci anni a fine 2025 danno 4,8-5,1% agli azionari e 2,7-2,9% ai bilanciati',
     verificata: true },
 
   // QUANTO COSTA DI PIÙ NON ESSERE IN UN FONDO NEGOZIALE, ed è la cifra che il calcolatore

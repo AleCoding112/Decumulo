@@ -99,6 +99,12 @@ function piano(D){
   // un reddito da lavoro
   const ultimo = Math.max(...ult);
   const fine   = Math.max(...D.p.map(x => x.nascita)) + D.etaFine;
+  // L'ANNO DI ISCRIZIONE VUOTO VALE L'ANNO IN CORSO, e la regola si riapplica qui: la pagina
+  // passa il valore SCRITTO (`null` se la casella è vuota), non quello già risolto, o questo
+  // file erediterebbe il ripiego invece di controllarlo. È il ripiego prudente — l'anzianità
+  // minore compatibile coi dati, quindi l'imposta più alta — e fino all'08/09/2026 la pagina
+  // faceva il contrario: 1900, cioè il 9% a chiunque lasciasse la casella in bianco.
+  const iscr = D.p.map(x => x.iscr == null ? V('ANNO0') : x.iscr);
 
   // PROVA DI TENUTA: i primi esercizi a rendimento reale nullo. Il TFR lasciato in azienda
   // resta fuori, perché si rivaluta per legge (art. 2120 c.c.) e non sul mercato.
@@ -244,7 +250,7 @@ function piano(D){
           const lorda = F[i].m / (AI - a);
           const imponibile = lorda * Math.min(F[i].v / F[i].m, 1);
           F[i].m -= lorda; F[i].v -= imponibile;
-          E += lorda - imponibile * aliqFondo(a - x.iscr);
+          E += lorda - imponibile * aliqFondo(a - iscr[i]);
         }
         F[i].m *= (1 + (fermo(a) ? Math.min(0, rf) : rf));
       }
@@ -252,7 +258,7 @@ function piano(D){
       // posizione a chi resta, in capitale, senza quota da convertire e senza soglia
       const preMorte = manca !== null && i === manca.chi && a === manca.anno && a < AI;
       if ((a === AI || preMorte) && F[i].m > 0){
-        const base = Math.min(F[i].v, F[i].m), al = aliqFondo((preMorte ? a : AI) - x.iscr);
+        const base = Math.min(F[i].v, F[i].m), al = aliqFondo((preMorte ? a : AI) - iscr[i]);
         const netto = F[i].m - base * al;
         const ce = coeffEta(x.annoPens - x.nascita);
         const qmax = F[i].m < soglia(ce) ? 1 : V('QUOTA_ORDINARIA');
@@ -282,7 +288,7 @@ function piano(D){
         const lorda = F[i].m / F[i].rate;
         const imponibile = lorda * Math.min(F[i].v / F[i].m, 1);
         F[i].m -= lorda; F[i].v -= imponibile; F[i].rate--;
-        E += lorda - imponibile * F[i].alCons(a - x.iscr);
+        E += lorda - imponibile * F[i].alCons(a - iscr[i]);
         if (F[i].rate > 0 && a > F[i].daCons) F[i].m *= (1 + (fermo(a) ? Math.min(0, rf) : rf));
       }
       // la rendita del defunto continua solo se la forma la protegge
@@ -379,6 +385,10 @@ const casi = {
   'pensione a 62 anni':       {annoPens0:2034, annoPens1:2041},
   'pensione a 72 anni':       {annoPens0:2044, annoPens1:2051},
   'fondi piccoli':            {fondo0:9000, fondo1:4000},
+  // L'ISCRIZIONE NON INDICATA: il ripiego è una regola come le altre, e si confronta. Con lo
+  // scritto a metà si prova che «20» non è un anno, come per le altre date della pagina.
+  'iscrizione non indicata: si conta da quest\'anno': {iscr0:'', iscr1:''},
+  'iscrizione scritta a metà':                        {iscr0:'20'},
   // --- l'abitazione. Il caso dell'affitto è il solo in cui la spesa cambia dentro il piano
   // per una ragione che non è il pensionamento, quindi il solo che possa scoprire un canone
   // finito per sbaglio dentro un moltiplicatore.
@@ -489,7 +499,9 @@ for (const [nome, over, prova, manca] of tutti){
       // il risultato della regola che questa implementazione deve rifare da sé. Passarli
       // significherebbe far verificare a questo file una decisione presa dall'altro.
       tfrGia:x.tfrGia, annoLav:x.annoLav,
-      tfrAlFondo:x.tfrAlFondo, iscr:x.iscr, rita:x.rita, quotaCap:x.quotaCap, forma:x.forma}))};
+      // e l'ISCRIZIONE COME È SCRITTA, `null` se vuota: il ripiego all'anno in corso lo rifà
+      // `piano()` da sé, per la stessa ragione di `fondoScritto` tre righe più su
+      tfrAlFondo:x.tfrAlFondo, iscr:x.iscrScritto, rita:x.rita, quotaCap:x.quotaCap, forma:x.forma}))};
   const P = piano(D);
 
   const rel = Math.abs(P.finale - R.finale) / Math.max(Math.abs(R.finale), 1);
