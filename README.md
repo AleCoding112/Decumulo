@@ -360,6 +360,11 @@ raggi dei bordi, le micro-etichette maiuscole spaziate. Sono l'idioma «document
 Niente ombre, niente icone, nessun colore d'accento nuovo: sono le quattro cose che sposterebbero
 il sito verso l'aspetto di chi ha qualcosa da vendere.
 
+**5-bis. Il risultato sta accanto al modulo, e lo segue.** (08/09/2026) Sopra i 1.100 px due
+colonne, la destra appiccicata per tutta la pagina; sotto, una colonna sola nell'ordine di sempre.
+Il grafico si disegna alla larghezza che ha, così le etichette restano di 11 px veri. Il perché e la
+trappola dello sticky stanno nella sezione datata.
+
 **4. Il modulo ha due strati, e nello strato aperto ci sta solo quello che il verdetto pretende
 più il fondo pensione.** (07/08/2026)
 
@@ -1304,6 +1309,81 @@ sua tabella delle pagine ne aveva otto, e tre conteggi di controlli erano fermi.
 «per le prestazioni richieste fino al 31 dicembre 2026»: cambierà coi coefficienti 2027-2028, e la
 guardia di gennaio lo elenca. Le mediane ISC di `FORME_FONDO` sono ancora quelle al 31/12/2025,
 l'ultimo dato COVIP.
+
+## 2026-09-08, secondo tempo — il risultato accanto al modulo, e le tre righe sotto il verdetto
+
+Nato da una domanda sua: se la grafica fosse il miglior lavoro possibile, o servisse un cambiamento
+radicale. **Il linguaggio visivo non si tocca**, ed è la prima conclusione: bianco caldo, i due
+caratteri, il verde solo al verdetto, niente icone né ombre sono la firma che distingue un
+documento da un pannello che vende. Un redesign in stile dashboard butterebbe via proprio quello.
+Il problema era di **struttura e densità**, e si misura: sulla pagina compilata a due persone il
+modulo pesava 1.006 parole, il risultato 339, le scelte **1.285** (più di tutto il resto insieme),
+per 8,8 schermate su desktop e 12,9 su telefono. Il secondo strato aveva risolto la densità del
+modulo; il risultato e le scelte no.
+
+**1. Il risultato sta accanto al modulo, e lo segue.** Sopra i 1.100 px la pagina ha due colonne:
+a sinistra il modulo e tutto quello che viene dopo (note, sviluppo, scelte, tabella), a destra
+verdetto, colpo d'occhio e grafico, **appiccicati per tutta la pagina**. Si trascina un cursore in
+fondo e il verdetto cambia sotto gli occhi: è la cosa che il sito fa meglio, e prima chiedeva di
+risalire quattromila pixel per vederla. Lo spazio ai lati, sopra i 1.100 px, era vuoto da sempre.
+Sotto quella larghezza i tre pezzi si impilano nell'ordine di prima.
+*La trappola trovata costruendolo*: un elemento sticky resta fermo solo dentro il proprio
+contenitore. Con la colonna del risultato alta quanto il suo contenuto, il blocco smetteva di
+seguire dopo il primo schermo e la destra della pagina restava vuota per due terzi. La colonna
+occupa quindi **due righe della griglia** (`grid-row:1/3`, il modulo e il dopo) ed è alta quanto la
+pagina; dentro, `.appiccica` è il blocco che si ferma. E il blocco scorre da sé se lo schermo è
+più basso di lui (`max-height` + `overflow`): meglio uno scorrimento interno che una legenda
+tagliata.
+*La seconda trappola l'ha misurata `senza-scatti.mjs`*: trascinando un cursore la pagina saltava
+di 174 px, con il rimedio acceso. Chrome compensa da sé i cambi di altezza sopra la finestra
+tenendo fermo un elemento «ancora», scelto fra quelli in vista nell'ordine del documento; il
+blocco fisso, sempre in vista e nel documento prima delle scelte, era diventato l'ancora, e non
+muovendosi mai non compensava più niente. `overflow-anchor:none` sulla colonna lo esclude dalla
+scelta, e la misura è tornata a 6 px. **Un controllo che passa può passare per una ragione che
+non si conosce**: quello sui sussulti era verde anche grazie all'ancoraggio del browser, e nessuno
+l'aveva scritto — ora è scritto accanto alla regola CSS.
+*E la terza l'ha presa `come-parla.mjs` al primo giro*: la riga della leva componeva «di» + nome e
+coi nomi vuoti scriveva «di il primo». La forma articolata viaggia col nome (`DI`), come il
+progetto sapeva già; il controllo sulla preposizione incollata all'articolo esiste per questo.
+
+**2. Il grafico si disegna alla larghezza che ha.** Con la `viewBox` fissa a 880 e `width:100%`,
+un'etichetta da 11 unità nella colonna da 440 px rendeva 5,5 px, e sul telefono 4,9: è la misura
+che aveva fatto scartare il secondo grafico dei flussi, e valeva anche per il primo. Ora la
+`viewBox` è pari ai pixel veri e cambia la porzione di disegno, non la grandezza del testo; al
+ridimensionamento della finestra si ridisegna. Nelle armature `getBoundingClientRect` non esiste e
+si torna a 880: i controlli non vedono differenze.
+
+**3. Tre righe sotto il verdetto.** Fino a quando regge, la spesa sostenibile, e **la leva più
+forte** fra le scelte qui sotto («portare il versamento di Anna all'11,9%: +23.287 € alla fine»).
+La terza riga è nuova, e la scrive `aggiornaDecisioni`, che è l'unico posto in cui quelle leve
+vengono misurate: raccolte mentre si scrivono i cursori, si prende la maggiore, e un piano che non
+regge oggi ma regge al punto più alto vale più di qualunque euro. La spesa sostenibile stava in coda
+al sottotitolo ed è uscita di là: due posti per lo stesso numero divergono, e `come-parla.mjs` ora
+pretende che il sottotitolo non la ripeta e che la cifra della leva compaia anche sotto un cursore.
+È un elenco etichetta-valore nell'idioma delle fasi, non una fila di riquadri coi numeroni.
+
+**4. Le spiegazioni delle scelte stanno dietro «Come funziona».** Il capoverso che spiega perché
+ogni scelta esiste è statico e si legge una volta: sta ripiegato, come le caselle del secondo
+strato. Restano in vista le letture del cursore e il suo esito, che reagiscono. **I rimandi alle
+pagine escono dal capoverso** e restano accanto al titolo (`.rimandi`), o ripiegando la spiegazione
+si sarebbero nascoste due porte del sito. Su telefono l'esito del cursore viene **subito dopo il
+nome**, prima del comando: stava in fondo, dopo cinque frasi, dove si arriva per ultimi.
+
+**5. Lo stato d'attesa non è un verdetto.** «Dati incompleti.» in corpo 34 e nero suonava come un
+errore prima che si fosse fatto niente. La pagina appena aperta dice «Il verdetto comparirà qui»,
+poi «Mancano tre dati», in grigio e senza grassetto. E **la riga in alto compare anche senza
+verdetto**, dicendo quante caselle mancano: su telefono era l'unico riscontro possibile vicino alle
+dita mentre si compila. Il controllo che pretendeva il contrario («col modulo vuoto non compare
+mai») è stato rovesciato, non tolto.
+
+**6. L'unità dentro la casella**: € e % a destra della cifra, in tenue. L'involucro lo aggiunge il
+codice al caricamento, così nel markup le caselle restano come sono e nessun controllo che le conta
+vede qualcosa di nuovo.
+
+**Come è stato deciso**: prima un'anteprima funzionante costruita in una copia del progetto e
+guardata nel browser, poi il passaggio nei sorgenti con i controlli adeguati. `a-schermo.mjs` misura
+ora anche i 1.300 px, che è l'assetto nuovo; `occhi.mjs` fotografa la colonna fissa e il colpo
+d'occhio.
 
 ## Il registro dei dubbi
 

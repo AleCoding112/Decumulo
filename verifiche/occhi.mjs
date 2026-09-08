@@ -191,6 +191,11 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // tutta la fila: è già successo con «Comparto del fondo pensione».
     fatti.push(await b.scatta('ipotesi', '.caselle:has(#comparto)'));
     fatti.push(await b.scatta('risultato', '#titolo'));
+    // LA COLONNA FISSA E IL COLPO D'OCCHIO (08/09/2026). A 1200 px il risultato sta a destra del
+    // modulo: si guarda che il blocco intero — titolo su tre righe, le tre righe del colpo
+    // d'occhio, il grafico stretto con le sue etichette — stia in una schermata e si legga.
+    fatti.push(await b.scatta('colonna-fissa', '.appiccica'));
+    fatti.push(await b.scatta('colpo-d-occhio', '#sguardo'));
 
     // IL GRAFICO, che fino all'11/08/2026 non era fotografato da nessuno — ed è il pezzo della
     // pagina che si giudica SOLO guardandolo: nessuna verifica sa dire se due tinte pallide si

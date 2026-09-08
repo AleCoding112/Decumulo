@@ -594,6 +594,74 @@
   tr.rossa td{color:var(--giu)}
   tr.evento td{background:var(--bg);color:var(--acc);text-align:left;font-size:12px;
     padding:7px 9px 6px;border-bottom:1px solid var(--line);white-space:normal;line-height:1.45}
+
+  /* ==================================================================== IL RISULTATO ACCANTO
+     Vedi il commento in cima a `.colonne`. Sotto i 1.100 px queste classi non fanno niente e i
+     tre pezzi si impilano; sopra, la griglia ha due colonne e il risultato occupa la seconda per
+     tutte e due le righe (`grid-row:1/3`), così l'involucro appiccicato lo segue fino in fondo.
+     La colonna destra è il 38%: a 1.160 px utili sono 440 px, che bastano al verdetto su tre righe
+     e a un grafico con le etichette a grandezza vera. Il blocco fisso scorre da sé se lo schermo è
+     più basso di lui (`max-height` + `overflow`): meglio uno scorrimento interno che una legenda
+     tagliata sotto il bordo, ed è l'unico caso in cui si vede. */
+  @media (min-width:1100px){
+    .pagina{max-width:1280px}
+    .colonne{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,38%);gap:0 48px}
+    .col-dati,.dopo-colonne{grid-column:1}
+    /* `overflow-anchor:none` NON È UN DETTAGLIO. Chrome compensa da sé i cambi di altezza sopra la
+       finestra tenendo fermo un elemento «ancora», scelto fra quelli in vista nell'ordine del
+       documento: `senza-scatti.mjs` conta su questo, e le sue misure erano verdi. Un blocco fisso
+       sempre in vista, che nel documento viene prima delle scelte, diventa l'ancora — e siccome
+       non si muove mai, niente viene più compensato: trascinando un cursore la pagina saltava di
+       174 px, misurati. Escluso dalla scelta, l'ancora torna nella colonna che si sta usando. */
+    .col-risultato{grid-column:2;grid-row:1/3;overflow-anchor:none}
+    .col-risultato .appiccica{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+    .col-risultato .risposta{font-size:28px}
+    .col-risultato .sotto{font-size:15px;margin-bottom:16px}
+    .col-risultato .grafico{padding:10px 6px 4px}
+  }
+  /* IL COLPO D'OCCHIO: etichetta e valore, nello stesso idioma delle fasi. `[hidden]` dichiarato
+     perché `display:grid` batterebbe quello del browser: è la lezione di `.sommario` e di `.cur`. */
+  .sguardo{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:0 0 18px;padding:12px 14px;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:14px;line-height:1.45}
+  .sguardo[hidden]{display:none}
+  .sguardo dt{color:var(--tenue);font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;padding-top:3px;white-space:nowrap}
+  .sguardo dd{margin:0}
+  .sguardo b{font-weight:600}
+  /* LO STATO D'ATTESA NON È UN VERDETTO. «Dati incompleti.» in corpo 34 e nero suonava come un
+     errore prima che si fosse fatto niente: la pagina appena aperta dice dove comparirà il
+     verdetto, e mentre si compila quante caselle mancano, in grigio e senza grassetto. */
+  .risposta.attesa{color:var(--soft);font-weight:400;font-size:26px}
+  .sommario.attesa .v{color:var(--soft)}
+  /* L'UNITÀ DENTRO LA CASELLA. «38000» senza € e «1,2» senza % si leggevano solo dal suggerimento
+     sotto. L'involucro lo aggiunge il codice al caricamento, così nel markup le caselle restano
+     come sono e i controlli che le contano non vedono niente di nuovo. La cifra sta a destra e
+     l'unità dopo, in tenue: non è un dato, è una didascalia. */
+  .unita{position:relative;display:block}
+  .unita>input{padding-right:30px}
+  .unita::after{content:attr(data-u);position:absolute;right:10px;top:50%;transform:translateY(-50%);
+    font-size:12px;color:var(--tenue);pointer-events:none}
+  .unita:has(>input:disabled)::after{opacity:.5}
+  /* LE SPIEGAZIONI DELLE SCELTE, ripiegate, coi rimandi accanto. Il `details` generale disegna un
+     riquadro: qui si spegne, perché questo sta già dentro un riquadro. Aperto, prende la riga
+     intera e i rimandi scendono sotto il testo. */
+  .capo-dec{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;margin:0 0 14px}
+  details.perche{background:none;border:0;border-radius:0;padding:0;margin:0;min-width:0}
+  details.perche[open]{flex-basis:100%}
+  details.perche>summary{font-size:12px;font-weight:600;color:var(--acc);list-style:none;
+    padding:0;letter-spacing:0;text-transform:none}
+  details.perche>summary::-webkit-details-marker{display:none}
+  details.perche>summary::before{content:'\25B8  '}
+  details.perche[open]>summary::before{content:'\25BE  '}
+  details.perche>.spiega{margin:8px 0 4px}
+  .rimandi{font-size:12px;font-weight:600}
+  .rimandi a{color:var(--acc);white-space:nowrap;margin-right:12px}
+  /* L'ESITO DEL CURSORE È IL NUMERO CHE CONTA, e su telefono viene subito dopo il nome, prima del
+     comando: prima stava in fondo, dopo cinque frasi, cioè dove si arriva per ultimi. */
+  .cur .esito b{font-size:18px}
+  @media (max-width:600px){
+    .cur .chi{order:-2} .cur .esito{order:-1;margin-bottom:6px}
+  }
 </style>
 </head>
 <body>
@@ -634,6 +702,18 @@ regole diverse. È un progetto personale e <b>può contenere errori</b>: il meto
 intero, e le segnalazioni sono le benvenute.
 <a href="il-metodo.html">Metodo di calcolo, ipotesi e limiti &rarr;</a></p>
 
+<!-- IL RISULTATO STA ACCANTO AL MODULO, E RESTA IN VISTA (08/09/2026). Fino a oggi la pagina era
+     una colonna sola di 760 px: il verdetto arrivava dopo il modulo, cioè a quattromila pixel
+     su desktop e alla sesta schermata su telefono, e muovendo un cursore delle scelte bisognava
+     risalire per vedere cosa fosse cambiato. Sopra i 1.100 px lo spazio ai lati era vuoto.
+     Ora la pagina è divisa in tre pezzi: il modulo («I dati»), il risultato (verdetto, colpo
+     d'occhio, grafico), e tutto quello che viene dopo (le note, lo sviluppo, le scelte, la
+     tabella). Sui desktop larghi il modulo e il dopo stanno nella colonna di sinistra, il
+     risultato in quella di destra e vi resta APPICCICATO per tutta la pagina: si trascina un
+     cursore in fondo e il verdetto cambia sotto gli occhi. Sotto i 1.100 px i tre pezzi si
+     impilano nell'ordine in cui stanno qui, che è quello di prima. -->
+<div class="colonne">
+<section class="col-dati">
 <h2 class="sezione" id="dati">I dati</h2>
 
 <!-- QUANTO BASTA DAVVERO. Il modulo ha molte caselle, ma il verdetto esce alla terza: chi arriva
@@ -1068,10 +1148,51 @@ intero, e le segnalazioni sono le benvenute.
 </details>
 
 
+</section>
+<!-- `.appiccica` è un involucro e non l'aside stesso: la colonna occupa due righe della griglia
+     (il modulo e il dopo) e un elemento sticky resta fermo solo dentro il proprio contenitore —
+     per seguire la pagina intera serve quindi un contenitore alto quanto la pagina, cioè l'aside,
+     e dentro di lui il blocco che si ferma. -->
+<aside class="col-risultato"><div class="appiccica">
 <h2 class="sezione" id="risultato">Il risultato</h2>
 <p class="vuoto-avviso" id="vuoto" hidden>Il risultato si aggiorna a ogni dato inserito.</p>
 <p class="risposta" id="titolo">&nbsp;</p>
 <p class="sotto" id="sottotitolo">&nbsp;</p>
+<!-- IL COLPO D'OCCHIO: tre righe, tre numeri. Sotto il verdetto c'erano cinque capoversi di pari
+     peso, e la spesa sostenibile stava in coda al sottotitolo: chi leggeva doveva estrarre da
+     sé i tre numeri che contano — fino a quando regge, quanto si può spendere, e quale delle
+     scelte qui sotto sposta di più il risultato. La terza riga è nuova: la scrive
+     `aggiornaDecisioni`, che è l'unico posto in cui quelle leve vengono misurate. È un elenco
+     etichetta-valore e non una fila di riquadri con i numeroni: resta un documento. -->
+<dl class="sguardo" id="sguardo" hidden>
+  <dt>Fino a quando</dt><dd id="sgQuando"></dd>
+  <dt>Spesa sostenibile</dt><dd id="sgSpesa"></dd>
+  <dt>La leva più forte</dt><dd id="sgLeva"></dd>
+</dl>
+
+<!-- I PEZZI CHE ESISTONO SOLO SE ESISTE UN PIANO, e nascono spenti. Fino al 07/08/2026 la
+     pagina appena aperta mostrava un grafico vuoto, la sua legenda, il titolo «Sviluppo del
+     piano» senza sviluppo sotto, e per intero la sezione delle scelte: sei cursori e due
+     schermate di decisioni su un piano che non c'è ancora. Il conto esce dai due `return`
+     anticipati di `calc()` PRIMA di chiamare `aggiornaDecisioni`, quindi restava in pagina
+     quello che `costruisciDecisioni` aveva appena disegnato — compresi i comandi del secondo,
+     che con «una persona» nessuno ha chiesto.
+     Li accende e li spegne `mostraIlPiano()`, da un punto solo: erano quattro elementi in tre
+     rami diversi, cioè il modo sicuro per dimenticarne uno. -->
+<div class="grafico" id="riquadroGrafico" hidden>
+  <svg id="svg" viewBox="0 0 880 330" role="img" aria-label="Il patrimonio anno per anno"></svg>
+</div>
+<!-- LA LEGENDA LA SCRIVE `disegna()`, e nasce vuota. Scritta a mano qui dentro aveva due
+     difetti che nessuna verifica poteva vedere: i quadratini portavano i colori di PRIMA dello
+     schiarimento delle aree, cioè dichiaravano due tinte che nel disegno non esistevano più; e
+     annunciavano bande che in certi piani non ci sono — con «già in pensione» prometteva «i
+     fondi pensione» per ventidue anni in cui di fondi non ce n'era per nessuno. -->
+<p class="legenda" id="legendaGrafico" hidden></p>
+</div></aside>
+<!-- LE NOTE AL VERDETTO STANNO QUI E NON NELLA COLONNA FISSA: un blocco appiccicato dev'essere
+     più basso dello schermo, e con le cinque note non lo sarebbe. Su telefono seguono il grafico
+     invece di precederlo: il verdetto e la sua figura restano insieme, le note dopo. -->
+<div class="dopo-colonne">
 <!-- SU COSA POGGIA IL NUMERO, e perché la riga sta qui e non fra le scelte.
      Il verdetto è calcolato con una forma di erogazione del fondo già decisa: il modulo parte da
      `quotaCap = 0` e `forma = vita`, cioè niente in contanti e tutto in rendita vitalizia. Non è
@@ -1098,25 +1219,6 @@ intero, e le segnalazioni sono le benvenute.
      FATTO (quanto non entra); la decisione, col cursore e il costo, resta dov'era. -->
 <p class="nota" id="superstite"></p>
 <p class="avviso" id="lasciato" hidden></p>
-
-<!-- I PEZZI CHE ESISTONO SOLO SE ESISTE UN PIANO, e nascono spenti. Fino al 07/08/2026 la
-     pagina appena aperta mostrava un grafico vuoto, la sua legenda, il titolo «Sviluppo del
-     piano» senza sviluppo sotto, e per intero la sezione delle scelte: sei cursori e due
-     schermate di decisioni su un piano che non c'è ancora. Il conto esce dai due `return`
-     anticipati di `calc()` PRIMA di chiamare `aggiornaDecisioni`, quindi restava in pagina
-     quello che `costruisciDecisioni` aveva appena disegnato — compresi i comandi del secondo,
-     che con «una persona» nessuno ha chiesto.
-     Li accende e li spegne `mostraIlPiano()`, da un punto solo: erano quattro elementi in tre
-     rami diversi, cioè il modo sicuro per dimenticarne uno. -->
-<div class="grafico" id="riquadroGrafico" hidden>
-  <svg id="svg" viewBox="0 0 880 330" role="img" aria-label="Il patrimonio anno per anno"></svg>
-</div>
-<!-- LA LEGENDA LA SCRIVE `disegna()`, e nasce vuota. Scritta a mano qui dentro aveva due
-     difetti che nessuna verifica poteva vedere: i quadratini portavano i colori di PRIMA dello
-     schiarimento delle aree, cioè dichiaravano due tinte che nel disegno non esistevano più; e
-     annunciavano bande che in certi piani non ci sono — con «già in pensione» prometteva «i
-     fondi pensione» per ventidue anni in cui di fondi non ce n'era per nessuno. -->
-<p class="legenda" id="legendaGrafico" hidden></p>
 <p class="nota inflazione" id="inflazione">&nbsp;</p>
 
 <div class="fasi" id="riquadroFasi" hidden>
@@ -1131,19 +1233,33 @@ intero, e le segnalazioni sono le benvenute.
   <!-- I NUMERI DEI TITOLI LI SCRIVE `aggiornaDecisioni`, e non sono un vezzo: i primi due
        riquadri spariscono per chi ha la decorrenza alle spalle, e una sezione che si apre con
        «3.» sarebbe un elenco che ha perso i primi due pezzi senza dirlo. -->
+  <!-- LE SPIEGAZIONI DELLE SCELTE SI RIPIEGANO (08/09/2026). Misurato sulla pagina compilata a due
+       persone: la sezione delle scelte pesava 1.285 parole, più di tutto il resto insieme, e ogni
+       cursore aveva intorno cinque o sei frasi. Di quelle, il capoverso che spiega PERCHÉ la
+       scelta esiste — il gradino del datore, le tre decisioni in fila, l'abitazione fuori dal
+       patrimonio — è statico e si legge una volta: sta dietro «Come funziona», come le caselle
+       del secondo strato del modulo. Restano in vista le letture del cursore e il suo esito, che
+       reagiscono. I rimandi alle pagine escono dal capoverso e restano visibili accanto al
+       titolo, o ripiegando la spiegazione si sarebbero nascoste anche le due porte del sito. -->
   <div class="dec" id="decContrib">
     <h3 id="contribuzione"><i class="np-dec" id="nContrib"></i>Entità della contribuzione</h3>
-    <p class="spiega"><b>L'azienda versa la propria quota solo se la versa anche il lavoratore</b>,
+    <div class="capo-dec">
+      <details class="perche"><summary>Come funziona</summary>
+      <p class="spiega"><b>L'azienda versa la propria quota solo se la versa anche il lavoratore</b>,
     e non aumenta oltre il <b>minimo contrattuale</b>: fin lì si prende il contributo dell'azienda
-    più lo sconto IRPEF, <b>quello che si versa in più vale il solo sconto</b>.
-    <a href="contributo-datore.html">Come funziona, coi conti →</a>
-    <a href="fondo-pensione-o-etf.html">Fondo pensione o ETF →</a></p>
+    più lo sconto IRPEF, <b>quello che si versa in più vale il solo sconto</b>.</p>
+      </details>
+      <span class="rimandi"><a href="contributo-datore.html">Il contributo del datore →</a>
+      <a href="fondo-pensione-o-etf.html">Fondo pensione o ETF →</a></span>
+    </div>
     <div id="decVersare"></div>
   </div>
 
   <div class="dec" id="decErog">
     <h3><i class="np-dec" id="nErog"></i>Modalità di erogazione del fondo</h3>
-    <p class="spiega"><b>Tre decisioni consecutive, e la prima condiziona le altre due</b>: quando
+    <div class="capo-dec">
+      <details class="perche"><summary>Come funziona</summary>
+      <p class="spiega"><b>Tre decisioni consecutive, e la prima condiziona le altre due</b>: quando
     il fondo comincia a uscire, quanto se ne prende in contanti, in che forma diventa assegno la
     parte che resta. Riscuoterlo prima riduce quello che arriva alla pensione.
     <b>Sulla prima decisione il conto indica il punto più alto.</b> Sulla seconda e sulla terza
@@ -1151,6 +1267,8 @@ intero, e le segnalazioni sono le benvenute.
     patrimonio, e di quanto la soglia si sposta se la vita è più lunga. La misura è il patrimonio
     che resta alla fine, e la rendita per costruzione non ne lascia: in cambio dà un assegno che
     arriva finché si vive.</p>
+      </details>
+    </div>
     <div id="decFondo"></div>
   </div>
 
@@ -1163,13 +1281,17 @@ intero, e le segnalazioni sono le benvenute.
        un'ipotesi scritta da chi compila, e per giunta su una decisione che non è finanziaria. -->
   <div class="dec" id="decCasa">
     <h3><i class="np-dec" id="nCasa"></i>L'abitazione</h3>
-    <p class="spiega"><b>L'abitazione non fa parte del patrimonio investito</b>: non produce
+    <div class="capo-dec">
+      <details class="perche"><summary>Come funziona</summary>
+      <p class="spiega"><b>L'abitazione non fa parte del patrimonio investito</b>: non produce
     reddito e non è disponibile finché ci si abita. Entra nel conto solo se si prevede di
     cambiarla, e allora contano <b>quanto libera la vendita</b> e <b>come cambia la spesa</b>.
     <b>Il calcolo non indica quale scelta convenga</b>: dipende dal rendimento del patrimonio,
     che è un'ipotesi scritta qui sopra. Indica <b>sotto quale rendimento la conclusione si
-    rovescia</b>.
-    <a href="casa-e-decumulo.html">Quanto resta di una vendita &rarr;</a></p>
+    rovescia</b>.</p>
+      </details>
+      <span class="rimandi"><a href="casa-e-decumulo.html">Quanto resta di una vendita &rarr;</a></span>
+    </div>
       <div class="caselle">
         <div><label for="casaCosa">Che cosa si prevede di fare</label>
           <select id="casaCosa">
@@ -1235,6 +1357,8 @@ pubblica. <a href="il-metodo.html">Metodo di calcolo, ipotesi e limiti →</a></
   <button type="button" id="azzera">Ricomincia da zero</button>
 </p>
 
+</div>
+</div>
 <script>
 let NOMI = ['il primo', 'il secondo'];   // i nomi li scrivono loro; questi sono i ripieghi
 // «di» + nome non si può comporre a pezzi in italiano: «di l'altro» non esiste. Ogni nome si
@@ -2372,7 +2496,14 @@ function scriviFasi(r){
 const TINTE_GRAFICO = {patr: '#dde9e1', fondi: '#e9edf4', tfr: '#f0ebe0', buco: '#f0dad5'};
 
 function disegna(r){
-  const W = 880, H = 330, L = 68, R = 16, T = 58, B = 26;
+  // IL GRAFICO SI DISEGNA ALLA LARGHEZZA CHE HA, non a 880 unità fisse. Con la `viewBox` fissa e
+  // `width:100%` un'etichetta da 11 unità nella colonna da 440 px rendeva 5,5 px, e a 390 px sul
+  // telefono 4,9: la lezione del secondo grafico scartato, misurata di nuovo. Con `viewBox` pari
+  // ai pixel veri il testo resta di 11 px ovunque, e cambia la porzione di disegno. Nelle
+  // armature `getBoundingClientRect` non esiste e si torna a 880.
+  const largh = EL('svg').getBoundingClientRect ? EL('svg').getBoundingClientRect().width : 0;
+  const W = largh > 100 ? Math.round(largh) : 880, H = W < 600 ? 260 : 330, L = 68, R = 16, T = 58, B = 26;
+  if (EL('svg').setAttribute) EL('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
   const xs = W - L - R, ys = H - T - B;
   const g0 = r.righe;
   // le tre grandezze si impilano, e l'ordine è «dal più disponibile al meno»: il patrimonio
@@ -2691,7 +2822,7 @@ function componi(comuni, dei){
 // mostrano il proprio contenitore vuoto. Un punto solo perché i rami che tolgono il verdetto
 // sono tre, e quattro elementi spenti a mano in tre rami sono tre occasioni di dimenticarne uno.
 const PEZZI_DEL_PIANO = ['riquadroGrafico', 'legendaGrafico', 'riquadroFasi', 'decisioni',
-                         'annoPerAnno'];
+                         'annoPerAnno', 'sguardo'];
 const mostraIlPiano = si => PEZZI_DEL_PIANO.forEach(k => EL(k).hidden = !si);
 
 // ============================================================================
@@ -3236,8 +3367,13 @@ function calc(){
 
   EL('vuoto').hidden = quanteMancano === 0;
   if (quanteMancano){
-    t.className = 'risposta';
-    t.innerHTML = 'Dati incompleti.';
+    // LO STATO D'ATTESA, in due tempi: a modulo intatto la pagina dice dove comparirà il verdetto,
+    // appena si comincia dice quante caselle mancano. «Dati incompleti.» era un titolo da errore
+    // dato a chi non aveva ancora scritto niente.
+    t.className = 'risposta attesa';
+    t.innerHTML = quanteMancano === req.quante ? 'Il verdetto comparirà qui.'
+      : quanteMancano === 1 ? 'Manca un dato.'
+      : `Mancano ${PAROLA[quanteMancano] || quanteMancano} dati.`;
     sub.innerHTML = 'Per il calcolo ' + (quanteMancano === 1 ? 'serve' : 'servono')
       + (frase.startsWith(',') ? '' : ' ') + frase + '.';
     ['fasi','tabella','legendaGrafico'].forEach(k => EL(k).innerHTML = '');
@@ -3246,7 +3382,12 @@ function calc(){
       EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
     mostraIlPiano(false);
-    aggiornaSommario('', '');   // senza verdetto non c'è niente da tenere sott'occhio
+    // LA RIGA IN ALTO DICE A CHE PUNTO SI È, anche senza verdetto. Prima restava spenta finché non
+    // c'era un risultato: su telefono, dove il verdetto sta a sei schermate dalle prime caselle,
+    // chi compilava non aveva nessun riscontro vicino alle dita. Sui desktop larghi non si vede,
+    // perché lì il risultato è già in vista nella colonna fissa.
+    aggiornaSommario(`<span class="v">${quanteMancano === 1 ? 'Manca un dato'
+      : 'Mancano ' + (PAROLA[quanteMancano] || quanteMancano) + ' dati'}</span> · ${frase.replace(/^,\s*/, '')}`, 'attesa');
     return;
   }
 
@@ -3266,10 +3407,6 @@ function calc(){
   // di posticipare la cessazione: a chi ha la decorrenza alle spalle quella leva non esiste più,
   // e leggersela proporre fa dubitare che il conto abbia capito i dati inseriti.
   const puoRimandare = s.indici.some(i => !s.p[i].giaInPens);
-  const margine = q === null || q < 1 ? '' :
-    `A parità di date la spesa massima sostenibile è di circa <b>${E50(q)}</b> al mese` +
-    (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '') +
-    `, contro ${E0(s.spesa)} indicati.`;
 
   // QUANTI ARRIVANO A UNA RISPOSTA. Il numero delle visite non lo dice: se il modulo è troppo
   // lungo la gente lo abbandona e le visite restano identiche. È l'unico evento del sito, si
@@ -3309,7 +3446,7 @@ function calc(){
       <em>Il patrimonio non si riduce</em> in nessuno dei
       ${r.annoFine - ANNO0 + 1} anni del piano.`;
     sub.innerHTML = `Le entrate coprono la spesa e l'eccedenza si accumula: nel
-      ${r.annoFine} restano <b>${E0(r.finale)}</b>. ` + margine;
+      ${r.annoFine} restano <b>${E0(r.finale)}</b>.`;
     sommarioDelTitolo(`non si riduce mai: nel ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
   } else {
     t.className = 'risposta su';
@@ -3322,8 +3459,21 @@ function calc(){
     sommarioDelTitolo(`nel ${r.annoFine} restano <b>${E0(r.finale)}</b>`);
     sub.innerHTML = `Il patrimonio inizia a ridursi dal ${giu}. Il punto più basso è nel
       <b>${min.anno}</b>: ${E0(min.patr)}${min.anno < r.annoFine ? ', in ripresa negli anni successivi' : ''}. `
-      + margine;
+      ;
   }
+
+  // IL COLPO D'OCCHIO. Le prime due righe si scrivono qui, dal verdetto appena dato; la terza la
+  // scrive `aggiornaDecisioni`, che è dove le leve vengono misurate, e fino ad allora resta un
+  // trattino. La spesa sostenibile stava in coda al sottotitolo (`margine`) e ora sta solo qui:
+  // due posti per lo stesso numero divergerebbero al primo ritocco.
+  EL('sgQuando').innerHTML = r.annoZero !== null
+    ? `si esaurisce nel <b>${r.annoZero}</b>, ${art(r.annoZero - giovane.nascita, 'ai')}${r.annoZero - giovane.nascita} anni ${DI[s.p.indexOf(giovane)]}`
+    : `regge fino al <b>${r.annoFine}</b>: restano ${E0(r.finale)}`;
+  EL('sgSpesa').innerHTML = q === null || q < 1
+    ? 'nessun livello di spesa porta il piano fino in fondo'
+    : `<b>${E50(q)}</b> al mese` + (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '')
+      + `, contro ${E0(s.spesa)} indicati`;
+  EL('sgLeva').innerHTML = '—';
 
   // SE UNO DEI DUE MANCASSE.
   // La metrica non può essere il patrimonio finale: la spesa di chi resta scende al 60-67% e quel
@@ -4191,6 +4341,10 @@ const FORME = [
 const FATT = Object.fromEntries(FORME.filter(f => !f.consuma).map(f => [f.k, f.fatt]));
 
 function aggiornaDecisioni(s, r){
+  // LE LEVE. Ogni cursore che ha un punto più alto lo misura qui; quella che vale di più finisce
+  // nella terza riga del colpo d'occhio, sotto il verdetto. Si raccolgono mentre si scrivono i
+  // cursori invece di ricalcolarle a parte: due conti dello stesso ottimo divergerebbero.
+  const leve = [];
   // I riquadri sono costruiti una volta per due persone: quelli in eccesso si spengono. E si
   // spengono anche quelli di chi è già in pensione: contribuzione ed erogazione del fondo sono
   // scelte che riguardano il futuro, e per chi ha la decorrenza alle spalle sono già state
@@ -4397,6 +4551,14 @@ function aggiornaDecisioni(s, r){
            ${E0(Math.abs(vale))} ${vale > 0 ? 'in più' : 'in meno'} rispetto al versamento di oggi,
            a parità di come il fondo verrà riscosso`;
       EL('cVers'+i+'Piu').innerHTML = frase;
+      // un piano che non regge oggi e regge al punto più alto vale più di qualunque euro.
+      // Il nome viaggia nella forma articolata (`DI[i]`: «di Anna», «del primo»): comporre
+      // «di» + nome dava «di il primo» coi nomi vuoti, ed è il difetto che il controllo sulla
+      // preposizione incollata all'articolo esiste per prendere. L'ha preso al primo giro.
+      if (b.regge && oggi.annoZero !== null)
+        leve.push({vale: Infinity, testo: `portare il versamento${s.N === 2 ? ' ' + DI[i] : ''} ${perc(b.v, 'al')}: da lì <b>il piano regge</b>`});
+      else if (b.regge && vale > 1 && Math.abs(b.v - x.pcVoi) > 0.05)
+        leve.push({vale, testo: `portare il versamento${s.N === 2 ? ' ' + DI[i] : ''} ${perc(b.v, 'al')}: <b>+${E0(vale)}</b> alla fine`});
       // il pulsante ci porta il cursore, ma solo se c'è davvero da spostarsi
       const daSpostare = frase !== '' && b.regge && Math.abs(b.v - pc) > 0.05;
       bVai.hidden = !daSpostare;
@@ -4530,6 +4692,8 @@ function aggiornaDecisioni(s, r){
         && (attesa.annoZero !== null || vale >= 1);
       bq.hidden = !daSpostare;
       if (daSpostare){ bq.textContent = `al punto più alto: ${b.v}`; bq.dataset.anno = b.v; }
+      if (daSpostare && b.regge && attesa.annoZero === null)
+        leve.push({vale, testo: `cominciare a prendere il fondo${s.N === 2 ? ' ' + DI[i] : ''} a rate nel ${b.v}: <b>+${E0(vale)}</b> alla fine`});
     }
 
     // --- passo 2: quanto in contanti. Da ZERO al massimo che la legge concede a QUESTO fondo:
@@ -4672,6 +4836,9 @@ function aggiornaDecisioni(s, r){
 
   });
 
+  leve.sort((a, b) => b.vale - a.vale);
+  EL('sgLeva').innerHTML = leve.length ? leve[0].testo
+    : 'nessuna delle scelte qui sotto migliora il piano: il versamento di oggi è già il punto più alto';
   document.querySelectorAll('#decFondo .scelte button').forEach(b =>
     b.addEventListener('click', () => {
       EL('forma' + b.dataset.i).value = b.dataset.f; calc();
@@ -5033,6 +5200,23 @@ fermaIlSaltoDeiCursori();
 // PRIMA DEL RIPRISTINO, come le decisioni: `ripristina()` scorre le caselle che trova in
 // pagina, e quelle costruite dopo non le rivedrebbe mai più.
 costruisciComposizione();
+// L'UNITÀ DENTRO LE CASELLE, aggiunta qui e non nel markup: le caselle restano come sono per i
+// controlli che le leggono e per `ripristina()`, e la lista di cosa porta cosa sta in un punto
+// solo. Gli anni non hanno unità; `pcMin` ha già il suo «%» accanto e resta fuori.
+{
+  const U = id => /^(ral|pens|fondo|tfrGia|spesa|spesaPens|casaValore|casaNuova|casaCanone|cl)\d*$/.test(id) ? '€'
+          : /^(pcVoi|pcDat|cresc|rend|rendFondo|infl)\d*$/.test(id) ? '%'
+          : id === 'etaFine' ? 'anni' : null;
+  document.querySelectorAll('input[type=text][inputmode]').forEach(e => {
+    const u = U(e.id); if (!u) return;
+    const w = document.createElement('span'); w.className = 'unita'; w.dataset.u = u;
+    e.parentNode.insertBefore(w, e); w.appendChild(e);
+  });
+  // il grafico segue la finestra: fra una colonna e l'altra la sua larghezza cambia
+  let ridisegna;
+  addEventListener('resize', () => { clearTimeout(ridisegna);
+    ridisegna = setTimeout(() => { if (ultimo) disegna(ultimo.r); }, 120); });
+}
 
 // COM'ERA IL MODULO APPENA COSTRUITO. Serve una riga dopo, per sapere quali blocchi del secondo
 // strato contengono qualcosa di scritto: senza questa fotografia il confronto sarebbe contro la

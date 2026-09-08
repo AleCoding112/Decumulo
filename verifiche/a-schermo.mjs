@@ -32,7 +32,10 @@ import { fileURLToPath } from 'node:url';
 const QUI = dirname(fileURLToPath(import.meta.url));
 const SITO = join(QUI, '..', 'sito');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const LARGHEZZE = [320, 390, 600, 900];
+// 1300 È LA LARGHEZZA IN CUI IL RISULTATO STA ACCANTO AL MODULO (dall'08/09/2026, sopra i
+// 1.100 px): un assetto che nessuna delle quattro misure di prima rendeva, e un ramo che nessuno
+// scenario rende non è coperto.
+const LARGHEZZE = [320, 390, 600, 900, 1300];
 
 // dati di prova: il modulo vuoto non mostra né risultato né decisioni, e quelli sono
 // esattamente i pezzi che possono sbordare

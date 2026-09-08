@@ -261,11 +261,17 @@ console.log('\n— il sommario in alto —');
   pieno.osservatori.titolo([{isIntersecting: true}]);
   c('tornando sul risultato sparisce', pieno.elementi.sommario.hidden === true);
 
+  // DALL'08/09/2026 LA RIGA COMPARE ANCHE SENZA VERDETTO, e dice quante caselle mancano: su
+  // telefono era l'unico riscontro possibile vicino alle dita mentre si compila. Prima questo
+  // controllo pretendeva il contrario («senza verdetto non c'è niente da tenere sott'occhio»).
   const vuoto = esegui({});
   vuoto.osservatori.cima([{isIntersecting: false}]);
   vuoto.osservatori.titolo([{isIntersecting: false}]);
-  c('col modulo vuoto non compare mai', vuoto.elementi.sommario.hidden === true,
-    'senza verdetto non c\'è niente da tenere sott\'occhio');
+  const rigaVuota = (vuoto.elementi.sommarioRiga.innerHTML || '').replace(/<[^>]+>/g, '');
+  c('col modulo vuoto, passato il titolo, dice quanti dati mancano',
+    vuoto.elementi.sommario.hidden === false && /^Mancano \w+ dati · /.test(rigaVuota), rigaVuota);
+  c('e non si veste da verdetto', / attesa\b/.test(vuoto.elementi.sommario.className)
+    && !/\bsu\b|\bgiu\b/.test(vuoto.elementi.sommario.className), vuoto.elementi.sommario.className);
 
   const cala = esegui({...BASE, spesa:3600});
   cala.osservatori.cima([{isIntersecting: false}]);
@@ -642,6 +648,48 @@ console.log('\n— l\'anno di iscrizione: quello che la pagina dice —');
     /15%/.test(fraz) && /9%/.test(scritta), `${scritta.slice(0, 44)} · ${fraz.slice(0, 44)}`);
   const gia = nota({...BASE, quanti:'1', annoPens0:2015, ral0:'', rita0:0});
   c('a chi è già in pensione tace: la casella è spenta', gia === '', gia);
+}
+
+// --- LO STATO D'ATTESA E IL COLPO D'OCCHIO (08/09/2026) -----------------------
+// Il verdetto ha guadagnato tre righe sotto di sé — fino a quando, spesa sostenibile, la leva più
+// forte — e la pagina appena aperta ha smesso di dire «Dati incompleti» come fosse un errore. Le
+// tre righe vanno lette come le altre frasi: devono esistere solo col verdetto, portare i numeri
+// che dicono di portare, e la spesa sostenibile deve stare LÌ e non più nel sottotitolo.
+console.log('\n— lo stato d\'attesa e il colpo d\'occhio —');
+{
+  const nudo = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const vuoto = esegui({});
+  c('a modulo intatto il titolo dice dove comparirà il verdetto',
+    /^Il verdetto comparirà qui\.$/.test(nudo(vuoto.scritte.titolo)), nudo(vuoto.scritte.titolo));
+  c('e il colpo d\'occhio resta spento', vuoto.elementi.sguardo.hidden === true);
+  const meta = esegui({...BASE, quanti: '1', spesa: '', pens0: ''});
+  c('a metà compilazione dice quante caselle mancano, in parole',
+    /^Mancano due dati\.$/.test(nudo(meta.scritte.titolo)), nudo(meta.scritte.titolo));
+  c('e con una sola la dice al singolare',
+    /^Manca un dato\.$/.test(nudo(esegui({...BASE, quanti: '1', spesa: ''}).scritte.titolo)));
+  c('lo stato d\'attesa non è vestito da verdetto', / attesa\b/.test(meta.elementi.titolo.className)
+    && !/\b(su|giu)\b/.test(meta.elementi.titolo.className), meta.elementi.titolo.className);
+
+  const pieno = esegui(BASE);
+  c('col verdetto il colpo d\'occhio si accende', pieno.elementi.sguardo.hidden === false);
+  const quando = nudo(pieno.scritte.sgQuando), spesa = nudo(pieno.scritte.sgSpesa), leva = nudo(pieno.scritte.sgLeva);
+  c('«fino a quando» porta l\'anno finale del piano che regge', /regge fino al 20\d\d ?: restano [\d.]+ €/.test(quando), quando);
+  c('«spesa sostenibile» porta la cifra al mese e quella indicata', /^[\d.]+ € al mese, contro [\d.]+ € indicati$/.test(spesa), spesa);
+  c('e il sottotitolo non la ripete più', !/spesa massima sostenibile/.test(nudo(pieno.scritte.sottotitolo)),
+    nudo(pieno.scritte.sottotitolo).slice(0, 80));
+  c('«la leva più forte» nomina una scelta e quanto vale', /^(portare il versamento|cominciare a prendere)/.test(leva) && /\+[\d.]+ € alla fine|il piano regge/.test(leva), leva);
+  // la leva è la migliore fra quelle che i cursori dichiarano: il numero deve comparire anche là
+  const cifra = (leva.match(/\+([\d.]+) €/) || [])[1];
+  c('e la cifra è una di quelle scritte sotto un cursore',
+    !!cifra && [pieno.scritte.cVers0Piu, pieno.scritte.cVers1Piu, pieno.scritte.cQuando0Picco, pieno.scritte.cQuando1Picco]
+      .some(t => nudo(t).includes(cifra)), cifra);
+  // e chi non regge legge l'anno in cui finisce, nella stessa forma del titolo
+  const rotto = esegui({...BASE, cl3: 40000, spesa: 4200, rend: 1});
+  const qRotto = nudo(rotto.scritte.sgQuando);
+  c('sul piano che non regge dice l\'anno in cui si esaurisce, e a che età',
+    /^si esaurisce nel 20\d\d ?, a(gli|i) \d+ anni/.test(qRotto), qRotto);
+  const anno = (qRotto.match(/nel (20\d\d)/) || [])[1];
+  c('e l\'anno è quello del titolo', !!anno && nudo(rotto.scritte.titolo).includes(anno));
 }
 
 // --- la prova di tenuta, nei suoi tre rami ---------------------------------
@@ -1023,7 +1071,7 @@ console.log('\n— le caselle che il verdetto richiede —');
   // il controllo fallisce per un ritorno a capo e sembra un difetto della pagina
   const piano = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   const testo = r => piano(r.scritte.sottotitolo);
-  const senzaVerdetto = r => /Dati incompleti/.test(r.scritte.titolo || '');
+  const senzaVerdetto = r => /comparirà qui|^Manca/.test(r.scritte.titolo || '');
   // quante volte le etichette compaiono in una frase: con due persone quelle di persona ci
   // stanno due volte, ed è proprio il conto che interessa
   const conta = t => Object.values(CASELLE).reduce((n, v) => n + (t.split(v).length - 1), 0);
@@ -1180,7 +1228,7 @@ console.log('\n— chi è già in pensione —');
 
   const gia = esegui({...UNO, annoPens0:2015});
   c('il verdetto esce, invece di chiedere una casella già compilata',
-    !/Dati incompleti/.test(gia.scritte.titolo || ''), testo(gia).slice(0, 80));
+    !/comparirà qui|^Manca/.test(gia.scritte.titolo || ''), testo(gia).slice(0, 80));
   c('l\'avviso compare, e dice che il fondo non è rappresentato',
     gia.elementi.avvisoPensione.hidden === false
     && /non è rappresentato/.test(gia.scritte.avvisoPensione || ''));
