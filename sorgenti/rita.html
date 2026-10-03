@@ -43,10 +43,10 @@ complementari. Le finestre temporali sono due, alternative fra loro.</p>
 <table>
   <thead><tr><th>Anticipo rispetto alla vecchiaia</th><th>Requisito ulteriore</th></tr></thead>
   <tbody>
-    <tr><td>fino a <b>5 anni</b> <span class="marca m-legge">legge</span> art. 11 c. 4</td>
+    <tr><td>fino a <b>{{ritaAnticipo}} anni</b> <span class="marca m-legge">legge</span> art. 11 c. 4</td>
         <td>almeno <b>20 anni</b> di contribuzione nei regimi obbligatori, maturati alla data
         della domanda</td></tr>
-    <tr><td>fino a <b>10 anni</b> <span class="marca m-legge">legge</span> art. 11 c. 4-bis</td>
+    <tr><td>fino a <b>{{ritaAnticipoLungo}} anni</b> <span class="marca m-legge">legge</span> art. 11 c. 4-bis</td>
         <td>inoccupazione superiore a <b>24 mesi</b>; in tale ipotesi il requisito dei 20 anni
         non &egrave; richiesto</td></tr>
   </tbody>
@@ -64,6 +64,17 @@ generale di <b>cinque anni di partecipazione</b> <span class="marca m-legge">leg
   <b>quanto cambierebbe il piano</b>; <b>se la RITA spetti va chiesto al fondo</b>, prima di
   contarci.</p>
 </div>
+
+<!-- LE DUE PORTE NEL CALCOLATORE (03/10/2026). Fino a oggi il cursore partiva da dieci anni prima
+     della pensione per chiunque avesse smesso di lavorare, cioè apriva a tutti la porta di chi è
+     senza lavoro da più di due anni. La pagina lo diceva giusto; il conto no. -->
+<p><span class="marca m-stima">stima</span> Il calcolatore apre la finestra dall&rsquo;anno
+dopo quello in cui si smette di lavorare, e la tiene dentro le due porte: {{ritaAnticipo}} anni prima
+della pensione, oppure {{ritaAnticipoLungo}} anni prima ma solo dal terzo anno senza lavoro, che
+&egrave; quando i 24 mesi sono passati. Accanto al cursore dice quale delle due si sta usando.
+Come data della pensione usa la <b>decorrenza indicata</b>: per chi va in pensione anticipata
+viene prima dell&rsquo;et&agrave; di vecchiaia, e la finestra risulta pi&ugrave; stretta del
+vero, non pi&ugrave; larga.</p>
 
 <h2>Quanto ci si paga di imposta</h2>
 

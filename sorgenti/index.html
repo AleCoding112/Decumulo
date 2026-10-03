@@ -2017,6 +2017,22 @@ const CONSUMO = {
   // art. 11 c. 3-bis: la durata la sceglie l'aderente, non meno di cinque anni
   frazionata: {anni: x => Math.max(FRAZ_ANNI_MIN, x.anniFraz), aliq: aliquotaFraz}
 };
+// LE DUE PORTE DELLA RITA (art. 11 c. 4 e 4-bis). In tutte e due si deve aver smesso di lavorare;
+// la prima si apre cinque anni prima della pensione, con vent'anni di contributi; la seconda dieci
+// anni prima, ma solo a chi è senza lavoro da più di 24 mesi. Fino al 03/10/2026 qui c'era una
+// porta sola, la seconda, aperta a chiunque: chi smetteva nel 2030 con la pensione nel 2040 poteva
+// far partire la RITA nel 2031. La legge lega le due finestre all'età della pensione di
+// VECCHIAIA; il conto ha la decorrenza scritta, che per chi va in pensione anticipata viene prima:
+// è un'approssimazione dichiarata in `rita.html`, e dal lato prudente — la finestra risulta più
+// stretta del vero, non più larga.
+// Restituisce i primi anni possibili per l'una e per l'altra porta; il primo dei due vale.
+const porteRita = x => {
+  const fine = Math.max(x.annoPens, ANNO0);
+  const breve = Math.max(ANNO0, x.ultimo + 1, fine - RITA_ANTICIPO);
+  const lunga = Math.max(ANNO0, x.ultimo + 1 + RITA_INOCCUPAZIONE, fine - RITA_ANTICIPO_INOCCUPATI);
+  return {breve, lunga, primo: Math.min(breve, lunga), fine};
+};
+
 // la tavola è a gradini per età intera: fuori dagli estremi non si estrapola, ci si appiattisce
 const vitaIntera = eta => {
   const T = VITA_INTERA;
@@ -2218,7 +2234,9 @@ function simula(s, spesaMese){
       // --- fondo pensione, uno per persona
       const annoIncasso = Math.max(x.annoPens, ANNO0);
       // RITA: si comincia a prenderlo prima della pensione, a rate uguali fino alla pensione
-      const daRita = Math.min(Math.max(x.rita || annoIncasso, ANNO0), annoIncasso);
+      // l'anno scritto non scavalca la legge: un salvataggio vecchio, o una casella scritta a
+      // mano, non può far partire la RITA prima che una delle due porte sia aperta
+      const daRita = Math.min(Math.max(x.rita || annoIncasso, porteRita(x).primo), annoIncasso);
       const nRate  = annoIncasso - daRita;
 
       // L'imposta si paga su quello che è stato versato IN EURO DI ALLORA. Tenendo i conti in
@@ -4741,9 +4759,8 @@ function aggiornaDecisioni(s, r){
       : `alla pensione, nel ${inc.anno}, vale <b>${E0(inc.montante)}</b>
          (${E0(netto)} netti, tolta l'imposta ${perc(inc.al*100, 'del')})`;
 
-    // --- passo 1: quando comincia a uscire. La RITA si apre al massimo 10 anni prima.
-    const fine = Math.max(x.annoPens, ANNO0);
-    const primo = Math.max(ANNO0, x.ultimo + 1, fine - 10);
+    // --- passo 1: quando comincia a uscire. Le due porte della RITA, in `porteRita`.
+    const porte = porteRita(x), fine = porte.fine, primo = porte.primo;
     const cq = EL('cQuando'+i);
     cq.min = primo; cq.max = fine;
     cq.value = Math.min(Math.max(x.rita || fine, primo), fine);
@@ -4763,7 +4780,12 @@ function aggiornaDecisioni(s, r){
       ? `<b>tutto alla pensione</b>, nel ${fine}`
       : rate <= 0
       ? `<b>tutto alla pensione</b>, nel ${fine}`
-      : `<b>a rate dal ${anno}</b><i>${rate} rate fino al ${fine-1}, poi quello che avanza</i>`;
+      : `<b>a rate dal ${anno}</b><i>${rate} rate fino al ${fine-1}, poi quello che avanza</i>`
+        // QUALE PORTA SI STA USANDO, perché il requisito cambia: prima della porta breve si
+        // entra solo da quella lunga, cioè senza lavoro da più di due anni
+        + `<i>${anno < porte.breve
+            ? `possibile solo se si è senza lavoro da più di 24 mesi`
+            : `con vent'anni di contributi, o senza lavoro da più di 24 mesi`}</i>`;
     EL('cQuando'+i+'Sx').textContent = `il prima possibile: ${primo}`;
     EL('cQuando'+i+'Dx').textContent = `alla pensione, ${fine}`;
     // come nella sezione 1: la differenza, non il numero da sette cifre che è di famiglia

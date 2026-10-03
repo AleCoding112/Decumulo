@@ -233,7 +233,12 @@ function piano(D){
 
       // il fondo
       const AI = Math.max(x.annoPens, V('ANNO0'));
-      const daRita = Math.min(Math.max(x.rita || AI, V('ANNO0')), AI);
+      // le due porte della RITA (art. 11 c. 4 e 4-bis), riscritte dalla norma: cinque anni prima
+      // della pensione dopo aver smesso, oppure dieci passati più di due anni senza lavoro
+      const portaBreve = Math.max(V('ANNO0'), ult[i] + 1, AI - V('RITA_ANTICIPO'));
+      const portaLunga = Math.max(V('ANNO0'), ult[i] + 1 + V('RITA_INOCCUPAZIONE'),
+                                  AI - V('RITA_ANTICIPO_INOCCUPATI'));
+      const daRita = Math.min(Math.max(x.rita || AI, Math.min(portaBreve, portaLunga)), AI);
       const nRate  = AI - daRita;
       // fuori dall'accumulo: una posizione che esce a rate resta aperta anche dopo la
       // prestazione, e la sua base imponibile è nominale in tutti quegli anni
@@ -380,13 +385,15 @@ const casi = {
   'nessuno versa':            {pcVoi0:0, pcVoi1:0},
   'rendite diverse':          {forma0:'rev', forma1:'certa', quotaCap1:0.5},
   'zero in capitale':         {quotaCap0:0, quotaCap1:0},
-  'RITA per uno':             {rita0:2034},
+  // la RITA sette anni prima della pensione passa dalla porta lunga: si è smesso nel 2031
+  'RITA per uno':             {rita0:2034, ultimo0:2031},
   // I DUE FONDI CON RENDIMENTI DIVERSI (03/10/2026): fino a ieri era una casella sola, e i casi
   // qui sopra hanno tutti lo stesso numero per tutti e due — un confronto che non avrebbe visto
   // un motore che legge il fondo dell'uno per l'altro. Si provano con la RITA e con le rate,
   // dove il rendimento lavora anche dopo la prestazione, e con la prova di tenuta.
   'fondi diversi: azionario e garantito': {rendFondo0:5, rendFondo1:1},
-  'fondi diversi, con la RITA e le rate': {rendFondo0:1, rendFondo1:6, rita1:2038, forma0:'durata'},
+  'fondi diversi, con la RITA e le rate': {rendFondo0:1, rendFondo1:6, rita1:2044, ultimo1:2041,
+                                           forma0:'durata'},
   'inflazione 5%':            {infl:5},
   'inflazione 0%':            {infl:0},
   'pensione a 62 anni':       {annoPens0:2034, annoPens1:2041},
@@ -440,7 +447,7 @@ const casi = {
   'erogazione frazionata al minimo':  {forma0:'frazionata', forma1:'frazionata'},
   'erogazione frazionata su vent\'anni': {forma0:'frazionata', forma1:'frazionata', anniFraz0:20, anniFraz1:20},
   'una converte e l\'altra consuma':  {forma0:'durata', forma1:'rev'},
-  'consuma dopo aver preso la RITA':  {forma0:'durata', rita0:2034},
+  'consuma dopo aver preso la RITA':  {forma0:'durata', rita0:2034, ultimo0:2031},
   'consuma, e uno manca durante le rate': {forma0:'durata', forma1:'durata'},
 };
 
@@ -484,6 +491,14 @@ for (const [nome, over, prova, manca] of tutti){
   const s = {...s0, ...(prova ? {prova} : {}),
              ...(manca ? {manca: {chi: manca.chi, anno: manca.anno, equiv: manca.equiv}} : {})};
   const R = M.simula(s);
+  // UN CASO CHE SI CHIAMA «RITA» DEVE AVERE LA RITA. Il 03/10/2026 le due porte sono diventate
+  // quelle della legge, e tre casi di questo file hanno smesso in silenzio di prenderla — le
+  // persone lavoravano fino alla pensione — continuando a passare: confrontavano un piano senza
+  // rate, cioè non provavano più quello che dicevano di provare.
+  if (/RITA/.test(nome) && !R.rite.length){
+    console.log(`  KO  ${nome}: il caso non ha nessuna rata RITA, e non prova più quello che dice`);
+    process.exitCode = 1;
+  }
   // `D` NON È UN MODULO DA COMPILARE, è l'ingresso dell'altra implementazione: qui la chiave si
   // chiama `patrimonio` perché è la grandezza, non la casella. Le caselle stanno in `base`, e
   // lì il patrimonio non esiste più — è la somma delle quattro classi.

@@ -242,7 +242,8 @@ console.log('\n  — le affermazioni delle pagine, provate sul motore —');
 
   // rita.html: «destinando alla RITA l'intero fondo e portandola fino alla pensione, la
   // posizione si esaurisce: all'ultima rata il divisore vale uno, e non avanza nulla»
-  const conRita = M.simula(leggiCon({...BASE, rita0:2036}));
+  // sei anni prima della pensione si entra solo dalla porta lunga: smesso da più di due anni
+  const conRita = M.simula(leggiCon({...BASE, rita0:2036, ultimo0:2033}));
   t('rita.html — la RITA fino alla pensione esaurisce la posizione',
     conRita.rite.length === 1 && conRita.incassi.length === 0,
     `${conRita.rite[0] ? conRita.rite[0].n + ' rate' : 'nessuna rata'}, `

@@ -231,6 +231,20 @@ export const REGOLE = {
     fonte: 'art. 11 c. 6-ter D.Lgs. 252/2005: «ridotta di una quota pari a 0,25 punti percentuali per ogni anno eccedente il quindicesimo anno di partecipazione»; dal 1° gennaio 2027 art. 258 c. 6 D.Lgs. 117/2026', verificata: true },
   FRAZ_ANNI_MIN: { nome: "Durata minima dell'erogazione frazionata", val: 5, come: 'anni',
     fonte: 'art. 11 c. 3-bis D.Lgs. 252/2005: «per un periodo non inferiore a cinque anni»', verificata: true },
+  // LA RITA HA DUE PORTE, E IL CALCOLATORE NE APRIVA UNA SOLA, LA PIÙ LARGA, A CHIUNQUE. Fino al
+  // 03/10/2026 il cursore partiva da dieci anni prima della pensione per chiunque avesse smesso di
+  // lavorare: ma i dieci anni sono la porta di chi è SENZA LAVORO DA PIÙ DI 24 MESI (c. 4-bis), e
+  // per tutti gli altri la porta è di cinque anni, con vent'anni di contributi (c. 4). Chi smette
+  // nel 2030 con la pensione nel 2040 poteva far partire la RITA nel 2031; la legge lo consente
+  // dal 2033 (dieci anni prima, passati i 24 mesi) o dal 2035 (cinque anni prima).
+  // Le due cifre di anni e la durata dell'inoccupazione stanno qui, come ogni cifra di legge.
+  RITA_ANTICIPO: { nome: "RITA, anni di anticipo sulla pensione di vecchiaia", val: 5, come: 'anni',
+    fonte: 'art. 11 c. 4 D.Lgs. 252/2005: cessazione dell\'attività lavorativa, età per la pensione di vecchiaia raggiunta «entro i cinque anni successivi», almeno vent\'anni di contribuzione nei regimi obbligatori e cinque di partecipazione alla previdenza complementare. Il calcolatore non conosce gli anni di contributi né quelli di partecipazione: la pagina sulla RITA lo dice', verificata: true },
+  RITA_ANTICIPO_INOCCUPATI: { nome: "RITA, anni di anticipo per chi è senza lavoro", val: 10, come: 'anni',
+    fonte: 'art. 11 c. 4-bis D.Lgs. 252/2005: per chi resta inoccupato «per un periodo di tempo superiore a ventiquattro mesi», con l\'età per la pensione di vecchiaia raggiunta entro i dieci anni successivi alla fine di quel periodo', verificata: true },
+  RITA_INOCCUPAZIONE: { nome: "RITA, anni interi senza lavoro per l'anticipo lungo", val: 2, come: 'anni',
+    fonte: 'art. 11 c. 4-bis D.Lgs. 252/2005: inoccupazione «superiore a ventiquattro mesi». Il conto è per esercizi interi: chi lavora fino al 2030 è senza lavoro da più di 24 mesi dal 2033', verificata: true },
+
   // LE TRE FORME NUOVE NON SONO PARTITE INSIEME. Rendita a durata definita e prelievi si possono
   // chiedere dal 1° luglio 2026; l'erogazione frazionata è stata rinviata dallo stesso decreto
   // che ha riportato la quota in capitale al 50%. Fino a quella data il calcolatore la calcola
@@ -805,6 +819,8 @@ export const TESTI = {
                       {minimumFractionDigits: 2, maximumFractionDigits: 2}),
   vitaInteraEs:     String((V('VITA_INTERA').find(([e]) => e === 67) || [, ''])[1]),
   frazAnniMin:      String(V('FRAZ_ANNI_MIN')),
+  ritaAnticipo:     String(V('RITA_ANTICIPO')),
+  ritaAnticipoLungo: String(V('RITA_ANTICIPO_INOCCUPATI')),
   // l'abitazione: le tre voci del costo di una compravendita, più il totale su un esempio, che
   // è il modo in cui la cifra si capisce davvero (una percentuale sola non dice quanto pesa)
   costiVendita:     pc(V('COSTI_VENDITA'), 2),
@@ -980,6 +996,9 @@ const ALIQ_FONDO_MAX = ${V('ALIQ_FONDO_MAX')}, ALIQ_FONDO_MIN = ${V('ALIQ_FONDO_
 const ALIQ_FRAZ_MAX = ${V('ALIQ_FRAZ_MAX')}, ALIQ_FRAZ_MIN = ${V('ALIQ_FRAZ_MIN')},
       ALIQ_FRAZ_PASSO = ${V('ALIQ_FRAZ_PASSO')};
 const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};
+// le due porte della RITA: cinque anni prima, o dieci per chi è senza lavoro da più di due anni
+const RITA_ANTICIPO = ${V('RITA_ANTICIPO')}, RITA_ANTICIPO_INOCCUPATI = ${V('RITA_ANTICIPO_INOCCUPATI')},
+      RITA_INOCCUPAZIONE = ${V('RITA_INOCCUPAZIONE')};
 // I costi di una compravendita: due quote del prezzo e una cifra fissa, perché l'onorario del
 // notaio e l'imposta di registro sul valore catastale non scalano col prezzo di mercato.
 const COSTI_VENDITA = ${V('COSTI_VENDITA')}, COSTI_ACQUISTO = ${V('COSTI_ACQUISTO')},

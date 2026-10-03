@@ -53,7 +53,10 @@ const SCENARI = {
   'fondo grosso, tagliato al massimo di legge': {...BASE, fondo0:300000, fondo1:300000},
   'nessun contributo, solo TFR':    {...BASE, pcVoi0:'', pcVoi1:'', pcDat0:'', pcDat1:''},
   'la quota del datore senza la propria': {...BASE, pcVoi0:'', pcVoi1:''},
-  'erogazione anticipata in corso': {...BASE, rita0:2035, rita1:2037, fondo0:200000, fondo1:200000},
+  // smesso di lavorare abbastanza prima da avere la porta lunga della RITA aperta (03/10/2026:
+  // prima lavoravano fino alla pensione, e il motore accettava rate che la legge non consente)
+  'erogazione anticipata in corso': {...BASE, rita0:2035, rita1:2037, ultimo0:2032, ultimo1:2034,
+                                     fondo0:200000, fondo1:200000},
   'patrimonio che cala ma arriva in fondo': {...BASE, spesa:3600},
   'retribuzione che cresce e spesa che cala in pensione': {...BASE, cresc0:4, cresc1:3, spesaPens:1800},
   // com'è per chi arriva la prima volta: una persona, nessun nome, e la prestazione ancora
@@ -83,7 +86,7 @@ const SCENARI = {
   // cercavano per nome: la seconda leggeva montante, aliquota e rate della prima. Il piano
   // restava giusto, quindi nessun numero falliva — sbagliava solo quello che si legge.
   'due persone con lo stesso nome': {...BASE, nome0:'Rossi', nome1:'Rossi',
-    rita0:2038, rita1:2040, fondo0:200000, fondo1:200000},
+    rita0:2038, rita1:2040, ultimo0:2035, ultimo1:2037, fondo0:200000, fondo1:200000},
   // LA RETRIBUZIONE BASSA, dove il trattamento integrativo morde e il cursore dei versamenti
   // arriva a fondo scala: è l'unico caso in cui l'estremo destro scrive «è l'intera
   // retribuzione lorda» invece di «oltre, il versamento supererebbe lo stipendio».

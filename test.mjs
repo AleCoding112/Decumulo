@@ -66,7 +66,8 @@ globalThis.document = documento(dichiarate(DATI));
 const M = new Function(src + `\nreturn {simula, leggi, aliquota, spesaSostenibile, fasi, eventi,
   irpefNetta, detrazione, DETRAZIONE_LAV, DETRAZIONE_PENS, DETRAZIONE_PENS_PIU, MENS_PENS, ASSEGNO_SOCIALE, sommaCuneo, ULTERIORE_DETRAZIONE,
   quotaMax, SOGLIA_TUTTO, soglia, coeffEta, aiSuperstiti, TRATT_MINIMO_ANNO, REVERSIBILITA, speranzaVita, COEFF_ETA, COEFF_RENDITA, BANDA_ALTA, BANDA_BASSA, FATT, irpef, spazioDeducibile, contributi, pcTetto, pcMassimo, pcSpendibile, nettoAnnuo, perc, pcTesto, candidatiVersamento, pcSoglia, costoAnnuo, scontoIrpef, costoMensile, conAlt, migliore,
-  numero, ANNO0, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN};`)();
+  numero, ANNO0, COSTI_VENDITA, COSTI_ACQUISTO, COSTI_ATTO, TETTO_DEDUZIONE, QUOTA_ORDINARIA, TFR_SU_RAL, aliquotaTfr, TFR_RIV_FISSA, TFR_RIV_QUOTA, TFR_IMPOSTA_RIV, IVS, vitaIntera, aliquotaFraz, FRAZ_ANNI_MIN,
+  porteRita, RITA_INOCCUPAZIONE};`)();
 const s = M.leggi();
 
 let ok = 0, ko = 0;
@@ -496,7 +497,9 @@ t('chi aspetta: il fondo supera la soglia e «tutto» viene tagliato alla quota 
 // contanti» non è una leva dell'erogazione anticipata — chi la prende per intero non ci arriva
 // nemmeno, alla scelta fra capitale e rendita.
 t('chi prende a rate fino alla pensione non ha nessuna quota da scegliere', (() => {
-    const v = M.conAlt(s, 1, 'rita', DATI.annoPens1 - 8);
+    // otto anni prima si entra dalla porta lunga: smesso da più di due anni
+    const v = M.simula({...s, p: s.p.map((x, j) => j !== 1 ? x
+      : {...x, rita: DATI.annoPens1 - 8, ultimo: DATI.annoPens1 - 9 - M.RITA_INOCCUPAZIONE})});
     return v.incassi.every(z => z.idx !== 1) && v.rite.some(z => z.idx === 1); })(),
   'la posizione si esaurisce con l\'ultima rata');
 // «tutto» viene comunque tagliato al massimo di legge: il confronto va fatto con METÀ di quel
@@ -993,10 +996,32 @@ console.log('\n— la RITA: il fondo preso a rate prima della pensione —');
 // SEI RATE, e non è un numero a caso: la finestra deve cadere DOPO la prestazione dell'altra
 // persona, altrimenti nella stessa fase finisce una una-tantum che con le rate non c'entra e il
 // controllo sul flusso ricorrente misurerebbe quella.
+// E LA PERSONA HA SMESSO DI LAVORARE ABBASTANZA PRIMA: sei anni prima della pensione si entra
+// solo dalla porta lunga (art. 11 c. 4-bis), che vuole più di 24 mesi senza lavoro. Fino al
+// 03/10/2026 questo caso faceva partire la RITA a chi lavorava ancora, e il motore lo accettava.
 const RATE = 6, daRita = DATI.annoPens1 - RATE;
-const rr = M.conAlt(s, 1, 'rita', daRita);
+const rr = M.simula({...s, p: s.p.map((x, j) => j !== 1 ? x
+  : {...x, rita: daRita, ultimo: daRita - 1 - M.RITA_INOCCUPAZIONE})});
 const ra = a => rr.righe.find(x => x.anno === a);
 t('senza RITA non c\'è nessuna rata', r.rite.length === 0 && g.every(x => x.daRata === 0));
+// LE DUE PORTE, provate sui loro bordi. Smesso nel 2030 con la pensione nel 2040: la porta breve
+// apre nel 2035, quella lunga nel 2033 (più di due anni senza lavoro), e vale la prima delle due.
+// Smesso nel 2038: la lunga aprirebbe nel 2041, dopo la pensione, e resta la breve.
+// E chi lavora fino all'anno prima della pensione non ha nessuna porta.
+{
+  const porte = (ultimo, annoPens) => M.porteRita({...s.p[0], ultimo, annoPens});
+  t('la RITA si apre dalla porta lunga solo dopo più di 24 mesi senza lavoro',
+    porte(2030, 2040).primo === 2033 && porte(2030, 2040).breve === 2035,
+    JSON.stringify(porte(2030, 2040)));
+  t('e dalla porta breve cinque anni prima della pensione, se l\'altra apre dopo',
+    porte(2036, 2040).primo === 2037, JSON.stringify(porte(2036, 2040)));
+  t('chi lavora fino all\'anno prima della pensione non ha finestra',
+    porte(2039, 2040).primo >= 2040, JSON.stringify(porte(2039, 2040)));
+  const presto = M.simula({...s, p: s.p.map((x, j) => j !== 1 ? x : {...x, rita: 2026, ultimo: 2030})});
+  t('e un anno scritto prima della porta non anticipa le rate',
+    presto.rite[0] && presto.rite[0].da === M.porteRita({...s.p[1], ultimo: 2030}).primo,
+    presto.rite[0] ? `rate dal ${presto.rite[0].da}` : 'nessuna rata');
+}
 t('con la RITA le rate partono nell\'anno scelto, non prima',
   rr.rite.length === 1 && rr.rite[0].da === daRita
   && ra(daRita - 1).daRata === 0 && ra(daRita).daRata > 0);
@@ -1038,8 +1063,12 @@ t('la fase si spezza quando cominciano le rate',
   M.fasi(rr).find(x => x.da === daRita)?.cosa);
 t('una data dopo la pensione viene ignorata',
   M.conAlt(s, 1, 'rita', DATI.annoPens1 + 10).rite.length === 0);
-t('una data prima del 2026 viene riportata a oggi',
-  M.conAlt(s, 1, 'rita', 1990).rite[0].da === 2026);
+// riportata alla prima porta aperta, che per chi ha smesso da anni non è più «oggi» per forza:
+// dipende anche da quanto manca alla pensione
+t('una data prima del 2026 viene riportata alla prima porta aperta, mai prima di oggi', (() => {
+    const via = {...s.p[1], rita: 1990, ultimo: 2020};
+    const v = M.simula({...s, p: s.p.map((x, j) => j === 1 ? via : x)});
+    return v.rite[0] && v.rite[0].da === M.porteRita(via).primo && v.rite[0].da >= 2026; })());
 
 console.log('\n— le fasi raccontano la stessa cosa della tabella —');
 const F = M.fasi(r);
