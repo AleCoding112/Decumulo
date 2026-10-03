@@ -341,6 +341,12 @@
   .gruppo span{display:block;font-size:12px;font-weight:400;text-transform:none;
     letter-spacing:0;color:var(--soft);margin-top:5px;line-height:1.5}
   .gruppo a{color:var(--acc);font-weight:600;white-space:nowrap}
+  /* I NOMI IN TESTA ALLE COLONNE DEL FONDO. Il blocco delle ipotesi sta lontano dalle righe del
+     modulo che dicono di chi è ciascuna colonna, e due tendine affiancate senza un nome non
+     dicono a chi appartengono. Con una persona sola, e sul telefono dove ogni casella porta già
+     il nome sopra di sé, la riga non serve. */
+  .chi-col{display:block;font-size:12px;font-weight:600;color:var(--soft);padding-top:6px}
+  .solo-uno .voce.intest,.solo-uno .voce.intest + .cella{display:none}
   /* l'avviso non c'è, finché non serve a chi lo sta leggendo */
   .avviso{max-width:566px;margin:12px 0 0;padding:11px 14px;background:#fbf1ee;
     border:1px solid #e8cfc8;border-left:3px solid var(--giu);border-radius:0 8px 8px 0;
@@ -532,6 +538,7 @@
     .solo-uno .due{grid-template-columns:1fr}
     .solo-uno .due .cella[data-chi]::before{content:none}
     .gruppo.largo,.solo-uno .gruppo.largo{max-width:none}
+    .due .voce.intest,.due .voce.intest + .cella,.due .voce.intest + .cella + .cella{display:none}
 
     /* le fasi: quattro colonne fisse per 440 px non stanno in 350. Diventano due righe,
        col periodo e la descrizione sopra e i due importi sotto */
@@ -565,31 +572,71 @@
     .gruppo a,.voce a,.spiega a,.pie-nav a{white-space:normal}
   }
 
+  /* ======================================================================== LA STAMPA
+     RISCRITTA IL 03/10/2026, e la ragione è una misura: col piano di una coppia la carta faceva
+     QUATTORDICI PAGINE, la prima quasi bianca perché il modulo intero non ci stava e saltava alla
+     successiva. Si stampava la pagina come sta sullo schermo — il modulo con ogni istruzione, i
+     cursori, le spiegazioni ripiegate aperte a forza, i rimandi — e non il piano.
+     Ora la carta è un rapporto: la riga di stampa, il verdetto con le tre righe e il grafico, i
+     dati inseriti in una tabella (`#riepilogo`, solo su carta), le note che condizionano il
+     numero, le fasi, la tabella anno per anno in corpo piccolo. Restano fuori il modulo, le
+     scelte coi cursori, i rimandi alle pagine, il piè di pagina e il consenso: niente di quello
+     si legge su un foglio. Il dettaglio anno per anno resta, perché è la parte che si rifà a mano. */
+  .solo-stampa{display:none}
   @media print {
+    @page{size:A4;margin:14mm 13mm}
     :root{--bg:#fff}
-    body{background:#fff}
+    body{background:#fff;font-size:11px}
     .pagina{max-width:none;padding:0}
-    .sommario,input[type=range],.bottoni,#azzera,.estremi,.scelte,
-    .chiediMin{display:none !important}
-    /* Le sezioni che sullo schermo si aprono con un clic, su carta devono essere già aperte.
-       QUESTA REGOLA DA SOLA NON BASTA, e per mesi si è creduto di sì: un <details> chiuso
-       nasconde il contenuto con un meccanismo interno del browser, non con un `display` sui
-       figli. Il titolo si stampava (un summary è sempre visibile), ma il contenuto no: la
-       tabella anno per anno, che su carta è la parte verificabile, mancava. Ad aprirlo è
-       `beforeprint`, qui sotto resta il fondino. Verificato sul PDF, non per convinzione. */
-    details > *{display:block !important}
-    details{background:#fff}
-    summary{list-style:none;font-size:13px;text-transform:uppercase;letter-spacing:.05em}
-    .scorre{overflow:visible;max-height:none}
-    th{position:static}
-    /* niente riquadri tagliati a metà, e niente titoli orfani in fondo alla pagina */
-    .dec,.fondoP,.passo,.cur,.fase,.chiave,.grafico,fieldset,table{break-inside:avoid}
-    h1,h2,h3,legend{break-after:avoid}
-    /* il grafico è la sintesi del piano: senza colori non dice niente */
-    .grafico,.grafico svg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    /* i valori scritti nelle caselle devono restare leggibili, il bordo non serve */
-    input,select{border-color:#ccc !important;background:#fff !important}
+    .solo-stampa{display:block}
+    .sommario,.salta,.occhiello,.perimetro,.col-dati,#vuoto,.decisioni,.salvataggio,.pie,
+    .avviso,input[type=range],.bottoni,#annoPerAnno .scelta{display:none !important}
+    /* i rimandi in coda alle note («Come è stimato →») su carta non portano da nessuna parte */
+    .dopo-colonne .nota a,.dopo-colonne .avviso a,.legenda a,.avvertenza a{display:none}
     a{text-decoration:none;color:inherit}
+    h1{font-size:22px;margin:0 0 2px}
+    .stampa-data{font-size:10px;color:var(--tenue);margin:0 0 10px}
+    h2.sezione{margin:14px 0 6px;font-size:11px}
+    .risposta{font-size:22px !important;margin:4px 0 4px}
+    .sotto{font-size:12px !important;margin:0 0 8px !important}
+    .sguardo{font-size:11px;padding:8px 10px;margin:0 0 8px;gap:4px 12px}
+    .sguardo dt{font-size:9px}
+    /* il grafico è la sintesi del piano: senza colori non dice niente. Lo ridisegna alla
+       larghezza della carta il `beforeprint`, e qui gli si dà un'altezza che non mangi la pagina */
+    .grafico{padding:6px 4px 2px;break-inside:avoid}
+    .grafico,.grafico svg{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .grafico svg{max-height:62mm}
+    .legenda{font-size:10px;margin:2px 0 6px}
+    /* i dati inseriti: due colonne strette di cifre, l'etichetta a sinistra */
+    .riep{width:100%;border-collapse:collapse;font-size:10px;line-height:1.3}
+    .riep td,.riep th{padding:2px 6px;border-bottom:1px solid #eee;text-align:right;vertical-align:top}
+    .riep td:first-child{text-align:left;color:var(--tenue);width:46%}
+    .riep tr.sez th{text-align:left;padding-top:8px;font-size:9px;text-transform:uppercase;
+      letter-spacing:.06em;color:var(--tenue);border-bottom:1px solid #ccc}
+    .riep tr.chi th{font-weight:700}
+    .riep tr{break-inside:avoid}
+    .riep-note p{font-size:10px;margin:4px 0}
+    .nota,.calcolato{font-size:10px;margin:4px 0;padding:0}
+    .dopo-colonne #lasciato:not([hidden]){display:block !important;font-size:10px}
+    .fasi{break-inside:auto}
+    .fasi h2{font-size:11px;margin:12px 0 4px}
+    .fasi{padding:8px 12px}
+    .fase{break-inside:avoid;padding:3px 0}
+    .fase,.fase *,.unatantum{font-size:10px !important;line-height:1.35}
+    /* la tabella: il dettaglio che si rifà a mano, in corpo piccolo e senza scorrimento */
+    details#annoPerAnno{background:#fff;padding:0;border:0;margin-top:10px}
+    details#annoPerAnno > *{display:block !important}
+    summary{list-style:none;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+    .scorre{overflow:visible;max-height:none}
+    #annoPerAnno table{display:table !important;font-size:8.5px;line-height:1.2}
+    #annoPerAnno th,#annoPerAnno td{padding:1px 4px}
+    #annoPerAnno th{font-size:7.5px}
+    #annoPerAnno td u{font-size:7.5px}
+    #annoPerAnno tr.evento td{font-size:8.5px;padding:2px 4px}
+    th{position:static}
+    tr{break-inside:avoid}
+    .avvertenza{font-size:9px;margin-top:8px}
+    h1,h2,h3{break-after:avoid}
   }
   tr.rossa td{color:var(--giu)}
   tr.evento td{background:var(--bg);color:var(--acc);text-align:left;font-size:12px;
@@ -680,6 +727,8 @@
      solo quando riceve il fuoco: per tutti gli altri non esiste. -->
 <a class="salta" href="#dati">Vai alle caselle</a>
 <h1 id="cima">Decumulo</h1>
+<!-- La riga della carta: quando è stato stampato e su quali parametri. Sullo schermo non serve. -->
+<p class="solo-stampa stampa-data" id="stampaData"></p>
 <!-- La proiezione parte dall'anno in corso e comprende gli esercizi di attività, che sono quelli
      su cui incidono le due decisioni: «dalla fine del lavoro» sarebbe inesatto, e per chi è già
      in pensione sarebbe una data che nel suo piano non esiste. -->
@@ -1094,32 +1143,6 @@ intero, e le segnalazioni sono le benvenute.
     <div><label for="rend">Rendimento del patrimonio, <b>netto</b></label>
       <input type="text" inputmode="decimal" id="rend" value="3">
       <u class="hint" id="rendDa">&nbsp;</u></div>
-    <!-- IL COMPARTO SI SCEGLIE, IL SUO RENDIMENTO NO. Il nome del comparto sta sulla
-         comunicazione annuale del fondo: è un dato, e si chiede. Quanto renderà non sta da
-         nessuna parte, ed è una convenzione nostra (COMPARTI, in regole.mjs).
-         La prima voce è «scritto a mano» e non è un riempitivo: se uno corregge il numero
-         accanto, la tendina ci torna da sé, invece di restare a dire «Bilanciato» sopra una
-         cifra che bilanciata non è più. -->
-    <div><label for="comparto">Comparto del fondo pensione</label>
-      <select id="comparto"></select>
-      <u class="hint">sta sulla comunicazione annuale del fondo</u></div>
-    <!-- LA FORMA DECIDE IL COSTO, E IL COSTO È UN RENDIMENTO IN MENO. Un fondo aperto costa
-         in media 1,4 punti l'anno più di un negoziale sull'azionario, un PIP 2,0: fino al
-         04/08/2026 la tendina qui accanto dava lo stesso 5% a tutti e tre, cioè il rendimento
-         di un negoziale letto anche da chi ha un PIP.
-         È UNA TENDINA E NON UNA CASELLA perché la forma la si sa — sta nel nome del fondo — e
-         l'ISC no. Chi però il proprio ISC lo conosce non deve fare i conti a mano: scrive il
-         rendimento nella casella accanto e le due tendine passano da sé a «scritto a mano»,
-         che è il meccanismo che c'era già. -->
-    <div><label for="formaFondo">Che tipo di fondo è</label>
-      <select id="formaFondo"></select>
-      <u class="hint">i costi cambiano molto fra le tre</u></div>
-    <!-- «del fondo» è caduto dall'etichetta e non è una limatura: andava a capo, e una riga in
-         più su UNA casella di tre disallineava tutta la fila — le altre due caselle finivano
-         più in alto. Il pezzo non si perde: la tendina accanto dice «Comparto del fondo
-         pensione», quindi di quale comparto si parla è già scritto una riga a sinistra. -->
-    <div><label for="rendFondo">Rendimento del comparto, <b>netto</b></label>
-      <input type="text" inputmode="decimal" id="rendFondo" value="3"></div>
     <div><label for="infl">Inflazione</label>
       <input type="text" inputmode="decimal" id="infl" value="2"></div>
     <div><label for="etaFine">Orizzonte del piano, in anni di età</label>
@@ -1127,6 +1150,38 @@ intero, e le segnalazioni sono le benvenute.
       <!-- annoFine = max(nascita) + etaFine: il piano si ferma quando la persona più giovane
            compie questa età. Con due date di nascita diverse non è indifferente, e va detto. -->
       <u class="hint">il piano si ferma quando il più giovane compie questa età</u></div>
+  </div>
+  <!-- IL FONDO È DI CIASCUNO, e da oggi anche il suo rendimento (03/10/2026). Comparto, tipo di
+       fondo e rendimento erano una casella sola per la coppia: chi aveva un azionario in un
+       negoziale accanto a chi aveva un garantito in un PIP — più di quattro punti l'anno di
+       distanza — vedeva i due fondi rendere uguale. Era nel registro dei dubbi come limite
+       dichiarato; era invece una casella mancante, come le altre del fondo che sono per persona.
+       IL COMPARTO SI SCEGLIE, IL SUO RENDIMENTO NO. Il nome del comparto sta sulla comunicazione
+       annuale del fondo: è un dato, e si chiede. Quanto renderà non sta da nessuna parte, ed è
+       una convenzione nostra (COMPARTI, in regole.mjs). La prima voce delle tendine è «scritto a
+       mano», e non è un riempitivo: se uno corregge il numero sotto, la tendina ci torna da sé.
+       LA FORMA DECIDE IL COSTO, E IL COSTO È UN RENDIMENTO IN MENO: sull'azionario un fondo
+       aperto costa in mediana 1,4 punti l'anno più di un negoziale, un PIP 2,0.
+       Restano nel blocco delle ipotesi e non nello strato aperto: arrivano già compilate, e il
+       verdetto non le pretende. -->
+  <div class="due rigalav">
+    <div class="gruppo">Il fondo pensione
+    <span>Comparto e tipo di fondo stanno sulla comunicazione annuale del fondo: il rendimento ne
+    discende. Chi conosce il costo del proprio fondo (l'ISC) può scriverlo a mano.</span></div>
+    <div class="voce intest"></div>
+    <div class="cella"><b class="chi-col" id="colFondo0"></b></div>
+    <div class="cella p2"><b class="chi-col" id="colFondo1"></b></div>
+    <div class="voce">Comparto</div>
+    <div class="cella"><select id="comparto0"></select></div>
+    <div class="cella p2"><select id="comparto1"></select></div>
+    <div class="voce">Che tipo di fondo è<br><span class="come">i costi cambiano molto fra i tre</span></div>
+    <div class="cella"><select id="formaFondo0"></select></div>
+    <div class="cella p2"><select id="formaFondo1"></select></div>
+    <!-- «NETTO» STA NELL'ETICHETTA, come per il patrimonio: per chi riscrive il numero a mano è
+         un'istruzione, e per chi lo lascia derivato la garanzia che i costi sono già tolti -->
+    <div class="voce">Rendimento del comparto, <b>netto</b></div>
+    <div class="cella"><input type="text" inputmode="decimal" id="rendFondo0" value="3"></div>
+    <div class="cella p2"><input type="text" inputmode="decimal" id="rendFondo1" value="3"></div>
   </div>
   <!-- L'ISTRUZIONE VALE PER CHI RISCRIVE IL NUMERO A MANO, ed è l'unico caso in cui serve: il
        motore non tassa il patrimonio, quindi un rendimento lordo passerebbe intatto. Per tutti
@@ -1194,6 +1249,15 @@ intero, e le segnalazioni sono le benvenute.
      più basso dello schermo, e con le cinque note non lo sarebbe. Su telefono seguono il grafico
      invece di precederlo: il verdetto e la sua figura restano insieme, le note dopo. -->
 <div class="dopo-colonne">
+<!-- I DATI INSERITI, SOLO SU CARTA (03/10/2026). Al loro posto la stampa portava il modulo
+     intero: trenta caselle con le loro istruzioni, e il piano usciva in quattordici pagine con la
+     prima quasi vuota. Qui c'è una tabella, una riga per dato e una colonna per persona, scritta
+     da `datiDelPiano` — la stessa funzione della prima scheda del foglio di calcolo. -->
+<section class="solo-stampa" id="riepilogo">
+  <h2 class="sezione">I dati inseriti</h2>
+  <table class="riep"><tbody id="riepilogoDati"></tbody></table>
+  <div class="riep-note" id="riepilogoNote"></div>
+</section>
 <!-- SU COSA POGGIA IL NUMERO, e perché la riga sta qui e non fra le scelte.
      Il verdetto è calcolato con una forma di erogazione del fondo già decisa: il modulo parte da
      `quotaCap = 0` e `forma = vita`, cioè niente in contanti e tutto in rendita vitalizia. Non è
@@ -1335,7 +1399,8 @@ intero, e le segnalazioni sono le benvenute.
     <label><input type="radio" name="euro" id="euroAllora"> euro di quell'anno</label>
   </p>
   <div class="scorre"><table id="tabella"></table></div>
-  <p class="nota">Importi <b>annui</b>; accanto all'anno, in corpo minore, l'età.
+  <p class="nota">Importi <b>annui</b>, <span id="valutaTabella">in euro di oggi</span>; accanto
+  all'anno, in corpo minore, l'età.
   Ogni riga è verificabile manualmente: <i>quello che c'era + rendimento + entrate −
   spesa</i>.</p>
 </details>
@@ -1786,6 +1851,10 @@ function leggi(){
     // gli anni dell'erogazione frazionata: la legge ne impone almeno cinque, e non c'è un
     // massimo scritto. Vuoto vale il minimo, che è il caso base.
     anniFraz: Math.max(FRAZ_ANNI_MIN, numFra('anniFraz'+i, 0, 60) || FRAZ_ANNI_MIN),
+    // IL RENDIMENTO DEL FONDO È DI CIASCUNO, come il fondo: due persone possono stare in comparti
+    // e in forme diverse. Nominale qui; il reale lo calcola il giro qui sotto, insieme alla
+    // crescita della retribuzione, quando l'inflazione è nota.
+    rendFondoNom: numFra('rendFondo'+i, -50, 100)/100,
     forma:    EL('forma'+i).value || 'vita'
   }));
   // L'ULTIMO ANNO DI LAVORO È DI CIASCUNO, e il valore di partenza è la propria pensione: uno
@@ -1849,7 +1918,8 @@ function leggi(){
   // vita», e in euro di oggi non deve cambiare niente.
   // Vuoto vuol dire lo stesso, cioè crescita reale zero: è anche l'unico modo perché il valore
   // di partenza resti giusto se si cambia l'inflazione.
-  p.forEach(x => { x.cresc = x.crescNom === null ? 0 : reale(x.crescNom / 100); });
+  p.forEach(x => { x.cresc = x.crescNom === null ? 0 : reale(x.crescNom / 100);
+                   x.rendFondo = reale(x.rendFondoNom); });
   // QUANDO IL PIANO NON HA NESSUN ESERCIZIO DI ATTIVITÀ, la spesa «di oggi» non ha anni a cui
   // applicarsi: il passaggio fra le due spese cade all'ultimo anno di lavoro, già alle spalle, e
   // la prima casella — l'unica che si sa — verrebbe scartata in silenzio. Le due spese qui
@@ -1918,8 +1988,7 @@ function leggi(){
     spesaPens: tuttoInPens || numOpt('spesaPens') === null
       ? null : fra(numOpt('spesaPens'), 0, 1e7),
     etaFine: numFra('etaFine', 0, 120), infl,
-    rendNom: numFra('rend', -50, 100)/100, rendFondoNom: numFra('rendFondo', -50, 100)/100,
-    rend: reale(numFra('rend', -50, 100)/100), rendFondo: reale(numFra('rendFondo', -50, 100)/100), p
+    rendNom: numFra('rend', -50, 100)/100, rend: reale(numFra('rend', -50, 100)/100), p
   };
 }
 
@@ -2006,7 +2075,8 @@ function simula(s, spesaMese){
   // perturbazione è per costruzione non migliorativa, ed è un'invariante controllabile.
   const fermi = s.prova ? ANNO0 + s.prova : ANNO0;
   const rendDi      = anno => anno < fermi ? Math.min(0, s.rend)      : s.rend;
-  const rendFondoDi = anno => anno < fermi ? Math.min(0, s.rendFondo) : s.rendFondo;
+  // il fondo di ciascuno col suo rendimento, e la prova di tenuta li ferma tutti e due
+  const rendFondoDi = (anno, x) => anno < fermi ? Math.min(0, x.rendFondo) : x.rendFondo;
   let patr = s.patrimonio, annoZero = null;
   const f = P.map(x => ({ montante: x.fondo, versati: x.fondo, rendita: 0, annoRendita: null,
                           // il record della RITA, tenuto per riferimento invece che cercato
@@ -2208,7 +2278,7 @@ function simula(s, spesaMese){
           f[i].rita.netto += lorda - tasse;
           rate[i] = true;
         }
-        f[i].montante *= (1 + rendFondoDi(anno));
+        f[i].montante *= (1 + rendFondoDi(anno, x));
       }
       // Art. 14 c. 3 D.Lgs. 252/2005: chi manca prima della prestazione lascia l'INTERA
       // posizione ai designati o agli eredi. Nel piano è capitale che entra in quell'esercizio,
@@ -2301,7 +2371,7 @@ function simula(s, spesaMese){
         consumo[i] = true;
         // nell'anno della prestazione il rendimento è già stato applicato dal blocco
         // dell'accumulo: applicarlo di nuovo lo conterebbe due volte
-        if (f[i].rate > 0 && anno > f[i].daCons) f[i].montante *= (1 + rendFondoDi(anno));
+        if (f[i].rate > 0 && anno > f[i].daCons) f[i].montante *= (1 + rendFondoDi(anno, x));
       }
       // la rendita è una cifra fissa: in euro di oggi si sgonfia
       // LA RENDITA DEL DEFUNTO SEGUE LA FORMA SCELTA, ed è il punto in cui la sezione 2
@@ -2496,14 +2566,15 @@ function scriviFasi(r){
 // vedeva, perché i controlli automatici leggono le frasi e i numeri, non i colori.
 const TINTE_GRAFICO = {patr: '#dde9e1', fondi: '#e9edf4', tfr: '#f0ebe0', buco: '#f0dad5'};
 
-function disegna(r){
+function disegna(r, carta = null){
   // IL GRAFICO SI DISEGNA ALLA LARGHEZZA CHE HA, non a 880 unità fisse. Con la `viewBox` fissa e
   // `width:100%` un'etichetta da 11 unità nella colonna da 440 px rendeva 5,5 px, e a 390 px sul
   // telefono 4,9: la lezione del secondo grafico scartato, misurata di nuovo. Con `viewBox` pari
   // ai pixel veri il testo resta di 11 px ovunque, e cambia la porzione di disegno. Nelle
   // armature `getBoundingClientRect` non esiste e si torna a 880.
   const largh = EL('svg').getBoundingClientRect ? EL('svg').getBoundingClientRect().width : 0;
-  const W = largh > 100 ? Math.round(largh) : 880, H = W < 600 ? 260 : 330, L = 68, R = 16, T = 58, B = 26;
+  const W = carta ? carta.W : largh > 100 ? Math.round(largh) : 880,
+        H = carta ? carta.H : W < 600 ? 260 : 330, L = 68, R = 16, T = 58, B = 26;
   if (EL('svg').setAttribute) EL('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
   const xs = W - L - R, ys = H - T - B;
   const g0 = r.righe;
@@ -2724,6 +2795,8 @@ function tabella(r, s){
       <td><b>${fmt(g.patr * k)}</b></td></tr>`;
   }
   EL('tabella').innerHTML = h;
+  // la valuta detta in parole accanto alla tabella: su carta la scelta coi due pallini non c'è
+  EL('valutaTabella').textContent = allora ? 'in euro di quell’anno' : 'in euro di oggi';
 }
 
 // IL SOMMARIO IN ALTO, in un punto solo. Dipende da tre cose che cambiano in momenti diversi: il
@@ -2845,6 +2918,14 @@ const mostraIlPiano = si => PEZZI_DEL_PIANO.forEach(k => EL(k).hidden = !si);
 //  Legge lo stato di `leggi()` e non le caselle: un riassunto scritto da un'altra fonte diverge
 //  dal conto al primo cambio, come facevano le cifre prima di `regole.mjs`.
 // ============================================================================
+// I FONDI DI CUI HA SENSO PARLARE: quelli di chi non è già in pensione, perché per chi lo è il
+// fondo esce dal modello. Se nessuno ne ha uno, tutti: le frasi devono comunque dire qualcosa.
+const fondiDelPiano = s => { const f = s.indici.filter(i => !s.p[i].giaInPens);
+  return f.length ? f : s.indici; };
+// due fondi che rendono uguale si dicono con una frase sola, come prima che fossero due caselle
+const fondiUguali = s => { const f = fondiDelPiano(s);
+  return f.every(i => Math.abs(s.p[i].rendFondoNom - s.p[f[0]].rendFondoNom) < 5e-5); };
+
 function statoBlocchi(s){
   const pc = v => fmt(v, 1) + '%';
   // Una frase che segue un punto comincia in maiuscolo anche se l'ha composta un elenco. Le
@@ -2935,9 +3016,11 @@ function statoBlocchi(s){
   // --- le ipotesi -------------------------------------------------------------
   // Qui non manca mai niente: ogni casella arriva compilata. Il titolo porta le cifre, così
   // restano leggibili senza aprire — nascondere una scelta non è ometterla.
-  EL('assuntoIpotesi').innerHTML = `Patrimonio ${pc(s.rendNom * 100)}, fondo
-    ${pc(s.rendFondoNom * 100)}, inflazione ${pc(s.infl * 100)}; il piano si ferma
-    a ${fmt(s.etaFine)} anni.`;
+  const fondi = fondiDelPiano(s);
+  EL('assuntoIpotesi').innerHTML = `Patrimonio ${pc(s.rendNom * 100)}, fondo `
+    + (fondiUguali(s) ? pc(s.p[fondi[0]].rendFondoNom * 100)
+       : fondi.map(i => `${s.p[i].di} ${pc(s.p[i].rendFondoNom * 100)}`).join(', '))
+    + `, inflazione ${pc(s.infl * 100)}; il piano si ferma a ${fmt(s.etaFine)} anni.`;
 }
 
 // L'ULTIMO CONTO FATTO, per chi lo vuole portare via. Non si ricalcola al momento dello
@@ -3030,7 +3113,8 @@ function calc(){
   // Sta qui, prima delle uscite anticipate, perché dipende solo da come è compilato il modulo.
   {
     const SPENTE = ['ral', 'cresc', 'ultimo',              // esercizi di attività
-                    'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove'];               // fondo
+                    'fondo', 'iscr', 'pcVoi', 'pcDat', 'tfrDove',                // fondo
+                    'comparto', 'formaFondo', 'rendFondo'];
     s.indici.forEach(i => SPENTE.forEach(k => { EL(k + i).disabled = s.p[i].giaInPens; }));
 
     // LE DUE CASELLE DEL TFR GIÀ ACCANTONATO seguono una condizione PIÙ LARGA di `giaInPens`, e
@@ -3118,6 +3202,7 @@ function calc(){
     // i nomi li scrivono loro, ma i riquadri sono costruiti una volta sola: vanno riscritti
     EL('chiVers'+i).textContent = NOMI[i];
     EL('chiFondo'+i).textContent = NOMI[i];
+    EL('colFondo'+i).textContent = NOMI[i];
     // i cursori sono costruiti dal codice e non hanno una `.voce` accanto: il loro nome
     // accessibile si compone qui, dove i nomi delle persone si conoscono
     [['cVers', 'Percentuale della retribuzione versata al fondo'],
@@ -3637,7 +3722,7 @@ function calc(){
   // i rendimenti. Nel decumulo la sequenza conta più della media: quello che manca all'inizio
   // non c'è più a rendere dopo, e un piano che regge sulla media può non reggere su una brutta
   // partenza. Misurato: sul caso di prova a 4.000 € di spesa il verdetto si rovescia davvero.
-  if (s.rend <= 0 && s.rendFondo <= 0){
+  if (s.rend <= 0 && fondiDelPiano(s).every(i => s.p[i].rendFondo <= 0)){
     // CON RENDIMENTI REALI GIÀ NON POSITIVI LA PROVA NON TOGLIE NIENTE: la perturbazione è
     // `Math.min(0, rendimento)`, che su un numero già negativo lo lascia dov'era, e mostrare il
     // confronto direbbe «regge lo stesso» su un piano paragonato a sé stesso.
@@ -3696,9 +3781,14 @@ function calc(){
   // NON «al netto restano»: la stessa frase dice dodici parole prima «al netto delle imposte»,
   // e il secondo «al netto» è invece netto d'inflazione. Due referenti per la stessa formula
   // nella stessa riga. Il verbo basta: che si tolga l'inflazione l'ha già detto la frase.
+  // i fondi si dicono uno per persona solo quando sono diversi: se rendono uguale la frase resta
+  // quella di prima, una sola
+  const conF = fondiDelPiano(s), ugualiF = fondiUguali(s);
   EL('reali').innerHTML =
-    `restano <b>${fmt(s.rend*100, 2)}%</b> per gli investimenti e
-     <b>${fmt(s.rendFondo*100, 2)}%</b> per i fondi pensione`;
+    `restano <b>${fmt(s.rend*100, 2)}%</b> per gli investimenti` + (ugualiF
+      ? ` e <b>${fmt(s.p[conF[0]].rendFondo*100, 2)}%</b> per i fondi pensione`
+      : ', ' + conF.map((i, k) => `<b>${fmt(s.p[i].rendFondo*100, 2)}%</b> per ${k ? 'quello' : 'il fondo'}
+          ${s.p[i].di}`).join(' e '));
 
 
   // Questa frase descrive il rapporto fra due caselle, quindi si deriva: scritta a mano dice «il
@@ -3712,25 +3802,35 @@ function calc(){
   // ragione non esiste il ramo opposto: se il segno non prova un errore in un verso, non prova la
   // correttezza nell'altro. Resta il fatto sul modello, da cui dipendono due esiti veri; la
   // spiegazione fiscale è dominio e sta in pagina.
-  const dif = s.rendFondoNom - s.rendNom;
-  const nomi = `Per i fondi pensione è indicato <b>${fmt(s.rendFondoNom*100,1)}%</b>, per gli
-    investimenti liberi <b>${fmt(s.rendNom*100,1)}%</b>: `;
-  EL('confrontoRend').innerHTML = nomi + (
-    Math.abs(dif) < 0.0005
-      ? `rendimento identico, quindi dove il denaro resta investito non sposta il risultato.`
-      : `<b>il fondo rende ${dif > 0 ? 'di più' : 'di meno'}</b>, di
-         ${fmt(Math.abs(dif)*100,1)} punti. Da questa differenza dipendono la convenienza
-         dell'erogazione anticipata e il valore della contribuzione aggiuntiva.`);
+  // CON DUE FONDI DIVERSI LE DIFFERENZE SONO DUE, e ciascuna decide per il fondo di chi: un
+  // azionario può rendere più del patrimonio mentre il garantito dell'altro rende meno.
+  const pcF = i => fmt(s.p[i].rendFondoNom*100, 1) + '%';
+  const difDi = i => s.p[i].rendFondoNom - s.rendNom;
+  const quanto = d => Math.abs(d) < 0.0005 ? 'rende quanto gli investimenti liberi'
+    : `<b>rende ${d > 0 ? 'di più' : 'di meno'}</b>, di ${fmt(Math.abs(d)*100,1)} punti`;
+  EL('confrontoRend').innerHTML = ugualiF
+    ? (() => { const dif = difDi(conF[0]);
+        return `Per i fondi pensione è indicato <b>${pcF(conF[0])}</b>, per gli investimenti liberi
+          <b>${fmt(s.rendNom*100,1)}%</b>: ` + (Math.abs(dif) < 0.0005
+          ? `rendimento identico, quindi dove il denaro resta investito non sposta il risultato.`
+          : `<b>il fondo rende ${dif > 0 ? 'di più' : 'di meno'}</b>, di
+             ${fmt(Math.abs(dif)*100,1)} punti. Da questa differenza dipendono la convenienza
+             dell'erogazione anticipata e il valore della contribuzione aggiuntiva.`); })()
+    : `Per gli investimenti liberi è indicato <b>${fmt(s.rendNom*100,1)}%</b>. `
+      + conF.map((i, k) => `${k ? 'il' : 'Il'} fondo ${s.p[i].di}, ${perc(s.p[i].rendFondoNom*100, 'al')}, ${quanto(difDi(i))}`).join('; ')
+      + `. Da queste differenze dipendono, per ciascuno, la convenienza dell'erogazione
+         anticipata e il valore della contribuzione aggiuntiva.`;
   // «Coi rendimenti indicati» lo dice già la frase in pagina, subito prima di questo span:
   // ripeterlo qui dentro produceva «Coi rendimenti indicati, coi rendimenti indicati fuori
   // rendono di più». Difetto vecchio, visto in uno screenshot: i controlli leggono i pezzi
   // separatamente e la giuntura fra HTML e template literal non la guarda nessuno.
-  EL('doveRende').innerHTML = Math.abs(dif) < 0.0005
-    ? 'i due posti rendono uguale, quindi qui non cambia niente'
-    : dif > 0 ? `fuori rendono <b>di meno</b> (${fmt(s.rendNom*100,1)}%
-                 contro ${fmt(s.rendFondoNom*100,1)}%), quindi anticipare costa`
-              : `fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}%
-                 contro ${fmt(s.rendFondoNom*100,1)}%)`;
+  const dove = i => { const d = difDi(i);
+    return Math.abs(d) < 0.0005 ? 'i due posti rendono uguale, quindi qui non cambia niente'
+      : d > 0 ? `fuori rendono <b>di meno</b> (${fmt(s.rendNom*100,1)}% contro ${pcF(i)}), quindi
+                 anticipare costa`
+              : `fuori rendono <b>di più</b> (${fmt(s.rendNom*100,1)}% contro ${pcF(i)})`; };
+  EL('doveRende').innerHTML = ugualiF ? dove(conF[0])
+    : conF.map(i => `per il fondo ${s.p[i].di} ${dove(i)}`).join('; ');
   // SI RACCONTA LA PERSONA, NON L'INCASSO. Chi prende il fondo a rate fino alla pensione
   // ESAURISCE la posizione — le rate si ricalcolano sul montante che resta, e all'ultima il
   // divisore vale uno — quindi un incasso alla pensione non c'è. Costruendo la frase sugli
@@ -3790,7 +3890,7 @@ function calc(){
     `Importi in <b>euro di oggi</b>. In valore nominale i ${E0(r.finale)} del ${r.annoFine}
      sarebbero <b>${E0(gonfio)}</b>: stesso potere d'acquisto, prezzi più alti.`;
 
-  scriviFasi(r); disegna(r); tabella(r, s); aggiornaDecisioni(s, r);
+  scriviFasi(r); disegna(r); tabella(r, s); aggiornaDecisioni(s, r); scriviRiepilogo(s, r);
   if (typeof salva === 'function') salva();
 }
 
@@ -4080,13 +4180,16 @@ function costruisciComposizione(){
   // «scritto a mano» sta in cima e non è un riempitivo: è lo stato in cui la tendina si mette
   // da sé quando il numero accanto non corrisponde a nessun comparto. Senza, resterebbe a dire
   // «Bilanciato» sopra una cifra che bilanciata non è più.
-  EL('comparto').innerHTML = '<option value="">scritto a mano</option>'
+  // DUE COPPIE DI TENDINE, una per persona: il fondo è di ciascuno (03/10/2026)
+  [0,1].forEach(p => {
+  EL('comparto'+p).innerHTML = '<option value="">scritto a mano</option>'
     + COMPARTI.map(([nome], i) => `<option value="${i}">${nome}</option>`).join('');
   // LA FORMA HA LA STESSA VOCE IN CIMA, e per la stessa ragione: le due tendine sono una
   // veduta SOLA dello stesso numero, quindi o descrivono tutte e due la cifra scritta o
   // nessuna delle due. Lasciarne una piena e l'altra vuota direbbe una mezza verità.
-  EL('formaFondo').innerHTML = '<option value="">scritto a mano</option>'
+  EL('formaFondo'+p).innerHTML = '<option value="">scritto a mano</option>'
     + FORME_FONDO.map(([nome], f) => `<option value="${f}">${nome}</option>`).join('');
+  });
   // QUESTI CONTROLLI NON RICEVONO L'ASCOLTATORE GENERALE: quello passa sulla pagina una volta
   // sola, prima che esistano. Se lo attaccano da sé, come già fanno le decisioni.
   CLASSI.forEach((_, i) => EL('cl' + i).addEventListener('input', () => {
@@ -4097,13 +4200,14 @@ function costruisciComposizione(){
   // IL NUMERO LO DECIDONO LE DUE TENDINE INSIEME, quindi l'ascoltatore è uno solo per tutt'e
   // due. Se manca una delle due scelte non si scrive niente: metà informazione darebbe una
   // cifra che non è quella di nessuno.
-  const daTendine = () => {
-    const i = EL('comparto').value, f = EL('formaFondo').value;
-    if (i !== '' && f !== '') EL('rendFondo').value = inCasella(rendDiComparto(+i, +f));
-    calc();
-  };
-  EL('comparto').addEventListener('input', daTendine);
-  EL('formaFondo').addEventListener('input', daTendine);
+  [0,1].forEach(p => {
+    const daTendine = () => {
+      const i = EL('comparto'+p).value, f = EL('formaFondo'+p).value;
+      if (i !== '' && f !== '') EL('rendFondo'+p).value = inCasella(rendDiComparto(+i, +f));
+      calc();
+    };
+    EL('comparto'+p).addEventListener('input', daTendine);
+    EL('formaFondo'+p).addEventListener('input', daTendine);
   // E IL RIALLINEAMENTO STA QUI, NON DENTRO `calc()`. Ci era finito, e scegliere un comparto
   // non faceva niente: la tendina sta nell'HTML fin dall'inizio, quindi aveva preso anche
   // l'ascoltatore generale — che gira per primo, chiama `calc()`, e `allineaComparto()`
@@ -4111,7 +4215,8 @@ function costruisciComposizione(){
   // si annullava da sé, in silenzio, e nessuna misura poteva accorgersene: la pagina era
   // coerente, solo inerte. Legato al numero — che è la cosa di cui la tendina è una veduta —
   // gira solo quando quel numero cambia per conto suo.
-  EL('rendFondo').addEventListener('input', allineaComparto);
+    EL('rendFondo'+p).addEventListener('input', () => allineaComparto(p));
+  });
 }
 
 // IL RENDIMENTO DI UN COMPARTO IN UNA DATA FORMA, in un posto solo: lo usano la scrittura
@@ -4126,9 +4231,10 @@ const rendDiComparto = (i, f) => COMPARTI[i][1] - FORME_FONDO[f][1][i];
 // LE TENDINE NON HANNO UNO STATO LORO: sono una veduta del numero accanto. Ripristino da un
 // salvataggio, azzeramento, correzione a mano — sarebbero stati tre casi da tenere allineati,
 // e invece è una funzione sola richiamata dal conto.
-function allineaComparto(){
+// quale comparto e quale forma danno questo rendimento: [comparto, forma], o -1 se nessuna
+function combinazione(rend){
   // stessa regola di sopra, e per la stessa ragione: si confronta come si scrive
-  const v = inCasella(numFra('rendFondo', -50, 100) / 100);
+  const v = inCasella(rend);
   // SI CERCA FRA LE DODICI COMBINAZIONI, non più fra quattro. Perché la ricerca abbia una
   // risposta sola i dodici valori devono essere tutti diversi: se due coincidessero, la coppia
   // trovata sarebbe la prima e non la vera, e le tendine direbbero il falso su un numero
@@ -4137,8 +4243,15 @@ function allineaComparto(){
   for (let f = 0; f < FORME_FONDO.length && ti < 0; f++)
     for (let i = 0; i < COMPARTI.length; i++)
       if (inCasella(rendDiComparto(i, f)) === v){ ti = i; tf = f; break; }
-  EL('comparto').value   = ti < 0 ? '' : String(ti);
-  EL('formaFondo').value = tf < 0 ? '' : String(tf);
+  return [ti, tf];
+}
+// il nome che la carta e il foglio scrivono accanto al rendimento
+const nomeDelFondo = rend => { const [ti, tf] = combinazione(rend);
+  return ti < 0 ? 'scritto a mano' : `${COMPARTI[ti][0].toLowerCase()}, fondo ${FORME_FONDO[tf][0]}`; };
+function allineaComparto(p){
+  const [ti, tf] = combinazione(numFra('rendFondo'+p, -50, 100) / 100);
+  EL('comparto'+p).value   = ti < 0 ? '' : String(ti);
+  EL('formaFondo'+p).value = tf < 0 ? '' : String(tf);
 }
 
 function disegnaComposizione(){
@@ -4979,8 +5092,13 @@ const scoperti = f => f.righe.filter(g =>
   addEventListener('beforeprint', () => {
     chiusi = [...document.querySelectorAll('details:not([open])')];
     chiusi.forEach(d => d.open = true);
+    // IL GRAFICO ALLA LARGHEZZA DELLA CARTA, e più basso: disegnato per la colonna dello schermo
+    // (440 px su desktop) e allargato dalla stampa, le sue etichette uscivano di 17 punti e lui
+    // si prendeva mezza pagina. A4 coi margini fa circa 690 px.
+    if (ultimo) disegna(ultimo.r, {W: 690, H: 230});
   });
-  addEventListener('afterprint', () => { chiusi.forEach(d => d.open = false); chiusi = []; });
+  addEventListener('afterprint', () => { chiusi.forEach(d => d.open = false); chiusi = [];
+    if (ultimo) disegna(ultimo.r); });
 }
 
 // --- i dati restano scritti: senza questo, a ogni riapertura si ricomincia da capo
@@ -5000,6 +5118,10 @@ function ripristina(){
   try {
     const d = JSON.parse(localStorage.getItem(CHIAVE) || 'null');
     if (!d) return false;
+    // IL RENDIMENTO DEL FONDO ERA UNO SOLO fino al 03/10/2026. Chi torna con un salvataggio di
+    // prima lo ritrova su tutte e due le persone: senza, la casella nuova ripartirebbe dal valore
+    // di partenza e il piano cambierebbe da solo, senza che nessuno abbia toccato niente.
+    if ('rendFondo' in d && !('rendFondo0' in d)) d.rendFondo0 = d.rendFondo1 = d.rendFondo;
     caselle().forEach(e => {
       if (!(e.id in d)) return;
       if (e.type === 'radio') e.checked = d[e.id]; else e.value = d[e.id];
@@ -5130,6 +5252,126 @@ ${schede.map((_, i) => `<Relationship Id="rId${i+1}" Type="${ns}/worksheet" Targ
   ]);
 }
 
+// --- I DATI DEL PIANO, IN UN POSTO SOLO -------------------------------------
+// Li scrivono due cose: la prima scheda del foglio di calcolo e il riepilogo della stampa. Fino
+// al 03/10/2026 c'era solo il foglio, e la stampa portava al loro posto il MODULO — trenta caselle
+// con le loro istruzioni, quattordici pagine di cui la prima quasi vuota. Una funzione sola perché
+// foglio e carta sono la stessa promessa («il piano si porta dietro i suoi dati») e due elenchi
+// scritti a mano divergerebbero al primo campo nuovo.
+// Ogni voce è {t, v, u}: etichetta, un valore per persona (o uno solo), unità per la carta. Il
+// foglio prende i numeri nudi; la stampa li scrive con `scriviValore`.
+// IL FOGLIO HA GUADAGNATO TRE RIGHE CHE NON AVEVA: quanto si versa, quanto mette il datore e dove
+// va il TFR, più come si prende il fondo. Senza, un foglio riaperto fra sei mesi diceva il fondo
+// di oggi e il risultato, ma non con quali versamenti ci si arrivava.
+function datiDelPiano(s, r){
+  const P = (t, f, u = '') => ({t, u, v: s.indici.map(i => f(s.p[i], i))});
+  const U = (t, v, u = '') => ({t, u, v: [v]});
+  // chi è già in pensione non ha versamenti né un fondo da prendere: un numero lì sarebbe un
+  // dato che il conto non usa, e sulla carta sembrerebbe contato
+  const seLavora = f => (x, i) => x.giaInPens ? null : f(x, i);
+  const comeEsce = (x, i) => {
+    const inc = r.incassi.find(v => v.idx === i), rita = r.rite.find(v => v.idx === i);
+    if (!inc && !rita) return x.fondo > 0 ? 'non riscosso dentro il piano' : null;
+    const f = FORME.find(f => f.k === x.forma) || FORME[0];
+    const quota = inc ? Math.round(inc.quota * 100) : 0;
+    const resto = (f.consuma ? 'erogazione ' : 'rendita ') + f.nome;
+    return (rita ? `a rate dal ${rita.da} (RITA)` + (inc ? '; ' : '') : '')
+      + (!inc ? '' : quota >= 100 ? 'tutto in contanti'
+                   : quota <= 0 ? `niente in contanti, ${resto}`
+                   : `${quota}% in contanti, il resto in ${resto}`);
+  };
+  const casa = s.casa;
+  return [
+    {sezione: 'Le persone'},
+    {intest: s.indici.map(i => s.p[i].nome)},
+    P('Anno di nascita', x => x.nascita, 'anno'),
+    P('Decorrenza del trattamento', x => x.annoPens, 'anno'),
+    P('Trattamento INPS, lordo mensile', x => x.pensLorda, '€'),
+    P('Retribuzione annua lorda', seLavora(x => x.ral), '€'),
+    P('Retribuzione netta annua, stimata', seLavora(x => nettoAnnuo(x, x.pc)), '€'),
+    P('Crescita annua della retribuzione (%, nominale)',
+      seLavora(x => x.crescNom === null ? 'come l\'inflazione' : x.crescNom), '%'),
+    P('Ultimo anno di lavoro', seLavora(x => x.ultimo), 'anno'),
+    P('Fondo pensione, quanto c\'è oggi', seLavora(x => x.fondoScritto), '€'),
+    // vuota, il foglio dice cosa ha assunto il conto: un anno che nessuno ha scritto, messo lì
+    // come numero, sembrerebbe un dato di chi compila
+    P('Anno di iscrizione al fondo',
+      seLavora(x => x.iscrVuoto ? `non indicato: si conta dal ${ANNO0}` : x.iscr), 'anno'),
+    // il versamento è quello su cui il conto è fatto, cioè dove sta il cursore: se è stato
+    // spostato, è diverso dalla casella, e la carta deve dire quello che il risultato usa
+    P('Versamento del lavoratore al fondo (% della RAL)', seLavora(x => x.pc), '%'),
+    P('Contributo del datore (% della RAL)',
+      seLavora(x => x.pcDatVuoto ? 'non indicato' : x.pcDat), '%'),
+    P('TFR che matura da qui in avanti', seLavora(x => x.tfrAlFondo ? 'nel fondo' : 'in azienda')),
+    // IL VALORE SCRITTO, non quello già filtrato da `tfrConta`: il foglio esiste per essere
+    // rifatto a mano, e chi lo rifà deve vedere cosa ha dichiarato — anche quando il conto non
+    // l'ha usato. Se mancasse l'anno, la riga sotto direbbe da sé perché la cifra non torna.
+    P('TFR già accantonato, in azienda o all\'INPS', x => x.tfrGiaVuoto ? null : x.tfrGia, '€'),
+    P('Da che anno si lavora', x => x.annoLav, 'anno'),
+    P('Come si prende il fondo', comeEsce),
+    {sezione: "Quello che c'è oggi"},
+    // IL PATRIMONIO SI PORTA DIETRO COM'È FATTO. Da quando non si chiede più intero, la sola
+    // riga del totale sarebbe la SOMMA di quattro dati scritti, cioè meno di quello che si è
+    // scritto: chi riapre il foglio fra un anno non saprebbe da dove venga il rendimento.
+    U('Patrimonio investito', s.patrimonio, '€'),
+    ...CLASSI.map(([nome], i) => U('    ' + nome, quotaClasse(i), '€')),
+    U('Spesa mensile', s.spesa, '€'),
+    U('Spesa mensile in pensione', s.spesaPens === null ? 'come oggi' : s.spesaPens, '€'),
+    // L'ABITAZIONE compare solo se è stata scelta: una riga «nessun cambiamento» in un foglio
+    // che si riapre fra sei mesi è rumore, e il patrimonio qui sopra la esclude per definizione.
+    ...(casa.attiva ? [
+      {sezione: "L'abitazione"},
+      U('Che cosa si prevede di fare', casa.cosa === 'piccola'
+        ? 'venderla e comprarne una più piccola' : 'venderla e andare in affitto'),
+      U('In che anno', casa.anno, 'anno'),
+      U('Valore dell\'abitazione', casa.valore, '€'),
+      ...(casa.cosa === 'piccola' ? [U('Prezzo della nuova', casa.nuova, '€')] : []),
+      ...(casa.cosa === 'affitto' ? [U('Canone mensile', casa.canone, '€')] : []),
+      U('Costi della compravendita (stima)', casa.costiVendita + casa.costiAcquisto, '€'),
+      U('Ricavato netto, che affluisce al patrimonio', casa.ricavato, '€')
+    ] : []),
+    {sezione: 'Le ipotesi'},
+    U('Rendimento del patrimonio (%, netto e nominale)', s.rendNom * 100, '%'),
+    P('Comparto e tipo di fondo', seLavora((x, i) => nomeDelFondo(x.rendFondoNom))),
+    P('Rendimento del comparto del fondo (%, netto e nominale)', seLavora(x => x.rendFondoNom * 100), '%'),
+    U('Inflazione (%)', s.infl * 100, '%'),
+    U('Orizzonte del piano (anni di età)', s.etaFine)
+  ];
+}
+
+// --- LA STAMPA ---------------------------------------------------------------
+// La carta non è la pagina: chi stampa vuole il risultato e su cosa poggia, non il modulo con le
+// sue istruzioni né i cursori. Il riepilogo sta in pagina, nascosto sullo schermo, e lo riscrive
+// ogni calcolo: così non dipende dal `beforeprint`, che non tutti i modi di stampare fanno partire.
+const scriviValore = (v, u) => v === null || v === undefined || v === '' ? '—'
+  : typeof v !== 'number' ? String(v)
+  : u === '€' ? E0(v)
+  : u === '%' ? v.toLocaleString('it-IT', {maximumFractionDigits: 2}) + '%'
+  : u === 'anno' ? String(v)
+  : fmt(v);
+function scriviRiepilogo(s, r){
+  const n = s.indici.length;
+  let h = '';
+  for (const d of datiDelPiano(s, r)){
+    if (d.sezione) h += `<tr class="sez"><th colspan="${n + 1}">${d.sezione}</th></tr>`;
+    else if (d.intest) h += n > 1 ? `<tr class="chi"><td></td>${d.intest.map(t => `<th>${t}</th>`).join('')}</tr>` : '';
+    else h += `<tr><td>${d.t.trim()}</td>` + (d.v.length === 1 && n > 1
+        ? `<td colspan="${n}">${scriviValore(d.v[0], d.u)}</td>`
+        : d.v.map(v => `<td>${scriviValore(v, d.u)}</td>`).join('')) + '</tr>';
+  }
+  EL('riepilogoDati').innerHTML = h;
+  // le due righe del modulo che dicono cosa il conto ricava dai dati — quando si smette, quanto
+  // si può prendere in contanti — stanno dentro il modulo, che su carta non c'è: si portano qui
+  EL('riepilogoNote').innerHTML = [EL('quandoSmettete').innerHTML, EL('regola').innerHTML]
+    .filter(t => t && t.trim()).map(t => `<p>${t}</p>`).join('');
+  // «l'8 ottobre», come le altre date del sito; e la revisione fra virgolette doppie, perché
+  // porta l'apostrofo della preposizione elisa
+  const oggi = new Date(), g = oggi.getDate();
+  EL('stampaData').textContent = (g === 8 || g === 11 ? "Stampato l'" : 'Stampato il ')
+    + oggi.toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric'})
+    + " da decumulo.it · parametri normativi rivisti {{alRevisione}}.";
+}
+
 // --- il piano, messo in due schede ------------------------------------------
 function pianoInFoglio(s, r){
   const allora = EL('euroAllora').checked;
@@ -5137,6 +5379,10 @@ function pianoInFoglio(s, r){
   const G = t => [t, 1];                                  // grassetto
   const perPersona = (etichetta, f) => [etichetta, ...s.indici.map(i => f(s.p[i], i))];
 
+  // i dati nel formato del foglio: numeri nudi, che restano numeri, e il grassetto alle sezioni
+  const comeRiga = d => d.sezione ? [G(d.sezione.toUpperCase())]
+    : d.intest ? ['', ...d.intest.map(G)]
+    : [d.t, ...d.v.map(v => v === null ? '' : v)];
   const piano = [
     [G('decumulo.it — proiezione del patrimonio')],
     // la data la mette il build dallo stesso segnaposto del piè di pagina: due copie della
@@ -5147,54 +5393,7 @@ function pianoInFoglio(s, r){
     [G('IL RISULTATO')],
     [EL('titolo').textContent.replace(/\s+/g, ' ').trim()],
     [EL('sottotitolo').textContent.replace(/\s+/g, ' ').trim()],
-    [],
-    [G('LE PERSONE')],
-    ['', ...s.indici.map(i => G(s.p[i].nome))],
-    perPersona('Anno di nascita', x => x.nascita),
-    perPersona('Decorrenza del trattamento', x => x.annoPens),
-    perPersona('Trattamento INPS, lordo mensile', x => x.pensLorda),
-    perPersona('Retribuzione netta annua, stimata', x => nettoAnnuo(x, x.pc)),
-    perPersona('Retribuzione annua lorda', x => x.ral),
-    perPersona('Ultimo anno di lavoro', x => x.ultimo),
-    perPersona('Fondo pensione, quanto c\'è oggi', x => x.fondoScritto),
-    // vuota, il foglio dice cosa ha assunto il conto: un anno che nessuno ha scritto, messo lì
-    // come numero, sembrerebbe un dato di chi compila
-    perPersona('Anno di iscrizione al fondo',
-      x => x.iscrVuoto ? `non indicato: si conta dal ${ANNO0}` : x.iscr),
-    // IL VALORE SCRITTO, non quello già filtrato da `tfrConta`: il foglio esiste per essere
-    // rifatto a mano, e chi lo rifà deve vedere cosa ha dichiarato — anche quando il conto non
-    // l'ha usato. Se mancasse l'anno, la riga sotto direbbe da sé perché la cifra non torna.
-    perPersona('TFR già accantonato, in azienda o all\'INPS', x => x.tfrGia),
-    perPersona('Da che anno si lavora', x => x.annoLav === null ? '' : x.annoLav),
-    [],
-    [G("QUELLO CHE C'È OGGI")],
-    // IL PATRIMONIO SI PORTA DIETRO COM'È FATTO. Da quando non si chiede più intero, la sola
-    // riga del totale sarebbe la SOMMA di quattro dati scritti, cioè meno di quello che si è
-    // scritto: chi riapre il foglio fra un anno non saprebbe da dove venga il rendimento.
-    ['Patrimonio investito', s.patrimonio],
-    ...CLASSI.map(([nome], i) => ['    ' + nome, quotaClasse(i)]),
-    ['Spesa mensile', s.spesa],
-    ['Spesa mensile in pensione', s.spesaPens === null ? 'come oggi' : s.spesaPens],
-    // L'ABITAZIONE compare solo se è stata scelta: una riga «nessun cambiamento» in un foglio
-    // che si riapre fra sei mesi è rumore, e il patrimonio qui sopra la esclude per definizione.
-    ...(s.casa.attiva ? [
-      [],
-      [G("L'ABITAZIONE")],
-      ['Che cosa si prevede di fare', s.casa.cosa === 'piccola'
-        ? 'venderla e comprarne una più piccola' : 'venderla e andare in affitto'],
-      ['In che anno', s.casa.anno],
-      ['Valore dell\'abitazione', s.casa.valore],
-      ...(s.casa.cosa === 'piccola' ? [['Prezzo della nuova', s.casa.nuova]] : []),
-      ...(s.casa.cosa === 'affitto' ? [['Canone mensile', s.casa.canone]] : []),
-      ['Costi della compravendita (stima)', s.casa.costiVendita + s.casa.costiAcquisto],
-      ['Ricavato netto, che affluisce al patrimonio', s.casa.ricavato]
-    ] : []),
-    [],
-    [G('LE IPOTESI')],
-    ['Rendimento del patrimonio (%, netto e nominale)', s.rendNom * 100],
-    ['Rendimento del comparto del fondo (%, netto e nominale)', s.rendFondoNom * 100],
-    ['Inflazione (%)', s.infl * 100],
-    ['Orizzonte del piano (anni di età)', s.etaFine],
+    ...datiDelPiano(s, r).flatMap(d => d.sezione ? [[], comeRiga(d)] : [comeRiga(d)]),
     [],
     [G('LA TABELLA')],
     ['Gli importi della scheda «Anno per anno» sono espressi in',
@@ -5289,7 +5488,7 @@ document.querySelectorAll('.strato').forEach(d => {
 });
 // la tendina non viene salvata insieme al resto perché non ha niente di suo da salvare: si
 // ricava dal rendimento appena ripristinato, che è l'unica cosa che il conto legge davvero
-allineaComparto();
+[0,1].forEach(allineaComparto);
 calc();
 
 // Il sommario si accorge da sé di quando serve: guarda due elementi, il titolo del sito (finché

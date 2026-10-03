@@ -35,7 +35,7 @@ const DEFAULT = moduloIniziale();
 const BASE = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1977,
   ral0:38000, ral1:33000, pens0:1500, pens1:1300,
   annoPens0:2042, annoPens1:2044, pcVoi0:1.2, pcVoi1:1.5, pcDat0:2, pcDat1:2,
-  iscr0:2005, iscr1:2007, cl3:200000, spesa:2500, rend:4, infl:2, rendFondo:3,
+  iscr0:2005, iscr1:2007, cl3:200000, spesa:2500, rend:4, infl:2, rendFondo0:3, rendFondo1:3,
   cresc0:'', cresc1:'', spesaPens:'',
   // Qui c'era `tipoFondo0/1:'collettiva'`, rimasto per settimane dopo che il menù era sparito
   // dalla pagina (03/08/2026): un valore che non arrivava da nessuna parte. L'ha trovato
@@ -78,7 +78,7 @@ const SCENARI = {
   // scrivevano «nessun rendimento: il patrimonio è nullo o negativo» con mezzo milione dentro,
   // e che la colonna «Rendim.» della tabella metteva un trattino tutti gli anni. Il negativo
   // era trattato come l'assenza in due punti diversi, e nessuno scenario ci passava.
-  'rendimento reale negativo': {...BASE, rend:1, rendFondo:1, infl:3},
+  'rendimento reale negativo': {...BASE, rend:1, rendFondo0:1, rendFondo1:1, infl:3},
   // DUE PERSONE CON LO STESSO NOME. Un cognome nella casella basta, e i record del fondo si
   // cercavano per nome: la seconda leggeva montante, aliquota e rate della prima. Il piano
   // restava giusto, quindi nessun numero falliva — sbagliava solo quello che si legge.
@@ -300,8 +300,8 @@ console.log('\n— il punto più alto della contribuzione —');
 for (const [nome, DATI] of Object.entries({
   'chi già versa':            {...BASE, quanti:'1'},
   'chi non versa niente':     {...BASE, quanti:'1', pcVoi0:''},
-  'senza quota del datore':   {...BASE, quanti:'1', pcDat0:'', rendFondo:2, rend:7},
-  'fondo che rende più':      {...BASE, quanti:'1', rendFondo:7, rend:2}
+  'senza quota del datore':   {...BASE, quanti:'1', pcDat0:'', rendFondo0:2, rendFondo1:2, rend:7},
+  'fondo che rende più':      {...BASE, quanti:'1', rendFondo0:7, rendFondo1:7, rend:2}
 })){
   const {scritte, elementi} = esegui(DATI);
   const frase = (scritte.cVers0Piu || '').replace(/<[^>]+>/g, '');
@@ -424,7 +424,7 @@ for (const [nome, DATI, atteso] of [
   // detrazioni dell'art. 13 il piano ha cominciato a reggere da solo: il ramo non era rotto, era
   // il fixture a non essere più al limite. Ritarato cercando di nuovo il bordo.
   ['regge alzando il versamento: è la frase che vale',
-   {...BASE, quanti:'1', spesa:2800, cl3:150000, rendFondo:7, rend:0, etaFine:75, fondo0:50000},
+   {...BASE, quanti:'1', spesa:2800, cl3:150000, rendFondo0:7, rendFondo1:7, rend:0, etaFine:75, fondo0:50000},
    /e da lì .*il piano regge/]
 ]){
   const {scritte, elementi} = esegui(DATI);
@@ -449,7 +449,7 @@ for (const [nome, DATI] of Object.entries({
   'finestra aperta':          {...BASE, quanti:'1', ultimo0:2032, rita0:0},
   'già sul punto più alto':   {...BASE, quanti:'1', ultimo0:2032, rita0:2033},
   'senza finestra':           {...BASE, quanti:'1'},
-  'fondo che rende più':      {...BASE, quanti:'1', ultimo0:2032, rita0:0, rendFondo:7, rend:2}
+  'fondo che rende più':      {...BASE, quanti:'1', ultimo0:2032, rita0:0, rendFondo0:7, rendFondo1:7, rend:2}
 })){
   const {scritte, elementi} = esegui(DATI);
   const frase = (scritte.cQuando0Picco || '').replace(/<[^>]+>/g, '');
@@ -728,7 +728,7 @@ console.log('\n— la prova di tenuta —');
   // comparto garantito — le persone più prudenti — e vedersi sparire una riga senza spiegazione
   // è peggio che leggere che non serve. Quello che NON deve fare è confrontare un piano con sé
   // stesso.
-  const {scritte: piatto} = esegui({...BASE, rend: 2, rendFondo: 1, infl: 2});
+  const {scritte: piatto} = esegui({...BASE, rend: 2, rendFondo0: 1, rendFondo1: 1, infl: 2});
   const testoPiatto = (piatto.tenuta || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   c('con rendimenti reali non positivi la riga dice perché non si applica',
     /Non si applica/.test(testoPiatto)
@@ -1145,7 +1145,7 @@ console.log('\n— le caselle che il verdetto richiede —');
 console.log('\n— un rendimento negativo non è un rendimento assente —');
 {
   const pulito = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-  const giu = esegui({...BASE, rend:1, rendFondo:1, infl:3});
+  const giu = esegui({...BASE, rend:1, rendFondo0:1, rendFondo1:1, infl:3});
   const fasi = pulito(giu.scritte.fasi), tab = pulito(giu.scritte.tabella);
   c('le fasi non dichiarano nullo un patrimonio che non lo è',
     !/patrimonio è nullo o negativo/.test(fasi),
@@ -1383,7 +1383,7 @@ console.log('\n— chi è già in pensione —');
   const APERTE = ['quanti', 'nascita0', 'ral0', 'pens0', 'annoPens0', 'fondo0', 'iscr0', 'spesa'];
   const NELLO_STRATO = ['nome0', 'cresc0', 'ultimo0', 'tfrGia0', 'annoLav0', 'tfrDove0',
                         'pcVoi0', 'pcDat0', 'spesaPens', 'casaValore',
-                        'rend', 'comparto', 'formaFondo', 'rendFondo', 'infl', 'etaFine'];
+                        'rend', 'comparto0', 'formaFondo0', 'rendFondo0', 'infl', 'etaFine'];
   c('i quattro blocchi del secondo strato ci sono tutti', blocchi.length === 4,
     `trovati ${blocchi.length}`);
   c('quello che il verdetto pretende sta nello strato aperto',
@@ -1467,6 +1467,22 @@ console.log('\n— le cifre dei riquadri sono quelle del piano —');
     attesa.r.righe[0].patr < attesa.r.righe[0].inizio
       && !/non si riduce/.test(pulito(attesa.el.titolo.innerHTML)),
     pulito(attesa.el.titolo.innerHTML).slice(0, 70));
+
+  // IL FONDO DI CIASCUNO (03/10/2026). Il montante di Bruno col garantito dev'essere quello che
+  // avrebbe se anche Anna fosse nel garantito, e viceversa: un fondo non deve sentire il
+  // rendimento dell'altro. Ed è da dire per nome, perché una frase sola sarebbe falsa per uno.
+  const diversi = conPiano({...BASE, rendFondo0:5, rendFondo1:1});
+  const tuttiA5 = conPiano({...BASE, rendFondo0:5, rendFondo1:5});
+  const tuttiA1 = conPiano({...BASE, rendFondo0:1, rendFondo1:1});
+  const mont = (p, i) => p.r.incassi.find(v => v.idx === i).montante;
+  c('ciascun fondo rende col proprio rendimento, e non con quello dell\'altro',
+    Math.abs(mont(diversi, 0) - mont(tuttiA5, 0)) < 0.01 && Math.abs(mont(diversi, 1) - mont(tuttiA1, 1)) < 0.01,
+    `Anna ${Math.round(mont(diversi, 0))} €, Bruno ${Math.round(mont(diversi, 1))} €`);
+  const titoloIpotesi = pulito(diversi.el.assuntoIpotesi.innerHTML);
+  c('e il titolo delle ipotesi li nomina tutti e due',
+    /di Anna 5,0%/.test(titoloIpotesi) && /di Bruno 1,0%/.test(titoloIpotesi), titoloIpotesi);
+  c('mentre due fondi uguali restano una frase sola',
+    !/di Anna/.test(pulito(tuttiA5.el.assuntoIpotesi.innerHTML)), pulito(tuttiA5.el.assuntoIpotesi.innerHTML));
 
   const rita = conPiano({...BASE, quanti:'1', nome1:'', nascita0:1962, annoPens0:2030,
     ultimo0:2025, fondo0:150000, rita0:2026, spesa:2000, cl3:100000, pens0:2500});

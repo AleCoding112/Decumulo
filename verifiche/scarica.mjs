@@ -25,7 +25,7 @@ const MODULO = moduloIniziale();
 const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1975, nascita1:1980,
   ral0:58000, ral1:36000, pens0:2600, pens1:1700,
   annoPens0:2042, annoPens1:2050, pcVoi0:1.5, pcVoi1:1.2, pcDat0:2, pcDat1:1.6,
-  iscr0:2018, iscr1:2012, cl3:120000, spesa:2600, rend:5, infl:2, rendFondo:5,
+  iscr0:2018, iscr1:2012, cl3:120000, spesa:2600, rend:5, infl:2, rendFondo0:5, rendFondo1:5,
   etaFine:95, fondo0:90000, fondo1:30000, tfrDove0:'fondo', tfrDove1:'fondo', tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:'',
   ultimo0:'', ultimo1:'',
   rita0:2042, rita1:2050, quotaCap0:0.6, quotaCap1:1, forma0:'vita', forma1:'vita',
@@ -140,7 +140,12 @@ const dentro = leggiZip(bytes);
     ['il patrimonio e la spesa',         /Patrimonio investito/],
     ['la data di revisione dei parametri', /Parametri normativi rivisti[\s\S]{0,200}?>al(?:l'| )\d/],
     ['in che valuta è la tabella',       /sono espressi in/],
-    ['e che non è consulenza',           /non costituisce consulenza/]
+    ['e che non è consulenza',           /non costituisce consulenza/],
+    // dal 03/10/2026: il foglio diceva il fondo di oggi e il risultato, ma non con quali
+    // versamenti ci si arrivava né come il fondo viene preso
+    ['quanto si versa',                  /Versamento del lavoratore al fondo/],
+    ['quanto mette il datore',           /Contributo del datore/],
+    ['come si prende il fondo',          /Come si prende il fondo/]
   ]) c(`il file dichiara ${nome}`, re.test(piano));
 
   c('e nomina le persone come le nomina la pagina',

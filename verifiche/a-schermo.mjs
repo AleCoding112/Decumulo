@@ -31,7 +31,7 @@ import { fileURLToPath } from 'node:url';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const SITO = join(QUI, '..', 'sito');
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+import { CHROME, SENZA_CHROME } from './_chrome.mjs';
 // 1300 È LA LARGHEZZA IN CUI IL RISULTATO STA ACCANTO AL MODULO (dall'08/09/2026, sopra i
 // 1.100 px): un assetto che nessuna delle quattro misure di prima rendeva, e un ramo che nessuno
 // scenario rende non è coperto.
@@ -42,7 +42,7 @@ const LARGHEZZE = [320, 390, 600, 900, 1300];
 const DATI = {quanti:'2', nome0:'Anna', nome1:'Bruno', nascita0:1965, nascita1:1968,
   ral0:42000, ral1:28000, pens0:2100, pens1:1250,
   annoPens0:2032, annoPens1:2035, pcVoi0:1.2, pcVoi1:1.2, pcDat0:2, pcDat1:2,
-  iscr0:2000, iscr1:2004, cl3:180000, spesa:2800, rend:4, infl:2, rendFondo:3,
+  iscr0:2000, iscr1:2004, cl3:180000, spesa:2800, rend:4, infl:2, rendFondo0:3, rendFondo1:3,
   etaFine:95, fondo0:90000, fondo1:55000, tfrDove0:'fondo', tfrDove1:'fondo', tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:'',
   ultimo0:'', ultimo1:''};
 
@@ -180,8 +180,10 @@ try {
     '--virtual-time-budget=20000', '--dump-dom', 'file://' + join(dir, 'banco.html')],
     {encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore','pipe','ignore']});
 } catch (e){
-  console.log('  ! Chrome non disponibile in ' + CHROME + ': controllo saltato');
-  process.exit(0);
+  // NON È PIÙ UN SUCCESSO. Usciva con 0 e «controllo saltato»: chi lancia questo file lo fa
+  // perché ha toccato il layout, e un verde senza misure è peggio di un rosso che dice perché.
+  console.log('  ✗ ' + (CHROME ? 'Chrome non è partito: ' + CHROME : SENZA_CHROME));
+  process.exit(1);
 }
 const m = out.match(/<title>([\s\S]*?)<\/title>/);
 if (!m){ console.log('  ✗ nessuna misura: la pagina di prova non ha risposto'); process.exit(1); }
@@ -241,28 +243,36 @@ if (anonimi.length){
       + x.campi.join(', '));
   } else console.log(`  ok  all'apertura si vedono ${ap[0].campi.length} caselle, non più di ${TETTO}`);
 }
-// --- e la stampa: su carta il dettaglio è la parte verificabile -------------
-// Un <details> chiuso non si apre col CSS, e per mesi si è creduto di sì. Qui si stampa davvero
-// e si cerca nel PDF una frase che sta SOLO dentro il dettaglio.
+// --- e la stampa: un rapporto di poche pagine, col dettaglio dentro ---------
+// DUE COSE, e la seconda è nuova (03/10/2026). La prima è di sempre: un <details> chiuso non si
+// apre col CSS, e per mesi si è creduto di sì — il dettaglio anno per anno, che su carta è la
+// parte verificabile, deve esserci. La seconda: la carta non è la pagina. Questo controllo
+// pretendeva «almeno 10 pagine» come prova che il dettaglio ci fosse, e così teneva fermo il
+// difetto vero — il piano di una coppia ne stampava 14, la prima quasi bianca, col modulo intero.
+// Ora si stampa due volte, col dettaglio e senza: la differenza dice che c'è, il totale che il
+// rapporto resta corto. Il PDF comprime i flussi, quindi si contano le pagine, non il testo.
 {
-  const pdf = join(dir, 'stampa.pdf');
-  const pag = join(dir, 'stampa.html');
-  const h = readFileSync(join(SITO, 'index.html'), 'utf8');
-  writeFileSync(pag, h.replace('</body>',
-    `<script>const D=${JSON.stringify(DATI)};addEventListener('DOMContentLoaded',()=>{` +
-    `for(const[k,v]of Object.entries(D)){const e=document.getElementById(k);if(e)e.value=String(v);}` +
-    `calc();});</script></body>`));
-  try {
+  const stampa = (nome, extra = '') => {
+    const pdf = join(dir, nome + '.pdf'), pag = join(dir, nome + '.html');
+    const h = readFileSync(join(SITO, 'index.html'), 'utf8');
+    writeFileSync(pag, h.replace('</body>', extra +
+      `<script>const D=${JSON.stringify(DATI)};addEventListener('DOMContentLoaded',()=>{` +
+      `for(const[k,v]of Object.entries(D)){const e=document.getElementById(k);if(e)e.value=String(v);}` +
+      `calc();});</script></body>`));
     execFileSync(CHROME, ['--headless','--disable-gpu','--no-sandbox','--virtual-time-budget=9000',
       '--no-pdf-header-footer', '--print-to-pdf=' + pdf, 'file://' + pag],
       {stdio: ['ignore','ignore','ignore']});
-    const grezzo = readFileSync(pdf, 'latin1');
-    // il PDF comprime i flussi: si cerca la dimensione, non il testo. Un dettaglio chiuso
-    // toglie una pagina intera, e quella differenza si vede.
-    const pagine = (grezzo.match(/\/Type\s*\/Page[^s]/g) || []).length;
-    if (pagine >= 10) console.log(`  ok  la stampa contiene il dettaglio anno per anno`
-      + `   ${pagine} pagine; senza il dettaglio ne farebbe 9`);
-    else { ko++; console.log(`  ✗ la stampa NON contiene il dettaglio: ${pagine} pagine`); }
+    return (readFileSync(pdf, 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  };
+  try {
+    const con = stampa('stampa'), senza = stampa('stampa-senza',
+      '<style>@media print{#annoPerAnno{display:none !important}}</style>');
+    const TETTO_PAGINE = 4;
+    if (con > senza) console.log(`  ok  la stampa contiene il dettaglio anno per anno`
+      + `   ${con} pagine; senza il dettaglio ne farebbe ${senza}`);
+    else { ko++; console.log(`  ✗ la stampa NON contiene il dettaglio: ${con} pagine, come senza`); }
+    if (con <= TETTO_PAGINE) console.log(`  ok  la stampa è un rapporto, non la pagina   ${con} pagine, tetto ${TETTO_PAGINE}`);
+    else { ko++; console.log(`  ✗ la stampa fa ${con} pagine, oltre il tetto di ${TETTO_PAGINE}`); }
   } catch (e){
     ko++;                       // un guasto non è una rinuncia: se non si stampa, si sa
     console.log('  ✗ la stampa non è riuscita: ' + String(e.message || e).slice(0, 80));

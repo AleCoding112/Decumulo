@@ -19,12 +19,12 @@ lancia da solo:
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
 | `node test.mjs` | 354 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 474 controlli sul testo, e confronta le cifre dei riquadri con quelle del piano |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 477 controlli sul testo, e confronta le cifre dei riquadri con quelle del piano |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
 | `node verifiche/casi-esterni.mjs` | i venti casi sulle discontinuità della legge, e il confronto col progetto esemplificativo COVIP di un fondo |
-| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 64 casi |
+| `node verifiche/seconda-implementazione.mjs` | confronta il motore con uno riscritto dalle regole, su 66 casi |
 | `node verifiche/coppie.mjs` | 25 coppie × 12 basi + 11 sulle funzioni: due piani che cambiano per **una cosa sola**, e il verso è dichiarato prima di lanciare |
 | `node verifiche/invarianti.mjs` | 4.000 piani casuali **seminati** + le funzioni di legge ai punti esatti. `SEME=<n>` per cambiare popolazione |
 | `node verifiche/il-punto-piu-alto.mjs` | l'unico che **non crede all'elenco dei punti notevoli**: spazzola il cursore a passo 0,1 su 40 piani e pretende che la ricerca rapida valga quanto la forza bruta. Nel percorso caldo la spazzolata è impraticabile — settecento giri di motore per persona — qui costa un secondo |
@@ -48,13 +48,14 @@ node studio.mjs     le domande di sostanza fatte al motore — coppia o soli, fo
 ```
 
 Fuori dalla catena, perché apre Chrome e va lanciato quando si tocca il layout o si aggiunge
-una casella:
+una casella. Il browser lo trova `verifiche/_chrome.mjs` (anche Chromium e la cache di Playwright,
+o `CHROME=<percorso>`); `occhi.mjs` e `senza-scatti.mjs` vogliono Node 22 o più recente:
 
 ```
 node verifiche/a-schermo.mjs     undici pagine (dieci più il 404) × quattro larghezze, e il
                                 calcolatore in cinque assetti del modulo: niente sborda, ogni
-                                campo ha un nome, la stampa contiene il
-                                dettaglio anno per anno. E il CONSENSO provato cliccando davvero:
+                                campo ha un nome, la stampa è un rapporto di al più quattro
+                                pagine col dettaglio anno per anno. E il CONSENSO provato cliccando davvero:
                                 è l'unico posto dove si può vedere che il tag non parte prima
 
 node verifiche/occhi.mjs        i ritagli in verifiche/scatti/, DA GUARDARE con gli occhi: il
@@ -1456,6 +1457,49 @@ riga dell'esito del passo 2 un po' più lunga di prima: va guardata alla prossim
 pretenderà che le frasi al futuro su `{{frazDal}}` siano riscritte (`come-prendere-il-fondo.html`
 e la nota della casella in `index.html`).
 
+## 2026-10-03, secondo tempo — la carta in tre pagine, e il fondo di ciascuno
+
+Due segnalazioni sue, tutte e due giuste.
+
+**1. La stampa faceva quattordici pagine, e ne servivano tre.** Misurata col piano di una coppia:
+la prima pagina quasi bianca — il modulo intero non ci stava e saltava alla successiva — poi trenta
+caselle con le loro istruzioni, le scelte coi cursori, le spiegazioni ripiegate aperte a forza, il
+piè di pagina. Si stampava la pagina com'è sullo schermo, non il piano. **Il controllo che
+avrebbe dovuto vederlo lo teneva fermo**: `a-schermo.mjs` pretendeva «almeno 10 pagine» come prova
+che il dettaglio anno per anno ci fosse.
+Ora la carta è un rapporto: la riga di stampa con la data e la revisione, il verdetto con le tre
+righe e il grafico (ridisegnato alla larghezza del foglio), **i dati inseriti in una tabella** —
+una riga per dato, una colonna per persona — le note che condizionano il numero, le fasi, la
+tabella anno per anno in corpo piccolo. Fuori il modulo, le scelte, i rimandi, il piè di pagina.
+**Tre pagine** su tre casi diversi, guardate una per una.
+La tabella dei dati esce da `datiDelPiano`, **la stessa funzione della prima scheda del foglio di
+calcolo**: due elenchi scritti a mano divergerebbero al primo campo nuovo. Il foglio ci ha
+guadagnato tre righe che non aveva — quanto si versa, quanto mette il datore, come si prende il
+fondo — senza le quali diceva il risultato ma non con quali versamenti ci si arrivava.
+Il controllo ora stampa due volte, col dettaglio e senza: la differenza dice che c'è, e **il totale
+non deve superare quattro pagine**. `occhi.mjs` produce anche il PDF, da guardare.
+
+**2. Il fondo era uno solo per la coppia.** Comparto, tipo di fondo e rendimento erano una casella
+sola: chi aveva un azionario in un negoziale accanto a chi aveva un garantito in un PIP vedeva i
+due fondi rendere uguale, con più di quattro punti l'anno di distanza vera. Stava nel registro dei
+dubbi come limite dichiarato; era una casella mancante, accanto ad altre sei del fondo che erano
+già per persona. Ora sono due colonne nel blocco delle ipotesi, con i nomi in testa; le frasi che
+confrontano fondo e patrimonio parlano di ciascuno quando i due sono diversi e restano una sola
+quando sono uguali; il motore fa rendere ogni fondo col suo. **Chi torna con un salvataggio di
+prima** ritrova il suo rendimento su tutte e due le persone, e il piano non cambia da solo.
+La seconda implementazione ha due casi con fondi diversi, e cade (provato) se il motore fa
+rendere il fondo di uno col rendimento dell'altro; i 4.000 piani casuali estraggono i due
+rendimenti separatamente; `come-parla.mjs` pretende che ciascun montante sia quello che avrebbe
+con entrambi i fondi al suo rendimento.
+
+**Due trappole dell'attrezzatura, trovate per strada.** Chrome non c'era più in
+`/Applications`, e `a-schermo.mjs` **usciva verde** con «controllo saltato»: è così che la
+rilettura del mattino è finita senza i controlli nel browser. Ora `verifiche/_chrome.mjs` cerca
+anche Chromium e il Chrome for Testing della cache di Playwright, e se non trova niente il
+controllo **fallisce** dicendo perché. E `occhi.mjs` vuole `WebSocket`, che Node ha solo dalla
+22: con la 20, che è quella predefinita qui, lo dice per nome invece di morire con un
+«WebSocket is not defined». Si lancia con `/opt/homebrew/opt/node@22/bin/node`.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -1478,7 +1522,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | La **perequazione a fasce** delle pensioni non è modellata | le tre percentuali e le soglie lette sulla norma, non sul commento: il DM 19/11/2025 le applica *per scaglioni* | l'errore è nullo sotto 4 volte il minimo (2.447 €/mese) e piccolo sopra: 2,8% su trent'anni a 3.500 €/mese. Ora è dichiarato con la sua misura |
 | Il TFR già accantonato è un **montante**, e l'imponibile va separato dalle rivalutazioni: la scomposizione usa il tasso del modello, non quelli storici | i tassi ISTAT degli anni trascorsi, per persona | opera su una frazione contenuta del montante (~6% su venticinque anni), e il ripiego cade dal lato prudente: senza anni vale 1, cioè tutto imponibile. È dichiarato in `il-metodo.html` e in `tfr-fondo-o-azienda.html` |
 | Il **garantito dei PIP** è quasi sempre una gestione separata di **ramo I**: non si valuta a mercato e non ha il sottostante di un garantito negoziale. Togliergli il solo differenziale di costo presuppone un'identità che non c'è | un modello del ramo I, oppure una rilevazione dei rendimenti effettivi di quelle gestioni | è **una casella su dodici**, e ne esce 0,07% — basso ma non assurdo per un prodotto garantito e caro. Dichiarato in `il-metodo.html`; le altre undici reggono |
-| Il rendimento del fondo è **uno solo per la coppia**, come lo era prima: due persone in forme diverse (una in un negoziale, l'altra in un PIP) non sono rappresentabili | una tendina per persona, come per il TFR | è il limite che `rendFondo` ha da sempre — la modifica sui costi non lo introduce, lo rende solo più visibile, perché ora le forme differiscono di due punti invece che di zero |
+| ~~Il rendimento del fondo è **uno solo per la coppia**~~ **— chiuso il 03/10/2026** | — | comparto, tipo di fondo e rendimento sono ora per persona (`rendFondo0`, `rendFondo1`), e la seconda implementazione ha due casi con fondi diversi. Stava qui come limite dichiarato; era una casella mancante |
 | Nessuno può impedire di scrivere nel TFR già accantonato **anche quello confluito nel fondo** | niente che il conto possa vedere: le due cifre stanno in due posti che non si parlano | è l'unico errore di compilazione che rende il piano **migliore** del vero, e per questo ha una frase sua (`avvisoTfr`) che compare esattamente a chi può commetterlo — chi scrive un importo e manda il TFR nuovo al fondo |
 | Gli **scaglioni IRPEF sono nominali** e il conto lavora in reale: il modello assume che vengano adeguati all'inflazione | niente da verificare: è un'ipotesi sul legislatore | rappresentare l'alternativa vorrebbe dire prevedere una legge di bilancio. Dichiarata, non sostituita da una previsione |
 

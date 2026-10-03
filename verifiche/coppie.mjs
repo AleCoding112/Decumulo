@@ -52,7 +52,7 @@ const M = new Function(src + `\nreturn {leggi, simula, spesaSostenibile, contrib
 // Diverse per struttura, non per cifre: una persona e due, chi lavora e chi è già in
 // pensione, il piano che regge e quello che si esaurisce, con e senza fondo, con e senza
 // casa da cambiare. Se una monotonia vale solo sul caso comodo, qui si vede.
-const COMUNE = {rend:4, infl:2, rendFondo:3, etaFine:95, nome0:'Anna', nome1:'Bruno',
+const COMUNE = {rend:4, infl:2, rendFondo0:3, rendFondo1:3, etaFine:95, nome0:'Anna', nome1:'Bruno',
   // il TFR già accantonato: nessuna base lo usa, e si scrive vuoto per dirlo invece di lasciarlo
   // dedurre dal silenzio. Le coppie qui sotto lo accendono dove serve.
   tfrGia0:'', tfrGia1:'', annoLav0:'', annoLav1:''};
@@ -201,7 +201,7 @@ const COPPIE = [
    perché:'è denaro che entra nel fondo senza uscire dalla busta'},
   {nome:'il datore mette un punto in più: e non peggiora il piano',
    cambia:{pcDat0:+1}, metrica:'finale', verso:'su', perché:'e non costa niente a chi lavora'},
-  {nome:'il fondo rende un punto in più', cambia:{rendFondo:+1}, metrica:'nelFondo', verso:'su',
+  {nome:'il fondo rende un punto in più', cambia:{rendFondo0:+1, rendFondo1:+1}, metrica:'nelFondo', verso:'su',
    perché:'lo stesso versamento produce un montante maggiore'},
 
   // --- le ipotesi ----------------------------------------------------------

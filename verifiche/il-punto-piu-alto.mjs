@@ -66,7 +66,7 @@ let peggio = 0, peggioCaso = null, guardati = 0, mancati = 0;
 for (let n = 0; n < PIANI; n++){
   const nascita0 = I(1960, 2000);
   DATI = {...MODULO, quanti:'1', cl3:Math.round(R(0,400000)), spesa:Math.round(R(500,4000)), spesaPens:'',
-    rend:+R(0,8).toFixed(1), infl:+R(0,4).toFixed(1), rendFondo:+R(0,8).toFixed(1),
+    rend:+R(0,8).toFixed(1), infl:+R(0,4).toFixed(1), rendFondo0:+R(0,8).toFixed(1), rendFondo1:+R(0,8).toFixed(1),
     etaFine:I(80,100), nascita0, ral0:Math.round(R(8000,90000)),
     pens0:Math.round(R(500,3000)), annoPens0:nascita0 + I(62,70),
     fondo0:Math.round(R(0,300000)), pcVoi0:+R(0,3).toFixed(1), pcDat0:+R(0,3).toFixed(1),

@@ -78,7 +78,7 @@ const casoTfr = (anni, dove) => ({
   tfrDove0: dove, tfrGia0: '', annoLav0: '',
   forma0: 'vita', quotaCap0: 0, rita0: ANNO0 + anni,
   cl3: 50000, spesa: 1500, spesaPens: '',
-  rend: 3, infl: ESEMPIO_TFR.infl * 100, rendFondo: ESEMPIO_TFR.rendBase * 100,
+  rend: 3, infl: ESEMPIO_TFR.infl * 100, rendFondo0: ESEMPIO_TFR.rendBase * 100, rendFondo1: ESEMPIO_TFR.rendBase * 100,
   etaFine: 95
 });
 
@@ -187,7 +187,7 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
     tfrDove0: 'fondo', tfrGia0: '', annoLav0: '',
     forma0: 'vita', quotaCap0: 0, rita0: ANNO0 + f.anni,
     cl3: 50000, spesa: 1500, spesaPens: '',
-    rend: f.rend * 100, infl: f.infl * 100, rendFondo: f.rend * 100, etaFine: 95
+    rend: f.rend * 100, infl: f.infl * 100, rendFondo0: f.rend * 100, rendFondo1: f.rend * 100, etaFine: 95
   });
   const x = M.leggi().p[0];
 
@@ -234,7 +234,7 @@ for (const [k, prova] of [['ALIQ_FONDO_MAX', 0], ['ALIQ_FONDO_MIN', 99]])
 console.log('\n  — le affermazioni delle pagine, provate sul motore —');
 {
   const leggiCon = d => { DATI = conModulo(d); return M.leggi(); };
-  const BASE = {quanti:'1', cl3:100000, spesa:1500, spesaPens:'', rend:4, infl:2, rendFondo:3,
+  const BASE = {quanti:'1', cl3:100000, spesa:1500, spesaPens:'', rend:4, infl:2, rendFondo0:3, rendFondo1:3,
     etaFine:95, nome0:'Anna', nascita0:1975, ral0:40000, pens0:1500, annoPens0:2042,
     fondo0:200000, pcVoi0:1.2, pcDat0:2, pcMin0:'', tfrDove0:'fondo', iscr0:2005,
     quotaCap0:0.5, forma0:'vita', anniFraz0:'', ultimo0:'', cresc0:'', tfrGia0:'', annoLav0:'',

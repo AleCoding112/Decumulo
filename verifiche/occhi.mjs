@@ -34,9 +34,14 @@ import { fileURLToPath } from 'node:url';
 const QUI = dirname(fileURLToPath(import.meta.url));
 const SITO = join(QUI, '..', 'sito');
 const SCATTI = join(QUI, 'scatti');
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+import { CHROME, SENZA_CHROME } from './_chrome.mjs';
 
 export async function apri({ larghezza = 1200, altezza = 1400 } = {}) {
+  if (!CHROME) throw new Error(SENZA_CHROME);
+  // `WebSocket` è dentro Node dalla 22: con la 20 serve `--experimental-websocket`. Detto per
+  // nome, perché «WebSocket is not defined» non dice cosa fare
+  if (typeof WebSocket !== 'function')
+    throw new Error('serve Node 22 o più recente (o node --experimental-websocket): qui manca WebSocket');
   const prof = fs.mkdtempSync(join(os.tmpdir(), 'decumulo-occhi-'));
   const ch = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-first-run',
     '--no-default-browser-check', '--remote-debugging-port=0',
@@ -140,6 +145,20 @@ export async function apri({ larghezza = 1200, altezza = 1400 } = {}) {
       fs.writeFileSync(dove, Buffer.from(data, 'base64'));
       return dove;
     },
+    // LA STAMPA, come la fa il browser: A4, margini di Chrome, `beforeprint` compreso. Restituisce
+    // il file e il numero di pagine, che è la prima cosa da guardare (erano 17).
+    async pdf(nome) {
+      await b.js(`dispatchEvent(new Event('beforeprint')); true`);
+      const { data } = await cmd('Page.printToPDF', { paperWidth: 8.27, paperHeight: 11.69,
+        marginTop: 0.4, marginBottom: 0.4, marginLeft: 0.4, marginRight: 0.4,
+        printBackground: true, preferCSSPageSize: true });
+      await b.js(`dispatchEvent(new Event('afterprint')); true`);
+      const buf = Buffer.from(data, 'base64');
+      fs.mkdirSync(SCATTI, { recursive: true });
+      const dove = join(SCATTI, nome + '.pdf');
+      fs.writeFileSync(dove, buf);
+      return { dove, pagine: (buf.toString('latin1').match(/\/Type\s*\/Page\b/g) || []).length };
+    },
     // Chrome muore con calma: cancellare il profilo subito dopo il kill trova file ancora aperti
     // e `rmSync` esplode. Si aspetta, e se non ci riesce pazienza — è una cartella temporanea.
     async chiudi() {
@@ -189,7 +208,14 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // l'allineamento delle etichette — che a occhio si vede e a misura no. Si guarda anche che
     // «Che tipo di fondo è» non vada a capo, perché una riga in più su UNA casella disallinea
     // tutta la fila: è già successo con «Comparto del fondo pensione».
-    fatti.push(await b.scatta('ipotesi', '.caselle:has(#comparto)'));
+    fatti.push(await b.scatta('ipotesi', '.caselle:has(#rend)'));
+    // il fondo di ciascuno, con la riga dei nomi in testa alle due colonne (03/10/2026)
+    await b.compila({quanti: '2', nome1: 'Bruno', nascita1: 1977, ral1: 33000, pens1: 1300,
+                     annoPens1: 2044, fondo1: 40000, iscr1: 2010, rendFondo1: '0,49'});
+    await b.js(`document.getElementById('strIpotesi').open = true; true`);
+    fatti.push(await b.scatta('ipotesi-fondi', '.due:has(#comparto0)'));
+    fatti.push(await b.scatta('ipotesi-frasi', '#confrontoRend'));
+    await b.compila({quanti: '1'});
     fatti.push(await b.scatta('risultato', '#titolo'));
     // LA COLONNA FISSA E IL COLPO D'OCCHIO (08/09/2026). A 1200 px il risultato sta a destra del
     // modulo: si guarda che il blocco intero — titolo su tre righe, le tre righe del colpo
@@ -250,6 +276,13 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     fatti.push(await b.scatta('telefono-grafico', '#riquadroGrafico'));
     fatti.push(await b.scatta('telefono-grafico-legenda', '#legendaGrafico'));
 
+    // LA STAMPA, da guardare pagina per pagina: era il pezzo più trascurato del sito, quattordici
+    // pagine col modulo intero, e nessuno scatto la mostrava
+    await b.compila({tfrDove0: 'fondo', pc0: ''});
+    const carta = await b.pdf('stampa');
+    fatti.push(carta.dove);
+    console.log(`  la stampa fa ${carta.pagine} pagine`);
+
     console.log('  ' + fatti.length + ' scatti in verifiche/scatti/');
     for (const f of fatti) console.log('      · ' + f.split('/').slice(-1)[0]);
 
@@ -260,8 +293,9 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     // poteva rompersi e restare rotto, con tutte le verifiche verdi.
     {
       const giro = await b.js(`(() => {
-        const C = document.getElementById('comparto'), F = document.getElementById('formaFondo'),
-              R = document.getElementById('rendFondo'), fuori = [];
+        // la prima persona; la seconda ha lo stesso cablaggio, scritto dallo stesso ciclo
+        const C = document.getElementById('comparto0'), F = document.getElementById('formaFondo0'),
+              R = document.getElementById('rendFondo0'), fuori = [];
         const tocca = (e, v) => { e.value = v; e.dispatchEvent(new Event('input',{bubbles:true})); };
         for (let f = 0; f < FORME_FONDO.length; f++)
           for (let i = 0; i < COMPARTI.length; i++){

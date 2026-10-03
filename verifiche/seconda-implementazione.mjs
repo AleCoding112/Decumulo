@@ -88,7 +88,8 @@ const FATT = {vita: 1, rev: V('FATT_REV'), certa: V('FATT_CERTA')};
 function piano(D){
   const infl = D.infl;
   const r    = (1 + D.rend) / (1 + infl) - 1;
-  const rf   = (1 + D.rendFondo) / (1 + infl) - 1;
+  // il rendimento del fondo è di ciascuno (03/10/2026): reale, persona per persona
+  const rfDi = i => (1 + D.p[i].rendFondo) / (1 + infl) - 1;
   const rTfr = (1 + (V('TFR_RIV_FISSA') + V('TFR_RIV_QUOTA') * infl) * (1 - V('TFR_IMPOSTA_RIV')))
              / (1 + infl) - 1;
   // ciascuno lavora fino al proprio ultimo anno: vuoto vuol dire fino alla propria decorrenza,
@@ -252,7 +253,7 @@ function piano(D){
           F[i].m -= lorda; F[i].v -= imponibile;
           E += lorda - imponibile * aliqFondo(a - iscr[i]);
         }
-        F[i].m *= (1 + (fermo(a) ? Math.min(0, rf) : rf));
+        F[i].m *= (1 + (fermo(a) ? Math.min(0, rfDi(i)) : rfDi(i)));
       }
       // art. 14 c. 3 D.Lgs. 252/2005: chi manca prima della prestazione lascia tutta la
       // posizione a chi resta, in capitale, senza quota da convertire e senza soglia
@@ -289,7 +290,7 @@ function piano(D){
         const imponibile = lorda * Math.min(F[i].v / F[i].m, 1);
         F[i].m -= lorda; F[i].v -= imponibile; F[i].rate--;
         E += lorda - imponibile * F[i].alCons(a - iscr[i]);
-        if (F[i].rate > 0 && a > F[i].daCons) F[i].m *= (1 + (fermo(a) ? Math.min(0, rf) : rf));
+        if (F[i].rate > 0 && a > F[i].daCons) F[i].m *= (1 + (fermo(a) ? Math.min(0, rfDi(i)) : rfDi(i)));
       }
       // la rendita del defunto continua solo se la forma la protegge
       const dura = !morto(i, a) || x.forma === 'rev'
@@ -343,7 +344,7 @@ globalThis.document = documento(id => DATI[id] === undefined ? undefined : Strin
 const M = new Function(src + '\nreturn {leggi, simula};')();
 
 // ------------------------------------------------------------------- i casi
-const base = {quanti:'2', cl3:100000, spesa:3300, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:4, etaFine:95,
+const base = {quanti:'2', cl3:100000, spesa:3300, spesaPens:'', cresc0:'', cresc1:'', rend:5, infl:2, rendFondo0:4, rendFondo1:4, etaFine:95,
   forma0:'vita', forma1:'vita', nome0:'A', nome1:'B', pc0:'', pc1:'',
   // Caso inventato, come quello di `test.mjs` e diverso da quello: due implementazioni
   // confrontate sempre sugli stessi numeri si accorderebbero anche su un caso particolare.
@@ -380,6 +381,12 @@ const casi = {
   'rendite diverse':          {forma0:'rev', forma1:'certa', quotaCap1:0.5},
   'zero in capitale':         {quotaCap0:0, quotaCap1:0},
   'RITA per uno':             {rita0:2034},
+  // I DUE FONDI CON RENDIMENTI DIVERSI (03/10/2026): fino a ieri era una casella sola, e i casi
+  // qui sopra hanno tutti lo stesso numero per tutti e due — un confronto che non avrebbe visto
+  // un motore che legge il fondo dell'uno per l'altro. Si provano con la RITA e con le rate,
+  // dove il rendimento lavora anche dopo la prestazione, e con la prova di tenuta.
+  'fondi diversi: azionario e garantito': {rendFondo0:5, rendFondo1:1},
+  'fondi diversi, con la RITA e le rate': {rendFondo0:1, rendFondo1:6, rita1:2038, forma0:'durata'},
   'inflazione 5%':            {infl:5},
   'inflazione 0%':            {infl:0},
   'pensione a 62 anni':       {annoPens0:2034, annoPens1:2041},
@@ -486,13 +493,13 @@ for (const [nome, over, prova, manca] of tutti){
     // risultato delle regole che questa implementazione deve rifare per conto suo.
     casa: {cosa:s.casa.cosa, anno:s.casa.anno, valore:s.casa.valore,
            nuova:s.casa.nuova, canone:s.casa.canone},
-    rendFondo:s.rendFondoNom, etaFine:s.etaFine,
+    etaFine:s.etaFine,
     p: s.p.map(x => ({nascita:x.nascita, ral:x.ral, pens:x.pensLorda,
       // SI PASSA IL VALORE SCRITTO, NON QUELLO GIÀ AZZERATO. `leggi()` toglie il fondo a chi ha
       // la decorrenza alle spalle: prendendo `x.fondo` questa implementazione erediterebbe la
       // decisione dell'altra e non verificherebbe più niente. La regola la riapplica da sé,
       // qui sotto, ed è l'unico modo perché il confronto possa ancora fallire.
-      annoPens:x.annoPens, fondo:x.fondoScritto, pcVoi:x.pcVoi, pcDat:x.pcDat, pc:x.pc, cresc:x.cresc,
+      annoPens:x.annoPens, rendFondo:x.rendFondoNom, fondo:x.fondoScritto, pcVoi:x.pcVoi, pcDat:x.pcDat, pc:x.pc, cresc:x.cresc,
       anniFraz:x.anniFraz,
       ultimo:x.ultimo,
       // I DUE DATI GREZZI DEL TFR PREGRESSO, non `tfrConta` né `tfrAnniPrima`: quelli sono già

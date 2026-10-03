@@ -82,7 +82,7 @@ const riga = (c, w=20) => '  ' + c.map(s => String(s).padStart(w)).join('');
 const linea = (n, w=20) => '  ' + '─'.repeat(n*w);
 const titolo = t => console.log(`\n\n╔══ ${t} ` + '═'.repeat(Math.max(4, 74 - t.length)));
 
-const COMUNE = {rend:4, infl:2, rendFondo:3, etaFine:95, nome0:'A', nome1:'B'};
+const COMUNE = {rend:4, infl:2, rendFondo0:3, rendFondo1:3, etaFine:95, nome0:'A', nome1:'B'};
 const uno = (o={}) => ({...COMUNE, quanti:'1', nascita0:1975, annoPens0:2042, pcVoi0:1.5,
   pcDat0:2, iscr0:2005, tfrDove0:'fondo', quotaCap0:0.5,
   tfrGia0:'', annoLav0:'', tfrGia1:'', annoLav1:'',
@@ -159,7 +159,7 @@ console.log('  E IL RENDIMENTO DEL COMPARTO CONTA MENO DI QUANTO SEMBRI — RAL 
 console.log(riga(['comparto','patrimonio','guadagno per €']));
 console.log(linea(3));
 for (const rf of [1, 2, 3, 4, 5, 6]){
-  const p = prova({ral0:38000, pens0:pensioneDa(38000), rendFondo:rf});
+  const p = prova({ral0:38000, pens0:pensioneDa(38000), rendFondo0:rf, rendFondo1:rf});
   console.log(riga([pc(rf/100,1), pc(0.04,1), (p.reso>=0?'+':'')+p.reso.toFixed(2)+' €']));
 }
 console.log('\n  Il fondo vince perfino rendendo TRE PUNTI IN MENO del patrimonio: la deduzione');
@@ -182,8 +182,8 @@ console.log('\n  RAL 38.000 €. Si cambia solo dove va il TFR.\n');
 console.log(riga(['comparto','nel fondo','in azienda','differenza']));
 console.log(linea(4));
 for (const rf of [1,2,3,4,5,6]){
-  const f = fin({...P, rendFondo:rf, tfrDove0:'fondo'});
-  const a = fin({...P, rendFondo:rf, tfrDove0:'azienda'});
+  const f = fin({...P, rendFondo0:rf, rendFondo1:rf, tfrDove0:'fondo'});
+  const a = fin({...P, rendFondo0:rf, rendFondo1:rf, tfrDove0:'azienda'});
   console.log(riga([pc(rf/100,1), eur(f), eur(a), (f>a?'+':'')+eur(f-a)]));
 }
 console.log('\n  Il pareggio sta intorno al 2,3%: in azienda il TFR si rivaluta dell\'1,5% più il');
@@ -242,7 +242,7 @@ const base7 = fin(b6);
 for (const [nome, vals, f, fv] of [
   ['inflazione', [1,2,3,4], v => ({...b6, infl:v}), v => pc(v/100,1)],
   ['rendim. patrimonio', [2,3,4,5,6], v => ({...b6, rend:v}), v => pc(v/100,1)],
-  ['rendim. fondo', [1,2,3,4,5], v => ({...b6, rendFondo:v}), v => pc(v/100,1)],
+  ['rendim. fondo', [1,2,3,4,5], v => ({...b6, rendFondo0:v, rendFondo1:v}), v => pc(v/100,1)],
   ['orizzonte', [85,90,95,100], v => ({...b6, etaFine:v}), v => v+' anni']]){
   for (const v of vals){
     const y = fin(f(v));
@@ -341,7 +341,7 @@ console.log('  rendimento del FONDO e si guarda dove va la soglia del PATRIMONIO
 console.log(riga(['comparto del fondo','pareggio nominale','pareggio reale','distanza dal 4%'], 21));
 console.log(linea(4, 21));
 for (const rf of [1, 2, 3, 4, 5, 6, 7]){
-  const base = {...COPPIA(38000), rendFondo:rf}, max = alTetto(base);
+  const base = {...COPPIA(38000), rendFondo0:rf, rendFondo1:rf}, max = alTetto(base);
   const s = sogliaF(r => fin({...max, rend:r}), r => fin({...base, rend:r}));
   console.log(riga([pc(rf/100,1), s === null ? 'mai' : pc(s/100,2),
     s === null ? '—' : pc(reale(s),2),
@@ -396,7 +396,7 @@ const COPPIA75 = (ral, o={}) => {
     // il patrimonio è 75/25 PER DAVVERO, non solo nel rendimento medio: le classi decidono
     // il totale, e il rendimento medio si passa a parte perché nella pagina lo scrive un
     // ascoltatore del DOM che qui non c'è
-    cl1: tot*0.25, cl3: tot*0.75, rend: mix(0.75)*100, rendFondo: R_AZIONARIO*100, ...o});
+    cl1: tot*0.25, cl3: tot*0.75, rend: mix(0.75)*100, rendFondo0: R_AZIONARIO*100, rendFondo1: R_AZIONARIO*100, ...o});
 };
 
 console.log('\n\n  A. QUANTO LASCIA IN PIÙ IL FONDO, a ogni reddito. 25 anni al traguardo.\n');
@@ -432,7 +432,7 @@ for (const g of [0.03, 0.05, 0.07, 0.09, 0.11]){
   const etf = g * 0.80 - 0.002;            // 20% effettivo al realizzo, meno il bollo
   const fondo = etf - COSTO_FONDO;
   const rend75 = 0.75*etf + 0.25*R_DEP;
-  const base = COPPIA75(38000, {rend: rend75*100, rendFondo: fondo*100});
+  const base = COPPIA75(38000, {rend: rend75*100, rendFondo0: fondo*100, rendFondo1: fondo*100});
   const max = alTetto(base);
   const a = fin(base), b = fin(max);
   console.log(riga([pc(g,0), pc(etf,2), pc(fondo,2), pc(rend75,2),
@@ -502,7 +502,7 @@ for (const ral of [25000, 32000, 38000, 45000, 60000, 90000]){
   // abbassava solo per chi versa al tetto, lasciando all'altro il 5,0% sui 120.000 € che ha
   // già nel fondo. Il confronto era truccato in favore del non versare, e il margine ne usciva
   // molto più stretto del vero. Un comparto è del fondo, non della strategia.
-  const conRf = f => { const b = COPPIA75(ral, {rendFondo:f}); return {b, m: alTetto(b)}; };
+  const conRf = f => { const b = COPPIA75(ral, {rendFondo0:f, rendFondo1:f}); return {b, m: alTetto(b)}; };
   const s = sogliaF(f => fin(conRf(f).m), f => fin(conRf(f).b), -5, 15);
   if (s !== null) margini.push(mix(0.75)*100 - s);
   console.log(riga([eur(ral),
@@ -595,7 +595,7 @@ const daProfilo = (p, o={}) => due({
   fondo0:p.fondo, fondo1:p.fondo, iscr0:p.iscr, iscr1:p.iscr,
   pcVoi0:1.2, pcVoi1:1.2, pcMin0:1.2, pcMin1:1.2, pcDat0:2, pcDat1:2,
   spesa:p.spesa, cl1:p.patr*0.10, cl3:p.patr*0.90,
-  rend: R_9010*100, rendFondo: R_AZIONARIO*100, ...o});
+  rend: R_9010*100, rendFondo0: R_AZIONARIO*100, rendFondo1: R_AZIONARIO*100, ...o});
 
 console.log('\n\n  A. LE SEI STRATEGIE SUI SEI PROFILI. Patrimonio a fine piano (95 anni), e sotto');
 console.log('  lo scarto rispetto alla rendita vitalizia, che è la riga di riferimento.\n');

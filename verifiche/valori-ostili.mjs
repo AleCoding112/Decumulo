@@ -31,7 +31,7 @@ const CAMPI = ['quanti','nome0','nome1','nascita0','nascita1','ral0','ral1',
   'annoLav0','annoLav1',
   'ultimo0','ultimo1',
   'cl0','cl1','cl2','cl3','spesa','spesaPens',
-  'rend','rendFondo','infl','etaFine','quotaCap0','quotaCap1','forma0','forma1','rita0','rita1',
+  'rend','rendFondo0','rendFondo1','infl','etaFine','quotaCap0','quotaCap1','forma0','forma1','rita0','rita1',
   'pc0','pc1'];
 controllaChiavi(Object.fromEntries(CAMPI.map(k => [k, ''])), 'l\'elenco dei campi ostili');
 // i valori che fanno male: quelli fuori scala, quelli che non sono numeri, e il vuoto
@@ -91,7 +91,7 @@ const REGRESSIONI = {
 };
 const SANO = {quanti:'1', nascita0:'1975', annoPens0:'2042', spesa:'2000', ral0:'35000',
   pens0:'1500', fondo0:'50000', iscr0:'2010', pcVoi0:'1.2', pcDat0:'2',
-  cl3:'100000', rend:'4', rendFondo:'3', infl:'2', etaFine:'95'};
+  cl3:'100000', rend:'4', rendFondo0:'3', rendFondo1:'3', infl:'2', etaFine:'95'};
 for (const [nome, over] of Object.entries(REGRESSIONI)){
   const t0 = Date.now();
   const {scritte, avvisi, esploso} = prova({...SANO, ...over});

@@ -38,7 +38,10 @@ for (let t=0; t<4000; t++){
   const n0=I(1950,1990), n1=I(1950,1990);
   DATI={...MODULO, cl3:Math.round(R(0,900000)), spesa:Math.round(R(0,9000)),
     spesaPens: P(['', Math.round(R(0,9000))]),
-    rend:+R(-2,12).toFixed(1), infl:+R(0,8).toFixed(1), rendFondo:+R(-2,12).toFixed(1),
+    rend:+R(-2,12).toFixed(1), infl:+R(0,8).toFixed(1), 
+    // i due fondi estratti ciascuno per conto suo: due persone in comparti diversi sono il caso
+    // che le caselle per persona esistono per rappresentare
+    rendFondo0:+R(-2,12).toFixed(1), rendFondo1:+R(-2,12).toFixed(1),
     etaFine:I(70,105),
     // I DUE NOMI POSSONO COINCIDERE, e devono poterlo fare qui dentro. Erano fissi ad
     // «Anna»/«Bruno», e per questo quattromila piani non hanno mai visto che i record del fondo

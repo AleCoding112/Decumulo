@@ -30,7 +30,7 @@ const src = sorgente();
 // Le classi del patrimonio non compilate si scrivono vuote — il patrimonio del caso è tutto in
 // azioni — e gli anni della frazionata pure: vuoto vale il minimo di legge, che è il caso base.
 const DATI = {quanti:'2', cl0:'', cl1:'', cl2:'', cl3:120000, spesa:2600, spesaPens:'',
-  cresc0:'', cresc1:'', rend:5, infl:2, rendFondo:5, etaFine:95,
+  cresc0:'', cresc1:'', rend:5, infl:2, rendFondo0:5, rendFondo1:5, etaFine:95,
   anniFraz0:'', anniFraz1:'',
   forma0:'vita', forma1:'vita', nome0:'Anna', nome1:'Bruno', pc0:'', pc1:'',
   nascita0:1975, ral0:58000, pens0:2600, annoPens0:2042,
@@ -433,12 +433,12 @@ t('smesso di lavorare non si versa più, e il fondo cresce del solo rendimento',
     const pres = M.simula({...s, p: s.p.map((x,i) => i === 1 ? {...x, ultimo: 2038} : x)});
     const a = y => pres.righe.find(g => g.anno === y);
     return [2040, 2042, 2044].every(y =>
-      Math.abs(a(y).fondi[1] - a(y-1).fondi[1] * (1 + s.rendFondo)) < 1e-6); })(),
+      Math.abs(a(y).fondi[1] - a(y-1).fondi[1] * (1 + s.p[1].rendFondo)) < 1e-6); })(),
   'dal 2039 al 2045 non versa, e il fondo lo riscuote nel 2046');
 t('e finché lavorava ci entrava di più del solo rendimento', (() => {
     const pres = M.simula({...s, p: s.p.map((x,i) => i === 1 ? {...x, ultimo: 2038} : x)});
     const a = y => pres.righe.find(g => g.anno === y);
-    return a(2038).fondi[1] > a(2037).fondi[1] * (1 + s.rendFondo) + 1; })());
+    return a(2038).fondi[1] > a(2037).fondi[1] * (1 + s.p[1].rendFondo) + 1; })());
 
 console.log('\n— la retribuzione che cresce —');
 // SI SCRIVE NOMINALE E IL CONTO TOGLIE L'INFLAZIONE: scriverla pari all'inflazione deve dare
@@ -873,8 +873,8 @@ t('il punto più alto tiene conto della soglia del «tutto in contanti»', (() =
 for (const caso of [{}, {pcVoi:0}, {pcDat:0, rendFondo:0.02}])
   t(`il punto più alto è quello vero anche su tutto il cursore${
       Object.keys(caso).length ? ' (' + Object.keys(caso).join(', ') + ')' : ''}`, (() => {
-    const sc = {...s, ...(caso.rendFondo ? {rendFondo: caso.rendFondo} : {}),
-      p: s.p.map((x, j) => j === 0 ? {...x, ...caso} : x)};
+    // il rendimento del fondo è di ciascuno: `caso` lo porta già sulla persona
+    const sc = {...s, p: s.p.map((x, j) => j === 0 ? {...x, ...caso} : x)};
     const x = sc.p[0], pcMax = Math.max(M.pcMassimo(x), 0.1);
     const dai = M.migliore(sc, 0, 'pc', M.candidatiVersamento(x, pcMax, M.pcSoglia(sc, 0, pcMax)));
     let vero = -Infinity;
@@ -1104,7 +1104,7 @@ t('il fondo di chi lo conferisce è più grosso, e di quanto lo dice il TFR',
   r.incassi[0].montante > inAzienda.incassi[0].montante,
   `al fondo ${eur(r.incassi[0].montante)} € · in azienda ${eur(inAzienda.incassi[0].montante)} €`);
 t('in azienda si rivaluta con la sua regola (1,5% + 75% dell\'inflazione), non col mercato', (() => {
-    const alto = M.simula({...s, rendFondo:0.30, p:s.p.map(x=>({...x, tfrAlFondo:false}))});
+    const alto = M.simula({...s, p:s.p.map(x=>({...x, rendFondo:0.30, tfrAlFondo:false}))});
     return Math.abs(alto.liquidazioni[0].lordo - inAzienda.liquidazioni[0].lordo) < 1e-6; })());
 t('più inflazione, più rivalutazione nominale — ma in euro di oggi ci perde lo stesso', (() => {
     const su = M.simula({...s, infl:0.06, p:s.p.map(x=>({...x, tfrAlFondo:false}))});
@@ -1267,7 +1267,7 @@ console.log('\n— il TFR già accantonato —');
   t('il pregresso si rivaluta fino alla cessazione, non resta fermo',
     mio[0].lordo > 52000, `52.000 € diventano ${eur(mio[0].lordo)} € in euro di oggi`);
   t('e col mercato non c\'entra niente: si muove solo con l\'inflazione', (() => {
-      const alto = M.simula({...conPregresso, rend:0.30, rendFondo:0.30});
+      const alto = M.simula({...conPregresso, rend:0.30, p: conPregresso.p.map(x => ({...x, rendFondo:0.30}))});
       const l = alto.liquidazioni.find(v => v.chi === DATI.nome0);
       return Math.abs(l.lordo - mio[0].lordo) < 1e-6; })());
 }
