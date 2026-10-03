@@ -36,7 +36,7 @@ la RITA &egrave; solo un modo di riscuoterlo.</p>
 <h2>Chi pu&ograve; chiederla</h2>
 
 <p><span class="marca m-legge">legge</span> È richiesta in ogni caso la <b>cessazione
-dell'attività lavorativa</b>, e almeno cinque anni di partecipazione alle forme pensionistiche
+dell'attività lavorativa</b>, e almeno {{ritaPartecipazione}} anni di partecipazione alle forme pensionistiche
 complementari. Le finestre temporali sono due, alternative fra loro.</p>
 
 <div class="scorre">
@@ -44,10 +44,10 @@ complementari. Le finestre temporali sono due, alternative fra loro.</p>
   <thead><tr><th>Anticipo rispetto alla vecchiaia</th><th>Requisito ulteriore</th></tr></thead>
   <tbody>
     <tr><td>fino a <b>{{ritaAnticipo}} anni</b> <span class="marca m-legge">legge</span> art. 11 c. 4</td>
-        <td>almeno <b>20 anni</b> di contribuzione nei regimi obbligatori, maturati alla data
+        <td>almeno <b>{{ritaContributi}} anni</b> di contribuzione nei regimi obbligatori, maturati alla data
         della domanda</td></tr>
     <tr><td>fino a <b>{{ritaAnticipoLungo}} anni</b> <span class="marca m-legge">legge</span> art. 11 c. 4-bis</td>
-        <td>inoccupazione superiore a <b>24 mesi</b>; in tale ipotesi il requisito dei 20 anni
+        <td>inoccupazione superiore a <b>{{ritaInoccupazioneMesi}} mesi</b>; in tale ipotesi il requisito dei {{ritaContributi}} anni
         non &egrave; richiesto</td></tr>
   </tbody>
 </table>
@@ -55,7 +55,7 @@ complementari. Le finestre temporali sono due, alternative fra loro.</p>
 
 <p>Il conto si fa sulla pensione di <b>vecchiaia</b>, non su quella anticipata: &egrave; una data
 successiva a quella in cui molti maturano il diritto alla pensione. Resta fermo, come per ogni prestazione della previdenza complementare, il requisito
-generale di <b>cinque anni di partecipazione</b> <span class="marca m-legge">legge</span>
+generale di <b>{{ritaPartecipazione}} anni di partecipazione</b> <span class="marca m-legge">legge</span>
 (art. 11 c. 2), che non &egrave; specifico della RITA.</p>
 
 <div class="chiave allarme">
@@ -71,7 +71,7 @@ generale di <b>cinque anni di partecipazione</b> <span class="marca m-legge">leg
 <p><span class="marca m-stima">stima</span> Il calcolatore apre la finestra dall&rsquo;anno
 dopo quello in cui si smette di lavorare, e la tiene dentro le due porte: {{ritaAnticipo}} anni prima
 della pensione, oppure {{ritaAnticipoLungo}} anni prima ma solo dal terzo anno senza lavoro, che
-&egrave; quando i 24 mesi sono passati. Accanto al cursore dice quale delle due si sta usando.
+&egrave; quando i {{ritaInoccupazioneMesi}} mesi sono passati. Accanto al cursore dice quale delle due si sta usando.
 Come data della pensione usa la <b>decorrenza indicata</b>: per chi va in pensione anticipata
 viene prima dell&rsquo;et&agrave; di vecchiaia, e la finestra risulta pi&ugrave; stretta del
 vero, non pi&ugrave; larga.</p>

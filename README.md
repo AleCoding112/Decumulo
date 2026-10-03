@@ -340,7 +340,10 @@ del sistema operativo, cioè il carattere del *software* — in ogni ruolo.
   `_stile.html`): `coerenza.mjs` confronta le due dichiarazioni nei file costruiti e fallisce se
   si separano.
 
-**Una scala sola: `11 · 12 · 13 · 14 · 15 · 16`**, più i due corpi da display (26 e 34). Erano
+**Una scala sola: `11 · 12 · 13 · 14 · 15 · 16`**, più il 18 dei capoversi d'apertura delle pagine
+e delle cifre accanto ai cursori, e i due corpi da display (26 e 34). Il 18 c'era da agosto senza
+essere scritto qui: una regola che il sito non rispetta in due punti va riscritta o fatta
+rispettare, e qui è stata riscritta (03/10/2026). Erano
 **quattordici corpi**, di cui cinque fuori scala — 10 · 10,5 · 11,5 · 12,5 · 13,5 · 14,5 · 17 —
 in diciassette dichiarazioni. Le mezze misure sono abolite: se una riga «non sta bene» a 13 non
 si inventa 13,5, si sceglie 12 o 14.
@@ -465,8 +468,9 @@ test.mjs        i controlli sul motore
 verifiche/      come parla · valori ostili · tavole dei fondi · riscontri esterni ·
                 seconda implementazione · invarianti · schermi · coerenza · consenso ·
                 anteprime · scarica · scadenze · a-schermo · occhi · senza-scatti
-                _armatura.mjs è il DOM finto di tutti, come i file con _ fra i sorgenti:
-                un pezzo, non un controllo
+                                _armatura.mjs è il DOM finto di tutti, _chrome.mjs dice dove sta il
+                browser: come i file con _ fra i sorgenti, pezzi e non controlli
+registro-dei-trattamenti.md   art. 30 GDPR: si aggiorna con privacy.html, e dice le stesse cose
 sorgenti/       index.html + le pagine; i file con _ sono pezzi da includere
 sito/           quello che si pubblica
 ```
@@ -752,7 +756,10 @@ nove file, cioè dimenticato sul decimo.
 - **il silenzio non è consenso**: non c'è crocetta per chiudere, e scorrere o navigare non vale
   come sì;
 - **si revoca da dove si è dato**: il piè di pagina di ogni pagina dice lo stato e permette di
-  cambiarlo, e alla revoca i cookie `_ga` già scritti vengono cancellati.
+  cambiarlo, e alla revoca i cookie `_ga` già scritti vengono cancellati. **E la revoca ha effetto
+  subito**: fino al 03/10/2026 lo script restava attivo fino al ricaricamento, e l'evento del
+  calcolatore partiva lo stesso. Ora si accende il blocco ufficiale `ga-disable-<ID>` e si toglie
+  `window.gtag`; `a-schermo.mjs` lo prova cliccando.
 
 La scelta sta in `localStorage` sotto **`decumulo-it-consenso`**, distinta da `decumulo-it` che
 sono i dati del modulo: azzerare il calcolatore non deve cancellare una scelta di privacy, e
@@ -1553,6 +1560,56 @@ E una frase che non era stata misurata: sotto il verdetto di un piano che non re
 forte diceva «il versamento di oggi è già il punto più alto», dove nessun punto più alto era stato
 indicato. Ora dice che nessuna scelta basta, e che restano la spesa e l'anno in cui si smette.
 
+## 2026-10-03, quarto tempo — le regole, quelle di fuori e quelle di casa
+
+Una rilettura di conformità, prima di toccare niente: quali regole valgono per un sito così, e se
+le rispetta. **Fuori**: protezione dei dati, cookie, consulenza finanziaria, obblighi dei siti,
+accessibilità, diritto d'autore. **Dentro**: le regole che questo README si è dato.
+
+**Il difetto vero era nel consenso.** Alla revoca i cookie sparivano ma lo script di Google
+restava attivo fino al ricaricamento, e l'evento `verdetto` partiva lo stesso, riscrivendo `_ga` a
+chi aveva appena detto di no. L'informativa prometteva il contrario. Ora la revoca accende
+`ga-disable-<ID>` e toglie `window.gtag`, un nuovo consenso nella stessa visita non carica un
+secondo script, e due controlli in `a-schermo.mjs` lo provano cliccando. Il codice disattiva anche
+Google Signals e i segnali per la pubblicità: la misurazione è dichiarata statistica, ora lo è
+per costruzione e non per un'impostazione del pannello.
+
+**L'informativa aveva quattro lacune**, tutte riscritte: il ruolo di Google (responsabile del
+trattamento, non un destinatario qualunque); GitHub, che ospita le pagine, registra l'IP come
+titolare autonomo e tratta i dati negli Stati Uniti, e non era nominato; la conservazione, ora col
+massimo dei dati (14 mesi) e la durata dei cookie (due anni); e i diritti sui dati già raccolti,
+che la pagina rimandava «alle condizioni del servizio Google» mentre è il titolare a rispondere.
+Aggiunte la corrispondenza via email e l'assenza di decisioni automatizzate. **E la pagina
+dichiarava un solo evento oltre alla navigazione**, mentre GA4 registra per impostazione anche lo
+scorrimento e i clic verso altri siti: ora li dichiara, cioè dice di più e non di meno.
+
+**Il registro dei trattamenti** (`registro-dei-trattamenti.md`) non c'era: l'esenzione dell'art.
+30 par. 5 non vale per un trattamento non occasionale, e la misurazione delle visite non lo è.
+
+**Restano da fare nel pannello di Google Analytics**, dove il codice non arriva: accettare i
+termini sul trattamento dei dati, leggere la durata di conservazione, spegnere nella misurazione
+avanzata le voci che non servono. L'elenco è in fondo al registro.
+
+**Cosa regge già, e perché.** Il consenso è preventivo, libero e revocabile, i pulsanti sono
+identici, senza consenso nessuna richiesta a siti terzi; il trasferimento a Google sta sulla
+decisione di adeguatezza del 2023. Il sito non dà consulenza in materia di investimenti nel senso
+del TUF: non nomina strumenti, e l'avvertenza lo dice in ogni pagina. Non vende niente e non ha
+pubblicità, quindi gli obblighi del commercio elettronico (D.Lgs. 70/2003) e la partita IVA non
+lo riguardano. Accessibilità: non è un obbligo di legge per un sito personale, ma la struttura è
+in ordine — nessun id duplicato, nessun collegamento interno rotto, titoli senza salti, lingua
+dichiarata, testo sopra 4,5:1, fuoco visibile. I bordi delle bande del grafico stanno sotto il
+3:1 degli elementi grafici, compensati dalla legenda, dai valori al passaggio e dalla tabella.
+
+**Le regole di casa, e dove le avevo violate io oggi.** Due ombre nuove (il riquadro del grafico,
+la colonna ferma della tabella) e due vecchie (la riga in alto e il banner): via tutte e quattro,
+al loro posto i bordi. Corpi a 10 px nei cerchi del grafico e nella tabella su telefono: portati a
+11. Il verdetto della colonna fissa a 28 px: portato a 26, che è il corpo da display della scala.
+Il 18 dei capoversi d'apertura c'era da agosto senza stare nella regola: la regola ora lo dice.
+«24 mesi» e «vent'anni di contributi» scritti a mano nel cursore e in `rita.html`: ora vengono da
+`regole.mjs` (`RITA_CONTRIBUTI`, `RITA_PARTECIPAZIONE`, e i mesi da `RITA_INOCCUPAZIONE`). E
+`REVISIONE_ISO` era ferma all'8 settembre con sei parametri nuovi verificati oggi: ora è il 3
+ottobre, e così il piè di pagina e la sitemap.
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -1563,7 +1620,7 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 |---|---|---|
 | ~~L'art. 8 c. 4 D.Lgs. 252/2005 comprenda i contributi del datore **anche volontari**, oltre a quelli da accordo~~ **— chiuso l'08/09/2026** | — | letto su Normattiva: «i contributi versati dal lavoratore e dal datore di lavoro o committente, *sia volontari sia dovuti in base a contratti o accordi collettivi, anche aziendali*»: li comprende. Nessuna frase del sito ci si appoggiava, e nessuna va cambiata |
 | `SPERANZA_VITA` e `VITA_INTERA` sono sul 2023 mentre ISTAT ed Eurostat hanno pubblicato il 2024 e il 2025 | il decreto sui coefficienti 2027-2028, atteso a fine 2026, dice quale tavola vale per la durata definita; la speranza di vita si aggiorna insieme al margine | la prassi dei fondi usa la 2023 «fino al 31/12/2026», e la guardia di gennaio elenca tutte e due |
-| La pagina privacy indica la **durata di conservazione** dei dati Analytics rinviando alle impostazioni della proprietà, senza il numero di mesi | leggere il valore nella proprietà GA4 (2 o 14 mesi) e scriverlo | l'art. 13 par. 2 lett. a chiede il periodo «o i criteri», e il criterio c'è; il numero lo sa solo chi ha accesso alla proprietà |
+| La pagina privacy indica la **durata di conservazione** dei dati Analytics come limite massimo (14 mesi, quello che GA4 consente), non il valore impostato | leggere il valore nella proprietà GA4 (2 o 14 mesi) e scriverlo, anche nel registro dei trattamenti | dal 03/10/2026 il limite è scritto e vero comunque; il numero esatto lo sa solo chi ha accesso alla proprietà |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
 | **La maggior parte delle regole non ha un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano, nemmeno qui**: lo dà `quanteRiscontrate()` in `regole.mjs` e lo stampa `il-metodo.html` (8 su 50 al 03/10/2026). Questa riga lo scriveva a mano — «41 su 48» — sotto la frase che diceva di non farlo, ed era di nuovo invecchiato |
 | La **RITA** conta gli anni di iscrizione anteriori al 2007 **fino a un massimo di quindici** (art. 11 c. 4-ter), e il conto no | modellarlo, con l'anno di iscrizione che già c'è | morde solo chi si è iscritto prima del 1992, ed è al più 2,1 punti d'aliquota sulle sole rate RITA |

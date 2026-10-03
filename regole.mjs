@@ -17,7 +17,7 @@
 // Si scrive in forma ISO ed è l'unica da cambiare: la stringa in italiano si genera da questa,
 // e due date scritte a mano divergerebbero al primo aggiornamento. La forma confrontabile serve
 // alla guardia in `verifiche/scadenze.mjs`.
-export const REVISIONE_ISO = '2026-09-08';
+export const REVISIONE_ISO = '2026-10-03';
 // una data ISO scritta come si scrive in italiano. Serve alla revisione e alla decorrenza
 // dell'erogazione frazionata: due copie della stessa conversione divergerebbero, come le date.
 const inItaliano = iso => new Date(iso + 'T00:00:00Z')
@@ -242,6 +242,12 @@ export const REGOLE = {
     fonte: 'art. 11 c. 4 D.Lgs. 252/2005: cessazione dell\'attività lavorativa, età per la pensione di vecchiaia raggiunta «entro i cinque anni successivi», almeno vent\'anni di contribuzione nei regimi obbligatori e cinque di partecipazione alla previdenza complementare. Il calcolatore non conosce gli anni di contributi né quelli di partecipazione: la pagina sulla RITA lo dice', verificata: true },
   RITA_ANTICIPO_INOCCUPATI: { nome: "RITA, anni di anticipo per chi è senza lavoro", val: 10, come: 'anni',
     fonte: 'art. 11 c. 4-bis D.Lgs. 252/2005: per chi resta inoccupato «per un periodo di tempo superiore a ventiquattro mesi», con l\'età per la pensione di vecchiaia raggiunta entro i dieci anni successivi alla fine di quel periodo', verificata: true },
+    // gli altri due requisiti della RITA, che il conto non può verificare ma la pagina e il cursore
+  // nominano: scritti a mano in quei due posti, alla prima modifica della norma sarebbero rimasti
+  RITA_CONTRIBUTI: { nome: "RITA, anni di contributi richiesti per l'anticipo breve", val: 20, come: 'anni',
+    fonte: 'art. 11 c. 4 D.Lgs. 252/2005: «maturazione di un requisito contributivo complessivo di almeno venti anni nei regimi obbligatori di appartenenza»', verificata: true },
+  RITA_PARTECIPAZIONE: { nome: "RITA, anni minimi di partecipazione alla previdenza complementare", val: 5, come: 'anni',
+    fonte: 'art. 11 c. 4 D.Lgs. 252/2005: «maturazione di almeno cinque anni di partecipazione alle forme pensionistiche complementari»', verificata: true },
   RITA_INOCCUPAZIONE: { nome: "RITA, anni interi senza lavoro per l'anticipo lungo", val: 2, come: 'anni',
     fonte: 'art. 11 c. 4-bis D.Lgs. 252/2005: inoccupazione «superiore a ventiquattro mesi». Il conto è per esercizi interi: chi lavora fino al 2030 è senza lavoro da più di 24 mesi dal 2033', verificata: true },
 
@@ -832,7 +838,11 @@ export const TESTI = {
   frazAnniMin:      String(V('FRAZ_ANNI_MIN')),
   ritaAnticipo:     String(V('RITA_ANTICIPO')),
   liquiditaAnni:    String(V('LIQUIDITA_ANNI')),
-  ritaAnticipoLungo: String(V('RITA_ANTICIPO_INOCCUPATI')),
+    ritaAnticipoLungo: String(V('RITA_ANTICIPO_INOCCUPATI')),
+  ritaContributi:   String(V('RITA_CONTRIBUTI')),
+  ritaPartecipazione: String(V('RITA_PARTECIPAZIONE')),
+  // la legge dice «ventiquattro mesi», il conto ragiona in anni interi: due cifre, una fonte
+  ritaInoccupazioneMesi: String(V('RITA_INOCCUPAZIONE') * 12),
   // l'abitazione: le tre voci del costo di una compravendita, più il totale su un esempio, che
   // è il modo in cui la cifra si capisce davvero (una percentuale sola non dice quanto pesa)
   costiVendita:     pc(V('COSTI_VENDITA'), 2),
@@ -1011,7 +1021,7 @@ const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};
 const LIQUIDITA_ANNI = ${V('LIQUIDITA_ANNI')};
 // le due porte della RITA: cinque anni prima, o dieci per chi è senza lavoro da più di due anni
 const RITA_ANTICIPO = ${V('RITA_ANTICIPO')}, RITA_ANTICIPO_INOCCUPATI = ${V('RITA_ANTICIPO_INOCCUPATI')},
-      RITA_INOCCUPAZIONE = ${V('RITA_INOCCUPAZIONE')};
+            RITA_INOCCUPAZIONE = ${V('RITA_INOCCUPAZIONE')}, RITA_CONTRIBUTI = ${V('RITA_CONTRIBUTI')};
 // I costi di una compravendita: due quote del prezzo e una cifra fissa, perché l'onorario del
 // notaio e l'imposta di registro sul valore catastale non scalano col prezzo di mercato.
 const COSTI_VENDITA = ${V('COSTI_VENDITA')}, COSTI_ACQUISTO = ${V('COSTI_ACQUISTO')},

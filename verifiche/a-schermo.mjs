@@ -326,6 +326,20 @@ addEventListener('load', async () => {
   out.push(['solo dopo il consenso il tag viene caricato', tag()]);
   out.push(['e il consenso resta memorizzato', memoria() === 'si']);
 
+  // LA REVOCA HA EFFETTO SUBITO, non al prossimo caricamento (03/10/2026). Prima i cookie sparivano
+  // ma lo script restava attivo, e l'evento del calcolatore partiva lo stesso: si guarda che il
+  // blocco ufficiale di Google sia acceso e che la funzione di invio non ci sia più.
+  d.getElementById('consensoCambia').click(); await attesa(200);
+  d.getElementById('consensoNo').click(); await attesa(300);
+  out.push(['dopo la revoca la pagina non manda più niente, senza ricaricarla',
+    w['ga-disable-G-10YFPPG27R'] === true && typeof w.gtag !== 'function']);
+  // e chi ci ripensa nella stessa visita torna misurato, senza un secondo script
+  d.getElementById('consensoCambia').click(); await attesa(200);
+  d.getElementById('consensoSi').click(); await attesa(300);
+  out.push(['e un nuovo consenso la riaccende, con lo script caricato una volta sola',
+    w['ga-disable-G-10YFPPG27R'] === false && typeof w.gtag === 'function'
+    && d.querySelectorAll('script[src*="googletagmanager"]').length === 1]);
+
   document.title = JSON.stringify(out);
 });
 </script>`);

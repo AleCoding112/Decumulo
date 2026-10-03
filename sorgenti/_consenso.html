@@ -21,7 +21,6 @@
 <style>
   .consenso{position:fixed;left:0;right:0;bottom:0;z-index:50;
     background:var(--card,#fff);border-top:1px solid var(--line,#e3e3e0);
-    box-shadow:0 -2px 14px rgba(0,0,0,.07);
     padding:14px 20px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;
     justify-content:center;font-size:13px;line-height:1.55;color:var(--soft,#4a4a46)}
   /* SENZA QUESTA RIGA IL BANNER NON SI CHIUDE. L'attributo `hidden` nasconde con una regola del
@@ -65,7 +64,7 @@
 (function(){
   var CHIAVE = 'decumulo-it-consenso';   // distinta da 'decumulo-it', che sono i dati del modulo
   var ID = 'G-10YFPPG27R';
-  var acceso = false;
+  var acceso = false, caricato = false;
 
   // localStorage può essere negato (navigazione privata, impostazioni restrittive): in quel caso
   // non si tiene memoria della scelta e il banner ricompare, che è il verso prudente. Non si
@@ -76,22 +75,39 @@
   function accendi(){
     if (acceso) return;
     acceso = true;
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
-    document.head.appendChild(s);
+    // chi ha revocato e poi ci ripensa nella stessa visita: lo script è già caricato, si toglie
+    // soltanto il blocco
+    window['ga-disable-' + ID] = false;
+    if (!caricato){
+      caricato = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+      document.head.appendChild(s);
+    }
     window.dataLayer = window.dataLayer || [];
     window.gtag = function(){ window.dataLayer.push(arguments); };
     window.gtag('js', new Date());
-    window.gtag('config', ID);
+    // MISURAZIONE SOLO STATISTICA, e detta nel codice invece che affidata al pannello: niente
+    // Google Signals (che incrocia i dati con gli account Google) e niente segnali per la
+    // pubblicità personalizzata. L'informativa lo dichiara; qui lo garantisce.
+    window.gtag('config', ID, {allow_google_signals: false,
+                               allow_ad_personalization_signals: false});
   }
 
   // REVOCARE NON È SOLO SMETTERE DI MISURARE: i cookie già scritti vanno tolti, altrimenti
   // restano sul dispositivo di chi ha appena chiesto di non essere misurato. Si cancellano
   // quelli di Analytics (`_ga`, `_ga_<id>`) sul dominio e sul dominio con il punto davanti,
   // che è dove Google li scrive.
+  // E NON BASTA CANCELLARE I COOKIE (03/10/2026): lo script di Google, una volta caricato, restava
+  // attivo fino al ricaricamento della pagina, e l'evento del calcolatore partiva lo stesso —
+  // riscrivendo `_ga` a chi aveva appena revocato. Ora alla revoca si accende il blocco ufficiale
+  // di Google (`ga-disable-<ID>`, che ferma ogni invio della pagina) e si toglie la funzione con
+  // cui il calcolatore manda l'evento: la revoca ha effetto subito, come l'informativa promette.
   function spegni(){
     acceso = false;
+    window['ga-disable-' + ID] = true;
+    try { delete window.gtag; } catch(e){ window.gtag = undefined; }
     var host = location.hostname;
     document.cookie.split(';').forEach(function(c){
       var n = c.split('=')[0].trim();
