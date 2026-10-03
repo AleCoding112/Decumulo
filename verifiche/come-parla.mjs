@@ -1012,7 +1012,9 @@ console.log('\n— la legenda del grafico —');
                 fondo0:30000, annoLav0:2012, cl0:15000, cl1:10000, cl2:25000, cl3:100000,
                 spesa:1800, pcVoi0:1.2, pcDat0:2};
   // le voci si leggono da quello che finisce in pagina, non dal codice che le genera
-  const voci = r => [...(r.scritte.legendaGrafico || '').matchAll(/<\/i>\s*([^<]+)</g)]
+  // LE BANDE, cioè le voci col quadratino colorato. Dal 03/10/2026 la legenda porta anche la
+  // linea tratteggiata della prova di tenuta, che non è una banda: si conta a parte, qui sotto.
+  const voci = r => [...(r.scritte.legendaGrafico || '').matchAll(/class="chip"[^>]*><\/i>\s*([^<]+)</g)]
     .map(m => m[1].trim());
   const tinte = r => [...(r.scritte.legendaGrafico || '')
     .matchAll(/background:(#[0-9a-f]{6})/gi)].map(m => m[1].toLowerCase());
@@ -1050,6 +1052,17 @@ console.log('\n— la legenda del grafico —');
     tinte(azienda).join(' '));
   c('e non se ne ripete una: tre bande, tre colori diversi',
     new Set(tinte(azienda)).size === 3);
+  // la prova di tenuta ha la sua voce quando il grafico ne disegna la linea, e solo allora: coi
+  // rendimenti reali non positivi la prova non si applica, e la legenda non deve nominarla
+  const tenuta = r => /class="tratto"/.test(r.scritte.legendaGrafico || '');
+  c('la linea della prova di tenuta ha la sua voce nella legenda', tenuta(azienda));
+  c('e non compare dove la prova non si applica',
+    !tenuta(esegui({...BASE, tfrDove0:'fondo', rend:1, infl:2, rendFondo0:1, rendFondo1:1})));
+  // I PUNTI NUMERATI: ogni cerchio del grafico ha la sua riga nell'elenco sotto, e viceversa
+  const cerchi = r => ((r.scritte.svg || '').match(/<circle [^>]*r="8"/g) || []).length;
+  const righe = r => ((r.scritte.puntiGrafico || '').match(/<li/g) || []).length;
+  c('ogni punto numerato del grafico è spiegato sotto, e nessuno manca',
+    cerchi(azienda) > 0 && cerchi(azienda) === righe(azienda), `${cerchi(azienda)} cerchi, ${righe(azienda)} righe`);
 }
 
 // --- le caselle da cui il verdetto dipende, e la frase che le promette ---
@@ -1438,11 +1451,13 @@ console.log('\n— le cifre dei riquadri sono quelle del piano —');
     const doc = documento(dichiarate(DATI, DEFAULT), {memoizza: true});
     globalThis.document = doc;
     const warn = console.warn; console.warn = () => {};
-    try { const m = new Function(src + '\nreturn {calc, ultimo: () => ultimo};')(); m.calc();
-          return {el: doc.elementi, ...m.ultimo()}; }
+    try { const m = new Function(src + '\nreturn {calc, fasi, ultimo: () => ultimo};')(); m.calc();
+          return {el: doc.elementi, fasi: m.fasi, ...m.ultimo()}; }
     finally { console.warn = warn; }
   };
   const UNO = {...BASE, quanti:'1', nome1:'', annoPens0:2038, fondo0:200000, quotaCap0:0};
+  const M_fasi = p => p.fasi(p.r);
+  const fmtUno = v => v.toLocaleString('it-IT', {minimumFractionDigits: 1, maximumFractionDigits: 1});
 
   const vita = conPiano({...UNO, forma0:'vita'});
   const attivo = pulito((vita.el.cForma0.innerHTML.match(/<button[^>]*class="attiva"[\s\S]*?<\/button>/) || [''])[0]);
@@ -1486,6 +1501,42 @@ console.log('\n— le cifre dei riquadri sono quelle del piano —');
     /di Anna 5,0%/.test(titoloIpotesi) && /di Bruno 1,0%/.test(titoloIpotesi), titoloIpotesi);
   c('mentre due fondi uguali restano una frase sola',
     !/di Anna/.test(pulito(tuttiA5.el.assuntoIpotesi.innerHTML)), pulito(tuttiA5.el.assuntoIpotesi.innerHTML));
+
+  // LA TABELLA MANTIENE LA SUA PROMESSA: «ogni riga è verificabile: quello che c'era + rendimento
+  // + entrate − spesa». Dal 03/10/2026 le colonne di base sono cinque e la promessa si può
+  // provare leggendo la tabella com'è scritta, riga per riga, con l'arrotondamento all'euro.
+  {
+    const p = conPiano(BASE);
+    const num = s => +s.replace(/\./g, '').replace('−', '-');
+    const righe = p.el.tabella.innerHTML.split('<tr').filter(x => /class="anno"/.test(x))
+      .map(x => ('<tr' + x).replace(/<u>[^<]*<\/u>/, '').replace(/<[^>]+>/g, ' ').replace(/—/g, ' 0 ')
+        .trim().split(/\s+/).map(num));
+    const intest = (p.el.tabella.innerHTML.match(/<thead>[\s\S]*?<\/thead>/) || [''])[0];
+    const colonne = (intest.match(/<th[ >]/g) || []).length;
+    c('la tabella di base ha cinque colonne', colonne === 5, `${colonne} colonne`);
+    const storte = righe.filter((v, k) => k > 0
+      && Math.abs(righe[k-1][4] + v[3] + v[1] + v[2] - v[4]) > 3);
+    c('ogni riga torna: patrimonio di prima + rendimento + entrate − spesa',
+      righe.length === p.r.righe.length && storte.length === 0,
+      `${righe.length} righe, ${storte.length} che non tornano`);
+    const fasiRighe = (p.el.tabella.innerHTML.match(/class="fase-t"/g) || []).length;
+    c('e ogni fase ha la sua riga di testa', fasiRighe === M_fasi(p).length, `${fasiRighe} fasi`);
+  }
+
+  // LA LIQUIDITÀ: la cifra detta è quella del piano, nel primo anno in cui le entrate non bastano
+  {
+    const misto = conPiano({...BASE, quanti:'1', nome1:'', nascita0:1962, ral0:30000, pens0:1300,
+      annoPens0:2030, fondo0:40000, iscr0:2010, cl0:15000, cl2:30000, cl3:120000, spesa:2700});
+    const frase = pulito(misto.el.sgLiquidita.innerHTML);
+    const g = misto.r.righe.find(g => g.spesa - (g.daLavoro + g.daPensioni + g.daRendita + g.daRata) > 0.5);
+    const atteso = g.inizio * (15000 / 165000) / (g.spesa - (g.daLavoro + g.daPensioni + g.daRendita + g.daRata));
+    c('la liquidità dice gli anni di spesa non coperta che stanno in conto e depositi',
+      frase.includes(`dal ${g.anno}`) && frase.includes(fmtUno(atteso)), frase);
+    const azioni = pulito(conPiano({...BASE, spesa: 3600}).el.sgLiquidita.innerHTML);
+    c('e a chi ha tutto in azioni dice che la differenza si paga vendendole', /vendendole/.test(azioni), azioni);
+    const basta = pulito(conPiano(BASE).el.sgLiquidita.innerHTML);
+    c('mentre se le entrate bastano sempre lo dice, invece di dare una cifra', /non serve/.test(basta), basta);
+  }
 
   const rita = conPiano({...BASE, quanti:'1', nome1:'', nascita0:1962, annoPens0:2030,
     ultimo0:2025, fondo0:150000, rita0:2026, spesa:2000, cl3:100000, pens0:2500});

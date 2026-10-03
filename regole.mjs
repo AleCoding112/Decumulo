@@ -450,6 +450,17 @@ export const REGOLE = {
     fonte: 'convenzione: dieci esercizi iniziali a rendimento reale nullo, per misurare quanto il verdetto dipenda dalla sequenza dei rendimenti anziché dalla loro media',
     verificata: true },
 
+  // LA RISERVA DI LIQUIDITÀ (03/10/2026). Il conto tratta il patrimonio come una massa sola con un
+  // rendimento medio, e non dice se gli anni in cui la spesa supera le entrate si pagano con la
+  // parte prudente o vendendo azioni — magari in un anno di Borsa negativo. La diagnosi accanto
+  // al verdetto conta quanti anni di spesa non coperta stanno in conto e depositi (e con le
+  // obbligazioni); questa è la soglia sotto la quale lo dice come un rischio. NON È LEGGE né una
+  // misura: è la convenzione più diffusa nella pianificazione del decumulo, e sta qui perché è
+  // una cifra che una frase usa, non perché sia una regola.
+  LIQUIDITA_ANNI: { nome: "Riserva di liquidità considerata prudente", val: 2, come: 'anni',
+    fonte: 'convenzione: nella pianificazione del decumulo è diffusa l\'indicazione di tenere fuori dall\'azionario da uno a tre anni della spesa che le entrate non coprono, per non dover vendere azioni dopo un anno in perdita. Non è una regola di legge né una misura: si adotta il valore centrale',
+    verificata: true },
+
   // --- il listino dei rendimenti attesi -----------------------------------
   // QUESTE OTTO CIFRE SONO L'OPINIONE PIÙ PESANTE DEL SITO, e vanno lette per quello che sono.
   // La loro rotondità è voluta, non pigrizia: un 4,8% si legge come una misura, un 5% si vede
@@ -820,6 +831,7 @@ export const TESTI = {
   vitaInteraEs:     String((V('VITA_INTERA').find(([e]) => e === 67) || [, ''])[1]),
   frazAnniMin:      String(V('FRAZ_ANNI_MIN')),
   ritaAnticipo:     String(V('RITA_ANTICIPO')),
+  liquiditaAnni:    String(V('LIQUIDITA_ANNI')),
   ritaAnticipoLungo: String(V('RITA_ANTICIPO_INOCCUPATI')),
   // l'abitazione: le tre voci del costo di una compravendita, più il totale su un esempio, che
   // è il modo in cui la cifra si capisce davvero (una percentuale sola non dice quanto pesa)
@@ -996,6 +1008,7 @@ const ALIQ_FONDO_MAX = ${V('ALIQ_FONDO_MAX')}, ALIQ_FONDO_MIN = ${V('ALIQ_FONDO_
 const ALIQ_FRAZ_MAX = ${V('ALIQ_FRAZ_MAX')}, ALIQ_FRAZ_MIN = ${V('ALIQ_FRAZ_MIN')},
       ALIQ_FRAZ_PASSO = ${V('ALIQ_FRAZ_PASSO')};
 const FRAZ_ANNI_MIN = ${V('FRAZ_ANNI_MIN')};
+const LIQUIDITA_ANNI = ${V('LIQUIDITA_ANNI')};
 // le due porte della RITA: cinque anni prima, o dieci per chi è senza lavoro da più di due anni
 const RITA_ANTICIPO = ${V('RITA_ANTICIPO')}, RITA_ANTICIPO_INOCCUPATI = ${V('RITA_ANTICIPO_INOCCUPATI')},
       RITA_INOCCUPAZIONE = ${V('RITA_INOCCUPAZIONE')};

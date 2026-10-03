@@ -112,6 +112,28 @@
   .legenda span{display:flex;align-items:center;gap:6px}
   .inflazione{margin:0 0 28px;padding:0 4px;max-width:68ch}
   .chip{width:11px;height:11px;border-radius:2px;display:inline-block}
+  /* la linea tratteggiata della prova di tenuta, nella legenda */
+  .tratto{width:18px;height:0;border-top:1.5px dashed #5d5a52;display:inline-block}
+  .grafico{position:relative}
+  .grafico svg{touch-action:pan-y}
+  .grafico-info{position:absolute;top:30px;z-index:2;background:#fff;border:1px solid var(--line);
+    border-radius:8px;padding:7px 10px;font-size:12px;line-height:1.45;color:var(--soft);
+    box-shadow:0 1px 3px rgba(0,0,0,.06);pointer-events:none;font-variant-numeric:tabular-nums;
+    min-width:170px}
+  .grafico-info[hidden]{display:none}
+  .grafico-info span{display:block}
+  .grafico-info i{font-style:normal;color:var(--tenue)}
+  .grafico-info b{color:var(--ink);font-weight:600}
+  /* l'elenco dei punti numerati: il numero è lo stesso cerchio del grafico */
+  .punti-grafico[hidden]{display:none}
+  .punti-grafico{list-style:none;margin:0 0 14px;padding:0 4px;font-size:13px;color:var(--soft);
+    line-height:1.45;display:grid;gap:4px}
+  .punti-grafico li{display:flex;gap:8px;align-items:baseline}
+  .punti-grafico li > span > span{display:block}
+  .punti-grafico b{flex:none;width:17px;height:17px;border:1.3px solid #3b3a36;border-radius:50%;
+    font-size:10px;line-height:15px;text-align:center;color:#3b3a36;background:#fff;box-sizing:border-box}
+  .punti-grafico li.allarme{color:var(--giu)}
+  .punti-grafico li.allarme b{border-color:var(--giu);color:var(--giu)}
 
   /* --- le fasi --- */
   .fasi{background:var(--card);border:1px solid var(--line);border-radius:10px;
@@ -496,6 +518,26 @@
     border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
   th:first-child,td:first-child{text-align:left}
   td{border-bottom:1px solid #f2f0ea}
+  /* L'ANNO E IL PATRIMONIO RESTANO FERMI scorrendo di lato: sono le due colonne che danno senso
+     alle altre, e il patrimonio stava in fondo a destra, tagliato a metà già su un desktop */
+  #tabella td.anno,#tabella thead th:first-child{position:sticky;left:0;z-index:1;background:var(--card)}
+  #tabella td.patr,#tabella thead th:last-child{position:sticky;right:0;z-index:1;background:var(--card);
+    box-shadow:-6px 0 6px -6px rgba(0,0,0,.12)}
+  #tabella thead th:first-child,#tabella thead th:last-child{z-index:3}
+  #tabella tr.pens td.anno,#tabella tr.pens td.patr{background:#f6f8f6}
+  #tabella td.patr b{font-weight:700}
+  #tabella .neg{color:var(--giu)}
+  #tabella tr.fase-t td{position:static;text-align:left;background:var(--bg);color:var(--ink);
+    font-size:12px;font-weight:600;padding:9px 9px 5px;white-space:normal;border-bottom:1px solid var(--line)}
+  .scelta .voci{margin-left:14px}
+  /* SUL TELEFONO le cinque colonne devono stare nella larghezza: l'età va sotto l'anno invece che
+     accanto, e i margini delle celle si stringono. Con l'età accanto la tabella era larga 360 px
+     in un riquadro da 324, e il patrimonio fermo a destra copriva il rendimento. */
+  @media (max-width:600px){
+    #tabella th,#tabella td{padding:4px 4px}
+    #tabella td.anno u{display:block;margin-left:0;font-size:10px}
+    #tabella th{font-size:10px;letter-spacing:.02em}
+  }
   td.vuoto{color:#c9c4b8}
   tr.pens td{background:#f6f8f6}
 
@@ -633,13 +675,16 @@
     #annoPerAnno th{font-size:7.5px}
     #annoPerAnno td u{font-size:7.5px}
     #annoPerAnno tr.evento td{font-size:8.5px;padding:2px 4px}
+    #annoPerAnno tr.fase-t td{font-size:9px;padding:5px 4px 2px}
+    #tabella .voce-col{display:none}
+    #tabella td.patr{box-shadow:none}
     th{position:static}
     tr{break-inside:avoid}
     .avvertenza{font-size:9px;margin-top:8px}
     h1,h2,h3{break-after:avoid}
   }
   tr.rossa td{color:var(--giu)}
-  tr.evento td{background:var(--bg);color:var(--acc);text-align:left;font-size:12px;
+  tr.evento td{background:#fff;color:var(--acc);text-align:left;font-size:12px;
     padding:7px 9px 6px;border-bottom:1px solid var(--line);white-space:normal;line-height:1.45}
 
   /* ==================================================================== IL RISULTATO ACCANTO
@@ -1224,6 +1269,9 @@ intero, e le segnalazioni sono le benvenute.
   <dt>Fino a quando</dt><dd id="sgQuando"></dd>
   <dt>Spesa sostenibile</dt><dd id="sgSpesa"></dd>
   <dt>La leva più forte</dt><dd id="sgLeva"></dd>
+  <!-- LA LIQUIDITÀ (03/10/2026): quanti anni di spesa non coperta stanno nella parte prudente del
+       patrimonio, nel primo anno in cui le entrate non bastano. Vedi `liquidita()`. -->
+  <dt>Liquidità</dt><dd id="sgLiquidita"></dd>
 </dl>
 
 <!-- I PEZZI CHE ESISTONO SOLO SE ESISTE UN PIANO, e nascono spenti. Fino al 07/08/2026 la
@@ -1237,6 +1285,8 @@ intero, e le segnalazioni sono le benvenute.
      rami diversi, cioè il modo sicuro per dimenticarne uno. -->
 <div class="grafico" id="riquadroGrafico" hidden>
   <svg id="svg" viewBox="0 0 880 330" role="img" aria-label="Il patrimonio anno per anno"></svg>
+  <!-- il riquadro che compare al passaggio del cursore: anno, età e le tre grandezze -->
+  <div class="grafico-info" id="graficoInfo" hidden></div>
 </div>
 <!-- LA LEGENDA LA SCRIVE `disegna()`, e nasce vuota. Scritta a mano qui dentro aveva due
      difetti che nessuna verifica poteva vedere: i quadratini portavano i colori di PRIMA dello
@@ -1244,6 +1294,10 @@ intero, e le segnalazioni sono le benvenute.
      annunciavano bande che in certi piani non ci sono — con «già in pensione» prometteva «i
      fondi pensione» per ventidue anni in cui di fondi non ce n'era per nessuno. -->
 <p class="legenda" id="legendaGrafico" hidden></p>
+<!-- I PUNTI NUMERATI DEL GRAFICO, spiegati: quello che arriva o succede in un anno solo. Al loro
+     posto c'erano tre file di etichette in cima al grafico, che con quattro eventi in quattro anni
+     si accavallavano («TFR Anna / smette Anna, e altri 2 / TFR Bruno»). -->
+<ol class="punti-grafico" id="puntiGrafico" hidden></ol>
 </div></aside>
 <!-- LE NOTE AL VERDETTO STANNO QUI E NON NELLA COLONNA FISSA: un blocco appiccicato dev'essere
      più basso dello schermo, e con le cinque note non lo sarebbe. Su telefono seguono il grafico
@@ -1397,10 +1451,15 @@ intero, e le segnalazioni sono le benvenute.
   <p class="scelta">Mostra gli importi in
     <label><input type="radio" name="euro" id="euroOggi" checked> euro di oggi</label>
     <label><input type="radio" name="euro" id="euroAllora"> euro di quell'anno</label>
+    <!-- le voci delle entrate a richiesta: di base la tabella ha cinque colonne, che stanno anche
+         su un telefono e bastano a rifare il conto di ogni riga -->
+    <label class="voci"><input type="checkbox" id="vociEntrate"> voce per voce</label>
   </p>
   <div class="scorre"><table id="tabella"></table></div>
   <p class="nota">Importi <b>annui</b>, <span id="valutaTabella">in euro di oggi</span>; accanto
-  all'anno, in corpo minore, l'età.
+  all'anno, in corpo minore, l'età. Le entrate comprendono quello che arriva una volta sola — il
+  TFR liquidato, il fondo riscosso in contanti, la casa venduta — e la riga sopra ogni gruppo di
+  anni dice chi lavora e chi è in pensione.
   Ogni riga è verificabile manualmente: <i>quello che c'era + rendimento + entrate −
   spesa</i>.</p>
 </details>
@@ -2579,119 +2638,313 @@ function scriviFasi(r){
 // ragione di `TINTE`: non sono un parametro del modello, nessun conto li usa, cambiarli non
 // sposta un euro. Ma stanno insieme perché la LEGENDA li rilegge, e finché erano due copie —
 // gli esadecimali nelle `<path>` e quelli scritti a mano nei quadratini — hanno finito per
-// divergere in silenzio: dallo schiarimento qui sotto fino all'11/08/2026 la legenda ha mostrato
-// due tinte (`#cfe0d6`, `#dfe6ef`) che nel disegno non esistevano più. Nessuna verifica lo
-// vedeva, perché i controlli automatici leggono le frasi e i numeri, non i colori.
-const TINTE_GRAFICO = {patr: '#dde9e1', fondi: '#e9edf4', tfr: '#f0ebe0', buco: '#f0dad5'};
+// divergere in silenzio. Nessuna verifica lo vedeva, perché i controlli automatici leggono le
+// frasi e i numeri, non i colori.
+// PIÙ SATURI DAL 03/10/2026: il fondo e il TFR, schiariti l'11/08 perché la curva si leggesse
+// prima del volume, erano diventati due pallori quasi uguali. Ora ogni banda ha anche il proprio
+// bordo superiore, un tono più scuro: è il bordo, non il riempimento, che separa le bande.
+const TINTE_GRAFICO = {patr: '#d6e7dc', fondi: '#d9e2f1', tfr: '#ede1c6', buco: '#f0d6d0'};
+const BORDI_GRAFICO = {fondi: '#8fa3c7', tfr: '#c4a96e'};
+// lo sfondo delle fasi: gli anni di lavoro un poco più scuri, la pensione sul bianco del riquadro
+const FONDI_FASE = {lavoro: '#f1eee5', parziale: '#f6f4ee', vuoto: '#f7efec'};
+
+// LE CIFRE DELL'ASSE, ALL'ITALIANA E POCHE. Il passo era la metà della potenza di dieci sotto
+// l'escursione: con 950.000 € faceva venti righe, e le etichette («950k 900k 850k…») si
+// accavallavano in una colonna illeggibile. Ora il passo è il più piccolo fra 1, 2, 2,5 e 5 per
+// una potenza di dieci che dia al più cinque intervalli, e le cifre si scrivono come si dicono.
+function passoAsse(escursione){
+  const grezzo = Math.max(escursione, 1) / 5, p = Math.pow(10, Math.floor(Math.log10(grezzo)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= grezzo - 1e-9) return m * p;
+  return 10 * p;
+}
+const cifraAsse = v => {
+  if (Math.abs(v) < 0.5) return '0';
+  const s = v < 0 ? '−' : '', a = Math.abs(v);
+  return s + (a >= 1e6
+    ? (a / 1e6).toLocaleString('it-IT', {maximumFractionDigits: 2}) + ' mln'
+    : (a / 1e3).toLocaleString('it-IT', {maximumFractionDigits: 0}) + ' mila');
+};
+
+// LE FASI DELLO SFONDO: chi lavora e chi no, anno per anno. Sostituiscono le etichette degli
+// eventi che stavano in cima al grafico e si accavallavano in tre file («TFR Anna / smette Anna,
+// e altri 2 / TFR Bruno»): le cessazioni e le decorrenze sono confini di fase, e un confine si
+// legge meglio come cambio di sfondo che come una scritta in più.
+function fasiDelGrafico(r){
+  const nomi = r.nomi || NOMI, out = [];
+  for (const g of r.righe){
+    const lav = g.lavora.map((v, i) => v ? i : -1).filter(i => i >= 0);
+    const n = g.lavora.length;
+    const [tipo, testo] = lav.length === n ? ['lavoro', n > 1 ? 'lavorano tutti e due' : 'lavoro']
+      : lav.length ? ['parziale', `lavora ${nomi[lav[0]]}`]
+      : g.inPens.some(Boolean) ? ['pensione', 'pensione']
+      : ['vuoto', 'né lavoro né pensione'];
+    const u = out[out.length - 1];
+    if (u && u.testo === testo) u.a = g.anno;
+    else out.push({tipo, testo, da: g.anno, a: g.anno});
+  }
+  return out;
+}
+
+// I PUNTI DEL PIANO: quello che arriva o succede in un anno solo — il TFR liquidato, il fondo
+// riscosso, l'inizio della RITA, la casa, l'esaurimento. Sul grafico sono cerchi numerati sulla
+// curva, e sotto il grafico l'elenco dice cosa sono: con le cifre, che il grafico da solo non dava.
+function puntiDelPiano(r){
+  const p = [];
+  // con una persona sola «il fondo della persona» non si dice: il complemento sparisce
+  const di = d => (r.nomi || NOMI).length === 1 ? '' : ' ' + d;
+  for (const l of r.liquidazioni) p.push({anno: l.anno,
+    testo: `il TFR${di(l.di)} lasciato in azienda viene liquidato: ${E0(l.netto)} netti`});
+  for (const t of r.rite) p.push({anno: t.da,
+    testo: `il fondo${di(t.di)} comincia a uscire a rate (RITA): ${t.n} rate fino al ${t.a}`});
+  for (const i of r.incassi){
+    const cap = i.capitale > 0.5, ass = i.assegno > 1;
+    p.push({anno: i.anno, testo: `il fondo${di(i.di)} viene riscosso: ` + (i.rate
+      ? (cap ? `${E0(i.capitale)} in contanti e il resto ` : '') + `in ${i.rate} rate annue`
+      : cap && ass ? `${E0(i.capitale)} in contanti e ${E0(i.assegno)} al mese di rendita`
+      : cap ? `${E0(i.capitale)} in contanti`
+      : `${E0(i.assegno)} al mese di rendita`)});
+  }
+  if (r.casa) p.push({anno: r.casa.anno, testo: (r.casa.cosa === 'piccola' ? 'cambio di casa'
+    : r.casa.valore > 0 ? 'vendita della casa' : 'si lascia la casa')
+    + (r.casa.ricavato ? `: ${r.casa.ricavato < 0 ? '−' : '+'}${E0(Math.abs(r.casa.ricavato))} nel patrimonio` : '')});
+  if (r.annoZero !== null) p.push({anno: r.annoZero, testo: 'il patrimonio si esaurisce', allarme: true});
+  return p.filter(v => v.anno >= ANNO0 && v.anno <= r.annoFine).sort((a, b) => a.anno - b.anno);
+}
+
+// lo stato del grafico disegnato per ultimo: lo legge chi risponde al passaggio del cursore, che
+// è attaccato una volta sola all'elemento e non a ogni disegno
+let graficoOra = null;
 
 function disegna(r, carta = null){
-  // IL GRAFICO SI DISEGNA ALLA LARGHEZZA CHE HA, non a 880 unità fisse. Con la `viewBox` fissa e
-  // `width:100%` un'etichetta da 11 unità nella colonna da 440 px rendeva 5,5 px, e a 390 px sul
-  // telefono 4,9: la lezione del secondo grafico scartato, misurata di nuovo. Con `viewBox` pari
-  // ai pixel veri il testo resta di 11 px ovunque, e cambia la porzione di disegno. Nelle
-  // armature `getBoundingClientRect` non esiste e si torna a 880.
-  const largh = EL('svg').getBoundingClientRect ? EL('svg').getBoundingClientRect().width : 0;
+  // IL GRAFICO SI DISEGNA ALLA LARGHEZZA CHE HA, non a 880 unità fisse: con la `viewBox` fissa e
+  // `width:100%` un'etichetta da 11 unità nella colonna da 440 px rendeva 5,5 px. Nelle armature
+  // `getBoundingClientRect` non esiste e si torna a 880. Su carta la larghezza la dà il foglio.
+  const svg = EL('svg');
+  const largh = svg.getBoundingClientRect ? svg.getBoundingClientRect().width : 0;
   const W = carta ? carta.W : largh > 100 ? Math.round(largh) : 880,
-        H = carta ? carta.H : W < 600 ? 260 : 330, L = 68, R = 16, T = 58, B = 26;
-  if (EL('svg').setAttribute) EL('svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+        H = carta ? carta.H : W < 600 ? 250 : 300, L = 58, R = 14, T = 24, B = 24;
+  if (svg.setAttribute) svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const xs = W - L - R, ys = H - T - B;
   const g0 = r.righe;
-  // le tre grandezze si impilano, e l'ordine è «dal più disponibile al meno»: il patrimonio
-  // investito, i fondi non ancora riscossi, il TFR ancora fermo in azienda. La banda nuova sta
-  // all'ESTERNO perché così il grafico di prima resta un sottoinsieme esatto di questo, e
-  // nessuno dei due confini che la gente già leggeva si sposta di un pixel.
-  const conFondi = g => g.patr + g.fondi.reduce((a,b)=>a+b,0);
+  const prova = r.prova && r.prova.righe.length === g0.length ? r.prova.righe : null;
+  // le tre grandezze si impilano, dalla più disponibile alla meno: il patrimonio investito, i
+  // fondi non ancora riscossi, il TFR ancora fermo in azienda
+  const conFondi = g => g.patr + g.fondi.reduce((a, b) => a + b, 0);
   const tot = g0.map(g => conFondi(g) + g.tfrAzienda);
-  const max = Math.max(...tot, 1);
-  const min = Math.min(...g0.map(g => g.patr), 0);
+  // un poco d'aria sopra il punto più alto, perché la cifra finale ci stia senza toccare la curva
+  const alto = Math.max(...tot, ...(prova ? prova.map(g => g.patr) : []), 1) * 1.07;
+  const basso = Math.min(...g0.map(g => g.patr), ...(prova ? prova.map(g => g.patr) : []), 0);
+  const passo = passoAsse(alto - basso);
+  const max = Math.ceil(alto / passo) * passo, min = Math.floor(basso / passo) * passo;
   const y = v => T + ys * (max - v) / (max - min);
   const x = i => L + xs * i / Math.max(g0.length - 1, 1);
-  const via = a => a.map((p,i) => (i?'L':'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-  const pP = g0.map((g,i) => [x(i), y(g.patr)]);
-  const pT = g0.map((g,i) => [x(i), y(conFondi(g))]);
-  const pTot = g0.map((g,i) => [x(i), y(conFondi(g) + g.tfrAzienda)]);
-  const base = y(0), fin = x(g0.length-1).toFixed(1);
+  const via = a => a.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const pP = g0.map((g, i) => [x(i), y(g.patr)]);
+  const pT = g0.map((g, i) => [x(i), y(conFondi(g))]);
+  const pTot = g0.map((g, i) => [x(i), y(conFondi(g) + g.tfrAzienda)]);
+  const base = y(0), fin = x(g0.length - 1).toFixed(1);
+  // metà di un anno, per far cominciare e finire le fasi fra un anno e l'altro
+  const mezzo = xs / Math.max(g0.length - 1, 1) / 2;
+  const iDi = anno => g0.findIndex(g => g.anno === anno);
 
   let h = '';
-  // LE ETICHETTE DEGLI ASSI PORTANO LA TINTA DI `--tenue` SCRITTA PER ESTESO (#767166): dentro
-  // un attributo SVG `var()` non vale, e le tre andrebbero comunque aggiornate insieme alla
-  // variabile — erano rimaste al grigio vecchio, sotto il contrasto minimo, proprio perché
-  // cablate qui. Se `--tenue` cambia ancora, si cambia anche qui, ed è scritto in tutti e due i posti.
-  // il passo va preso sull'ESCURSIONE, non sul massimo: se il patrimonio è sempre sotto zero
-  // il massimo vale 1, il passo diventa 0,5 e la griglia prova a disegnare milioni di righe
-  const passo = Math.pow(10, Math.floor(Math.log10(Math.max(max - min, 1)))) / 2;
-  for (let v = Math.ceil(min/passo)*passo; v <= max; v += passo){
-    h += `<line x1="${L}" x2="${W-R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"
-      stroke="${v===0?'#c9c4b8':'#eeebe4'}"/>`;
-    h += `<text x="${L-8}" y="${(y(v)+4).toFixed(1)}" font-size="11" fill="#767166"
-      text-anchor="end">${v===0?'0':Math.round(v/1000)+'k'}</text>`;
+  // --- lo sfondo delle fasi, con il nome scritto in cima se ci sta
+  for (const f of fasiDelGrafico(r)){
+    const x0 = Math.max(L, x(iDi(f.da)) - mezzo), x1 = Math.min(W - R, x(iDi(f.a)) + mezzo);
+    if (FONDI_FASE[f.tipo]) h += `<rect x="${x0.toFixed(1)}" y="${T}" width="${(x1 - x0).toFixed(1)}"
+      height="${ys}" fill="${FONDI_FASE[f.tipo]}"/>`;
+    // il nome per esteso se ci sta, altrimenti quello breve, altrimenti niente: la fascia resta
+    const breve = {lavoro: 'lavoro', parziale: 'lavoro', pensione: 'pensione', vuoto: 'senza reddito'}[f.tipo];
+    const nome = [f.testo, breve].find(s => x1 - x0 >= s.length * 6 + 8);
+    if (nome) h += `<text x="${(x0 + 4).toFixed(1)}" y="${T - 8}" font-size="11" fill="#767166">${nome}</text>`;
+    if (x0 > L + 1) h += `<line x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${T - 18}" y2="${H - B}"
+      stroke="#cfc9bc" stroke-width="1"/>`;
+  }
+  // --- la griglia e l'asse. LE ETICHETTE PORTANO LA TINTA DI `--tenue` SCRITTA PER ESTESO
+  // (#767166): dentro un attributo SVG `var()` non vale. Se `--tenue` cambia, si cambia anche qui.
+  for (let v = min; v <= max + passo / 2; v += passo){
+    h += `<line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"
+      stroke="${Math.abs(v) < 0.5 ? '#b9b3a6' : '#e7e3da'}"/>`;
+    h += `<text x="${L - 8}" y="${(y(v) + 4).toFixed(1)}" font-size="11" fill="#767166"
+      text-anchor="end">${cifraAsse(v)}</text>`;
   }
   // sopra lo zero è patrimonio, sotto è un buco: due colori, non uno
   h += `<defs>
-    <clipPath id="sopra"><rect x="${L}" y="${T-6}" width="${xs}" height="${(base-T+6).toFixed(1)}"/></clipPath>
-    <clipPath id="sotto"><rect x="${L}" y="${base.toFixed(1)}" width="${xs}" height="${(H-B-base).toFixed(1)}"/></clipPath>
+    <clipPath id="sopra"><rect x="${L}" y="${T - 6}" width="${xs}" height="${(base - T + 6).toFixed(1)}"/></clipPath>
+    <clipPath id="sotto"><rect x="${L}" y="${base.toFixed(1)}" width="${xs}" height="${(H - B - base).toFixed(1)}"/></clipPath>
   </defs>`;
-  // IL PESO STA NEL TRATTO, NON NEL RIEMPIMENTO. Le due aree erano più forti della linea che
-  // le genera: si vedeva un blocco di colore, non un andamento. Schiarite (#cfe0d6 → #dde9e1,
-  // #dfe6ef → #e9edf4) e linea da 2 a 2,5, il grafico si legge come su un giornale: la curva
-  // prima, il volume dopo. L'area sotto lo zero resta più satura delle altre due, perché lì il
-  // riempimento È la notizia.
-  // DALLA PIÙ GRANDE ALLA PIÙ PICCOLA, e ciascuna colonna riempita una volta sola: sono aree
-  // sovrapposte, non impilate per segmento. Riempire segmento per segmento fa sovrapporre i
-  // rettangoli adiacenti di un pixel, e si vedono strisce verticali — è la lezione imparata
-  // disegnando l'anteprima, e vale per qualunque grafica generata.
+  // DALLA PIÙ GRANDE ALLA PIÙ PICCOLA, ciascuna riempita una volta sola: aree sovrapposte, non
+  // impilate per segmento, o i rettangoli adiacenti si sovrappongono di un pixel e si vedono
+  // strisce verticali.
   const area = p => `${via(p)} L ${fin} ${base.toFixed(1)} L ${L} ${base.toFixed(1)} Z`;
   h += `<path d="${area(pTot)}" fill="${TINTE_GRAFICO.tfr}" clip-path="url(#sopra)"/>`;
   h += `<path d="${area(pT)}" fill="${TINTE_GRAFICO.fondi}" clip-path="url(#sopra)"/>`;
   h += `<path d="${area(pP)}" fill="${TINTE_GRAFICO.patr}" clip-path="url(#sopra)"/>`;
   h += `<path d="${area(pP)}" fill="${TINTE_GRAFICO.buco}" clip-path="url(#sotto)"/>`;
+  // i bordi delle due bande: dove una banda è vuota il bordo coincide con quello sotto, e la
+  // curva del patrimonio, disegnata dopo, lo copre
+  h += `<path d="${via(pTot)}" fill="none" stroke="${BORDI_GRAFICO.tfr}" stroke-width="1" clip-path="url(#sopra)"/>`;
+  h += `<path d="${via(pT)}" fill="none" stroke="${BORDI_GRAFICO.fondi}" stroke-width="1" clip-path="url(#sopra)"/>`;
+  // LA PROVA DI TENUTA, tratteggiata: il patrimonio se i primi esercizi rendessero zero. È la
+  // perturbazione che la riga sotto il verdetto racconta a parole, e qui si vede quanto pesa.
+  if (prova) h += `<path d="${via(prova.map((g, i) => [x(i), y(g.patr)]))}" fill="none"
+    stroke="#5d5a52" stroke-width="1.5" stroke-dasharray="5 4"/>`;
   h += `<path d="${via(pP)}" fill="none" stroke="#2f6f4e" stroke-width="2.5" clip-path="url(#sopra)"/>`;
   h += `<path d="${via(pP)}" fill="none" stroke="#a33a2a" stroke-width="2.5" clip-path="url(#sotto)"/>`;
 
-  // gli anni in cui cambia qualcosa. Tre file di etichette: ciascuna va nella prima fila
-  // dove non si accavalla con la precedente; se non ce n'è, resta solo la riga tratteggiata
-  const bordo = [-1e9, -1e9, -1e9];
-  for (const e of eventi(r)){
-    const i = g0.findIndex(v => v.anno === e.anno);
-    if (i < 0) continue;
-    // «SMETTE ANNA +2» SI LEGGEVA COME «PIÙ DUE ANNI». Vuol dire un'altra cosa — che in
-    // quell'anno succedono altre due cose — e su un grafico dove ogni etichetta sta accanto a
-    // un anno, un numero preceduto dal segno più è una data, non un conteggio. Per esteso il
-    // testo esiste già e sta nella tabella; qui bastano tre parole in più.
-    const testo = e.breve + (e.altri ? `, e ${e.altri === 1 ? 'un altro' : 'altri ' + e.altri}` : '');
-    const px = x(i), largh = testo.length * 5.5 + 12;
-    const dx = px + largh > W - R ? -5 : 5;              // le ultime si appoggiano a sinistra
-    const sx = dx < 0 ? px - largh : px;
-    h += `<line x1="${px.toFixed(1)}" x2="${px.toFixed(1)}" y1="${T-8}" y2="${H-B}"
-      stroke="#b9b3a6" stroke-dasharray="3 3"/>`;
-    const riga = bordo.findIndex(b => b <= sx);
-    if (riga < 0) continue;
-    bordo[riga] = sx + largh;
-    h += `<text x="${(px + dx).toFixed(1)}" y="${T - 38 + riga*13}" font-size="10.5"
-      fill="#767166" text-anchor="${dx < 0 ? 'end' : 'start'}">${testo}</text>`;
-  }
-  g0.forEach((v,i) => { if (v.anno % 10 === 0)
-    h += `<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="11" fill="#767166"
+  // --- gli anni in basso: ogni dieci, ogni cinque se il piano è corto
+  const ogni = g0.length <= 25 ? 5 : 10;
+  g0.forEach((v, i) => { if (v.anno % ogni === 0)
+    h += `<text x="${x(i).toFixed(1)}" y="${H - 7}" font-size="11" fill="#767166"
       text-anchor="middle">${v.anno}</text>`; });
-  EL('svg').innerHTML = h;
+
+  // --- i punti numerati. Anni troppo vicini per due cerchi diventano un punto solo, che
+  // nell'elenco sotto porta tutte le sue voci
+  const punti = puntiDelPiano(r), gruppi = [];
+  for (const p of punti){
+    const i = iDi(p.anno), u = gruppi[gruppi.length - 1];
+    if (u && x(i) - x(iDi(u.voci[0].anno)) < 18) u.voci.push(p);
+    else gruppi.push({voci: [p]});
+  }
+  gruppi.forEach((gr, k) => {
+    const i = iDi(gr.voci[0].anno), cx = x(i), cy = Math.max(T + 9, Math.min(H - B - 9, y(g0[i].patr)));
+    const rosso = gr.voci.some(v => v.allarme);
+    h += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="#fff"
+      stroke="${rosso ? '#a33a2a' : '#3b3a36'}" stroke-width="1.3"/>`;
+    h += `<text x="${cx.toFixed(1)}" y="${(cy + 3.6).toFixed(1)}" font-size="10" font-weight="700"
+      fill="${rosso ? '#a33a2a' : '#3b3a36'}" text-anchor="middle">${k + 1}</text>`;
+  });
+  // il valore finale accanto alla fine della curva: la cifra che il verdetto dice a parole
+  {
+    const ult = g0[g0.length - 1];
+    if (ult && r.annoZero === null){
+      // sopra la fine della curva se c'è posto, sotto se la curva tocca il bordo
+      const yf = y(ult.patr) - 10 >= T + 10 ? y(ult.patr) - 10 : y(ult.patr) + 18;
+      h += `<text x="${(W - R).toFixed(1)}" y="${yf.toFixed(1)}" font-size="11" font-weight="700"
+        fill="#2f6f4e" text-anchor="end">${E0(ult.patr)}</text>`;
+    }
+  }
+  // la guida del cursore, vuota finché non serve
+  h += `<g id="guida" visibility="hidden"><line id="guidaLinea" y1="${T}" y2="${H - B}" stroke="#3b3a36"
+    stroke-width="1" stroke-dasharray="2 2"/><circle id="guidaPunto" r="4" fill="#2f6f4e"/></g>`;
+  svg.innerHTML = h;
+  // un riquadro rimasto aperto parlerebbe del disegno di prima
+  EL('graficoInfo').hidden = true;
+  if (svg.setAttribute) svg.setAttribute('aria-label', `Il patrimonio anno per anno, dal ${g0[0] ? g0[0].anno : ANNO0}`
+    + ` al ${r.annoFine}` + (r.annoZero !== null ? `: si esaurisce nel ${r.annoZero}` : `: alla fine ${E0(r.finale)}`));
+  graficoOra = {r, prova, x, y, L, R, W, xs, n: g0.length};
+
+  // L'ELENCO DEI PUNTI, sotto il grafico: il numero sul cerchio rimanda qui
+  EL('puntiGrafico').innerHTML = gruppi.map((gr, k) => `<li${gr.voci.some(v => v.allarme) ? ' class="allarme"' : ''}>`
+    + `<b>${k + 1}</b><span>` + gr.voci.map(v => `<span>${v.anno}: ${v.testo}</span>`).join('') + '</span></li>').join('');
 
   // LA LEGENDA ESCE DA QUI, e non è una comodità: i colori hanno così una sorgente sola, e un
-  // quadratino dichiara una banda soltanto se quella banda esiste in QUESTO piano. Il
-  // patrimonio investito c'è sempre — è la curva —, gli altri due no: chi è già in pensione non
-  // ha né fondo né TFR da riscuotere, e chi non ha mai lasciato il TFR in azienda ha la terza
-  // banda identicamente a zero. Una legenda che nomina una banda invisibile manda a cercare
-  // sul disegno un colore che non c'è.
+  // quadratino dichiara una banda soltanto se quella banda esiste in QUESTO piano.
   const voci = [
     [TINTE_GRAFICO.patr,  'il patrimonio investito', true],
     [TINTE_GRAFICO.fondi, 'i fondi pensione, non ancora riscossi',
                           g0.some(g => g.fondi.some(v => v > 0.5))],
-    // «lasciato in azienda» è la stessa formula che `eventi()` scrive per esteso: il TFR di chi
-    // non l'ha conferito, più il pregresso di chi l'ha conferito dopo — perché le quote già
-    // accantonate non seguono la scelta successiva e restano dove sono.
     [TINTE_GRAFICO.tfr,   'il TFR lasciato in azienda', g0.some(g => g.tfrAzienda > 0.5)],
   ];
   EL('legendaGrafico').innerHTML = voci.filter(v => v[2])
-    .map(([c, t]) => `<span><i class="chip" style="background:${c}"></i> ${t}</span>`).join('');
+    .map(([c, t]) => `<span><i class="chip" style="background:${c}"></i> ${t}</span>`).join('')
+    + (prova ? `<span><i class="tratto"></i> con i primi ${fmt(PROVA_ANNI)} anni a rendimento reale nullo</span>` : '');
+}
+
+// ============================================================================
+//  LA LIQUIDITÀ: SE LA SPESA SI PAGA SENZA VENDERE AZIONI (03/10/2026).
+//
+//  Il conto tratta il patrimonio come una massa sola con un rendimento medio, e la ripartizione
+//  come ferma: che gli anni in cui le entrate non bastano si paghino col conto corrente o
+//  vendendo azioni dopo un anno di Borsa negativo, per il verdetto è lo stesso. Per chi vive di
+//  quel patrimonio no. Il fondo pensione e il TFR in azienda il conto li tiene già fuori dalla
+//  spesa finché non vengono riscossi; questo dice il resto.
+//
+//  NON SI SIMULANO QUATTRO SALVADANAI: vorrebbe dire scegliere una regola di prelievo che nessuno
+//  ha dichiarato — la stessa ragione per cui i prelievi liberi del fondo non sono rappresentati
+//  — e cambierebbe il verdetto per una ragione che non si vede. Si guarda invece il PRIMO anno in
+//  cui la spesa supera le entrate che arrivano ogni anno, e quanti anni di quella differenza
+//  stanno nella parte prudente del patrimonio, con la ripartizione di oggi: conto e depositi, e a
+//  parte anche le obbligazioni. Le cifre che arrivano una volta sola — il TFR, il fondo in
+//  contanti, la casa — non contano come entrata ricorrente: entrano nel patrimonio, e con la
+//  ripartizione di oggi una parte va nella riserva.
+// ============================================================================
+function liquidita(s, r){
+  const tot = totaleClassi();
+  if (!(tot > 0) || !r.righe.length) return null;
+  const q0 = (quotaClasse(0) + quotaClasse(1)) / tot, q1 = q0 + quotaClasse(2) / tot;
+  const anni = r.righe.filter(g => g.inizio > 0).map(g => ({anno: g.anno, inizio: g.inizio,
+    scoperto: g.spesa - (g.daLavoro + g.daPensioni + g.daRendita + g.daRata)}))
+    .filter(v => v.scoperto > 0.5);
+  if (!anni.length) return {mai: true};
+  const p = anni[0];
+  // e se più avanti la riserva si assottiglia: col patrimonio che cala, la stessa quota prudente
+  // copre sempre meno anni. Si dice da quando scende sotto la soglia, se succede dopo il primo.
+  const corto = anni.find(v => v.inizio * q1 / v.scoperto < LIQUIDITA_ANNI);
+  return {anni: anni.length, anno: p.anno, scoperto: p.scoperto, q0, q1,
+          copre: p.inizio * q0 / p.scoperto, copreObbl: p.inizio * q1 / p.scoperto,
+          annoCorto: corto && corto.anno !== p.anno ? corto.anno : null};
+}
+// gli anni detti come si dicono: «cinque mesi», «1,4 anni», «più di dieci anni»
+const anniDetti = v => v >= 10 ? 'più di dieci anni'
+  : v < 1 ? (Math.round(v * 12) < 1 ? 'meno di un mese' : `${fmt(Math.round(v * 12))} ${Math.round(v * 12) === 1 ? 'mese' : 'mesi'}`)
+  : `${fmt(v, 1)} anni`;
+function fraseLiquidita(L){
+  if (!L) return '—';
+  if (L.mai) return 'le entrate coprono la spesa tutti gli anni: la liquidità non serve a pagarla';
+  // CORTA, perché sta in una riga del colpo d'occhio: quanto manca, da quando, quanti anni copre
+  const quando = `dal ${L.anno} mancano ${E0(L.scoperto)} l'anno`;
+  if (L.q1 < 1e-9) return `${quando}, e il patrimonio è tutto in azioni: <b>si pagano
+    vendendole</b>, anche dopo un anno in perdita`;
+  // con le obbligazioni si dice solo se aggiunge qualcosa: «più di dieci anni, con le
+  // obbligazioni più di dieci anni» ripete la stessa cifra
+  const corto = L.copreObbl < LIQUIDITA_ANNI;
+  const conObbl = L.q1 - L.q0 > 1e-9 && L.copre < 10;
+  return `${quando}: ${L.q0 > 1e-9 ? 'conto e depositi' : 'le obbligazioni'} ne coprono
+      <b>${anniDetti(L.q0 > 1e-9 ? L.copre : L.copreObbl)}</b>`
+    + (conObbl && L.q0 > 1e-9 ? `, con le obbligazioni ${anniDetti(L.copreObbl)}` : '')
+    + (corto ? `. <span class="giu-t">Sotto i ${fmt(LIQUIDITA_ANNI)} anni un anno di Borsa in
+        perdita costringe a vendere azioni</span>`
+       : L.annoCorto ? `; meno di ${fmt(LIQUIDITA_ANNI)} anni dal ${L.annoCorto}` : '');
+}
+
+// IL VALORE SOTTO IL CURSORE. Il grafico mostrava un andamento e nessuna cifra: per sapere quanto
+// valeva il patrimonio in un anno bisognava aprire la tabella e cercare la riga. Al passaggio del
+// mouse, o toccando sul telefono, una guida verticale e un riquadro con l'anno, le età e le tre
+// grandezze. L'ascoltatore si attacca una volta sola e legge `graficoOra`, l'ultimo disegno.
+function guidaDelGrafico(){
+  const svg = EL('svg'), info = EL('graficoInfo');
+  if (!svg.addEventListener || !info) return;
+  const nascondi = () => { info.hidden = true;
+    const gd = document.getElementById('guida'); if (gd) gd.setAttribute('visibility', 'hidden'); };
+  const mostra = e => {
+    const G = graficoOra; if (!G || !G.n) return;
+    const box = svg.getBoundingClientRect(), scala = G.W / box.width;
+    const px = (e.clientX - box.left) * scala;
+    const i = Math.max(0, Math.min(G.n - 1, Math.round((px - G.L) / G.xs * (G.n - 1))));
+    const g = G.r.righe[i], fondi = g.fondi.reduce((a, b) => a + b, 0);
+    const gd = document.getElementById('guida');
+    if (gd){ gd.setAttribute('visibility', 'visible');
+      document.getElementById('guidaLinea').setAttribute('x1', G.x(i));
+      document.getElementById('guidaLinea').setAttribute('x2', G.x(i));
+      document.getElementById('guidaPunto').setAttribute('cx', G.x(i));
+      document.getElementById('guidaPunto').setAttribute('cy', G.y(g.patr)); }
+    info.innerHTML = `<b>${g.anno}</b> <i>${g.eta.join(' e ')} anni</i>`
+      + `<span>Patrimonio investito <b>${E0(g.patr)}</b></span>`
+      + (fondi > 0.5 ? `<span>Fondi pensione ${E0(fondi)}</span>` : '')
+      + (g.tfrAzienda > 0.5 ? `<span>TFR in azienda ${E0(g.tfrAzienda)}</span>` : '')
+      + (G.prova ? `<span>Con la prova di tenuta ${E0(G.prova[i].patr)}</span>` : '');
+    info.hidden = false;
+    // il riquadro sta dalla parte opposta del cursore, per non coprire il punto che si guarda
+    const xPx = G.x(i) / scala, destra = xPx > box.width / 2;
+    info.style.left = destra ? '' : (xPx + 14) + 'px';
+    info.style.right = destra ? (box.width - xPx + 14) + 'px' : '';
+  };
+  svg.addEventListener('pointermove', mostra);
+  svg.addEventListener('pointerdown', mostra);
+  svg.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') nascondi(); });
+  // sul telefono il riquadro resta finché non si tocca altrove
+  addEventListener('pointerdown', e => { if (!svg.contains(e.target)) nascondi(); });
 }
 
 // kOf(anno) converte gli importi: 1 in euro di oggi, (1+infl)^n in euro di quell'anno.
@@ -2778,41 +3031,59 @@ function eventi(r, kOf = () => 1){
   return out;
 }
 
+// LA TABELLA ANNO PER ANNO, RIFATTA IL 03/10/2026. Aveva otto colonne e il patrimonio — la sola
+// che tutti cercano — stava in fondo a destra: su un desktop restava tagliato a metà, su un telefono
+// se ne vedevano tre su otto senza che niente dicesse che la tabella scorreva. E quarantasette
+// righe tutte uguali, interrotte da frasi lunghe, non dicevano dove cambiava qualcosa.
+// Ora le colonne di base sono cinque — anno, entrate, spesa, rendimento, patrimonio — e il conto
+// di ogni riga si fa a occhio: patrimonio dell'anno prima + rendimento + entrate − spesa. Le voci
+// delle entrate e la spesa non coperta si aprono con «voce per voce». L'anno e il patrimonio
+// restano fermi quando si scorre di lato, e le righe sono raggruppate per fase.
 function tabella(r, s){
-  const allora = EL('euroAllora').checked;
+  const allora = EL('euroAllora').checked, voci = !!EL('vociEntrate').checked;
   const kOf = anno => allora ? Math.pow(1 + s.infl, anno - ANNO0) : 1;
   const ev = {}; eventi(r, kOf).forEach(e => ev[e.anno] = e.testo);
+  const fasiDa = {}; fasi(r).forEach(f => fasiDa[f.da] = f);
   // La rendita del fondo e la pensione INPS stanno in due colonne diverse: sono fonti diverse, e
   // la rendita non si rivaluta, quindi unite farebbero sembrare che a erodersi sia l'INPS.
-  // La colonna della casa compare solo se serve e non si somma a quella del fondo: sotto la
-  // tabella c'è scritto che ogni riga si rifà a mano, e unire una prestazione previdenziale al
-  // prezzo di una casa in un numero solo renderebbe quel conto impossibile.
+  // La colonna della casa compare solo se serve e non si somma a quella del fondo: unire una
+  // prestazione previdenziale al prezzo di una casa in un numero solo renderebbe il conto opaco.
   const conCasa = !!(r.casa && r.casa.ricavato !== 0);
-  const nCol = conCasa ? 9 : 8;
-  let h = `<tr><th>Anno</th><th>Lavoro</th><th>Pensione INPS</th><th>Rendita del fondo</th>
-    <th>Fondo e TFR</th>${conCasa ? '<th>Casa</th>' : ''}<th>Spesa</th><th>Rendim.</th>
-    <th>Patrimonio</th></tr>`;
+  const vc = (testo, titolo = '') => `<th class="voce-col"${titolo ? ` title="${titolo}"` : ''}>${testo}</th>`;
+  const intest = `<tr><th>Anno</th>` + (voci
+      ? vc('Lavoro') + vc('Pensione INPS') + vc('Rendita del fondo') + vc('Fondo e TFR')
+        + (conCasa ? vc('Casa') : '') : '')
+    + `<th>Entrate</th><th>Spesa</th>`
+    + (voci ? vc('Spesa non coperta', 'quanto la spesa supera le entrate che arrivano ogni anno: lo paga il patrimonio') : '')
+    + `<th>Rendim.</th><th>Patrimonio</th></tr>`;
+  const nCol = 5 + (voci ? 5 + (conCasa ? 1 : 0) : 0);
+  let h = `<thead>${intest}</thead><tbody>`;
   for (const g of r.righe){
-    if (ev[g.anno]) h += `<tr class="evento"><td colspan="${nCol}">${g.anno} — ${ev[g.anno]}</td></tr>`;
+    // LA FASE, prima del suo primo anno: chi lavora, chi è in pensione, se il fondo esce a rate
+    const f = fasiDa[g.anno];
+    if (f) h += `<tr class="fase-t"><td colspan="${nCol}">${f.da === f.a ? f.da : `${f.da}–${f.a}`}
+      · ${f.cosa}</td></tr>`;
     // in euro di quell'anno: gli stessi soldi, ai prezzi di allora
     const k = kOf(g.anno);
     const c = v => v * k > 0.5 ? fmt(v * k) : '<span class="vuoto">—</span>';
-    // il ricavato può essere negativo, e allora va scritto col segno invece di sparire
+    // `cc` E NON `c` DOVE IL NUMERO PUÒ ESSERE NEGATIVO: il rendimento reale negativo, il lavoro
+    // quando il versamento supera la busta, la casa nuova più cara di quella venduta
     const cc = v => Math.abs(v * k) > 0.5
-      ? (v < 0 ? '−' + fmt(-v * k) : fmt(v * k)) : '<span class="vuoto">—</span>';
-    // `cc` E NON `c` DOVE IL NUMERO PUÒ ESSERE NEGATIVO. Con un rendimento reale negativo la
-    // colonna «Rendim.» scriveva un trattino tutti gli anni — cioè «non è successo niente» —
-    // mentre era proprio lì che il patrimonio si stava consumando. Vale anche per il lavoro:
-    // oltre una certa percentuale il versamento supera quello che resta in busta.
-    const cl = g.patr < 0 ? 'rossa' : (g.lavora.some(v=>v) ? '' : 'pens');
-    h += `<tr class="${cl}"><td class="anno">${g.anno}<u>${g.eta.join('/')}</u></td>
-      <td>${cc(g.daLavoro)}</td><td>${c(g.daPensioni)}</td><td>${c(g.daRendita)}</td>
-      <td>${c(g.daFondo + g.daRata + g.daTfr)}</td>
-      ${conCasa ? `<td>${cc(g.daCasa || 0)}</td>` : ''}
-      <td>−${fmt(g.spesa * k)}</td><td>${cc(g.rendimento)}</td>
-      <td><b>${fmt(g.patr * k)}</b></td></tr>`;
+      ? (v < 0 ? '<span class="neg">−' + fmt(-v * k) + '</span>' : fmt(v * k)) : '<span class="vuoto">—</span>';
+    const ricorrenti = g.daLavoro + g.daPensioni + g.daRendita + g.daRata;
+    const entrate = ricorrenti + g.daFondo + g.daTfr + (g.daCasa || 0);
+    const cl = g.patr < 0 ? 'rossa' : (g.lavora.some(v => v) ? '' : 'pens');
+    h += `<tr class="${cl}"><td class="anno">${g.anno}<u>${g.eta.join('/')}</u></td>`
+      + (voci ? `<td class="voce-col">${cc(g.daLavoro)}</td><td class="voce-col">${c(g.daPensioni)}</td>`
+          + `<td class="voce-col">${c(g.daRendita)}</td><td class="voce-col">${c(g.daFondo + g.daRata + g.daTfr)}</td>`
+          + (conCasa ? `<td class="voce-col">${cc(g.daCasa || 0)}</td>` : '') : '')
+      + `<td>${cc(entrate)}</td><td>−${fmt(g.spesa * k)}</td>`
+      + (voci ? `<td class="voce-col">${c(Math.max(0, g.spesa - ricorrenti))}</td>` : '')
+      + `<td>${cc(g.rendimento)}</td><td class="patr"><b>${g.patr < 0 ? '−' + fmt(-g.patr * k) : fmt(g.patr * k)}</b></td></tr>`;
+    // l'evento DOPO la riga del suo anno, e breve: spiega il numero che si è appena letto
+    if (ev[g.anno]) h += `<tr class="evento"><td colspan="${nCol}">${g.anno} — ${ev[g.anno]}</td></tr>`;
   }
-  EL('tabella').innerHTML = h;
+  EL('tabella').innerHTML = h + '</tbody>';
   // la valuta detta in parole accanto alla tabella: su carta la scelta coi due pallini non c'è
   EL('valutaTabella').textContent = allora ? 'in euro di quell’anno' : 'in euro di oggi';
 }
@@ -2913,7 +3184,7 @@ function componi(comuni, dei){
 // scelte e la tabella non sono parti della pagina: sono parti del risultato, e senza risultato
 // mostrano il proprio contenitore vuoto. Un punto solo perché i rami che tolgono il verdetto
 // sono tre, e quattro elementi spenti a mano in tre rami sono tre occasioni di dimenticarne uno.
-const PEZZI_DEL_PIANO = ['riquadroGrafico', 'legendaGrafico', 'riquadroFasi', 'decisioni',
+const PEZZI_DEL_PIANO = ['riquadroGrafico', 'legendaGrafico', 'puntiGrafico', 'riquadroFasi', 'decisioni',
                          'annoPerAnno', 'sguardo'];
 const mostraIlPiano = si => PEZZI_DEL_PIANO.forEach(k => EL(k).hidden = !si);
 
@@ -3460,7 +3731,7 @@ function calc(){
       chiuderebbe nel ${finePiano}: prima dell'anno in corso. Il piano non ha anni da
       calcolare.`;
     EL('vuoto').hidden = false;
-    ['fasi','tabella','legendaGrafico'].forEach(k => EL(k).innerHTML = '');
+    ['fasi','tabella','legendaGrafico','puntiGrafico'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
     ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni','nonContato'].forEach(k => EL(k).innerHTML = '');
     EL('lasciato').hidden = true;
@@ -3480,7 +3751,7 @@ function calc(){
       : `Mancano ${PAROLA[quanteMancano] || quanteMancano} dati.`;
     sub.innerHTML = 'Per il calcolo ' + (quanteMancano === 1 ? 'serve' : 'servono')
       + (frase.startsWith(',') ? '' : ' ') + frase + '.';
-    ['fasi','tabella','legendaGrafico'].forEach(k => EL(k).innerHTML = '');
+    ['fasi','tabella','legendaGrafico','puntiGrafico'].forEach(k => EL(k).innerHTML = '');
     EL('svg').innerHTML = '';
     ['inflazione','calcolato','quandoSmettete','regola','tenuta','superstite','assunzioni','nonContato'].forEach(k =>
       EL(k).innerHTML = '');
@@ -3582,6 +3853,7 @@ function calc(){
     : `<b>${E50(q)}</b> al mese` + (inPens ? ` (${E50(q * s.spesaPens / Math.max(s.spesa, 1))} in pensione)` : '')
       + `, contro ${E0(s.spesa)} indicati`;
   EL('sgLeva').innerHTML = '—';
+  EL('sgLiquidita').innerHTML = fraseLiquidita(liquidita(s, r));
 
   // SE UNO DEI DUE MANCASSE.
   // La metrica non può essere il patrimonio finale: la spesa di chi resta scende al 60-67% e quel
@@ -3740,6 +4012,7 @@ function calc(){
   // i rendimenti. Nel decumulo la sequenza conta più della media: quello che manca all'inizio
   // non c'è più a rendere dopo, e un piano che regge sulla media può non reggere su una brutta
   // partenza. Misurato: sul caso di prova a 4.000 € di spesa il verdetto si rovescia davvero.
+  r.prova = null;
   if (s.rend <= 0 && fondiDelPiano(s).every(i => s.p[i].rendFondo <= 0)){
     // CON RENDIMENTI REALI GIÀ NON POSITIVI LA PROVA NON TOGLIE NIENTE: la perturbazione è
     // `Math.min(0, rendimento)`, che su un numero già negativo lo lascia dov'era, e mostrare il
@@ -3753,6 +4026,8 @@ function calc(){
   } else {
     const sotto = {...s, prova: PROVA_ANNI};
     const p = simula(sotto);
+    // il grafico la disegna tratteggiata accanto alla curva vera
+    r.prova = p;
     const capo = `<b>Prova di tenuta.</b> Con i primi ${fmt(PROVA_ANNI)} anni a rendimento
       reale nullo `;
     const coda = ` <a href="il-metodo.html">Come è costruita →</a>`;
@@ -5020,7 +5295,12 @@ function aggiornaDecisioni(s, r){
 
   leve.sort((a, b) => b.vale - a.vale);
   EL('sgLeva').innerHTML = leve.length ? leve[0].testo
-    : 'nessuna delle scelte qui sotto migliora il piano: il versamento di oggi è già il punto più alto';
+    // SU UN PIANO CHE NON REGGE nessun punto più alto viene indicato, quindi «il versamento di oggi
+    // è già il punto più alto» era un'affermazione che nessuno aveva misurato. E a chi è in
+    // pensione non c'è un versamento da nominare.
+    : r.annoZero !== null
+    ? 'nessuna delle scelte qui sotto basta a portare il piano fino in fondo: restano la spesa e l\'anno in cui si smette'
+    : 'nessuna delle scelte qui sotto migliora il piano';
   document.querySelectorAll('#decFondo .scelte button').forEach(b =>
     b.addEventListener('click', () => {
       EL('forma' + b.dataset.i).value = b.dataset.f; calc();
@@ -5130,7 +5410,7 @@ const caselle = () => document.querySelectorAll('input[id], select[id]');
 function salva(){
   try {
     const d = {};
-    caselle().forEach(e => d[e.id] = (e.type === 'radio' ? e.checked : e.value));
+    caselle().forEach(e => d[e.id] = (e.type === 'radio' || e.type === 'checkbox' ? e.checked : e.value));
     localStorage.setItem(CHIAVE, JSON.stringify(d));
     return true;
   } catch(e){ return false; }   // certi browser non lo permettono sui file aperti da disco
@@ -5146,7 +5426,7 @@ function ripristina(){
     if ('rendFondo' in d && !('rendFondo0' in d)) d.rendFondo0 = d.rendFondo1 = d.rendFondo;
     caselle().forEach(e => {
       if (!(e.id in d)) return;
-      if (e.type === 'radio') e.checked = d[e.id]; else e.value = d[e.id];
+      if (e.type === 'radio' || e.type === 'checkbox') e.checked = d[e.id]; else e.value = d[e.id];
     });
     return true;
   } catch(e){ return false; }
@@ -5354,10 +5634,12 @@ function datiDelPiano(s, r){
     ] : []),
     {sezione: 'Le ipotesi'},
     U('Rendimento del patrimonio (%, netto e nominale)', s.rendNom * 100, '%'),
-    P('Comparto e tipo di fondo', seLavora((x, i) => nomeDelFondo(x.rendFondoNom))),
-    P('Rendimento del comparto del fondo (%, netto e nominale)', seLavora(x => x.rendFondoNom * 100), '%'),
     U('Inflazione (%)', s.infl * 100, '%'),
-    U('Orizzonte del piano (anni di età)', s.etaFine)
+    U('Orizzonte del piano (anni di età)', s.etaFine),
+    // i nomi di nuovo in testa: le righe del fondo sono per persona, e lontane dalle prime
+    {intest: s.indici.map(i => s.p[i].nome)},
+    P('Comparto e tipo di fondo', seLavora((x, i) => nomeDelFondo(x.rendFondoNom))),
+    P('Rendimento del comparto del fondo (%, netto e nominale)', seLavora(x => x.rendFondoNom * 100), '%')
   ];
 }
 
@@ -5466,6 +5748,7 @@ EL('azzera').addEventListener('click', () => {
 
 costruisciDecisioni();
 fermaIlSaltoDeiCursori();
+guidaDelGrafico();
 // PRIMA DEL RIPRISTINO, come le decisioni: `ripristina()` scorre le caselle che trova in
 // pagina, e quelle costruite dopo non le rivedrebbe mai più.
 costruisciComposizione();

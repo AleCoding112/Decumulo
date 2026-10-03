@@ -276,6 +276,18 @@ if (process.argv[1] && import.meta.url === 'file://' + process.argv[1]) {
     fatti.push(await b.scatta('telefono-grafico', '#riquadroGrafico'));
     fatti.push(await b.scatta('telefono-grafico-legenda', '#legendaGrafico'));
 
+    // IL GRAFICO AL PASSAGGIO DEL CURSORE e LA TABELLA (03/10/2026): il riquadro coi valori di un
+    // anno, e la tabella a cinque colonne coi gruppi di fase. Il riquadro si fa comparire come
+    // lo fa il mouse, con un evento sul disegno a metà larghezza.
+    await b.larga(1200);
+    await b.js(`(() => { const s = document.getElementById('svg'), r = s.getBoundingClientRect();
+      s.dispatchEvent(new PointerEvent('pointermove', {clientX: r.x + r.width * 0.6,
+        clientY: r.y + r.height / 2, bubbles: true, pointerType: 'mouse'})); return true; })()`);
+    fatti.push(await b.scatta('grafico-al-passaggio', '#riquadroGrafico'));
+    fatti.push(await b.scatta('grafico-punti', '#puntiGrafico'));
+    await b.js(`document.getElementById('annoPerAnno').open = true; true`);
+    fatti.push(await b.scatta('tabella', '#annoPerAnno'));
+
     // LA STAMPA, da guardare pagina per pagina: era il pezzo più trascurato del sito, quattordici
     // pagine col modulo intero, e nessuno scatto la mostrava
     await b.compila({tfrDove0: 'fondo', pc0: ''});

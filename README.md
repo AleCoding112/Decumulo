@@ -18,8 +18,8 @@ lancia da solo:
 | comando | cosa fa |
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
-| `node test.mjs` | 354 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 477 controlli sul testo, e confronta le cifre dei riquadri con quelle del piano |
+| `node test.mjs` | 358 controlli sul motore, letto da `sito/index.html` |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 486 controlli sul testo, e confronta le cifre dei riquadri con quelle del piano |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
@@ -1499,6 +1499,59 @@ anche Chromium e il Chrome for Testing della cache di Playwright, e se non trova
 controllo **fallisce** dicendo perché. E `occhi.mjs` vuole `WebSocket`, che Node ha solo dalla
 22: con la 20, che è quella predefinita qui, lo dice per nome invece di morire con un
 «WebSocket is not defined». Si lancia con `/opt/homebrew/opt/node@22/bin/node`.
+
+## 2026-10-03, terzo tempo — la RITA con le sue due porte, il grafico, la tabella, la liquidità
+
+Quattro segnalazioni sue.
+
+**1. La RITA si apriva a dieci anni dalla pensione per chiunque avesse smesso di lavorare.** La
+legge ha due porte (art. 11 c. 4 e 4-bis): cinque anni prima della pensione di vecchiaia con
+vent'anni di contributi, oppure dieci anni prima ma solo per chi è senza lavoro **da più di 24
+mesi**. `rita.html` lo diceva giusto, il calcolatore apriva a tutti la seconda: chi smetteva nel
+2030 con la pensione nel 2040 poteva far partire le rate nel 2031, la legge dal 2033 o dal 2035.
+Ora `porteRita` calcola le due porte e vale la prima; le tre cifre stanno in `regole.mjs`
+(`RITA_ANTICIPO`, `RITA_ANTICIPO_INOCCUPATI`, `RITA_INOCCUPAZIONE`); il motore non lascia partire
+la RITA prima della porta nemmeno da un salvataggio vecchio; accanto al cursore si dice quale
+porta si sta usando. Come anno della pensione il conto usa la decorrenza scritta, che per chi va in
+pensione anticipata viene prima della vecchiaia: la finestra risulta più stretta del vero, non più
+larga, ed è dichiarato in `rita.html`.
+**Tre casi di prova avevano smesso in silenzio di provare la RITA** — le persone lavoravano fino
+alla pensione, e con la regola giusta le rate non partivano più — continuando a passare. Ora un
+caso della seconda implementazione che si chiama «RITA» fallisce se di rate non ne ha.
+
+**2. Il grafico.** L'asse aveva venti etichette sovrapposte (il passo era metà della potenza di
+dieci sotto l'escursione); gli eventi erano tre file di etichette accavallate in cima; le bande
+del fondo e del TFR erano due pallori quasi uguali; e non c'era modo di leggere una cifra. Ora:
+da quattro a sei valori sull'asse, scritti all'italiana («250 mila», «1,5 mln»); lo sfondo dice
+le fasi (lavoro, pensione) al posto delle etichette; le cose che succedono in un anno solo sono
+cerchi numerati sulla curva, spiegati con le cifre in un elenco sotto; le bande hanno un bordo
+proprio; la cifra finale sta accanto alla fine della curva; **la prova di tenuta è una linea
+tratteggiata**, così il rischio della sequenza si vede invece di leggersi; e al passaggio del
+cursore — o toccando, sul telefono — un riquadro dice anno, età, patrimonio, fondi e TFR di
+quell'anno.
+
+**3. La tabella.** Otto colonne, col patrimonio in fondo a destra tagliato già su un desktop, tre
+colonne su otto visibili su un telefono, quarantasette righe uguali. Ora cinque colonne — anno,
+entrate, spesa, rendimento, patrimonio — e il conto di ogni riga si fa a occhio; le voci delle
+entrate e la «spesa non coperta» si aprono con «voce per voce»; anno e patrimonio restano fermi
+scorrendo di lato; le righe sono raggruppate per fase. `come-parla.mjs` rifà ora il conto di
+**ogni riga** leggendo la tabella com'è scritta: è la promessa della nota sotto la tabella, che
+nessun controllo provava.
+
+**4. La liquidità.** Il conto tratta il patrimonio come una massa sola con un rendimento medio, e
+non diceva mai se gli anni in cui la spesa supera le entrate si pagano con la parte prudente o
+vendendo azioni, magari dopo un anno di Borsa negativo. **Non si simulano quattro salvadanai**:
+vorrebbe dire scegliere una regola di prelievo che nessuno ha dichiarato, e cambierebbe il
+verdetto per ragioni che non si vedono. C'è invece una quarta riga sotto il verdetto: dal primo
+anno in cui le entrate non bastano, quanti anni di quella differenza stanno in conto e depositi
+(e con le obbligazioni), con la ripartizione di oggi; sotto i due anni — `LIQUIDITA_ANNI`, una
+convenzione dichiarata come tale, non legge — lo dice come rischio, e dice da quando la riserva
+scende sotto quella soglia se il patrimonio cala. Fondo pensione e TFR in azienda il conto li
+teneva già fuori dalla spesa finché non vengono riscossi. È nei limiti di `il-metodo.html`.
+
+E una frase che non era stata misurata: sotto il verdetto di un piano che non regge, la leva più
+forte diceva «il versamento di oggi è già il punto più alto», dove nessun punto più alto era stato
+indicato. Ora dice che nessuna scelta basta, e che restano la spesa e l'anno in cui si smette.
 
 ## Il registro dei dubbi
 
