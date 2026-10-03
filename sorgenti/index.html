@@ -1062,7 +1062,8 @@ intero, e le segnalazioni sono le benvenute.
       <u class="hint">non entra nel patrimonio: serve solo se si prevede di cambiarla</u></div>
   </div>
   <p class="nota">Le due spese restano ferme dentro la loro fase: il conto passa dalla prima
-  alla seconda l'anno in cui si smette di lavorare.</p>
+  alla seconda dal primo anno senza lavoro, e con due persone da quando ha smesso anche
+  l'ultima.</p>
   </details>
 </fieldset>
 
@@ -3397,7 +3398,11 @@ function calc(){
   // non risponde: 2,8 milioni alla fine possono voler dire «non l'avete mai toccato» oppure
   // «ci siete andati vicini». Il verdetto si ricava da due fatti — se il patrimonio cala mai,
   // e se arriva in fondo — e solo dopo viene il numero.
-  const cala = r.righe.filter((g, k) => k > 0 && g.patr < r.righe[k-1].patr - 1);
+  // IL PRIMO ESERCIZIO SI CONFRONTA CON IL PROPRIO INIZIO, non con niente. Partendo dal secondo,
+  // un piano che cala solo nel primo anno — chi ha smesso di lavorare e aspetta la decorrenza
+  // dell'anno dopo — riceveva «il patrimonio non si riduce in nessuno dei 30 anni», mentre due
+  // righe più su `calcolato` diceva «il patrimonio è in riduzione già dal primo anno».
+  const cala = r.righe.filter((g, k) => g.patr < (k > 0 ? r.righe[k-1].patr : g.inizio) - 1);
   const q = spesaSostenibile(s);
   // la spesa sostenibile è quella di ADESSO: quella della pensione la segue in proporzione,
   // e quando le due sono diverse va detto, o si legge un numero solo per due fasi diverse
@@ -3667,10 +3672,14 @@ function calc(){
     }
   }
 
-  // quello che entra davvero nel primo anno, pensioni già in corso comprese
+  // quello che entra davvero nel primo anno, pensioni già in corso comprese.
+  // LE RATE DEL FONDO CI STANNO, come nelle fasi e in `scoperti`: sono un flusso ricorrente. Senza,
+  // a chi prende la RITA dal primo anno la frase diceva «la spesa eccede le entrate di 2.000 € al
+  // mese: la differenza esce dal patrimonio, che il rendimento mantiene comunque in crescita»,
+  // mentre le fasi, poco sotto, dicevano «accantonamento 784 € al mese» per lo stesso esercizio.
   const primo = r.righe[0];
   const messiVia = primo
-    ? (primo.daLavoro + primo.daPensioni + primo.daRendita - primo.spesa) / 12 : 0;
+    ? (primo.daLavoro + primo.daPensioni + primo.daRendita + primo.daRata - primo.spesa) / 12 : 0;
   // UN DISAVANZO DI FLUSSO NON È UN PATRIMONIO CHE CALA: se il rendimento lo copre, il
   // patrimonio sale lo stesso. La frase diceva «il patrimonio è già in riduzione» leggendo solo
   // le entrate, e finiva sopra un verdetto che dichiarava il contrario nella stessa schermata.
@@ -3807,7 +3816,7 @@ function conAlt(s, i, campo, valore){
 // Gli interi restano come rete di sicurezza. Tutto viene portato sul passo del cursore, 0,1:
 // un punto che il cursore non può raggiungere sarebbe un consiglio che non si può seguire.
 // E C'È UN GRADINO CHE DALLE PERCENTUALI NON SI VEDE: la soglia del «tutto in contanti».
-// Superarla di un euro fa scendere la quota liquidabile dal 100% al 60%, e il resto diventa una
+// Superarla di un euro fa scendere la quota liquidabile dal 100% al 50%, e il resto diventa una
 // rendita che non si rivaluta: nel conto quel salto vale decine di migliaia di euro. Il punto in
 // cui il montante la incrocia si trova per bisezione — il montante cresce con quello che si
 // versa — e vanno provati i due decimi che lo stringono, o si finisce per consigliare il decimo
@@ -4332,7 +4341,9 @@ function fermaIlSaltoDeiCursori(){
 const FORME = [
   {k:'vita', nome:'vitalizia',     fatt:1,          sotto:'finisce con l\'aderente'},
   {k:'rev',  nome:'reversibile',   fatt:FATT_REV,   sotto:'continua a chi resta'},
-  {k:'certa',nome:'certa 10 anni', fatt:FATT_CERTA, sotto:'10 anni garantiti'},
+  // gli anni garantiti vengono da CERTA_ANNI come nel motore: scritti qui, un ritocco in
+  // regole.mjs avrebbe cambiato il conto lasciando «10» sul pulsante
+  {k:'certa',nome:`certa ${CERTA_ANNI} anni`, fatt:FATT_CERTA, sotto:`${CERTA_ANNI} anni garantiti`},
   // art. 11 c. 3-bis: erogate dal fondo, col montante che resta investito
   {k:'durata',     nome:'a durata definita', consuma:1, sotto:'per gli anni di vita attesa'},
   {k:'frazionata', nome:'frazionata',        consuma:1, sotto:'per gli anni che si sceglie'}
@@ -4660,9 +4671,15 @@ function aggiornaDecisioni(s, r){
           : `${nSc} ${nSc === 1 ? 'anno' : 'anni'} in cui la spesa esce dal patrimonio`}</i>`;
     if (senzaFinestra){
       // il cursore non c'è: va detto perché, altrimenti sembra che manchi qualcosa
-      EL('cQuando'+i+'Picco').textContent =
-        `la RITA serve a chi smette molto prima della pensione: ${x.nome} smette nel ${x.ultimo}`
-        + ` e la pensione arriva l'anno dopo, quindi non c'è nessun buco da coprire`;
+      // DUE RAGIONI DIVERSE PER LA STESSA FINESTRA CHIUSA. Diceva sempre «smette nel … e la
+      // pensione arriva l'anno dopo», anche a chi aveva smesso nel 2020 con la decorrenza nel
+      // 2026: lì la finestra è chiusa perché la decorrenza è già quest'anno, non perché non ci
+      // sia un buco. E «la persona smette» non si dice: con una persona sola il soggetto sparisce.
+      EL('cQuando'+i+'Picco').textContent = x.ultimo + 1 >= fine
+        ? `la RITA serve a chi smette molto prima della pensione: `
+          + (s.N === 1 ? 'si smette' : `${x.nome} smette`) + ` nel ${x.ultimo}`
+          + ` e la pensione arriva l'anno dopo, quindi non c'è nessun buco da coprire`
+        : `la pensione decorre già nel ${fine}: non resta un anno in cui anticipare il fondo`;
       EL('cQuando'+i+'Vai').hidden = true;   // senza finestra non c'è nessun punto a cui andare
     } else {
       // IL PUNTO PIÙ ALTO QUI ESISTE DAVVERO, ed è l'unico dei tre passi per cui valga.
@@ -4706,13 +4723,33 @@ function aggiornaDecisioni(s, r){
     const qc = (+cc.value) / 100;
     const coeff = inc ? inc.coeff : (x.coeff || COEFF_RENDITA);
     const alMese = q => netto * (1 - q) * coeff / 12;
+    // LE FORME CHE CONSUMANO NON CONVERTONO, e il loro importo al mese non passa dal coefficiente:
+    // è il montante che resta diviso per le rate, meno l'imposta sulla sola quota imponibile —
+    // la stessa riga del motore per la prima rata. SI PARTE DAL MONTANTE LORDO, non da `netto`:
+    // il residuo non paga l'imposta alla prestazione, la paga rata per rata, e partendo dal netto
+    // la si toglieva due volte (il pulsante della durata definita diceva 909 € al mese dove il
+    // motore ne pagava 976). E il passo 2 scriveva «757 € al mese convertendo…» anche a chi aveva
+    // scelto la durata definita, cioè l'assegno di una forma che non stava prendendo.
+    const anniDi = f => f.k === 'durata' ? vitaIntera(x.etaPens)
+                      : Math.max(1, Math.round(Math.max(FRAZ_ANNI_MIN, x.anniFraz)));
+    const primaRata = (f, q) => {
+      if (!inc) return 0;
+      const al = (f.k === 'durata' ? aliquota : aliquotaFraz)(inc.anno - x.iscr);
+      const quotaTass = Math.min(1, inc.base / Math.max(1, inc.montante));
+      return inc.montante * (1 - q) / anniDi(f) * (1 - al * quotaTass) / 12;
+    };
+    const formaQui = FORME.find(f => f.k === x.forma) || FORME[0];
+    // quanto arriva ogni mese, nella forma scelta, con la quota `q` presa in contanti
+    const assegno = q => formaQui.consuma ? primaRata(formaQui, q) : alMese(q);
     EL('cCap'+i+'Ora').innerHTML = !inc ? '—'
       : `<b>${E0(netto * qc)}</b> subito<i>${perc(qc*100, 'il')} di quello che c'è</i>`;
     EL('cCap'+i+'Sx').textContent = 'niente: tutto in rendita';
     EL('cCap'+i+'Dx').textContent = maxPc >= 100
       ? 'tutto: 100%' : `il massimo di legge: ${maxPc}%`;
     EL('cCap'+i+'Esito').innerHTML = !inc ? '<i>—</i>'
-      : `<b>${E0(alMese(qc))}</b> al mese<i>${alMese(qc) < 1 ? 'niente rendita: è uscito tutto'
+      : `<b>${E0(assegno(qc))}</b> al mese<i>${alMese(qc) < 1 ? 'niente rendita: è uscito tutto'
+          : formaQui.consuma
+          ? `la prima di ${anniDi(formaQui)} rate, sui ${E0(inc.montante * (1 - qc))} che restano nel fondo`
           : `convertendo ${E0(netto * (1 - qc))}`}</i>`;
     // La soglia del «tutto in contanti» la calcola il fondo con la propria tavola, non noi. Fra
     // le tavole pubblicate il coefficiente varia di un terzo, quindi la soglia varia altrettanto:
@@ -4741,23 +4778,16 @@ function aggiornaDecisioni(s, r){
     // OGNI PULSANTE DICE QUANTO DÀ AL MESE, ma le due famiglie lo calcolano in modo diverso:
     // chi converte applica il coefficiente, chi consuma divide il residuo per le rate. Sono
     // due numeri che si possono confrontare, ed è tutto il punto della sezione.
-    const resto = netto * (1 - qc);
-    const primaRata = f => {
-      const n = f.k === 'durata' ? vitaIntera(x.etaPens)
-                                 : Math.max(FRAZ_ANNI_MIN, x.anniFraz);
-      // al lordo dell'imposta, che su queste forme si paga rata per rata
-      const al = (f.k === 'durata' ? aliquota : aliquotaFraz)(x.annoPens - x.iscr);
-      return resto / n * (1 - al * Math.min(1, (inc ? inc.base : 0) / Math.max(1, inc ? inc.montante : 1))) / 12;
-    };
-    // QUANTI ANNI DURA, SCRITTO SUL PULSANTE. Senza, la frazionata a cinque anni mostrava
-    // 4.355 € al mese contro i 1.184 della durata definita: aritmeticamente giusto e
+    // QUANTI ANNI DURA, SCRITTO SUL PULSANTE (`anniDi`, qui sopra). Senza, la frazionata a cinque
+    // anni mostrava 4.355 € al mese contro i 1.184 della durata definita: aritmeticamente giusto e
     // ingannevole da leggere, perché sembra che paghi quattro volte tanto mentre paga per un
     // quarto del tempo. Un importo periodico senza la sua durata non è confrontabile con nulla.
-    const anniDi = f => f.k === 'durata' ? vitaIntera(x.etaPens)
-                      : Math.max(FRAZ_ANNI_MIN, x.anniFraz);
+    // IL COEFFICIENTE È QUELLO DELL'ETÀ DI QUESTA PERSONA, non quello dei 67 anni: con la
+    // costante, chi va in pensione a 63 anni leggeva sul pulsante acceso della vitalizia 885 € al
+    // mese e, accanto, nell'esito dello stesso passo, i 757 € che il conto gli pagava davvero.
     const gruppo = (titolo, quali) =>
       `<div class="famiglia"><span>${titolo}</span>` + quali.map(f => {
-        const q = f.consuma ? primaRata(f) : netto * (1 - qc) * COEFF_RENDITA * f.fatt / 12;
+        const q = f.consuma ? primaRata(f, qc) : netto * (1 - qc) * x.coeffEta * f.fatt / 12;
         const quanto = f.consuma
           ? `per ${anniDi(f)} anni` + (f.k === 'durata' ? ', la vita attesa' : ', a scelta')
           : f.sotto;
@@ -4781,14 +4811,14 @@ function aggiornaDecisioni(s, r){
          non arriva più niente. Quello che avanza alla morte va ai designati, e la rata non è
          fissa — segue quanto rende il comparto</i>`
       : x.forma === 'frazionata'
-      ? `<i>${Math.max(FRAZ_ANNI_MIN, x.anniFraz)} rate, con l'imposta che parte dal
+      ? `<i>${anniDi(formaQui)} rate, con l'imposta che parte dal
          ${fmt(aliquotaFraz(0)*100)}% invece che dal ${fmt(aliquota(0)*100)}%: è la forma più
          libera e la più cara. Quello che avanza alla morte va ai designati</i>`
       : x.forma === 'rev'
       ? `<i>se ${x.nome} muore prima, ${altro} continua a prendere questi
          ${E0(alMese(qc))} al mese finché vive</i>`
       : x.forma === 'certa'
-      ? `<i>se ${x.nome} muore entro 10 anni, le rate che restano vanno agli eredi</i>`
+      ? `<i>se ${x.nome} muore entro ${CERTA_ANNI} anni, le rate che restano vanno agli eredi</i>`
       : `<i>finisce con ${x.nome}: agli eredi non resta niente</i>`;
 
     // Lo scambio, che è la decisione vera. Il patrimonio finale premia i contanti per come è
@@ -4797,16 +4827,29 @@ function aggiornaDecisioni(s, r){
     // il pareggio in rendimento, misurato a due orizzonti di vita. Vedi `pareggioRendita`.
     let sc = '';
     if (inc && netto > 0){
-      const tutto = netto * max, nulla = alMese(0);
+      // QUELLO CHE SI PERDE AL MESE È LA DIFFERENZA FRA I DUE CAPI, non l'assegno intero. Qui
+      // c'era `alMese(0)`, cioè tutta la rendita che si avrebbe senza contanti: col massimo al 50%
+      // la frase diceva «64.843 € subito e 446 € al mese in meno» dove se ne perdono 223, e il
+      // conto degli anni che seguiva (64.843 / 446 / 12 = 12, non i 24 dichiarati) non tornava.
+      const tutto = netto * max, meno = assegno(0) - assegno(max);
       const anniPari = coeff > 0 ? 1 / coeff : 0;
-      sc = `<b>Da un capo all'altro</b>: prendere il massimo in contanti dà
-        <b>${E0(tutto)} subito</b> e <b>${E0(nulla)} al mese in meno</b>, a vita. Alla rendita
+      // CHI CONSUMA NON HA UN ASSEGNO A VITA DA RECUPERARE: le rate durano un numero di anni dato,
+      // il montante resta investito e quello che avanza va ai designati. Il «pareggio» in anni e
+      // la rendita che non si rivaluta sono frasi della vitalizia, e lì sarebbero false.
+      sc = formaQui.consuma
+        ? `<b>Da un capo all'altro</b>: prendere il massimo in contanti dà
+          <b>${E0(tutto)} subito</b> e <b>${E0(meno)} al mese in meno</b> per
+          ${anniDi(formaQui)} anni, quanto durano le rate. Non c'è un assegno a vita da
+          recuperare: il montante che resta nel fondo continua a rendere col comparto, e quello che
+          avanza alla morte va ai designati.`
+        : `<b>Da un capo all'altro</b>: prendere il massimo in contanti dà
+        <b>${E0(tutto)} subito</b> e <b>${E0(meno)} al mese in meno</b>, a vita. Alla rendita
         servono <b>${fmt(anniPari)} anni</b> per recuperarli, e ${x.nome} ne avrebbe
         ${fmt(inc.anno - x.nascita + anniPari)}: sono sempre ${fmt(anniPari)} qualunque sia la
         cifra, perché è l'inverso del ${fmt(coeff*100,1)}% con cui il fondo converte.
         Il pareggio vero è più in là, perché nel frattempo i contanti rendono e la rendita
-        <b>non si rivaluta</b>: ${E0(nulla)} di oggi, dopo ${r.annoFine - inc.anno} anni, ne
-        varranno ${E0(nulla / Math.pow(1 + s.infl, r.annoFine - inc.anno))}.`;
+        <b>non si rivaluta</b>: ${E0(meno)} di oggi, dopo ${r.annoFine - inc.anno} anni, ne
+        varranno ${E0(meno / Math.pow(1 + s.infl, r.annoFine - inc.anno))}.`;
 
       // QUANTO PESA LA LONGEVITÀ, misurata invece che dichiarata. Non è la longevità a impedire
       // di indicare un ottimo: portando il piano a 105 anni i contanti restano avanti lo stesso.
@@ -4816,10 +4859,14 @@ function aggiornaDecisioni(s, r){
       const etaOriz  = r.annoFine - x.nascita;
       // `breve` per il secondo estremo: ripetere «la rendita converrebbe sotto» due volte nella
       // stessa frase è la stessa cosa detta due volte, non una forbice
+      // e il soggetto è quello che si sta scegliendo: con una forma che consuma non c'è rendita
       const dice = (p, breve) => !p ? null
-        : p.gia ? 'la rendita è già avanti'
-        : p.mai ? 'la rendita non recupera comunque'
-        : (breve ? 'sotto ' : 'la rendita converrebbe sotto ') + fmt(p.rend*100, 2) + '%';
+        : p.gia ? (formaQui.consuma ? 'le rate sono già avanti' : 'la rendita è già avanti')
+        : p.mai ? (formaQui.consuma ? 'le rate non recuperano comunque'
+                                    : 'la rendita non recupera comunque')
+        : (breve ? 'sotto '
+                 : formaQui.consuma ? 'le rate converrebbero sotto ' : 'la rendita converrebbe sotto ')
+          + fmt(p.rend*100, 2) + '%';
       const pMedia = dice(pareggioRendita(s, i, etaMedia), false);
       // il secondo orizzonte si mostra solo se è più in là del primo: due estremi uguali non
       // sono una forbice. E NON si chiama «l'orizzonte scritto sopra»: nella casella c'è l'età
@@ -5094,7 +5141,8 @@ function pianoInFoglio(s, r){
     [G('decumulo.it — proiezione del patrimonio')],
     // la data la mette il build dallo stesso segnaposto del piè di pagina: due copie della
     // stessa data sono due date che prima o poi divergono
-    ['Parametri normativi rivisti al', '{{revisione}}'],
+    // fra virgolette doppie: la preposizione elisa porta un apostrofo («all'8 settembre»)
+    ['Parametri normativi rivisti', "{{alRevisione}}"],
     [],
     [G('IL RISULTATO')],
     [EL('titolo').textContent.replace(/\s+/g, ' ').trim()],

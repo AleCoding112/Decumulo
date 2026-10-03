@@ -23,6 +23,17 @@ export const REVISIONE_ISO = '2026-09-08';
 const inItaliano = iso => new Date(iso + 'T00:00:00Z')
   .toLocaleDateString('it-IT', {day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC'});
 export const REVISIONE = inItaliano(REVISIONE_ISO);
+// LA PREPOSIZIONE DAVANTI A UNA DATA SI DECIDE SU COME SI LEGGE IL GIORNO, come davanti alle
+// percentuali nel calcolatore: «all'8 settembre», «all'11 marzo», «al 1° gennaio» (primo). Il piè
+// di pagina scriveva «rivisti al 8 settembre 2026» su tutte e undici le pagine, e nessun controllo
+// lo vedeva perché la frase era giusta il giorno in cui è stata scritta.
+const elide = n => n === 8 || n === 11 || (n >= 80 && n <= 89);
+export const alData = iso => (elide(+iso.slice(8, 10)) ? "all'" : 'al ') + inItaliano(iso);
+// la stessa regola per una percentuale già scritta in italiano («1,2%», «0,8%», «33%»): decide la
+// parte intera che si legge, e lo zero vuole «dello». Qui l'1 elide («dell'1,2%», si legge «uno»);
+// nelle date no, perché il primo del mese si scrive «1°» e si legge «primo».
+export const delPc = testo => { const n = parseInt(testo, 10);
+  return (n === 0 ? 'dello ' : n === 1 || elide(n) ? "dell'" : 'del ') + testo; };
 // LA DECORRENZA DELL'EROGAZIONE FRAZIONATA, in forma confrontabile. Le pagine ne parlano al
 // futuro — «si può chiedere dal…», «fino a quella data il fondo non la eroga» — e sono frasi
 // che scadono: passata la data, la guardia in `verifiche/scadenze.mjs` pretende che vengano
@@ -82,7 +93,9 @@ export const REGOLE = {
     riscontro: 'verifiche/riscontri-esterni.mjs',
     fonte: 'art. 13 c. 3 D.P.R. 917/1986 (TUIR), testo vigente 2026: 1.955 € fino a 8.500; 700 + 1.255 × (28.000 − reddito) / 19.500 fino a 28.000; 700 × (50.000 − reddito) / 22.000 fino a 50.000; nulla oltre; dal 1° gennaio 2027 art. 13 c. 3 D.Lgs. 117/2026, importi identici',
     verificata: true },
-  DETRAZIONE_PENS_PIU: { nome: "Maggiorazione della detrazione da pensione", val: 50, come: 'secco',
+  // senza `come`: è una cifra in euro, e col formato «secco» la tabella dei parametri scriveva
+  // «50» senza dire di che cosa
+  DETRAZIONE_PENS_PIU: { nome: "Maggiorazione della detrazione da pensione", val: 50,
     fonte: 'art. 13 c. 3-bis TUIR: «aumentata di un importo pari a 50 euro, se il reddito complessivo è superiore a 25.000 euro ma non a 29.000 euro»; dal 1° gennaio 2027 art. 13 c. 4 D.Lgs. 117/2026',
     verificata: true },
 
@@ -495,11 +508,14 @@ export const REGOLE = {
   // sia: `test.mjs` controlla che le lunghezze coincidano, che il negoziale sia tutto a zero e
   // che i dodici rendimenti che ne escono siano tutti diversi fra loro — se due coincidessero,
   // la tendina non saprebbe più quale delle due mostrare.
+  // `come: 'forme'` E NON 'listino': ogni riga porta QUATTRO numeri, uno per comparto, e il
+  // formato del listino ne aspetta uno. Fino al 03/10/2026 la tabella di `il-metodo.html` scriveva
+  // «negoziale NaN% · aperto NaN% · PIP NaN%», in pubblico, con tutti i controlli verdi.
   FORME_FONDO: { nome: "Forme pensionistiche, costo annuo in più rispetto a un fondo negoziale",
     val: [['negoziale', [0,      0,      0,      0     ]],
           ['aperto',    [0.0051, 0.0074, 0.0109, 0.0137]],
           ['PIP',       [0.0093, 0.0147, 0.0166, 0.0203]]],
-    come: 'listino',
+    come: 'forme',
     fonte: 'differenza fra gli ISC mediani a 35 anni pubblicati dalla COVIP («Indicatore sintetico dei costi», comparatore interattivo, dati al 31/12/2025) e quelli dei fondi negoziali dello stesso comparto. Mediane calcolate comparto per comparto: garantiti 0,57% negoziali contro 1,08% aperti e 1,50% PIP; obbligazionari 0,23 / 0,97 / 1,70; bilanciati 0,24 / 1,33 / 1,90; azionari 0,23 / 1,60 / 2,26. Numerosità: 35/23/27/26 comparti negoziali, 38/35/46/38 aperti, 52/16/58/60 PIP',
     verificata: true },
 
@@ -689,9 +705,14 @@ export const ESEMPIO_TFR = { anni: [10, 20, 35], base: 20, infl: 0.02 };
   // (1% nominale contro 2%), mentre il TFR in azienda si rivaluta poco ma in positivo: oltre un
   // certo orizzonte lo scarto composto supera il vantaggio fiscale. Non è un caso di scuola —
   // è il comparto di chi si è iscritto e non ha scelto. Il valore si ricava, non si scrive.
+  // L'ANNO SI CERCA ANNO PER ANNO, non fra i tre orizzonti della tabella: prima la pagina diceva
+  // «(dal 20° anno)» perché 20 era la prima colonna in cui il segno cambiava, mentre il sorpasso
+  // avviene prima. Si guarda fino all'orizzonte più lungo mostrato.
   t.doveGirano = V('COMPARTI').map(([nome, rend]) => {
-    const n = t.anni.find(n => t.caso(rend, n).foMano < t.caso(rend, n).azMano);
-    return { nome, rend, anni: n ?? null };
+    let n = null;
+    for (let k = 1; k <= Math.max(...t.anni) && n === null; k++)
+      if (t.caso(rend, k).foMano < t.caso(rend, k).azMano) n = k;
+    return { nome, rend, anni: n };
   }).filter(c => c.anni !== null);
 }
 
@@ -735,13 +756,19 @@ export const ESEMPIO_FONDO = { anni: 25, infl: 0.02 };
 
   const reale = r => (1 + r) / (1 + f.infl) - 1;
   const montante = (a, r, n) => Math.abs(r) > 1e-9 ? a * ((1 + r) ** n - 1) / r : a * n;
+  // LA BASE IMPONIBILE IN EURO DI OGGI, con la stessa riga di ESEMPIO_TFR. Qui c'era `dentro ×
+  // anni`: i versamenti sommati secchi, cioè l'inflazione di venticinque anni contata come se non
+  // fosse passata — l'imposta della pagina usciva di un quarto più alta di quella del motore, che
+  // la base la sgonfia anno per anno. La regola era scritta due blocchi più su, per il TFR.
+  const scontati = n => Math.abs(f.infl) > 1e-9
+    ? (1 - (1 + f.infl) ** -n) / f.infl * (1 + f.infl) : n;
   f.aliquota = Math.max(V('ALIQ_FONDO_MIN'),
     V('ALIQ_FONDO_MAX') - Math.max(0, f.anni - 15) * V('ALIQ_FONDO_PASSO'));
 
   // un caso = quanto entra nel fondo, quanto esce dalla busta, e quanto costa in più la forma
   f.caso = (dentro, costa, piu = 0) => {
     const nel  = montante(dentro, reale(f.rend - piu), f.anni);
-    const base = dentro * f.anni;
+    const base = dentro * scontati(f.anni);
     const fondo = nel - base * f.aliquota;
     const etf   = montante(costa, reale(f.rend), f.anni);
     return { nel, base, imposta: base * f.aliquota, fondo, etf, diff: fondo - etf };
@@ -829,6 +856,7 @@ export const TESTI = {
   anno0:            String(V('ANNO0')),
   frazDal:          V('FRAZ_DECORRENZA'),
   revisione:        REVISIONE,
+  alRevisione:      alData(REVISIONE_ISO),
   titolare:         TITOLARE,
   recapito:         RECAPITO,
 
@@ -836,6 +864,10 @@ export const TESTI = {
   exRal:      eur(ESEMPIO.ral),
   exPcLav:    pc(ESEMPIO.pcLav / 100, 1),
   exPcDat:    pc(ESEMPIO.pcDat / 100, 1),
+  // con la preposizione già attaccata: «del 1,2%» non si dice
+  exDelPcLav: delPc(pc(ESEMPIO.pcLav / 100, 1)),
+  exDelPcDat: delPc(pc(ESEMPIO.pcDat / 100, 1)),
+  exDelAliquotaEff: delPc(pc(ESEMPIO.aliqMargEff, 1)),
   exLav:      eur(ESEMPIO.lav),
   exDat:      eur(ESEMPIO.dat),
   exTfr:      eur(ESEMPIO.tfr),
@@ -968,8 +1000,11 @@ const PUNTI = [60, 67, 75];
 const aEtà = (val, come) => PUNTI
   .map(e => `${come(val.find(([x]) => x === e)[1])} a ${e} anni`).join(' · ');
 
+// gli anni si scrivono coi decimali solo se la tavola li ha: «25,0 a 60 anni» per la tavola in anni
+// INTERI della durata definita diceva una precisione al decimo che quella tavola non ha
 const mostra = r => Array.isArray(r.val)
-  ? r.come === 'anni'  ? aEtà(r.val, a => a.toLocaleString('it-IT', {minimumFractionDigits: 1}))
+  ? r.come === 'anni'  ? aEtà(r.val, a => a.toLocaleString('it-IT',
+      {minimumFractionDigits: r.val.every(([, v]) => Number.isInteger(v)) ? 0 : 1}))
   : r.come === 'curva' ? aEtà(r.val, c => pc(c, 1))
   // LE BANDE DELLE DETRAZIONI hanno una forma sola — base + quota × (fino − reddito) / den — e
   // senza un formato loro finivano nel ramo delle aliquote, che le rendeva «195.500% fino a
@@ -982,8 +1017,10 @@ const mostra = r => Array.isArray(r.val)
   : r.come === 'trattamento' ? (([tetto, imp, sconto]) =>
       `${eur(imp)} l'anno fino a ${eur(tetto)} di reddito complessivo, se l'imposta lorda `
       + `supera la detrazione dell'art. 13 c. 1 diminuita di ${eur(sconto)}`)(r.val)
+  // una banda tutta a zero è «nulla», non una casella vuota: la prima dell'ulteriore detrazione
+  // usciva «· fino a 20.000 € ·», con niente davanti
   : r.come === 'detrazione' ? r.val.map(([fino, base, quota, den]) =>
-      (base ? eur(base) : '')
+      (base ? eur(base) : quota ? '' : 'nulla')
       + (quota ? (base ? ' + ' : '') + `${eur(quota)} × (${eur(fino)} − reddito) / `
                  + den.toLocaleString('it-IT', {useGrouping: 'always'}) : '')
       + ` fino a ${eur(fino)}`).join(' · ') + ' · nulla oltre'
@@ -996,6 +1033,12 @@ const mostra = r => Array.isArray(r.val)
   // sono volte il trattamento minimo, non euro. Un formato che non viene raggiunto non è un
   // formato mancante — è peggio, perché ne vince un altro e la riga sembra scritta apposta.
   : r.come === 'cumulo' ? r.val.map(([n, q]) => `${pc(q)} oltre ${n} volte il minimo`).join(' · ')
+  // i quattro maggiori costi di ciascuna forma, nell'ordine dei comparti; il negoziale è il
+  // riferimento, tutto a zero, e si dice una volta invece di scrivere quattro zeri
+  : r.come === 'forme' ? r.val.filter(([, v]) => v.some(Boolean)).map(([n, v]) =>
+      `${n} ${v.map(p => '+' + (p * 100).toLocaleString('it-IT', {minimumFractionDigits: 2}))
+        .join(' / ')} punti`).join(' · ')
+      + ` (${V('COMPARTI').map(([c]) => c.toLowerCase()).join(' / ')}; il negoziale è il riferimento)`
   : r.val.map(([t, a]) => `${pc(a)} ${t === Infinity ? 'oltre' : 'fino a ' + eur(t)}`).join(' · ')
   // E `anni` esisteva solo per le curve: su un numero solo cadeva in fondo, dove tutto ciò che
   // supera 1 diventa euro. «Durata minima dell'erogazione frazionata: 5 €».
@@ -1004,7 +1047,10 @@ const mostra = r => Array.isArray(r.val)
   : r.come === 'volte'    ? r.val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' volte'
   : r.come === 'secco'    ? String(r.val)
   : r.come === 'percento' ? r.val + '%'
-  : r.val > 1 ? eur(r.val)
+  // i centesimi restano dove la fonte li ha: il trattamento minimo è 611,85 €, non «612 €»
+  : r.val > 1 ? (Number.isInteger(r.val) ? eur(r.val)
+      : r.val.toLocaleString('it-IT', {useGrouping: 'always', minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2}) + ' €')
   : pc(r.val, 2).replace(',00', '').replace(/,(\d)0%/, ',$1%');
 
 // LO STATO DICE DUE COSE DIVERSE, e prima ne diceva una sola. «Verificata» vuol dire che

@@ -154,7 +154,7 @@ contratto applicato.</p>
 <h2>Quanto costa in busta, e quanto entra nel fondo</h2>
 
 <p>L'esempio seguente assume una retribuzione annua lorda di {{exRal}}, un contributo del
-lavoratore del {{exPcLav}} e un contributo aziendale del {{exPcDat}}.</p>
+lavoratore {{exDelPcLav}} e un contributo aziendale {{exDelPcDat}}.</p>
 
 <div class="conto">
 <table>
@@ -170,13 +170,15 @@ lavoratore del {{exPcLav}} e un contributo aziendale del {{exPcDat}}.</p>
 
 <p><span class="marca m-legge">legge</span> I contributi versati dal lavoratore e dal datore
 sono deducibili dal reddito complessivo entro {{tetto}} annui (art. 8 c. 4 D.Lgs. 252/2005). La
-deduzione opera all'aliquota marginale del contribuente, applicata dal sostituto d'imposta.</p>
+deduzione opera all'aliquota marginale del contribuente, applicata dal sostituto d'imposta: qui
+non il {{exAliquota}} dello scaglione ma il {{exAliquotaEff}}, perch&eacute; ogni euro dedotto fa
+risalire anche una parte delle detrazioni per lavoro dipendente, che decrescono col reddito.</p>
 
 <div class="conto">
 <table>
   <tbody>
     <tr><td>Contributo del lavoratore</td><td>{{exLav}}</td></tr>
-    <tr><td>Minore IRPEF, all'aliquota marginale del {{exAliquota}}</td><td>−{{exSconto}}</td></tr>
+    <tr><td>Minore IRPEF, all'aliquota marginale effettiva {{exDelAliquotaEff}}</td><td>−{{exSconto}}</td></tr>
     <tr><td><b>Onere netto a carico del lavoratore</b></td><td><b>{{exCosta}}</b></td></tr>
     <tr><td>Affluito al fondo per effetto della contribuzione</td><td><b>{{exDentro}}</b></td></tr>
   </tbody>

@@ -19,7 +19,7 @@ lancia da solo:
 |---|---|
 | `node build.mjs` | `sorgenti/` + `regole.mjs` → `sito/` |
 | `node test.mjs` | 354 controlli sul motore, letto da `sito/index.html` |
-| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 454 controlli sul testo |
+| `node verifiche/come-parla.mjs` | esegue il calcolatore su trentotto scenari e legge le frasi che scrive: 474 controlli sul testo, e confronta le cifre dei riquadri con quelle del piano |
 | `node verifiche/valori-ostili.mjs` | duemila moduli con valori impossibili: non deve rompersi né dire assurdità |
 | `node verifiche/tavole-dei-fondi.mjs` | tiene la curva dei coefficienti dentro le tavole vere |
 | `node verifiche/riscontri-esterni.mjs` | le nostre cifre contro numeri pubblicati da altri: l'unico controllo che può vedere un'**omissione** |
@@ -1385,6 +1385,77 @@ guardata nel browser, poi il passaggio nei sorgenti con i controlli adeguati. `a
 ora anche i 1.300 px, che è l'assetto nuovo; `occhi.mjs` fotografa la colonna fissa e il colpo
 d'occhio.
 
+## 2026-10-03 — la rilettura di ottobre: dieci difetti, nessuno in una cifra di legge
+
+Rilettura completa del motore, delle pagine costruite e di cinque cifre di legge riscontrate di
+nuovo in rete (soglia del «tutto in contanti» sul 70% del montante e il 50% dell'assegno sociale,
+che la L. 199/2025 lascia com'era; 546,24 € e 611,85 € della circolare INPS 153/2025; il 2,5%
+minimo dei coefficienti d'usufrutto, confermato dal DM 24/12/2025 col tasso legale all'1,6%).
+**Nessuna cifra di legge era sbagliata.** Erano sbagliati dieci punti in cui una frase rifaceva da
+sé un conto che il motore fa già, o in cui un formato riceveva una cosa diversa da quella per cui
+era scritto — e tutti e dieci passavano coi controlli verdi.
+
+**Nel calcolatore, cinque, e stavano tutti fra il verdetto e le scelte:**
+
+| dove | cosa diceva | cosa dice |
+|---|---|---|
+| i pulsanti della forma dell'assegno | l'importo della vitalizia col coefficiente dei **67 anni** per chiunque: a 63 anni 885 € sul pulsante acceso, 757 € nell'esito accanto | il coefficiente dell'età della persona |
+| la prima rata della durata definita e della frazionata | partiva dal montante **già tassato** e lo ritassava: 909 € contro i 976 € che il motore paga | il montante lordo, come la riga del motore |
+| «da un capo all'altro» | chiamava «al mese in meno» **la rendita intera**: col massimo al 50% il doppio del vero, e i suoi anni di pareggio non tornavano con le sue cifre | la differenza fra i due capi; e a chi consuma non parla più di un assegno a vita |
+| il verdetto | contava i cali **dal secondo esercizio**: «non si riduce in nessuno dei 30 anni» sopra «il patrimonio è in riduzione già dal primo anno» | il primo esercizio si confronta col proprio inizio |
+| l'accantonamento corrente | non contava le **rate della RITA**: «la spesa eccede le entrate di 2.000 € al mese» dove le fasi dicevano «accantonamento 784 €» | le rate ci sono, come nelle fasi e in `scoperti` |
+
+Più due ritocchi: il passo 2 scriveva «convertendo…» anche a chi aveva scelto una forma che non
+converte, e la finestra chiusa della RITA dava sempre la stessa ragione («smette nel … e la
+pensione arriva l'anno dopo») anche a chi aveva smesso sei anni prima di una decorrenza
+nell'anno in corso. Gli anni della rendita certa ora vengono da `CERTA_ANNI`.
+**Sei controlli nuovi in `come-parla.mjs`** confrontano la cifra scritta con quella del piano, e
+cadono tutti e sei sul codice di prima (provato).
+
+**Nelle pagine, cinque:**
+
+- la tabella dei parametri di `il-metodo.html` scriveva **«negoziale NaN% · aperto NaN% · PIP
+  NaN%»**: `FORME_FONDO` porta quattro numeri per riga e stava sul formato del listino, che ne
+  aspetta uno. Ha un formato suo (`forme`). Nella stessa tabella: la prima banda dell'ulteriore
+  detrazione era una cella vuota («· fino a 20.000 €»), la maggiorazione da pensione un «50» senza
+  unità, la tavola in anni interi «25,0 a 60 anni», il trattamento minimo «612 €» invece di 611,85;
+- il piè di pagina di **tutte le pagine** diceva «rivisti **al 8** settembre», e
+  `contributo-datore.html` «un contributo del lavoratore **del 1,2%**». Il calcolatore sa elidere
+  da agosto (`perc`, `vocaleDetta`); i segnaposto delle pagine no. Ora `alData` e `delPc` in
+  `regole.mjs` portano la preposizione insieme al numero;
+- `contributo-datore.html` metteva **«all'aliquota marginale del 33%»** accanto a uno sconto
+  calcolato al 41,7%: la riga ora dice l'aliquota effettiva, e il capoverso sopra spiega perché;
+- l'esempio di `fondo-pensione-o-etf.html` tassava i versamenti **sommati secchi**, cioè con
+  l'inflazione di venticinque anni contata come se non fosse passata: 3.360 € d'imposta invece di
+  2.676. La regola era scritta due blocchi più su, per `ESEMPIO_TFR`; ora è la stessa riga;
+- `tfr-fondo-o-azienda.html` diceva che col garantito il conferimento smette di convenire «dal
+  20° anno» perché 20 era la prima colonna della tabella in cui il segno cambiava: è il **12°**,
+  cercato anno per anno.
+
+E tre frasi imprecise: `il-metodo.html` chiamava la sterilizzazione sopra i 200.000 € «l'unico
+punto» favorevole a chi compila, mentre a dieci righe di distanza dichiarava l'adeguamento degli
+scaglioni, che lo è anche lui; diceva che la riliquidazione del TFR «riduce l'imposta», mentre può
+andare nei due versi; `casa-e-decumulo.html` dava il registro al 2% senza dire che è quello della
+prima casa.
+
+**Il controllo che avrebbe preso le pagine** sta in `coerenza.mjs`: legge il testo visibile delle
+pagine costruite e fallisce su `NaN`, `undefined`, `Infinity` e su una preposizione non elisa
+davanti a 1, 8, 11 o 80-89 (non «1°», che si legge «primo»). Sul sito di prima trovava i due
+difetti al primo giro.
+
+**Regola: una frase che rifà un conto del motore è una seconda implementazione senza rete.** I
+cinque difetti del calcolatore avevano la stessa forma: `primaRata`, `alMese`, il coefficiente sul
+pulsante, la base dell'esempio, il primo esercizio del verdetto — ciascuno una piccola copia di
+una cosa che il motore sa già fare.
+
+**Non verificato nel browser**: Chrome non c'era sulla macchina, e `a-schermo.mjs`,
+`senza-scatti.mjs` e `occhi.mjs` sono rimasti fermi. La prosa nuova intorno ai cursori è una
+riga dell'esito del passo 2 un po' più lunga di prima: va guardata alla prossima occasione.
+
+**Fra 28 giorni**, il 31 ottobre, l'erogazione frazionata diventa richiedibile e la guardia
+pretenderà che le frasi al futuro su `{{frazDal}}` siano riscritte (`come-prendere-il-fondo.html`
+e la nota della casella in `index.html`).
+
 ## Il registro dei dubbi
 
 **Cose sapute e non risolte.** Vivevano nelle conversazioni e sparivano con loro: qui restano.
@@ -1397,7 +1468,9 @@ ancora dato una risposta verificata*, e ognuna dice cosa servirebbe per chiuderl
 | `SPERANZA_VITA` e `VITA_INTERA` sono sul 2023 mentre ISTAT ed Eurostat hanno pubblicato il 2024 e il 2025 | il decreto sui coefficienti 2027-2028, atteso a fine 2026, dice quale tavola vale per la durata definita; la speranza di vita si aggiorna insieme al margine | la prassi dei fondi usa la 2023 «fino al 31/12/2026», e la guardia di gennaio elenca tutte e due |
 | La pagina privacy indica la **durata di conservazione** dei dati Analytics rinviando alle impostazioni della proprietà, senza il numero di mesi | leggere il valore nella proprietà GA4 (2 o 14 mesi) e scriverlo | l'art. 13 par. 2 lett. a chiede il periodo «o i criteri», e il criterio c'è; il numero lo sa solo chi ha accesso alla proprietà |
 | Le tre detrazioni e le mensilità sono state verificate su **fonti specializzate concordi**, non sul testo in Gazzetta | scaricare il TUIR e rileggere l'art. 13 | ora hanno un riscontro esterno a sei punti su due fonti indipendenti (`verifiche/riscontri-esterni.mjs`), che è più di quanto abbiano quasi tutte le altre |
-| **41 regole su 48 non hanno un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano**: lo dà `quanteRiscontrate()` in `regole.mjs`, ed era rimasto a «37 su 41» mentre le regole diventavano 48 |
+| **La maggior parte delle regole non ha un riscontro esterno** | una cifra pubblicata da altri per ciascuna, come per i coefficienti, le detrazioni e la Tabella F | sono verificate sul testo; manca il controllo *ricorrente*, non la verifica. **Il numero non si scrive a mano, nemmeno qui**: lo dà `quanteRiscontrate()` in `regole.mjs` e lo stampa `il-metodo.html` (8 su 50 al 03/10/2026). Questa riga lo scriveva a mano — «41 su 48» — sotto la frase che diceva di non farlo, ed era di nuovo invecchiato |
+| La **RITA** conta gli anni di iscrizione anteriori al 2007 **fino a un massimo di quindici** (art. 11 c. 4-ter), e il conto no | modellarlo, con l'anno di iscrizione che già c'è | morde solo chi si è iscritto prima del 1992, ed è al più 2,1 punti d'aliquota sulle sole rate RITA |
+| Lo **scenario del superstite** colloca il decesso alla speranza di vita **alla decorrenza**: per chi è in pensione da molti anni quell'anno può essere già passato, e lo scenario parte allora da subito | la speranza di vita all'età di oggi, quando è più alta di quella | riguarda chi ha superato da tempo la propria speranza di vita alla decorrenza; il rapporto fra le entrate resta calcolato, cambia solo l'anno a cui è riferito |
 | ~~L'oggetto finto delle armature è **copiato in otto file**~~ **— chiuso il 21/08/2026** | — | ora è `verifiche/_armatura.mjs`, importato da tutti — e severo: la casella non dichiarata non vale più un ripiego, fa cadere il controllo per nome, e `controllaChiavi` respinge le chiavi che la pagina non ha più. Al primo giro ha trovato `tipoFondo` (morto dal 03/08) nei casi di come-parla e `patrimonio` (morto con le quattro classi) nei moduli ostili: i duemila moduli giravano quasi tutti **senza patrimonio**, cioè senza mai raggiungere il verdetto |
 | Chi ha usato il sito prima del 3 agosto ha in memoria un **tipo di fondo** che non esiste più, e se aveva scelto «scelto da sé» con una percentuale scritta ora quella quota **viene conteggiata** | niente: `ripristina()` scorre le caselle che trova in pagina, quindi la chiave vecchia è ignorata e sparisce al primo salvataggio | è il comportamento voluto — la percentuale scritta vale — e non è silenzioso: `notaDatore` compare proprio perché una percentuale c'è, e dice la condizione |
 | La **retribuzione netta** derivata non comprende addizionali né carichi di famiglia | modellarli, o dichiararsi soddisfatti | i due effetti hanno segno opposto e si compensano in parte; è dichiarato in `il-metodo.html` |

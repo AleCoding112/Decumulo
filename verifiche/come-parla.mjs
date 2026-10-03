@@ -1410,5 +1410,72 @@ console.log('\n— chi è già in pensione —');
     /\.strato:not\(\[open\]\) > \*:not\(summary\)\{display:none\}/.test(PAGINA));
 }
 
+// --- LE CIFRE DI UN RIQUADRO CONTRO QUELLE DEL MOTORE (03/10/2026) ----------------------------
+// Cinque difetti con tutti i controlli verdi, e tutti dello stesso tipo: una frase che calcola da
+// sé una cifra che il motore calcola già, e la calcola diversa. I controlli qui sopra leggono le
+// frasi una per una; nessuno confrontava una cifra scritta con quella del piano.
+//  · il pulsante della vitalizia usava il coefficiente dei 67 anni per chiunque: a 63 anni 885 €
+//    al mese sul pulsante acceso, 757 € nell'esito accanto;
+//  · la prima rata della durata definita partiva dal montante già tassato e lo ritassava: 909 €
+//    contro i 976 che il motore paga;
+//  · «da un capo all'altro» chiamava «al mese in meno» la rendita intera: col massimo al 50% il
+//    doppio del vero, e i suoi anni di pareggio non tornavano con le sue stesse cifre;
+//  · il verdetto partiva dal secondo esercizio: «non si riduce in nessuno dei 30 anni» sopra
+//    «il patrimonio è in riduzione già dal primo anno»;
+//  · l'accantonamento corrente non contava le rate della RITA, e diceva «la spesa eccede le
+//    entrate» dove le fasi, poco sotto, dicevano «accantonamento».
+console.log('\n— le cifre dei riquadri sono quelle del piano —');
+{
+  const pulito = t => (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const euro = t => +((t.match(/([\d.]+) €/) || [, 'NaN'])[1].replace(/\./g, ''));
+  // il piano che sta dietro la pagina, oltre a quello che la pagina scrive
+  const conPiano = DATI => {
+    controllaChiavi(DATI, 'lo scenario');
+    prepara();
+    const doc = documento(dichiarate(DATI, DEFAULT), {memoizza: true});
+    globalThis.document = doc;
+    const warn = console.warn; console.warn = () => {};
+    try { const m = new Function(src + '\nreturn {calc, ultimo: () => ultimo};')(); m.calc();
+          return {el: doc.elementi, ...m.ultimo()}; }
+    finally { console.warn = warn; }
+  };
+  const UNO = {...BASE, quanti:'1', nome1:'', annoPens0:2038, fondo0:200000, quotaCap0:0};
+
+  const vita = conPiano({...UNO, forma0:'vita'});
+  const attivo = pulito((vita.el.cForma0.innerHTML.match(/<button[^>]*class="attiva"[\s\S]*?<\/button>/) || [''])[0]);
+  c('a 63 anni il pulsante acceso dice lo stesso assegno dell\'esito accanto',
+    euro(attivo) === euro(pulito(vita.el.cCap0Esito.innerHTML)),
+    `${euro(attivo)} € e ${euro(pulito(vita.el.cCap0Esito.innerHTML))} €`);
+
+  const durata = conPiano({...UNO, forma0:'durata'});
+  const inc = durata.r.incassi[0];
+  const rata = (durata.r.righe.find(g => g.anno === inc.anno) || {daRata: NaN}).daRata / 12;
+  const scritta = euro(pulito(durata.el.cCap0Esito.innerHTML));
+  c('la prima rata della durata definita è quella che il motore paga',
+    Math.abs(scritta - rata) <= 1, `pagina ${scritta} €, motore ${Math.round(rata)} €`);
+  c('e il passo 2 non dice «convertendo» a chi consuma',
+    !/convertendo/.test(pulito(durata.el.cCap0Esito.innerHTML)), pulito(durata.el.cCap0Esito.innerHTML));
+
+  const capi = pulito(conPiano({...UNO, forma0:'vita', quotaCap0:0.5}).el.cScambio0.innerHTML);
+  const [, subito, meno, anni] = (capi.match(/dà ([\d.]+) € subito e ([\d.]+) € al mese in meno[\s\S]*?servono (\d+) anni/) || []).map(v => +String(v).replace(/\./g, ''));
+  c('«da un capo all\'altro» torna con le sue stesse cifre',
+    Math.abs(subito / (meno * 12) - anni) < 1, `${subito} / (${meno} × 12) contro ${anni} anni`);
+
+  const attesa = conPiano({...BASE, quanti:'1', nome1:'', nascita0:1960, annoPens0:2027,
+    ultimo0:2025, pens0:3000, spesa:1500, fondo0:'', cl3:100000, ral0:'', pcVoi0:'', pcDat0:''});
+  c('un piano che cala nel primo anno non riceve «non si riduce»',
+    attesa.r.righe[0].patr < attesa.r.righe[0].inizio
+      && !/non si riduce/.test(pulito(attesa.el.titolo.innerHTML)),
+    pulito(attesa.el.titolo.innerHTML).slice(0, 70));
+
+  const rita = conPiano({...BASE, quanti:'1', nome1:'', nascita0:1962, annoPens0:2030,
+    ultimo0:2025, fondo0:150000, rita0:2026, spesa:2000, cl3:100000, pens0:2500});
+  const g0 = rita.r.righe[0];
+  const flusso = g0.daLavoro + g0.daPensioni + g0.daRendita + g0.daRata - g0.spesa;
+  c('con la RITA dal primo anno l\'accantonamento corrente conta le rate',
+    (flusso >= 0) === /Accantonamento corrente/.test(pulito(rita.el.calcolato.innerHTML)),
+    pulito(rita.el.calcolato.innerHTML));
+}
+
 console.log(ko ? `\n✗ ${ko} controlli falliti` : '\n✓ il calcolatore parla come deve');
 if (ko) process.exitCode = 1;

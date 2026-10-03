@@ -138,7 +138,7 @@ const dentro = leggiZip(bytes);
     ['l\'inflazione',                    /Inflazione/],
     ['l\'orizzonte',                     /Orizzonte del piano/],
     ['il patrimonio e la spesa',         /Patrimonio investito/],
-    ['la data di revisione dei parametri', /Parametri normativi rivisti al/],
+    ['la data di revisione dei parametri', /Parametri normativi rivisti[\s\S]{0,200}?>al(?:l'| )\d/],
     ['in che valuta è la tabella',       /sono espressi in/],
     ['e che non è consulenza',           /non costituisce consulenza/]
   ]) c(`il file dichiara ${nome}`, re.test(piano));

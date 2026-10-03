@@ -260,5 +260,31 @@ if (alte.length){
   }
 }
 
+// --- 5. quello che si legge, nelle pagine COSTRUITE (03/10/2026) -------------
+// Due difetti pubblici con tutti i controlli verdi, perché nessuno leggeva il testo finito:
+// la tabella dei parametri di `il-metodo.html` scriveva «negoziale NaN% · aperto NaN% · PIP NaN%»
+// (un formato che aspettava un numero e riceveva una lista), e il piè di pagina di tutte le
+// pagine «rivisti al 8 settembre» — una preposizione che il calcolatore sa elidere da agosto e
+// che i segnaposto delle pagine non sapevano. Si guarda il testo visibile, senza codice e
+// commenti: `NaN` e `undefined` dentro il motore sono legittimi, in una frase mai.
+// L'elisione si prova sui numeri che si leggono con una vocale in testa — 8, 11, 80-89 — e
+// sugli 1 che non sono «1°» (primo): «del 1,2%» è sbagliato, «dal 1° gennaio» no.
+{
+  const visibile = f => fs.readFileSync(join(SITO, f), 'utf8')
+    .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&deg;/g, '°').replace(/\s+/g, ' ');
+  const costruite = fs.readdirSync(SITO).filter(f => f.endsWith('.html'));
+  const guasti = [], elisioni = [];
+  for (const f of costruite){
+    const t = visibile(f);
+    for (const m of t.matchAll(/.{0,30}\b(NaN|undefined|Infinity)\b.{0,20}/g)) guasti.push(`[${f}] …${m[0]}…`);
+    for (const m of t.matchAll(/\b(?:il|al|del|dal|sul|nel|Il|Al|Del|Dal|Sul|Nel) (?:8|11|8\d|1(?!°|\d))\b[^ ]*/g))
+      elisioni.push(`[${f}] ${m[0]}`);
+  }
+  c('nessuna pagina mostra NaN, undefined o Infinity', !guasti.length, guasti.slice(0, 3).join(' · '));
+  c('nessuna preposizione da elidere davanti a un numero che si legge con una vocale',
+    !elisioni.length, elisioni.slice(0, 4).join(' · '));
+}
+
 console.log(ko ? `\n  ✗ ${ko} controlli falliti` : '\n  pagine e motore non divergono su niente di controllabile');
 if (ko) process.exitCode = 1;
